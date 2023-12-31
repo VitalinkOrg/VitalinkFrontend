@@ -1,0 +1,1 @@
+export { default } from "file:///Users/robyifanmengyifan/Documents/Codes/Vitalink/VitalinkFrontend/node_modules/@nuxt/vite-builder/dist/runtime/client.manifest.mjs"
