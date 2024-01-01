@@ -1,5 +1,5 @@
 <template>
-	<WebsiteHeader />
+	<WebsiteNav />
 	<slot />
 	<WebsiteFooter />
 </template>

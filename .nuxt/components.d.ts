@@ -2,7 +2,7 @@
 declare module 'vue' {
   export interface GlobalComponents {
     'WebsiteFooter': typeof import("../components/website/footer.vue")['default']
-    'WebsiteHeader': typeof import("../components/website/header.vue")['default']
+    'WebsiteNav': typeof import("../components/website/nav.vue")['default']
     'NuxtWelcome': typeof import("../node_modules/@nuxt/ui-templates/dist/templates/welcome.vue")['default']
     'NuxtLayout': typeof import("../node_modules/nuxt/dist/app/components/nuxt-layout")['default']
     'NuxtErrorBoundary': typeof import("../node_modules/nuxt/dist/app/components/nuxt-error-boundary")['default']
@@ -24,7 +24,7 @@ declare module 'vue' {
     'Html': typeof import("../node_modules/nuxt/dist/head/runtime/components")['Html']
     'Body': typeof import("../node_modules/nuxt/dist/head/runtime/components")['Body']
     'LazyWebsiteFooter': typeof import("../components/website/footer.vue")['default']
-    'LazyWebsiteHeader': typeof import("../components/website/header.vue")['default']
+    'LazyWebsiteNav': typeof import("../components/website/nav.vue")['default']
     'LazyNuxtWelcome': typeof import("../node_modules/@nuxt/ui-templates/dist/templates/welcome.vue")['default']
     'LazyNuxtLayout': typeof import("../node_modules/nuxt/dist/app/components/nuxt-layout")['default']
     'LazyNuxtErrorBoundary': typeof import("../node_modules/nuxt/dist/app/components/nuxt-error-boundary")['default']
@@ -49,7 +49,7 @@ declare module 'vue' {
 }
 
 export const WebsiteFooter: typeof import("../components/website/footer.vue")['default']
-export const WebsiteHeader: typeof import("../components/website/header.vue")['default']
+export const WebsiteNav: typeof import("../components/website/nav.vue")['default']
 export const NuxtWelcome: typeof import("../node_modules/@nuxt/ui-templates/dist/templates/welcome.vue")['default']
 export const NuxtLayout: typeof import("../node_modules/nuxt/dist/app/components/nuxt-layout")['default']
 export const NuxtErrorBoundary: typeof import("../node_modules/nuxt/dist/app/components/nuxt-error-boundary")['default']
@@ -71,7 +71,7 @@ export const Head: typeof import("../node_modules/nuxt/dist/head/runtime/compone
 export const Html: typeof import("../node_modules/nuxt/dist/head/runtime/components")['Html']
 export const Body: typeof import("../node_modules/nuxt/dist/head/runtime/components")['Body']
 export const LazyWebsiteFooter: typeof import("../components/website/footer.vue")['default']
-export const LazyWebsiteHeader: typeof import("../components/website/header.vue")['default']
+export const LazyWebsiteNav: typeof import("../components/website/nav.vue")['default']
 export const LazyNuxtWelcome: typeof import("../node_modules/@nuxt/ui-templates/dist/templates/welcome.vue")['default']
 export const LazyNuxtLayout: typeof import("../node_modules/nuxt/dist/app/components/nuxt-layout")['default']
 export const LazyNuxtErrorBoundary: typeof import("../node_modules/nuxt/dist/app/components/nuxt-error-boundary")['default']
