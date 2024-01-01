@@ -1,5 +1,14 @@
+@import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@300;500;600;800;900&display=swap');
+
 @import "bootstrap/bootstrap.scss";
 
 strong {
-  font-weight: 700;
+  font-weight: 600;
+}
+
+h3,
+h4,
+h5,
+h6 {
+  font-weight: 600;
 }

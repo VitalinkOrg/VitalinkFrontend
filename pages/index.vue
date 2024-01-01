@@ -3,7 +3,7 @@
 		<div class="bg-light">
 			<header class="d-flex align-items-center">
 				<div class="container">
-					<h1 class="display-5 text-center"><strong>Bienestar a tu alcance: encuentra y programa citas médicas</strong>
+					<h1 class="display-5 text-center">Bienestar a tu alcance: encuentra y programa citas médicas
 					</h1>
 					<p class="text-center text-muted col-sm-8 mx-auto">Pon tu salud en primer lugar con nuestro directorio de
 						médicos
@@ -99,7 +99,7 @@
 						<div class="card-body ps-5">
 							<div class="d-flex align-items-center">
 								<div class="col-sm-6">
-									<h2 class="display-6"><strong>¿Listo para empezar la búsqueda?</strong></h2>
+									<h2 class="display-6">¿Listo para empezar la búsqueda?</h2>
 									<p class="text-muted mb-4">Un centro médico te está esperando</p>
 									<NuxtLink class="btn btn-primary px-4">Empezar ahora</NuxtLink>
 								</div>
@@ -120,28 +120,28 @@
 						<img src="@/src/assets/img-busca-centro-medico.png" alt="Busca centro medico" class="img-fluid">
 					</div>
 					<div class="col">
-						<h2 class="display-6"><strong>Números que muestran nuestro éxito</strong></h2>
+						<h2 class="display-6">Números que muestran nuestro éxito</h2>
 						<p class="text-muted">Lorem ipsum dolor sit amet consectetur nunc nunc sit velit eget sollicitudin sit posuere
 						</p>
 
 						<div class="row row-cols-2 py-2">
 							<div>
-								<p class="h3 text-warning"><strong>200+</strong></p>
+								<p class="h3 text-warning">200+</p>
 								<h4 class="h5">Lorem ipsum dolor</h4>
 								<p class="text-muted"><small>Lorem ipsum dolor sit amet consectetur adipiscing elitolmel.</small></p>
 							</div>
 							<div>
-								<p class="h3 text-warning"><strong>97%</strong></p>
+								<p class="h3 text-warning">97%</p>
 								<h4 class="h5">Lorem ipsum dolor</h4>
 								<p class="text-muted"><small>Lorem ipsum dolor sit amet consectetur adipiscing elitolmel.</small></p>
 							</div>
 							<div>
-								<p class="h3 text-warning"><strong>34+</strong></p>
+								<p class="h3 text-warning">34+</p>
 								<h4 class="h5">Lorem ipsum dolor</h4>
 								<p class="text-muted"><small>Lorem ipsum dolor sit amet consectetur adipiscing elitolmel.</small></p>
 							</div>
 							<div>
-								<p class="h3 text-warning"><strong>100+</strong></p>
+								<p class="h3 text-warning">100+</p>
 								<h4 class="h5">Lorem ipsum dolor</h4>
 								<p class="text-muted"><small>Lorem ipsum dolor sit amet consectetur adipiscing elitolmel.</small></p>
 							</div>
@@ -178,6 +178,82 @@
 				</div>
 			</div>
 		</section>
+
+		<section class="bg-white py-5">
+			<div class="container-fluid">
+				<div class="row align-items-center">
+					<div class="col ms-sm-5 col-sm-4">
+						<h2 class="display-6">Qué dicen de nuestro servicio?</h2>
+						<p class="text-muted">Lorem ipsum dolor sit amet consectetur nunc nunc sit velit eget sollicitudin sit posuere
+						</p>
+					</div>
+					<div class="col ms-5 d-flex" style="white-space: nowrap;overflow-x: auto;">
+						<div class=" card rounded-4 bg-primary p-3 me-4" style="text-wrap:initial;min-width: 30rem">
+							<div class="card-body bg-light rounded-4" style="--bs-bg-opacity: .2;">
+								STARS
+								<h4 class=" text-light">¡Fue realmente fácil!</h4>
+								<p class="text-light mb-4">
+									<small>Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut
+										labore et
+										dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut
+										aliquip
+										ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum
+										dolore
+										eu
+										fugiat nulla pariatur.</small>
+								</p>
+								<p class="text-light"><strong>Stephanie Powell</strong> | Doctora, Usuario de Vitalink</p>
+							</div>
+						</div>
+						<div class="card rounded-4 bg-primary p-3 me-4" style="text-wrap:initial;min-width: 30rem">
+							<div class="card-body bg-light rounded-4" style="--bs-bg-opacity: .2;">
+								STARS
+								<h4 class=" text-light">¡Fue realmente fácil!</h4>
+								<p class="text-light mb-4">
+									<small>Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut
+										labore et
+										dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut
+										aliquip
+										ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum
+										dolore
+										eu
+										fugiat nulla pariatur.</small>
+								</p>
+								<p class="text-light"><strong>Stephanie Powell</strong> | Doctora, Usuario de Vitalink</p>
+							</div>
+						</div>
+					</div>
+				</div>
+				<div class="row">
+					<div class="col d-flex justify-content-end me-5 mt-4">
+						<button class="btn btn-circle btn-warning-subtle rounded-circle">L</button>
+						<button class="btn btn-circle btn-warning rounded-circle">R</button>
+					</div>
+				</div>
+			</div>
+		</section>
+
+		<div class="bg-light">
+			<section class="py-5">
+				<div class="container">
+					<div class="card bg-primary rounded-5 border-0" style="--bs-bg-opacity: .05;">
+						<div class="card-body ps-5">
+							<div class="d-flex align-items-center">
+								<div class="col-sm-6">
+									<h2 class="display-6">¿Emocionado por empezar tu búsqueda?</h2>
+									<p class="text-muted mb-4">Lorem ipsum dolor sit amet consectetur adipiscing eli mattis sit phasellus
+										mollis sit aliquam sit nullam.</p>
+									<NuxtLink class="btn btn-primary px-4">Empezar ahora</NuxtLink>
+								</div>
+								<div>
+									<img src="@/src/assets/img-busca-centro-medico.png" alt="Busca centro medico" class="img-fluid">
+								</div>
+							</div>
+						</div>
+					</div>
+				</div>
+			</section>
+		</div>
 	</NuxtLayout>
 </template>
 
