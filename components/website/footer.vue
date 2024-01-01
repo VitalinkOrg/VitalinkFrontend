@@ -3,7 +3,7 @@
     <div class="container">
       <div class="row row-cols-5">
         <div class="col">
-          Vitalink
+          <img src="@/src/assets/img-vitalink-logo.svg" alt="Vitalink">
           Lorem ipsum dolor sit amet consectetur, adipisicing elit. Temporibus quas voluptas
         </div>
         <div class="col">

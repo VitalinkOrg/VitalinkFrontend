@@ -42,7 +42,7 @@ $pink: #d63384 !default;
 $red: #dc3545 !default;
 $orange: #fd7e14 !default;
 $yellow: #F2CF63 !default;
-$green: #198754 !default;
+$green: #04BFAE !default;
 $teal: #0CADBB !default;
 $cyan: #0dcaf0 !default;
 // scss-docs-end color-variables
@@ -620,11 +620,13 @@ $font-size-lg: $font-size-base * 1.25 !default;
 
 $font-weight-lighter: lighter !default;
 $font-weight-light: 300 !default;
-$font-weight-normal: 400 !default;
+// $font-weight-normal: 400 !default;
+$font-weight-normal: 300 !default;
 $font-weight-medium: 500 !default;
 $font-weight-semibold: 600 !default;
-$font-weight-bold: 700 !default;
-$font-weight-bolder: bolder !default;
+$font-weight-bold: 800 !default;
+// $font-weight-bolder: bolder !default;
+$font-weight-bolder: 900 !default;
 
 $font-weight-base: $font-weight-normal !default;
 
@@ -654,7 +656,8 @@ $font-sizes: (
 $headings-margin-bottom: $spacer * .5 !default;
 $headings-font-family: null !default;
 $headings-font-style: null !default;
-$headings-font-weight: 500 !default;
+// $headings-font-weight: 500 !default;
+$headings-font-weight: $font-weight-bolder !default;
 $headings-line-height: 1.2 !default;
 $headings-color: inherit !default;
 // scss-docs-end headings-variables
@@ -670,7 +673,8 @@ $display-font-sizes: (
 
 $display-font-family: null !default;
 $display-font-style: null !default;
-$display-font-weight: 300 !default;
+// $display-font-weight: 300 !default;
+$display-font-weight: $font-weight-bolder !default;
 $display-line-height: $headings-line-height !default;
 // scss-docs-end display-headings
 
@@ -883,9 +887,11 @@ $form-text-color: var(--#{$prefix}secondary-color) !default;
 
 // scss-docs-start form-label-variables
 $form-label-margin-bottom: .5rem !default;
-$form-label-font-size: null !default;
+// $form-label-font-size: null !default;
+$form-label-font-size: $font-size-sm !default;
 $form-label-font-style: null !default;
-$form-label-font-weight: null !default;
+// $form-label-font-weight: null !default;
+$form-label-font-weight: $font-weight-normal !default;
 $form-label-color: null !default;
 // scss-docs-end form-label-variables
 
