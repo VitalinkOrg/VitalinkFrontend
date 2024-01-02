@@ -237,22 +237,129 @@
 			<section class="py-5">
 				<div class="container">
 					<div class="card bg-primary rounded-5 border-0" style="--bs-bg-opacity: .05;">
-						<div class="card-body ps-5">
+						<div class="card-body p-0">
 							<div class="d-flex align-items-center">
-								<div class="col-sm-6">
+								<div class="co ps-5">
 									<h2 class="display-6">¿Emocionado por empezar tu búsqueda?</h2>
 									<p class="text-muted mb-4">Lorem ipsum dolor sit amet consectetur adipiscing eli mattis sit phasellus
 										mollis sit aliquam sit nullam.</p>
-									<NuxtLink class="btn btn-primary px-4">Empezar ahora</NuxtLink>
+
+									<form class="d-flex ms-2">
+										<input class="form-control me-2" type="email" placeholder="Escribe tu correo electrónico"
+											aria-label="Search">
+										<button class="btn btn-primary" type="submit">Suscribirse</button>
+									</form>
+									<!-- <NuxtLink class="btn btn-primary px-4">Empezar ahora</NuxtLink> -->
 								</div>
-								<div>
-									<img src="@/src/assets/img-busca-centro-medico.png" alt="Busca centro medico" class="img-fluid">
+								<div class="col-sm-4 offset-sm-1 pe-4">
+									<img src="@/src/assets/img-buscar-miles-medicos.png" alt="Busca centro medico" class="img-fluid">
 								</div>
 							</div>
 						</div>
 					</div>
 				</div>
 			</section>
+
+			<section class="py-5">
+				<div class="container">
+					<h2 class="display-6 text-center">Dejanos saber que piensas</h2>
+					<p class="text-center text-muted col-sm-8 mx-auto">Lorem ipsum dolor sit amet consectetur adipiscing eli mattis
+						sit phasellus
+						mollis sit aliquam sit nullam.</p>
+
+					<div class="row">
+						<div class="col-sm-11 mx-auto py-4">
+							<div class="row align-items-center">
+								<div class="col">
+									<h4 class="h5">Medios de Contacto</h4>
+									<p>Lorem ipsum dolor sit amet consectetur adipiscing eli mattis sit phasellus</p>
+									<div class="d-flex align-items-center mb-3">
+										ICON
+										<div class="d-flex flex-column ms-3">
+											<span class="h6">Email:</span>
+											<small>contact@brix.com</small>
+										</div>
+									</div>
+									<div class="d-flex align-items-center mb-3">
+										ICON
+										<div class="d-flex flex-column ms-3">
+											<span class="h6">Phone:</span>
+											<small>(414) 687 - 5892</small>
+										</div>
+									</div>
+									<p class="text-muted mb-0">Síguenos en redes sociales</p>
+									<p>Icon Icon Icon Icon Icon</p>
+								</div>
+								<div class="col">
+									<div class="card shadow-lg border-0 rounded-5">
+										<div class="card-body p-4">
+											<form action="">
+												<div class="row">
+													<div class="col">
+														<div class="form-group">
+															<label for="nombre" class="form-label">Nombre</label>
+															<input type="text" class="form-control" id="nombre" aria-describedby="nombreHelp"
+																placeholder="Brian Clark">
+															<!-- <div id="nombreHelp" class="form-text">We'll never share your email with anyone else.</div> -->
+														</div>
+													</div>
+													<div class="col">
+														<div class="form-group">
+															<label for="email" class="form-label">Correo Electrónico</label>
+															<input type="email" class="form-control" id="email" aria-describedby="emailHelp"
+																placeholder="example@youremail.com">
+															<!-- <div id="emailHelp" class="form-text">We'll never share your email with anyone else.</div> -->
+														</div>
+													</div>
+
+												</div>
+												<div class="form-group">
+													<label for="telephono" class="form-label">Número de Teléfono</label>
+													<input type="phone" class="form-control" id="telephono" aria-describedby="telephonoHelp"
+														placeholder="example@youremail.com">
+													<!-- <div id="emailHelp" class="form-text">We'll never share your email with anyone else.</div> -->
+												</div>
+												<div class="form-group">
+													<label for="mensaje" class="form-label">Message</label>
+													<textarea type="mensaje" class="form-control" id="mensaje" aria-describedby="mensajeHelp"
+														placeholder="Escribe tu mensaje aquí"></textarea>
+													<!-- <div id="emailHelp" class="form-text">We'll never share your email with anyone else.</div> -->
+												</div>
+												<button class="btn btn-warning">Contactar</button>
+											</form>
+										</div>
+									</div>
+								</div>
+							</div>
+						</div>
+					</div>
+				</div>
+			</section>
+
+			<section class="py-5">
+				<div class="container">
+					<div class="card rounded-5 border-0 shadow">
+						<div class="row">
+							<div class="col bg-info rounded-start-5 rounded-0 p-5 align-items-center d-flex">
+								<div class="py-4 ps-3">
+									<h2 class="h2 text-light">Preguntas Frecuentes</h2>
+									<p class="text-light">Lorem ipsum dolor sit amet consectetur adipiscing eli mattis sit phasellus mollis
+										sitoler aliquam sit.
+									</p>
+									<button class="btn btn-light text-info mt-2">Contactar</button>
+								</div>
+							</div>
+							<div class="col align-items-center justify-content-center d-flex flex-column p-4">
+								<WebsiteFaqItem />
+								<WebsiteFaqItem />
+								<WebsiteFaqItem />
+								<WebsiteFaqItem />
+							</div>
+						</div>
+					</div>
+				</div>
+			</section>
+
 		</div>
 	</NuxtLayout>
 </template>
