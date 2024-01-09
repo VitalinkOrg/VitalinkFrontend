@@ -16,12 +16,9 @@ export interface IClinica {
   nombre: string;
   servicios?: IServicioClinica[];
   rating?: string,
-  images?: string[];
-  category?: string;
   // variants?: Variant[];
-  price?: number;
-  tags?: string[];
-  reviews?: number
+  reviews?: number,
+  otrasOfertas: IClinica[]
 }
 
 
@@ -65,7 +62,8 @@ export default function useSearch() {
         { id: '845', nombre: 'pediatría' },
       ],
       reviews: 13,
-      lugarCoord: [2145678234234, 32478598765]
+      lugarCoord: [2145678234234, 32478598765],
+      otrasOfertas: []
     },
     { id: '2', nombre: 'Clínica Santa Lucía, San José' }
   ])
