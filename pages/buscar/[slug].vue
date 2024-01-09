@@ -1,7 +1,6 @@
 <script setup>
 // const { clinicas } = await useSearch();
 const { clinicas } = useSearch();
-const panel = false
 </script>
 
 
