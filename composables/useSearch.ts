@@ -42,7 +42,6 @@ export default function useSearch() {
         { id: '845', nombre: 'pediatría' },
       ],
       reviews: 13,
-      lugarCoord: [2145678234234, 32478598765],
       otrasOfertas: []
     },
     { id: '2', nombre: 'Clínica Santa Lucía, San José' }

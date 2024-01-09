@@ -2,6 +2,7 @@
 declare module 'vue' {
   export interface GlobalComponents {
     'WebsiteClinicaNav': typeof import("../components/website/clinica-nav.vue")['default']
+    'WebsiteClinicaServiciosTab': typeof import("../components/website/clinica/servicios-tab.vue")['default']
     'WebsiteClinicasListItem': typeof import("../components/website/clinicas-list-item.vue")['default']
     'WebsiteFaqItem': typeof import("../components/website/faq-item.vue")['default']
     'WebsiteFooter': typeof import("../components/website/footer.vue")['default']
@@ -28,6 +29,7 @@ declare module 'vue' {
     'Html': typeof import("../node_modules/nuxt/dist/head/runtime/components")['Html']
     'Body': typeof import("../node_modules/nuxt/dist/head/runtime/components")['Body']
     'LazyWebsiteClinicaNav': typeof import("../components/website/clinica-nav.vue")['default']
+    'LazyWebsiteClinicaServiciosTab': typeof import("../components/website/clinica/servicios-tab.vue")['default']
     'LazyWebsiteClinicasListItem': typeof import("../components/website/clinicas-list-item.vue")['default']
     'LazyWebsiteFaqItem': typeof import("../components/website/faq-item.vue")['default']
     'LazyWebsiteFooter': typeof import("../components/website/footer.vue")['default']
@@ -57,6 +59,7 @@ declare module 'vue' {
 }
 
 export const WebsiteClinicaNav: typeof import("../components/website/clinica-nav.vue")['default']
+export const WebsiteClinicaServiciosTab: typeof import("../components/website/clinica/servicios-tab.vue")['default']
 export const WebsiteClinicasListItem: typeof import("../components/website/clinicas-list-item.vue")['default']
 export const WebsiteFaqItem: typeof import("../components/website/faq-item.vue")['default']
 export const WebsiteFooter: typeof import("../components/website/footer.vue")['default']
@@ -83,6 +86,7 @@ export const Head: typeof import("../node_modules/nuxt/dist/head/runtime/compone
 export const Html: typeof import("../node_modules/nuxt/dist/head/runtime/components")['Html']
 export const Body: typeof import("../node_modules/nuxt/dist/head/runtime/components")['Body']
 export const LazyWebsiteClinicaNav: typeof import("../components/website/clinica-nav.vue")['default']
+export const LazyWebsiteClinicaServiciosTab: typeof import("../components/website/clinica/servicios-tab.vue")['default']
 export const LazyWebsiteClinicasListItem: typeof import("../components/website/clinicas-list-item.vue")['default']
 export const LazyWebsiteFaqItem: typeof import("../components/website/faq-item.vue")['default']
 export const LazyWebsiteFooter: typeof import("../components/website/footer.vue")['default']
