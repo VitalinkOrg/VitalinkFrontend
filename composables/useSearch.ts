@@ -1,26 +1,6 @@
 // import useApi from "./api";
-import { Ref, ref } from "vue";
-
-// export interface Variant {
-//   id: string;
-//   title: string;
-//   sku: string;
-//   quantity: number;
-// }
-export interface IServicioClinica {
-  id: string,
-  nombre: string
-}
-export interface IClinica {
-  id: string;
-  nombre: string;
-  servicios?: IServicioClinica[];
-  rating?: string,
-  // variants?: Variant[];
-  reviews?: number,
-  otrasOfertas: IClinica[]
-}
-
+// import { type Ref, ref } from "vue";
+import { type IClinica } from "@/types";
 
 // export type UsableClinicas = Promise<{ clinicas: Ref<Clinica[] | undefined> }>;
 
