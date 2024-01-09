@@ -27,8 +27,8 @@
           </li>
         </ul>
         <div class="">
-          <button class="btn btn-outline-dark me-2">Ingresar</button>
-          <button class="btn btn-primary">Registrarse</button>
+          <NuxtLink href="/pacientes/login" class="btn btn-outline-dark me-2">Ingresar</NuxtLink>
+          <NuxtLink href="/pacientes/registro" class="btn btn-primary">Registrarse</NuxtLink>
         </div>
       </div>
     </div>
