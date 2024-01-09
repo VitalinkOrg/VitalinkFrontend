@@ -23,7 +23,7 @@ export default {
     <li class="nav-item"><button class="nav-link" :class="tab === 6 ? 'active' : ''" @click="tab = 6">Perfil</button></li>
   </ul>
 
-  <section class="p-4">
+  <section class="py-4 px-1">
     <!-- Dsiponibilidad  -->
     <div v-if="tab === 1">
       <p class="fw-semibold">Reserva una cita</p>
