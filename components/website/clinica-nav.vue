@@ -23,10 +23,20 @@ export default {
     <li class="nav-item"><button class="nav-link" :class="tab === 6 ? 'active' : ''" @click="tab = 6">Perfil</button></li>
   </ul>
 
-  <div v-if="tab === 1">Reserva una cita</div>
-  <div v-if="tab === 2">Lista de Servicios</div>
-  <div v-if="tab === 3">Encuentranos Facilmente</div>
-  <div v-if="tab === 4">Fotos</div>
-  <div v-if="tab === 5">Reseñas logradas</div>
-  <div v-if="tab === 6">Nuestra Historia</div>
+  <section class="p-4">
+    <!-- Dsiponibilidad  -->
+    <div v-if="tab === 1">
+      <p class="fw-semibold">Reserva una cita</p>
+    </div>
+    <!-- Servicios  -->
+    <WebsiteClinicaServiciosTab :clinica="clinica" v-if="tab === 2" />
+    <!-- Ubicacion -->
+    <div v-if="tab === 3">Encuentranos Facilmente</div>
+    <!-- Galeria  -->
+    <div v-if="tab === 4">Fotos</div>
+    <!-- Reseñas  -->
+    <div v-if="tab === 5">Reseñas logradas</div>
+    <!-- Perfil  -->
+    <div v-if="tab === 6">Nuestra Historia</div>
+  </section>
 </template>

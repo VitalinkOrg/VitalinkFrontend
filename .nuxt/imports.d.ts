@@ -24,5 +24,6 @@ export { injectHead, useHead, useSeoMeta, useHeadSafe, useServerHead, useServerS
 export { default as api, ApiRequest, UsableAPI } from '../composables/api';
 export { default as useClinica } from '../composables/useClinica';
 export { default as useSearch } from '../composables/useSearch';
+export { default as useServicios } from '../composables/useServicios';
 export { useNuxtDevTools } from '../node_modules/@nuxt/devtools/dist/runtime/use-nuxt-devtools';
 export { definePageMeta } from '../node_modules/nuxt/dist/pages/runtime/composables';

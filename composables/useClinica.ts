@@ -12,7 +12,6 @@ export default function useClinica() {
       { id: '845', nombre: 'pediatría' },
     ],
     reviews: 13,
-    lugarCoord: [2145678234234, 32478598765],
     otrasOfertas: [],
     experiencia: 10,
     pacientes: 1000,
@@ -22,7 +21,8 @@ export default function useClinica() {
   }])
 
 
+
   return {
-    clinicas
+    clinicas,
   }
 }

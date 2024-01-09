@@ -1,6 +1,14 @@
 export interface IServicioClinica {
   id: string,
-  nombre: string
+  nombre: string, //66821 - Operación de Cataratas
+  descripcion: string //La cirugía de cataratas es un procedimiento oftalmológico comúnmente realizado para restaurar la visión nublada debido a la opacificación del cristalino del ojo. 
+  amenidades?: IAmenidadClinica[],
+  precio: number // en USD 
+}
+
+export interface IAmenidadClinica {
+  id: string,
+  nombre: string //Habitación Privada
 }
 
 export interface IDireccion {
@@ -20,5 +28,15 @@ export interface IClinica {
   imagen?: string,
   direccion?: IDireccion,
   experiencia?: number, //en años
-  pacientes?: number
+  pacientes?: number,
+  horario: IHorarioDiario[],
+  clinica: string
+}
+
+export interface IHorarioDiario {
+  dia: EWeekDays, horas: string
+}
+
+export enum EWeekDays {
+  Lunes = "Lunes", Martes = "Martes", Miercoles = "Miércoles", Jueves = "Jueves", Viernes = "Viernes", Sabado = "Sábado", Domingo = "Domingo"
 }
