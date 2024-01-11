@@ -23,7 +23,8 @@ export { withCtx, withDirectives, withKeys, withMemo, withModifiers, withScopeId
 export { injectHead, useHead, useSeoMeta, useHeadSafe, useServerHead, useServerSeoMeta, useServerHeadSafe } from '@unhead/vue';
 export { default as api, ApiRequest, UsableAPI } from '../composables/api';
 export { default as useClinica } from '../composables/useClinica';
-export { default as useSearch } from '../composables/useSearch';
 export { default as useServicios } from '../composables/useServicios';
+export { default as useSearch, IServicioClinica, IClinica } from '../composables/useSearch';
+export { defineStore, acceptHMRUpdate, usePinia, storeToRefs } from '../node_modules/@pinia/nuxt/dist/runtime/composables';
 export { useNuxtDevTools } from '../node_modules/@nuxt/devtools/dist/runtime/use-nuxt-devtools';
 export { definePageMeta } from '../node_modules/nuxt/dist/pages/runtime/composables';

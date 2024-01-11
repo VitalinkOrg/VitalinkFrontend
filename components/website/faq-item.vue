@@ -1,6 +1,16 @@
 
 <script>
 export default {
+  props: {
+    title: {
+      type: String,
+      default: '¿Cuáles son los tipos de cirugía disponibles en VitaLink?',
+    },
+    subtitles: {
+      type: String,
+      default: 'Cubrimos una amplia gama de procedimientos quirúrgicos, desde cirugía cardíaca hasta cirugía plástica. Simplemente ingresa el nombre del procedimiento en la barra de búsqueda para obtener resultados específicos.'
+    }
+  },
   data: () => ({
     open: false
   })
@@ -10,14 +20,12 @@ export default {
   <div class="accordion-item border-bottom border-warning w-100">
     <h2 class="accordion-header py-3">
       <button class="accordion-button d-flex justify-content-between" type="button" @click="open = !open">
-        Lorem ipsum dolor sit amet, consectetur cdolor <span>Arrow</span>
+        {{ title }}
       </button>
     </h2>
     <div class="accordion-collapse" v-if="open">
       <div class="accordion-body pb-3">
-        <small>Lorem ipsum dolor sit amet, consectetur cdolor col adipiscing elit. Integer mattis
-          nunc
-          augue vel lacinia erat euismod ut. Sed eleifend tellus nonole tincidunt aliquet. Fusce aliquam mi felis.</small>
+        <small>Cubrimos una amplia gama de procedimientos quirúrgicos, desde cirugía cardíaca hasta cirugía plástica. Simplemente ingresa el nombre del procedimiento en la barra de búsqueda para obtener resultados específicos.</small>
       </div>
     </div>
   </div>
