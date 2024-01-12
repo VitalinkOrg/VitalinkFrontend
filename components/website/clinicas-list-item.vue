@@ -4,24 +4,43 @@ export default {
   data: () => ({
     panel: false,
   }),
+  methods: {
+    goTo(id) {
+      this.$router.push({
+        name: "perfiles-slug",
+        params: { slug: id },
+      })
+    }
+  }
 };
 </script>
 
 <template>
-  <div class="card shadow border-0 rounded-4 mb-4">
+  <div class="card shadow border-0 rounded-4 mb-4" style="cursor: pointer;" @click="goTo(clinica.id)">
     <div class="card-body">
       <div class="row">
         <div class="col-sm-3">
           <img
+            v-if="clinica.picture"
             :src="clinica.picture"
+            class="img-fluid rounded-4"
+            alt="clinica"
+          />
+          <img
+            v-else
+            src="@/src/assets/img-clinica-thumbnail.png"
             class="img-fluid rounded-4"
             alt="clinica"
           />
         </div>
         <div class="col">
           <small>
-            <span class="fw-semibold me-2">{{ clinica.review_score || "" }} [S]</span>
-            <span class="text-muted">({{ clinica.review_count || 0 }} Reseñas)</span>
+            <span class="fw-semibold me-2"
+              >{{ clinica.price || "" }} [S]</span
+            >
+            <span class="text-muted"
+              >({{ clinica.rating || 0 }} Reseñas)</span
+            >
           </small>
           <h2 class="h5 fw-semibold my-2">{{ clinica.name }}</h2>
           <!-- <span
@@ -58,7 +77,7 @@ export default {
               @click="panel = !panel"
             >
               <span class="text-muted">A partir de</span>
-              <span class="fw-bold text-nowrap">23.200 USD A</span>
+              <span class="fw-bold text-nowrap">{{ clinica.stock  }} USD A</span>
             </div>
           </div>
         </div>
