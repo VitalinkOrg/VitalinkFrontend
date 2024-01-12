@@ -44,7 +44,31 @@ export default function useSearch() {
       reviews: 13,
       otrasOfertas: []
     },
-    { id: '2', nombre: 'Clínica Santa Lucía, San José' }
+    {
+      id: '2',
+      nombre: 'Hospital Clínica Bíblica',
+      rating: '5.0',
+      servicios: [
+        { id: '125', nombre: 'oftalmología' },
+        { id: '5733', nombre: 'cirugía' },
+        { id: '845', nombre: 'pediatría' },
+      ],
+      reviews: 13,
+      otrasOfertas: []
+    },
+    {
+      id: '3',
+      nombre: 'Hospital Clínica Bíblica',
+      rating: '5.0',
+      servicios: [
+        { id: '125', nombre: 'oftalmología' },
+        { id: '5733', nombre: 'cirugía' },
+        { id: '845', nombre: 'pediatría' },
+      ],
+      reviews: 13,
+      otrasOfertas: []
+    },
+    { id: '4', nombre: 'Clínica Santa Lucía, San José' }
   ])
 
   return { clinicas };

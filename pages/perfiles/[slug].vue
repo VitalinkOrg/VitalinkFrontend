@@ -42,7 +42,7 @@ const tab = 1 // 1 Disponibilidad, 2 Servicios , 3 Ubicacion, 4 Galeria, 5 Rese√
                   <span class="badge bg-success rounded-4 mx-1 p-2">[E]</span>
                 </div>
                 <p class="card-text py-2 text-muted fw-light">
-                  <small>[I] {{ clinica.direccion.texto }}</small>
+                  <small v-if="clinica">[I] {{ clinica.direccion.texto }}</small>
                 </p>
                 <div class="row row-cols-2">
                   <div class="col">

@@ -1,8 +1,51 @@
-<script setup>
+<!-- <script setup>
 import { ref, toRaw } from 'vue'
 const clinicas = ref()
 const { data : response } = await useFetch('http://13.58.69.25:3000/patients/dashboard', {mode: 'no-cors'})
 clinicas.value = toRaw(response?.value?.data);
+</script> -->
+<!-- 
+<script setup>
+// const { clinicas } = useSearch();
+const { data: clinicas, pending } = await useLazyFetch('http://13.58.69.25:3000/patients/dashboard', {
+  mode: 'no-cors',
+  transform: (_clinicas) => _clinicas.data
+})
+console.log(clinicas, 'value');
+</script> -->
+
+<script>
+import axios from 'axios';
+export default {
+  data() {
+    return {
+      clinicas: [],
+      loading: true,
+    }
+  },
+  created() {
+    this.getData()
+  },
+  methods: {
+    async getData() {
+      let procedimiento = '';
+      if(this.$route.query.procedimiento !== undefined) {
+        procedimiento = this.$route.query.procedimiento;
+      }
+      try {
+        await axios.get(
+          'https://dummyjson.com/products/search?q=' + procedimiento)
+          .then((r) => {
+          console.log(r, 'value');
+          this.clinicas = r.data.products;
+          this.loading = false;
+        })
+      } catch (e) {
+        console.log(e)
+      }
+    }
+  }
+}
 </script>
 
 <template>
@@ -20,8 +63,7 @@ clinicas.value = toRaw(response?.value?.data);
           </div>
         </div>
       </section>
-
-      <div v-if="loading">Loading talks...</div>
+      <div v-if="pending">Loading clinicas...</div>
       <div v-else class="container-fluid">
         <section class="pb-5">
           <div class="row">

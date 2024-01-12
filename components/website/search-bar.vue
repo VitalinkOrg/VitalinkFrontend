@@ -8,15 +8,14 @@ const procedimiento = ref("");
 const lugar = ref("");
 const vaucher = ref("");
 
-function searchResults(this: any) {
-  router.push({
+function searchResults() {
+  const routeOptions = {
     path: "/buscar",
-    query: {
-      procedimiento: procedimiento.value,
-      lugar: lugar.value,
-      vaucher: vaucher.value,
-    },
-  });
+  };
+  if (procedimiento.value !== "") {
+    routeOptions.query = { procedimiento: procedimiento.value };
+  }
+  router.push(routeOptions);
 }
 </script>
 
