@@ -27,10 +27,31 @@
           </li>
         </ul>
         <div class="">
+        </div>
+        <div v-if="!authenticated">
           <NuxtLink href="/pacientes/login" class="btn btn-outline-dark me-2">Ingresar</NuxtLink>
           <NuxtLink href="/pacientes/registro" class="btn btn-primary">Registrarse</NuxtLink>
+        </div>
+        <div v-if="authenticated" >
+          <NuxtLink @click="logout"  class="btn btn-primary">Cerrar sesión</NuxtLink>
         </div>
       </div>
     </div>
   </nav>
 </template>
+
+<script lang="ts" setup>
+import { storeToRefs } from 'pinia'; // import storeToRefs helper hook from pinia
+import { useAuthStore } from '~/store/auth'; // import the auth store we just created
+
+const router = useRouter();
+
+
+const { logUserOut } = useAuthStore(); // use authenticateUser action from  auth store
+const { authenticated } = storeToRefs(useAuthStore()); // make authenticated state reactive with storeToRefs
+
+const logout = () => {
+  logUserOut();
+  router.push('/pacientes/login');
+};
+</script>
