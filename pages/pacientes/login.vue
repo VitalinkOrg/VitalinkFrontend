@@ -1,36 +1,18 @@
 <template>
-  <NuxtLayout name="login">
+  <NuxtLayout name="pacientes-login">
     <h1 class="fw-semibold fs-2">Ingrese a su cuenta</h1>
     <hr />
     <form @submit.prevent="login">
       <div class="form-group mb-4">
-        <label for="email" class="form-label text-capitalize"
-          >Correo Electrónico</label
-        >
-        <input
-          v-model="user.email"
-          type="email"
-          class="form-control"
-          placeholder="Escribe tu correo electrónico"
-          name="email"
-          required
-        />
+        <label for="email" class="form-label text-capitalize">Correo Electrónico</label>
+        <input v-model="user.email" type="email" class="form-control" placeholder="Escribe tu correo electrónico"
+          name="email" required />
         <!-- <div id="nombreHelp" class="form-text">We'll never share your email with anyone else.</div> -->
       </div>
       <div class="form-group mb-4">
-        <label for="password" class="form-label text-capitalize"
-          >Contraseña</label
-        >
-        <input
-          v-model="user.password"
-          type="password"
-          class="form-control"
-          id="password"
-          placeholder="Escribe tu contraseña"
-          aria-describedby="passwordHelp"
-          required
-          name="password"
-        />
+        <label for="password" class="form-label text-capitalize">Contraseña</label>
+        <input v-model="user.password" type="password" class="form-control" id="password"
+          placeholder="Escribe tu contraseña" aria-describedby="passwordHelp" required name="password" />
         <!-- <div id="passwordHelp" class="form-text">Deben ser 8 caracteres como mínimo</div> -->
       </div>
       <button type="submit" class="btn btn-primary w-100 mt-4">Ingresar</button>
@@ -47,9 +29,7 @@
     </div>
     <p class="text-center">
       <span class="text-muted">No tienes Cuenta? </span>
-      <NuxtLink href="/pacientes/registro" class="btn-link text-dark fw-medium"
-        >Registrate</NuxtLink
-      >
+      <NuxtLink href="/pacientes/registro" class="btn-link text-dark fw-medium">Registrate</NuxtLink>
     </p>
   </NuxtLayout>
 </template>
@@ -63,7 +43,7 @@ const { authenticateUser } = useAuthStore(); // use authenticateUser action from
 const { authenticated } = storeToRefs(useAuthStore()); // make authenticated state reactive with storeToRefs
 
 const user = ref({
-  email: 'test@gmail.com', 
+  email: 'test@gmail.com',
   password: 'test',
 });
 const router = useRouter();
