@@ -1,5 +1,5 @@
 <template>
-  <NuxtLayout name="login">
+  <NuxtLayout name="pacientes-login">
     <h1 class="text-center fw-semibold fs-2">Registrarse</h1>
     <p class="text-center text-muted fw-light fs-56">Es gratis y fácil</p>
 
