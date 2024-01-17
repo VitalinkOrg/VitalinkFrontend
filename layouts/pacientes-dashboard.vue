@@ -1,5 +1,7 @@
 <template>
-  <PacientesNav />
-  <slot />
+  <div>
+    <PacientesNav />
+    <slot />
+  </div>
 </template>
 <style src="@/assets/styles/vitalink.scss" />
