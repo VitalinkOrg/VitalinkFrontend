@@ -1,7 +1,7 @@
 import type { IServicioClinica } from "@/types"
 
 export default function useServicios(clinicaId: string) {
-  console.log(clinicaId)
+  // console.log(clinicaId)
 
   const servicios = useState<IServicioClinica[]>('servicios', () => [{
     id: '66821',
