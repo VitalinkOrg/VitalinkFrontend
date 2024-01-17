@@ -1,5 +1,15 @@
 
 
+<script>
+export default {
+  // props: ['clinica'],
+  data: () => ({
+    open: false
+  })
+}
+</script>
+
+
 <template>
   <nav class="navbar navbar-expand-lg navbar-light bg-white border-bottom shadow">
     <div class="container-fluid">
@@ -11,48 +21,53 @@
       <div class="collapse navbar-collapse " id="navbarTogglerDemo03">
         <ul class="navbar-nav mx-auto mb-2 mb-lg-0">
           <li class="nav-item">
-            <!-- <a class="nav-link active" aria-current="page" href="#">Home</a> -->
-            <NuxtLink href="/" class="nav-link" active-class="active">Home</NuxtLink>
+            <!-- <a class="nav-link fw-light active" aria-current="page" href="#">Home</a> -->
+            <NuxtLink href="/pacientes/inicio" class="nav-link fw-light"
+              active-class="active bg-primary-subtle rounded-3  px-3">Home
+            </NuxtLink>
           </li>
           <li class="nav-item">
-            <NuxtLink href="" class="nav-link">¿Eres paciente?</NuxtLink>
+            <NuxtLink href="/pacientes/citas" class="nav-link fw-light"
+              active-class="active bg-primary-subtle rounded-3  px-3">Mis Citas</NuxtLink>
           </li>
           <li class="nav-item">
-            <NuxtLink href="" class="nav-link">¿Eres Doctor o Clínica?</NuxtLink>
+            <NuxtLink href="/pacientes/vauchers" class="nav-link fw-light"
+              active-class="active bg-primary-subtle rounded-3  px-3">Váuchers
+            </NuxtLink>
           </li>
           <li class="nav-item">
-            <NuxtLink href="" class="nav-link">¿Eres aseguradora?</NuxtLink>
+            <NuxtLink href="/pacientes/documentos" class="nav-link fw-light"
+              active-class="active bg-primary-subtle rounded-3  px-3">Documentos
+            </NuxtLink>
           </li>
           <li class="nav-item">
-            <NuxtLink href="" class="nav-link">Nosotros</NuxtLink>
+            <NuxtLink href="/pacientes/facturas" class="nav-link fw-light"
+              active-class="active bg-primary-subtle rounded-3  px-3">
+              Facturación</NuxtLink>
           </li>
         </ul>
-        <div class="">
-        </div>
-        <div v-if="!authenticated">
-          <NuxtLink href="/pacientes/login" class="btn btn-outline-dark me-2">Ingresar</NuxtLink>
-          <NuxtLink href="/pacientes/registro" class="btn btn-primary">Registrarse</NuxtLink>
-        </div>
-        <div v-if="authenticated">
-          <NuxtLink @click="logout" class="btn btn-primary">Cerrar sesión</NuxtLink>
-        </div>
+
       </div>
+      <ul class="navbar-nav d-flex align-items-center">
+        <li class="nav-item"><button class="nav-link">[S]</button></li>
+        <li class="nav-item"><button class="nav-link">[N]</button></li>
+        <li class="nav-item dropdown">
+          <a class="nav-link dropdown-toggle" :class="open ? 'show' : ''" @click="open = !open" href="#" role="button"
+            data-bs-toggle="dropdown" aria-expanded="false" data-bs-display="static">
+            <img src="@/src/assets/img-avatar-sm.png" alt="avatar">
+            [I]
+          </a>
+          <ul class="dropdown-menu dropdown-menu-start" :class="open ? 'show' : ''" style="transform: translateX(-5rem);">
+            <li><a class=" dropdown-item" href="#">[I] Mi Cuenta</a>
+            </li>
+            <li><a class="dropdown-item" href="#">[I] Mis Reseñas</a></li>
+            <li><a class="dropdown-item" href="#">[I] Notificaciones</a></li>
+            <li><a class="dropdown-item" href="#">[I] Ayuda y Soporte</a></li>
+            <li><a class="dropdown-item" href="#">[I] Cerrar Sesión</a></li>
+          </ul>
+        </li>
+      </ul>
     </div>
   </nav>
 </template>
 
-<script lang="ts" setup>
-import { storeToRefs } from 'pinia'; // import storeToRefs helper hook from pinia
-import { useAuthStore } from '~/store/auth'; // import the auth store we just created
-
-const router = useRouter();
-
-
-const { logUserOut } = useAuthStore(); // use authenticateUser action from  auth store
-const { authenticated } = storeToRefs(useAuthStore()); // make authenticated state reactive with storeToRefs
-
-const logout = () => {
-  logUserOut();
-  router.push('/pacientes/login');
-};
-</script>
