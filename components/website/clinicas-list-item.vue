@@ -20,27 +20,18 @@ export default {
     <div class="card-body">
       <div class="row">
         <div class="col-sm-3">
-          <img
-            v-if="clinica.picture"
-            :src="clinica.picture"
-            class="img-fluid rounded-4"
-            alt="clinica"
-          />
-          <img
-            v-else
-            src="@/src/assets/img-clinica-thumbnail.png"
-            class="img-fluid rounded-4"
-            alt="clinica"
-          />
+          <img v-if="clinica.picture" :src="clinica.picture" class="img-fluid rounded-4" alt="clinica" />
+          <img v-else src="@/src/assets/img-clinica-thumbnail.png" class="img-fluid rounded-4" alt="clinica" />
         </div>
         <div class="col">
           <small>
-            <span class="fw-semibold me-2"
-              >{{ clinica.price || "" }} [S]</span
-            >
-            <span class="text-muted"
-              >({{ clinica.rating || 0 }} Reseñas)</span
-            >
+            <span class="fw-semibold me-2">
+              <!-- {{ clinica.price || "" }} -->
+              {{ clinica.rating || "" }}
+              <AtomsIconsStar />
+            </span>
+            <!-- <span class="text-muted">({{ clinica.rating.reviews || 0 }} Reseñas)</span> -->
+            <span class="text-muted">({{ clinica.reviews || 0 }} Reseñas)</span>
           </small>
           <h2 class="h5 fw-semibold my-2">{{ clinica.name }}</h2>
           <!-- <span
@@ -50,34 +41,23 @@ export default {
             >{{ servicio.nombre }}</span
           > -->
           <p class="fw-light text-muted mt-3">
-            <span
-              class="badge rounded-circle bg-primary text-primary me-2"
-              style="--bs-bg-opacity: 0.05"
-              >I</span
-            >Cirugia de Cataratas
+            <span class="badge rounded-circle bg-primary text-primary me-2" style="--bs-bg-opacity: 0.05">I</span>Cirugia
+            de Cataratas
           </p>
           <p class="fw-light text-muted">
-            <span
-              class="badge rounded-circle bg-primary text-primary me-2"
-              style="--bs-bg-opacity: 0.05"
-              >I</span
-            >+5 Hospitales diferentes
+            <span class="badge rounded-circle bg-primary text-primary me-2" style="--bs-bg-opacity: 0.05">I</span>+5
+            Hospitales diferentes
           </p>
           <div class="d-flex justify-content-between align-items-center">
             <div class="card bg-light rounded-4 border-0">
               <div class="card-body py-2">
                 <span class="text-muted">Disponibilidad:</span><br />
-                <span class="fw-normal"
-                  >[I] 5 de Octubre de 2023 [I] 11:00 am</span
-                >
+                <span class="fw-normal">[I] 5 de Octubre de 2023 [I] 11:00 am</span>
               </div>
             </div>
-            <div
-              class="d-flex flex-column align-items-end btn btn-light bg-white"
-              @click="panel = !panel"
-            >
+            <div class="d-flex flex-column align-items-end btn btn-light bg-white" @click="panel = !panel">
               <span class="text-muted">A partir de</span>
-              <span class="fw-bold text-nowrap">{{ clinica.stock  }} USD A</span>
+              <span class="fw-bold text-nowrap">{{ clinica.stock }} USD A</span>
             </div>
           </div>
         </div>
@@ -97,7 +77,8 @@ export default {
               </div>
               <div class="card-body d-flex flex-column">
                 <p class="card-text text-center">
-                  <small class="fw-semibold">5.0</small> [S]
+                  <small class="fw-semibold">5.0</small>
+                  <AtomsIconsStar />
                   <small class="text-muted">(13 Reseñas)</small>
                 </p>
                 <p class="card-text text-center mb-0">
@@ -116,21 +97,14 @@ export default {
                 <div class="text-center bg-light rounded-3">
                   <span class="fw-semibold text-primary">Reembolso total</span>
                   <br />
-                  <small class="text-muted"
-                    >Precio original
-                    <span class="text-decoration-line-through"
-                      >23.000 USD</span
-                    ></small
-                  ><br />
+                  <small class="text-muted">Precio original
+                    <span class="text-decoration-line-through">23.000 USD</span></small><br />
                   <small class="fw-medium">Con Váucher:</small> <br />
                   <button class="btn btn-outline-success btn-sm rounded-4">
                     AG5228GE6
                   </button>
                 </div>
-                <NuxtLink
-                  href="/perfiles/clinica-biblica"
-                  class="btn btn-primary mt-2 rounded-3"
-                  >Pedir Cita
+                <NuxtLink href="/perfiles/clinica-biblica" class="btn btn-primary mt-2 rounded-3">Pedir Cita
                 </NuxtLink>
               </div>
             </div>

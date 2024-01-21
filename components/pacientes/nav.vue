@@ -49,7 +49,9 @@ export default {
 
       </div>
       <ul class="navbar-nav d-flex align-items-center">
-        <li class="nav-item"><button class="nav-link">[S]</button></li>
+        <li class="nav-item"><button class="nav-link">
+            <AtomsIconsStar />
+          </button></li>
         <li class="nav-item"><button class="nav-link">[N]</button></li>
         <li class="nav-item dropdown">
           <a class="nav-link dropdown-toggle" :class="open ? 'show' : ''" @click="open = !open" href="#" role="button"
