@@ -25,8 +25,13 @@ export default {
         </div>
         <div class="col">
           <small>
-            <span class="fw-semibold me-2">{{ clinica.price || "" }} [S]</span>
-            <span class="text-muted">({{ clinica.rating || 0 }} Reseñas)</span>
+            <span class="fw-semibold me-2">
+              <!-- {{ clinica.price || "" }} -->
+              {{ clinica.rating || "" }}
+              <AtomsIconsStar />
+            </span>
+            <!-- <span class="text-muted">({{ clinica.rating.reviews || 0 }} Reseñas)</span> -->
+            <span class="text-muted">({{ clinica.reviews || 0 }} Reseñas)</span>
           </small>
           <h2 class="h5 fw-semibold my-2">{{ clinica.name }}</h2>
           <!-- <span
@@ -72,7 +77,8 @@ export default {
               </div>
               <div class="card-body d-flex flex-column">
                 <p class="card-text text-center">
-                  <small class="fw-semibold">5.0</small> [S]
+                  <small class="fw-semibold">5.0</small>
+                  <AtomsIconsStar />
                   <small class="text-muted">(13 Reseñas)</small>
                 </p>
                 <p class="card-text text-center mb-0">

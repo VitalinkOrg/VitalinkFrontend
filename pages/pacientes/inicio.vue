@@ -68,7 +68,25 @@ console.log(citas, historial)
                   <NuxtLink class="btn btn-link text-dark" href="/pacientes/inicio">Ver Todo [I]</NuxtLink>
                 </p>
                 <div class="card shadow-sm border-0 h-100">
-                  <div v-if="historial.length > 0" class="card-body">Mostrar citas</div>
+                  <div v-if="historial.length > 0" class="card-body">
+                    <div v-for="medico in historial" class="row border-bottom pb-3">
+                      <div class="col-3">
+                        <img src="@/src/assets/img-medico-thumbnail.png" alt="" class="img-fluid">
+                      </div>
+                      <div class="col">
+                        <div class="fs-5">{{ medico.rating.ratingNumber }}
+                          <AtomsIconsStar /> <span class="fw-light text-muted">({{
+                            medico.rating.reviews
+                          }} Reseñas)</span>
+                        </div>
+                        <p class="fs-5 fw-semibold mt-2 mb-3">{{ medico.nombre }}</p>
+                        <div>
+                          <AtomsBadgeServicio v-for="servicio in medico.servicios" :servicio="servicio" />
+                        </div>
+                      </div>
+                    </div>
+
+                  </div>
                   <div v-else class="card-body d-flex py-5">
                     <div class="col-sm-5 text-end">
                       <img src="@/src/assets/img-chart-nocitas.svg" alt="">

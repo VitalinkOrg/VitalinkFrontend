@@ -29,11 +29,16 @@ const tab = 1 // 1 Disponibilidad, 2 Servicios , 3 Ubicacion, 4 Galeria, 5 Rese√
                 <img src="@/src/assets/img-clinica-thumbnail-md.png" alt="" class="img-fluid mb-3">
                 <div>
                   <small>
-                    <span class="fw-semibold me-2">{{ clinica.rating.ratingNumber }} [S]</span>
+                    <span class="fw-semibold me-2">
+                      {{ clinica.rating.ratingNumber }}
+
+                      <IconStar />
+                    </span>
                     <span class="text-muted">({{ clinica.rating.reviews || 0 }} Rese√±as)</span>
                   </small>
                 </div>
                 <h2 class="h5 fw-semibold my-2">{{ clinica.nombre }}</h2>
+
                 <span class="badge bg-primary text-primary me-2 rounded-5 text-capitalize" style="--bs-bg-opacity: .07"
                   v-for=" servicio in
                         clinica.servicios">{{

@@ -31,7 +31,12 @@ export default function usePacientes() {
     rating: {
       ratingNumber: '5.0',
       reviews: 13
-    }
+    },
+    servicios: [
+      { id: '125', nombre: 'oftalmología' },
+      { id: '5733', nombre: 'cirugía' },
+      { id: '845', nombre: 'pediatría' },
+    ],
   }])
 
   return {
