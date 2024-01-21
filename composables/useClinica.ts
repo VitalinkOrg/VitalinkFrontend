@@ -5,13 +5,15 @@ export default function useClinica() {
   const clinicas = useState<IClinica[]>('clinicas', () => [{
     id: '1',
     nombre: 'Hospital Clínica Bíblica',
-    rating: '5.0',
+    rating: {
+      ratingNumber: '5.0',
+      reviews: 13
+    },
     servicios: [
       { id: '125', nombre: 'oftalmología' },
       { id: '5733', nombre: 'cirugía' },
       { id: '845', nombre: 'pediatría' },
     ],
-    reviews: 13,
     otrasOfertas: [],
     experiencia: 10,
     pacientes: 1000,
@@ -19,7 +21,6 @@ export default function useClinica() {
       texto: 'C. 24, San José, San Bosco, Costa Rica'
     }
   }])
-
 
 
   return {
