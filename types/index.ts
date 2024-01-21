@@ -75,7 +75,8 @@ export interface IMedico {
   id: string,
   nombre: string,
   rating?: IRating,
-  imagen?: string
+  imagen?: string,
+  servicios?: IServicioClinica[]
 }
 
 export interface IVaucher {
