@@ -1,5 +1,5 @@
 
-import { type IPaciente, type ICita, ECitaEstado, type IVaucher, type IHistorial, EVaucherEstado } from '@/types'
+import { type IPaciente, type ICita, ECitaEstado, type IVaucher, EVaucherEstado, type IMedico } from '@/types'
 
 export default function usePacientes() {
   const pacientes = useState<IPaciente[]>('pacientes', () => [{
@@ -25,9 +25,14 @@ export default function usePacientes() {
     estado: EVaucherEstado.ACEPTADA
   }])
 
-  const historial = useState<IHistorial[]>('historial', () => [])
-
-
+  const historial = useState<IMedico[]>('historial', () => [{
+    id: '34567486',
+    nombre: 'Dra.Stephanie Powell',
+    rating: {
+      ratingNumber: '5.0',
+      reviews: 13
+    }
+  }])
 
   return {
     pacientes,

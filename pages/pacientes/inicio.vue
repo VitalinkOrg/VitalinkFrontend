@@ -22,17 +22,32 @@ console.log(citas, historial)
               <span class="fw-semibold fs-5">Próximas Citas</span>
               <NuxtLink class="btn btn-link text-dark" href="/pacientes/citas">Ver Todo [I]</NuxtLink>
             </p>
-            <div class="card shadow-sm border-0">
-              <div v-if="citas.length > 0" class="card-body">
-                <div v-for="cita in citas">
-                  {{ cita.medico.nombre }}
-                  {{ cita.fecha }}
-                  {{ cita.hora }}
-                  {{ cita.procedimiento }}
-                  {{ cita.lugar.texto }}
-                  {{ cita.estado }}
-                </div>
-              </div>
+            <div class="card shadow-sm border-0" style="min-height: 15rem">
+              <table class="table table-hover" v-if="citas.length > 0">
+                <thead>
+                  <tr>
+                    <th scope="col">Doctor</th>
+                    <th scope="col">Fecha</th>
+                    <th scope="col">Hora</th>
+                    <th scope="col">Procedimiento</th>
+                    <th scope="col">Lugar</th>
+                    <th scope="col">Estado</th>
+                    <th scope="col"></th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr v-for="cita in citas">
+                    <th scope="row" class="fw-light">{{ cita.medico.nombre }}</th>
+                    <td class="fw-light">{{ cita.fecha }}</td>
+                    <td class="fw-light">{{ cita.hora }}</td>
+                    <td class="fw-light">{{ cita.procedimiento }}</td>
+                    <td class="fw-light">{{ cita.lugar.texto }}</td>
+                    <td class="fw-light"><span class="badge bg-success-subtle text-dark rounded-5 w-100">{{ cita.estado
+                    }}</span></td>
+                    <td>[I]</td>
+                  </tr>
+                </tbody>
+              </table>
               <div v-else class="card-body d-flex py-5">
                 <div class="col-sm-5 text-end">
                   <img src="@/src/assets/img-chart-nocitas.svg" alt="">
@@ -73,13 +88,17 @@ console.log(citas, historial)
                   <NuxtLink class="btn btn-link text-dark" href="/pacientes/vauchers">Ver Todo [I]</NuxtLink>
                 </p>
                 <div class="card shadow-sm border-0 h-100">
-                  <div v-if="vauchers.length > 0" class="card-body">
-                    <div v-for="vaucher in vauchers">
-                      {{ vaucher.id }}
-                      {{ vaucher.servicio }}
-                      {{ vaucher.estado }}
-                    </div>
-                  </div>
+                  <table v-if="vauchers.length > 0" class="table table-hover">
+                    <tbody>
+                      <tr v-for="vaucher in vauchers">
+                        <td class="fw-semibold fs-5">#{{ vaucher.id }}</td>
+                        <td class="fs-5">{{ vaucher.servicio }}</td>
+                        <td><span class="badge bg-success-subtle text-dark rounded-5 w-100 fs-5">{{ vaucher.estado
+                        }}</span>
+                        </td>
+                      </tr>
+                    </tbody>
+                  </table>
                   <div v-else class="card-body d-flex py-5">
                     <div class="col-sm-5 text-end">
                       <img src="@/src/assets/img-chart-nocitas.svg" alt="">
