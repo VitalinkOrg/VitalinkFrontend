@@ -1,6 +1,5 @@
 <script setup>
 const { clinicas } = useClinica();
-const tab = 1 // 1 Disponibilidad, 2 Servicios , 3 Ubicacion, 4 Galeria, 5 Reseñas, 6 Perfil
 </script>
 
 <template>

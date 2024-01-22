@@ -1,3 +1,3 @@
 <template>
-  <span>[S]</span>
+  <span>[I]</span>
 </template>

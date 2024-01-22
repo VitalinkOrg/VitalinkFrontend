@@ -68,7 +68,8 @@ export interface ICita {
   hora: string,
   procedimiento: string, //servicio
   lugar: IDireccion,
-  estado: ECitaEstado
+  estado: ECitaEstado,
+  paciente?: string
 }
 
 export interface IMedico {
@@ -88,6 +89,7 @@ export interface IVaucher {
 export enum ECitaEstado {
   PENDIENTE = "Pendiente",
   CANCELADA = "Cancelada",
+  CONCRETADA = "Concretada",
 }
 
 export enum EVaucherEstado {
