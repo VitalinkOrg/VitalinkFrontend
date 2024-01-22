@@ -1,6 +1,5 @@
 <script setup>
 const { pacientes, citas, vauchers, historial } = usePaciente()
-console.log(citas, historial)
 </script>
 <template>
   <NuxtLayout name="pacientes-dashboard">
