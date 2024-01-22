@@ -10,6 +10,33 @@ export default function usePacientes() {
   const citas = useState<ICita[]>('citas', () => [{
     id: '2356374',
     medico: { id: '32637', nombre: 'Dra. Andrea Morales Solis' },
+    paciente: 'Andrea Morales Solis',
+    fecha: '10/11/2023',
+    hora: '18:00 - 18:45',
+    procedimiento: 'Operación de Cataratas',
+    lugar: {
+      texto: '2118 Thornridge Cir. Syracuse, Connecticut 35624'
+    },
+    estado: ECitaEstado.CONCRETADA
+  },
+  {
+    id: '2356374',
+    medico: { id: '32637', nombre: 'Dra. Andrea Morales Solis' },
+    paciente: 'Carlos Rodriguez',
+
+    fecha: '10/11/2023',
+    hora: '18:00 - 18:45',
+    procedimiento: 'Operación de Cataratas',
+    lugar: {
+      texto: '2118 Thornridge Cir. Syracuse, Connecticut 35624'
+    },
+    estado: ECitaEstado.CANCELADA
+  },
+  {
+    id: '2356374',
+    medico: { id: '32637', nombre: 'Dra. Andrea Morales Solis' },
+    paciente: 'Maria Fernandez',
+
     fecha: '10/11/2023',
     hora: '18:00 - 18:45',
     procedimiento: 'Operación de Cataratas',
@@ -17,7 +44,10 @@ export default function usePacientes() {
       texto: '2118 Thornridge Cir. Syracuse, Connecticut 35624'
     },
     estado: ECitaEstado.PENDIENTE
-  }])
+  }
+  ])
+
+  const getCitas = (page: number) => { console.log(page) }
 
   const vauchers = useState<IVaucher[]>('vauchers', () => [{
     id: 'A52DWMM',
@@ -42,6 +72,7 @@ export default function usePacientes() {
   return {
     pacientes,
     citas,
+    getCitas,
     vauchers,
     historial
   }
