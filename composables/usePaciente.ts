@@ -55,6 +55,8 @@ export default function usePacientes() {
     estado: EVaucherEstado.ACEPTADA
   }])
 
+  const getVauchers = (page: number) => { console.log(page) }
+
   const historial = useState<IMedico[]>('historial', () => [{
     id: '34567486',
     nombre: 'Dra.Stephanie Powell',
@@ -74,6 +76,7 @@ export default function usePacientes() {
     citas,
     getCitas,
     vauchers,
+    getVauchers,
     historial
   }
 }
