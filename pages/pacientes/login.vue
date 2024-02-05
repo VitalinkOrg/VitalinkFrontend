@@ -4,15 +4,33 @@
     <hr />
     <form @submit.prevent="login">
       <div class="form-group mb-4">
-        <label for="email" class="form-label text-capitalize">Correo Electrónico</label>
-        <input v-model="user.email" type="email" class="form-control" placeholder="Escribe tu correo electrónico"
-          name="email" required />
+        <label for="email" class="form-label text-capitalize"
+          >Correo Electrónico</label
+        >
+        <input
+          v-model="email"
+          type="email"
+          class="form-control"
+          placeholder="Escribe tu correo electrónico"
+          name="email"
+          required
+        />
         <!-- <div id="nombreHelp" class="form-text">We'll never share your email with anyone else.</div> -->
       </div>
       <div class="form-group mb-4">
-        <label for="password" class="form-label text-capitalize">Contraseña</label>
-        <input v-model="user.password" type="password" class="form-control" id="password"
-          placeholder="Escribe tu contraseña" aria-describedby="passwordHelp" required name="password" />
+        <label for="password" class="form-label text-capitalize"
+          >Contraseña</label
+        >
+        <input
+          v-model="password"
+          type="password"
+          class="form-control"
+          id="password"
+          placeholder="Escribe tu contraseña"
+          aria-describedby="passwordHelp"
+          required
+          name="password"
+        />
         <!-- <div id="passwordHelp" class="form-text">Deben ser 8 caracteres como mínimo</div> -->
       </div>
       <button type="submit" class="btn btn-primary w-100 mt-4">Ingresar</button>
@@ -29,30 +47,42 @@
     </div>
     <p class="text-center">
       <span class="text-muted">No tienes Cuenta? </span>
-      <NuxtLink href="/pacientes/registro" class="btn-link text-dark fw-medium">Registrate</NuxtLink>
+      <NuxtLink href="/pacientes/registro" class="btn-link text-dark fw-medium"
+        >Registrate</NuxtLink
+      >
     </p>
   </NuxtLayout>
 </template>
 
 <script lang="ts" setup>
-import { storeToRefs } from 'pinia'; // import storeToRefs helper hook from pinia
-import { useAuthStore } from '~/store/auth'; // import the auth store we just created
+import { useStore } from "~/store";
 
-const { authenticateUser } = useAuthStore(); // use authenticateUser action from  auth store
-
-const { authenticated } = storeToRefs(useAuthStore()); // make authenticated state reactive with storeToRefs
-
-const user = ref({
-  email: 'test@gmail.com',
-  password: 'test',
-});
+const config = useRuntimeConfig();
 const router = useRouter();
+const store = useStore();
+const token = useCookie("token");
+const email = ref("patient@gmail.com");
+const password = ref("patient");
 
 const login = async () => {
-  await authenticateUser(user.value); // call authenticateUser and pass the user object
-  // redirect to homepage if user is authenticated
-  if (authenticated) {
-    router.push('/');
+  const { data, error }: any = await useFetch(
+    config.public.API_BASE_URL + "/users/login",
+    {
+      method: "POST",
+      body: {
+        email,
+        password,
+      },
+    }
+  );
+  if (data.value) {
+    router.push("/");
+    store.authenticated = true;
+    store.user = data?.value?.data?.user_info;
+    token.value = data?.value?.data?.access_token;
+  }
+  if (error.value) {
+    console.log(error.value, "data");
   }
 };
 </script>

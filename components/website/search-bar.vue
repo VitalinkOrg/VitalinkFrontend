@@ -1,10 +1,6 @@
-<script setup lang="ts">
+<script setup>
 import { ref } from "vue";
 const router = useRouter();
-
-
-// declare a ref to hold the element reference
-// the name must match template ref value
 const procedimiento = ref("");
 const lugar = ref("");
 const vaucher = ref("");
@@ -12,12 +8,24 @@ const vaucher = ref("");
 function searchResults() {
   const routeOptions = {
     path: "/buscar",
+    query: {}
   };
+
   if (procedimiento.value !== "") {
-    routeOptions.query = { procedimiento: procedimiento.value };
+    routeOptions.query.filter_name = procedimiento.value;
   }
+
+  if (vaucher.value !== "") {
+    routeOptions.query.insurance = vaucher.value;
+  }
+
+  if (lugar.value !== "") {
+    routeOptions.query.lugar = lugar.value;
+  }
+
   router.push(routeOptions);
 }
+
 </script>
 
 <template>
