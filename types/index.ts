@@ -82,8 +82,13 @@ export interface IMedico {
 
 export interface IVaucher {
   id: string,
-  servicio: string,
-  estado: EVaucherEstado
+  servicio: string, // Procedimiento
+  estado: EVaucherEstado,
+  fecha: string,
+  hora: string,
+  lugar: IDireccion,
+  aseguradora: IAseguradora,
+  costoUSD: number
 }
 
 export enum ECitaEstado {
@@ -95,11 +100,15 @@ export enum ECitaEstado {
 export enum EVaucherEstado {
   ACEPTADA = "Aceptado",
   PENDIENTE_APROBACION = "Pendiente de Aprobación",
-  DENEGADO = "Denegado"
+  DENEGADO = "Denegado",
+  UTILIZADA = "Utilizado",
 }
 
 
-
 // 
+// Aseguradora 
 // 
-// 
+export interface IAseguradora {
+  id: string,
+  nombre: string
+}

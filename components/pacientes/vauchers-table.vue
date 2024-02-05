@@ -6,26 +6,36 @@ const { vauchers, getVauchers } = usePaciente()
     <table class="table fw-light">
       <thead>
         <tr>
-          <th scope="col" class="text-muted">Nombre del paciente</th>
-          <th scope="col" class="text-muted">Doctor</th>
-          <th scope="col" class="text-muted">Fecha</th>
-          <th scope="col" class="text-muted">Hora</th>
+          <th scope="col"></th>
+          <th scope="col" class="text-muted">Código</th>
+          <th scope="col" class="text-muted">Fecha y hora de uso</th>
           <th scope="col" class="text-muted">Procedimiento</th>
           <th scope="col" class="text-muted">Lugar</th>
+          <th scope="col" class="text-muted">Aseguradora</th>
           <th scope="col" class="text-muted">Estado</th>
+          <th scope="col" class="text-muted">Costo</th>
           <th scope="col" class="text-muted"></th>
         </tr>
       </thead>
 
       <tbody>
-        <tr v-for="cita in citas">
-          <td>{{ cita.paciente }}</td>
-          <td>{{ cita.medico.nombre }}</td>
-          <td>{{ cita.fecha }}</td>
-          <td>{{ cita.hora }}</td>
-          <td>{{ cita.procedimiento }}</td>
-          <td><small>{{ cita.lugar.texto }}</small></td>
-          <td><span class="badge bg-success-subtle rounded-5 text-dark">{{ cita.estado }} [I]</span></td>
+        <tr v-for="vaucher in vauchers">
+          <td>
+            <div class="form-check">
+              <input class="form-check-input border-dark" type="checkbox" value="" :id="vaucher.id">
+              <!-- <label class="form-check-label" for="flexCheckDefault"></label> -->
+            </div>
+          </td>
+          <td>{{ vaucher.id }}</td>
+          <td>{{ vaucher.fecha }} a las {{ vaucher.hora }}</td>
+          <td>{{ vaucher.servicio }}</td>
+          <td>{{ vaucher.lugar.texto }}</td>
+          <td>{{ vaucher.aseguradora.nombre }}</td>
+          <td><span class="badge bg-success-subtle rounded-5 text-dark">{{ vaucher.estado }} </span></td>
+          <td><small>{{ vaucher.costoUSD }} USD</small></td>
+          <td>
+            <AtomsIconsDownloadIcon />
+          </td>
         </tr>
       </tbody>
     </table>
