@@ -43,7 +43,7 @@ const { pacientes, citas, vauchers, historial } = usePaciente()
                     <td class="fw-light">{{ cita.lugar.texto }}</td>
                     <td class="fw-light"><span class="badge bg-success-subtle text-dark rounded-5 w-100">{{ cita.estado
                     }}</span></td>
-                    <td>[I]</td>
+                    <td><AtomsIconsTrashIcon/></td>
                   </tr>
                 </tbody>
               </table>

@@ -10,28 +10,28 @@ export default {
 <template>
   <NuxtLayout name="pacientes-dashboard">
     <main class="bg-light" style="min-height: 100vh">
-      <section class="container py-5">
+      <section class="container-fluid py-5">
         <p>
           <span class="fw-semibold fs-5">Mis Váuchers</span>
         </p>
 
         <div class="d-flex align-items-end justify-content-between mb-4">
           <ul class="nav nav-underline d-flex flex-row w-100">
-            <li class="nav-item"><button class="nav-link" :class="tab === 1 ? 'active' : ''" @click="tab = 1">
+            <li class="nav-item"><button class="nav-link" :class="tab === 1 ? 'active' : 'border-0'" @click="tab = 1">
                 Todas las citas</button>
             </li>
-            <li class="nav-item"><button class="nav-link" :class="tab === 2 ? 'active' : ''"
-                @click="tab = 2">Concretadas</button>
+            <li class="nav-item"><button class="nav-link" :class="tab === 2 ? 'active' : 'border-0'"
+                @click="tab = 2">Utilizadas</button>
             </li>
-            <li class="nav-item"><button class="nav-link" :class="tab === 3 ? 'active' : ''"
-                @click="tab = 3">Pendientes</button>
+            <li class="nav-item"><button class="nav-link" :class="tab === 3 ? 'active' : 'border-0'"
+                @click="tab = 3">Pendientes de Aprobación</button>
             </li>
-            <li class="nav-item"><button class="nav-link" :class="tab === 4 ? 'active' : ''"
-                @click="tab = 4">Canceladas</button>
+            <li class="nav-item"><button class="nav-link" :class="tab === 4 ? 'active' : 'border-0'"
+                @click="tab = 4">Rechazados</button>
             </li>
           </ul>
-          <NuxtLink href="/buscar" class="btn btn-primary text-nowrap px-4">
-            <AtomsIconsPlusIcon /> Nueva Cita
+          <NuxtLink href="/pacientes" class="btn btn-primary text-nowrap px-4">
+            <AtomsIconsPlusIcon /> Solicitar Nuevo Váucher
           </NuxtLink>
         </div>
 
@@ -46,11 +46,8 @@ export default {
             </div>
           </div>
           <div class="col-auto ms-auto d-flex">
-            <button class="btn btn-outline-dark text-nowrap me-2">
-              <AtomsIconsDownloadIcon /> Descargar
-            </button>
             <div class="dropdown">
-              <button class="btn btn-outline-dark dropdown-toggle" @click="sort = !sort" type="button"
+              <button class="btn btn-outline-dark dropdown-toggle bg-white" @click="sort = !sort" type="button"
                 data-bs-toggle="dropdown" aria-expanded="false">
                 Ordenar por
               </button>
