@@ -1,51 +1,15 @@
-<!-- <script setup>
-import { ref, toRaw } from 'vue'
-const clinicas = ref()
-const { data : response } = await useFetch('http://13.58.69.25:3000/patients/dashboard', {mode: 'no-cors'})
-clinicas.value = toRaw(response?.value?.data);
-</script> -->
-<!-- 
 <script setup>
-// const { clinicas } = useSearch();
-const { data: clinicas, pending } = await useLazyFetch('http://13.58.69.25:3000/patients/dashboard', {
-  mode: 'no-cors',
-  transform: (_clinicas) => _clinicas.data
-})
-console.log(clinicas, 'value');
-</script> -->
+const config = useRuntimeConfig();
+const route = useRoute();
+const { query } = route;
 
-<script>
-import axios from 'axios';
-export default {
-  data() {
-    return {
-      clinicas: [],
-      loading: true,
-    }
-  },
-  created() {
-    this.getData()
-  },
-  methods: {
-    async getData() {
-      let procedimiento = '';
-      if(this.$route.query.procedimiento !== undefined) {
-        procedimiento = this.$route.query.procedimiento;
-      }
-      try {
-        await axios.get(
-          'https://dummyjson.com/products/search?q=' + procedimiento)
-          .then((r) => {
-          console.log(r, 'value');
-          this.clinicas = r.data.products;
-          this.loading = false;
-        })
-      } catch (e) {
-        console.log(e)
-      }
-    }
+const { data: clinicas, pending } = await useLazyFetch(
+  config.public.API_BASE_URL + "/patient_dashboard/search_doctors_hospitals",
+  {
+    params: query,
+    transform: (_clinicas) => _clinicas.data,
   }
-}
+);
 </script>
 
 <template>
@@ -90,7 +54,10 @@ export default {
                   </select>
                 </span>
               </div>
-              <WebsiteClinicasListItem v-for="clinica in clinicas" :clinica="clinica" />
+              <WebsiteClinicasListItem
+                v-for="clinica in clinicas"
+                :clinica="clinica"
+              />
             </div>
             <div class="col">
               <div
