@@ -1,3 +1,10 @@
+<script>
+export default {
+	data: () => ({
+		tab: 1
+	})
+}
+</script>
 <template>
 	<main class="d-flex" style="background-color: #F8F8F8">
 		<section class="left text-center d-sm-flex d-none">
@@ -19,12 +26,126 @@
 				</div>
 			</div>
 		</section>
-		<section class="right">
-			<div class="card border-0 w-100" style="background-color: #F8FAFF; max-width: 30rem">
-				<div class="card-body p-5 rounded-4">
-					CClinicas Registro
-				</div>
+
+
+
+		<section class="right bg-light">
+
+			<div class="d-flex align-items-center justify-content-between">
+				<h2 class="h1 fw-bold fs-2 text-primary m-0">Registrarse</h2>
+				<span class=" text-primary">Es gratis y fácil</span>
 			</div>
+			<div class="fw-semibold my-4">
+				<span class="text-success me-5">Datos Personales</span>
+				<span :class="tab === 2 ? 'text-success' : 'text-muted'">Información Profesional</span>
+			</div>
+			<form>
+				<!-- TAB DATOS PERSONALES -->
+				<div v-if="tab === 1">
+					<label class="form-label mb-4 text-dark text-capitalize">Completa los datos de registro</label>
+					<div class="row row-cols-2">
+						<div class="form-group mb-4">
+							<label for="nombre" class="form-label text-capitalize">Nombre</label>
+							<input type="text" class="form-control" placeholder="Escribe tu nombre" name="nombre" required />
+							<!-- <div id="nombreHelp" class="form-text">We'll never share your email with anyone else.</div> -->
+						</div>
+						<div class="form-group mb-4">
+							<label for="apellido" class="form-label text-capitalize">Apellido</label>
+							<input type="text" class="form-control" placeholder="Escribe tu apellido" name="apellido" required />
+							<!-- <div id="nombreHelp" class="form-text">We'll never share your email with anyone else.</div> -->
+						</div>
+						<div class="form-group mb-4">
+							<label for="telefono" class="form-label text-capitalize">Número de teléfono</label>
+							<input type="phone" class="form-control" placeholder="0000-0000" name="telefono" required />
+							<!-- <div id="nombreHelp" class="form-text">We'll never share your email with anyone else.</div> -->
+						</div>
+						<div class="form-group mb-4">
+							<label for="dob" class="form-label text-capitalize">Fecha de nacimiento</label>
+							<input type="date" class="form-control" placeholder="15/06/1996" name="dob" required />
+							<!-- <div id="nombreHelp" class="form-text">We'll never share your email with anyone else.</div> -->
+						</div>
+					</div>
+					<hr>
+					<div class="form-group mb-4">
+						<label for="email" class="form-label text-capitalize">Correo Electrónico</label>
+						<input type="email" class="form-control" placeholder="Escribe tu correo electrónico" name="email" required />
+						<!-- <div id="nombreHelp" class="form-text">We'll never share your email with anyone else.</div> -->
+					</div>
+					<div class="row row-cols-2">
+						<div class="form-group mb-4">
+							<label for="password" class="form-label text-capitalize">Contraseña</label>
+							<input type="password" class="form-control" id="password" placeholder="Escribe tu contraseña"
+								aria-describedby="passwordHelp" required name="password" />
+							<!-- <div id="passwordHelp" class="form-text">Deben ser 8 caracteres como mínimo</div> -->
+						</div>
+						<div class="form-group mb-4">
+							<label for="confirmPassword" class="form-label text-capitalize">Confirmar Contraseña</label>
+							<input type="password" class="form-control" id="confirmPassword" placeholder="Escribe tu contraseña"
+								aria-describedby="confirmPasswordHelp" required name="confirmPassword" />
+							<!-- <div id="passwordHelp" class="form-text">Deben ser 8 caracteres como mínimo</div> -->
+						</div>
+					</div>
+
+
+					<button @click="tab = 2" class="btn btn-primary">
+						Siguiente Paso
+						<AtomsIconsArrowRightIcon />
+					</button>
+
+
+
+				</div>
+				<div v-if="tab === 2">
+					<label class="form-label mb-4 text-dark text-capitalize">Completa la información básica profesional</label>
+
+					<div class="form-group mb-4">
+						<label for="matricula" class="form-label text-capitalize">No de Matricula</label>
+						<input type="number" class="form-control" placeholder="Escribe tu número de matricula" name="matricula"
+							required />
+						<!-- <div id="matriculaHelp" class="form-text">We'll never share your email with anyone else.</div> -->
+					</div>
+					<div class="form-group mb-4">
+						<label for="servicios" class="form-label text-capitalize">Servicios que ofrecen</label>
+						<input type="text" class="form-control" placeholder="Oftalmología" name="servicios" required />
+						<!-- <div id="matriculaHelp" class="form-text">We'll never share your email with anyone else.</div> -->
+					</div>
+					<div class="mb-3 form-check">
+						<input type="checkbox" class="form-check-input border-dark" id="recordarme">
+						<label class="form-check-label border" for="recordarme">Recordarme</label>
+					</div>
+					<div class="mb-3 form-check">
+						<input type="checkbox" class="form-check-input border-dark" id="politicas">
+						<label class="form-check-label " for="politicas">He leído y acepto la Política de Privacidad y
+							condiciones de
+							uso</label>
+					</div>
+					<button @click="tab = 1" class="btn btn-light border-dark w-100">
+						<AtomsIconsArrowLeftIcon />
+						Volver Atrás
+					</button>
+					<button type="submit" class="btn btn-primary w-100 mt-2">Registrarme</button>
+
+				</div>
+
+
+			</form>
+			<hr>
+			<p class="text-center"><small class="text-muted">O hacerlo con estas cuentas</small></p>
+			<div class="text-center">
+				<button class="btn btn-light border-dark-subtle">
+					<AtomsIconsGoogleIcon />
+				</button>
+				<button class="btn btn-light border-dark-subtle mx-4">
+					<AtomsIconsAppleIcon />
+				</button>
+				<button class="btn btn-light border-dark-subtle">
+					<AtomsIconsFacebookIcon />
+				</button>
+			</div>
+			<p class="text-center mt-3">
+				<span class="text-muted">Ya tienes Cuenta? </span>
+				<NuxtLink href="/medicos/registro" class="btn-link text-dark fw-medium">Iniciar Sesión</NuxtLink>
+			</p>
 
 		</section>
 	</main>
@@ -34,12 +155,6 @@
 <style lang="scss" scoped>
 main {
 	height: 100vh;
-}
-
-.logo {
-	img {
-		width: 10rem;
-	}
 }
 
 .left,
@@ -62,11 +177,11 @@ main {
 }
 
 .right {
-	padding: 1rem;
+	padding: 2rem;
 	display: flex;
 	flex-direction: column;
 	justify-content: center;
-	align-items: center;
+	// align-items: center;
 	overflow-y: auto;
 }
 

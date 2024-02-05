@@ -41,9 +41,15 @@
     <hr>
     <p class="text-center"><small class="text-muted">O hacerlo con estas cuentas</small></p>
     <div class="text-center">
-      <button class="btn btn-light border-dark-subtle">G</button>
-      <button class="btn btn-light border-dark-subtle mx-4">A</button>
-      <button class="btn btn-light border-dark-subtle">F</button>
+      <button class="btn btn-light border-dark-subtle">
+        <AtomsIconsGoogleIcon />
+      </button>
+      <button class="btn btn-light border-dark-subtle mx-4">
+        <AtomsIconsAppleIcon />
+      </button>
+      <button class="btn btn-light border-dark-subtle">
+        <AtomsIconsFacebookIcon />
+      </button>
     </div>
   </NuxtLayout>
 </template>
