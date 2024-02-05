@@ -51,8 +51,13 @@ export default function usePacientes() {
 
   const vauchers = useState<IVaucher[]>('vauchers', () => [{
     id: 'A52DWMM',
-    servicio: 'Operación de Cataratas',
-    estado: EVaucherEstado.ACEPTADA
+    servicio: 'Operación de Cataratas', // Procedimiento
+    estado: EVaucherEstado.UTILIZADA,
+    aseguradora: { id: '23567', nombre: 'ASIS'},
+    lugar: { texto: 'Hospital CIMA'},
+    fecha: '26/09/2023',
+    hora: '18:00 - 18:45',
+    costoUSD: 100
   }])
 
   const getVauchers = (page: number) => { console.log(page) }

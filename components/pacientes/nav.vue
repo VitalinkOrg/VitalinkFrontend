@@ -57,7 +57,7 @@ export default {
           <a class="nav-link dropdown-toggle" :class="open ? 'show' : ''" @click="open = !open" href="#" role="button"
             data-bs-toggle="dropdown" aria-expanded="false" data-bs-display="static">
             <img src="@/src/assets/img-avatar-sm.png" alt="avatar">
-            [I]
+            <AtomsIconsChevronDown/>
           </a>
           <ul class="dropdown-menu dropdown-menu-start" :class="open ? 'show' : ''" style="transform: translateX(-5rem);">
             <li><a class=" dropdown-item" href="#">[I] Mi Cuenta</a>
