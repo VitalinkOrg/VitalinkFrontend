@@ -71,7 +71,7 @@ export default {
         </li>
       </nav>
     </div>
-    <main class="w-100 px-3" style="height: 100vh; overflow-y: auto;">
+    <main class="w-100 px-3 pb-5" style="height: 100vh; overflow-y: auto;">
       <div class="container-fluid">
         <div class="row">
           <div class="col">
