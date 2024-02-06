@@ -47,7 +47,7 @@ const { citas, getCitas } = useMedico()
       </tbody>
     </table>
 
-    <div class="card-footer bg-transparent justify-content-end d-flex">
+    <div class="card-footer bg-transparent justify-content-end d-flex border-0">
       <nav>
         <ul class="pagination m-0">
           <li class="page-item">
