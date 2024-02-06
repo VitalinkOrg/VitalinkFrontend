@@ -8,7 +8,7 @@
         <li class="nav-item w-100 mb-3">
           <NuxtLink href="/medicos/inicio" class="nav-link rounded-3 py-3 text-dark" active-class="bg-primary"
             style="--bs-bg-opacity: 0.05">
-            <span class="text-primary">
+            <span class="text-primary me-2">
               <AtomsIconsHomeIcon />
             </span> Inicio
           </NuxtLink>
@@ -16,7 +16,7 @@
         <li class="nav-item w-100 mb-3">
           <NuxtLink href="/medicos/citas" class="nav-link rounded-3 py-3 text-dark" active-class="bg-primary"
             style="--bs-bg-opacity: 0.05">
-            <span class="text-primary">
+            <span class="text-primary me-2">
               <AtomsIconsCitasIcon />
             </span> Citas
           </NuxtLink>
@@ -24,7 +24,7 @@
         <li class="nav-item w-100 mb-3">
           <NuxtLink href="/medicos/servicios" class="nav-link rounded-3 py-3 text-dark" active-class="bg-primary"
             style="--bs-bg-opacity: 0.05">
-            <span class="text-primary">
+            <span class="text-primary me-2">
               <AtomsIconsServiciosIcon />
             </span> Servicios
           </NuxtLink>
@@ -32,7 +32,7 @@
         <li class="nav-item w-100 mb-3">
           <NuxtLink href="/medicos/pacientes" class="nav-link rounded-3 py-3 text-dark" active-class="bg-primary"
             style="--bs-bg-opacity: 0.05">
-            <span class="text-primary">
+            <span class="text-primary me-2">
               <AtomsIconsPacientesIcon />
             </span> Pacientes
           </NuxtLink>
@@ -40,7 +40,7 @@
         <li class="nav-item w-100 mb-3">
           <NuxtLink href="/medicos/hospitales" class="nav-link rounded-3 py-3 text-dark" active-class="bg-primary"
             style="--bs-bg-opacity: 0.05">
-            <span class="text-primary">
+            <span class="text-primary me-2">
               <AtomsIconsHospitalesIcon />
             </span> Hospitales
           </NuxtLink>
@@ -50,14 +50,14 @@
         <hr>
         <li class="nav-item">
           <NuxtLink class="nav-link text-dark" href="/medicos/inicio">
-            <span class="text-success">
+            <span class="text-success me-2">
               <AtomsIconsInfoIcon />
             </span> Ayuda y Soporte
           </NuxtLink>
         </li>
         <li class="nav-item">
           <button class="nav-link text-dark">
-            <span class="text-success">
+            <span class="text-success me-2">
               <AtomsIconsLogoutDashboardIcon />
             </span> Cerrar Sesión
           </button>
