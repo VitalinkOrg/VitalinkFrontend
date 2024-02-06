@@ -1,5 +1,4 @@
 
-import type chartVacioVue from '~/components/atoms/icons/chart-vacio.vue';
 <template>
   <NuxtLayout name="medicos-dashboard">
     <div class="row row-cols-4 mb-3">
