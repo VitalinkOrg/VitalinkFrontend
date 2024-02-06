@@ -5,7 +5,6 @@
         <li class="breadcrumb-item">
           <NuxtLink href="/medicos/inicio" class="text-muted">Inicio</NuxtLink>
         </li>
-        <!-- <li class="breadcrumb-item active fw-semibold" aria-current="page">Citas</li> -->
       </ol>
     </nav>
     <p>
@@ -48,4 +47,3 @@
     </div>
   </NuxtLayout>
 </template>
-<style src="@/assets/styles/vitalink.scss" />
