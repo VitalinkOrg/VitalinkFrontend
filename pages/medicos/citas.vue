@@ -17,7 +17,7 @@ export default {
       </ol>
     </nav>
     <p>
-      <span class="fw-semibold fs-5">Seguimiento de Citas</span>
+      <span class="fw-medium fs-4">Seguimiento de Citas</span>
     </p>
 
     <div class="d-flex align-items-end justify-content-between mb-4">
