@@ -5,7 +5,7 @@
       <div class="col">
         <div class="card rounded-3 border-0 shadow-sm">
           <div class="card-body d-flex align-items-center px-1">
-            <!-- <AtomsIconsChartVacio /> -->
+
             <AtomsIconsNoActivityIcon />
             <p class="d-flex flex-column ms-3 mb-0">
               Aún no tienes actividad
@@ -17,7 +17,7 @@
       <div class="col">
         <div class="card rounded-3 border-0 shadow-sm">
           <div class="card-body d-flex align-items-center px-1">
-            <!-- <AtomsIconsChartVacio /> -->
+
             <AtomsIconsNoActivityIcon />
             <p class="d-flex flex-column ms-3 mb-0">
               Aún no tienes actividad
@@ -29,7 +29,7 @@
       <div class="col">
         <div class="card rounded-3 border-0 shadow-sm">
           <div class="card-body d-flex align-items-center px-1">
-            <!-- <AtomsIconsChartVacio /> -->
+
             <AtomsIconsNoActivityIcon />
             <p class="d-flex flex-column ms-3 mb-0">
               Aún no tienes actividad
@@ -41,7 +41,7 @@
       <div class="col">
         <div class="card rounded-3 border-0 shadow-sm">
           <div class="card-body d-flex align-items-center px-1">
-            <!-- <AtomsIconsChartVacio /> -->
+
             <AtomsIconsNoActivityIcon />
             <p class="d-flex flex-column ms-3 mb-0">
               Aún no tienes actividad
