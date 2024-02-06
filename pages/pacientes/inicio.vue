@@ -43,13 +43,16 @@ const { pacientes, citas, vauchers, historial } = usePaciente()
                     <td class="fw-light">{{ cita.lugar.texto }}</td>
                     <td class="fw-light"><span class="badge bg-success-subtle text-dark rounded-5 w-100">{{ cita.estado
                     }}</span></td>
-                    <td><AtomsIconsTrashIcon/></td>
+                    <td>
+                      <AtomsIconsTrashIcon />
+                    </td>
                   </tr>
                 </tbody>
               </table>
               <div v-else class="card-body d-flex py-5">
                 <div class="col-sm-5 text-end">
-                  <img src="@/src/assets/img-chart-nocitas.svg" alt="">
+                  <AtomsIconsChartVacio />
+
                 </div>
                 <div class="col-sm-7">
                   <p class="fs-5 text-muted fw-medium">Aún no tienes actividad en tu tablero </p>
@@ -88,7 +91,8 @@ const { pacientes, citas, vauchers, historial } = usePaciente()
                   </div>
                   <div v-else class="card-body d-flex py-5">
                     <div class="col-sm-5 text-end">
-                      <img src="@/src/assets/img-chart-nocitas.svg" alt="">
+                      <AtomsIconsChartVacio />
+
                     </div>
                     <div class="col-sm-7">
                       <p class="fs-5 text-muted fw-medium">Aún no tienes actividad en tu tablero </p>
@@ -118,7 +122,8 @@ const { pacientes, citas, vauchers, historial } = usePaciente()
                   </table>
                   <div v-else class="card-body d-flex py-5">
                     <div class="col-sm-5 text-end">
-                      <img src="@/src/assets/img-chart-nocitas.svg" alt="">
+                      <AtomsIconsChartVacio />
+
                     </div>
                     <div class="col-sm-7">
                       <p class="fs-5 text-muted fw-medium">Aún no tienes actividad en tu tablero </p>
