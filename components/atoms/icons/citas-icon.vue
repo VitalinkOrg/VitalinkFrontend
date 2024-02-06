@@ -1,0 +1,3 @@
+<template>
+  [IC]
+</template>
