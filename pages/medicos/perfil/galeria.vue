@@ -1,5 +1,6 @@
+
 <template>
   <NuxtLayout name="medicos-dashboard-perfil">
-    Galeria
+    galería
   </NuxtLayout>
 </template>

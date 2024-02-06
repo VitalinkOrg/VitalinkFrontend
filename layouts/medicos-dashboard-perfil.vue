@@ -41,7 +41,11 @@
         </li>
       </ul>
     </div>
-    <slot />
+    <div class="card border-0 shadow rounded-3">
+      <div class="card-body p-4">
+        <slot />
+      </div>
+    </div>
   </NuxtLayout>
 </template>
 <style src="@/assets/styles/vitalink.scss" />

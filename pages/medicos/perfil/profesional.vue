@@ -1,5 +1,6 @@
+
 <template>
   <NuxtLayout name="medicos-dashboard-perfil">
-    Profesionela
+    Datos Profesionales
   </NuxtLayout>
 </template>
