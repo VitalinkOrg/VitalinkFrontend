@@ -70,6 +70,7 @@ export interface ICita {
   lugar: IDireccion,
   estado: ECitaEstado,
   paciente?: string
+  vaucher?: IVaucher[id]
 }
 
 export interface IMedico {
