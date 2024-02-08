@@ -1,4 +1,12 @@
 <script setup>
+import { useStore } from "~/store";
+definePageMeta({
+  middleware: "auth-pacientes"
+});
+const store = useStore();
+const { user } = store;
+
+console.log(user, 'store');
 const { pacientes, citas, vauchers, historial } = usePaciente()
 </script>
 <template>
@@ -7,7 +15,7 @@ const { pacientes, citas, vauchers, historial } = usePaciente()
       <header class="d-flex align-items-center">
         <div class="container">
           <h1 class="text-center fs-3 mb-4">
-            <span class="fw-semibold">Bienvenida {{ pacientes[0].nombre }}</span>
+            <span class="fw-semibold">Bienvenida {{ user.email }}</span>
             <span class="fw-light ms-1">¿Qué servicio médico estás buscando?</span>
           </h1>
           <WebsiteSearchBar :solicitar="true" />

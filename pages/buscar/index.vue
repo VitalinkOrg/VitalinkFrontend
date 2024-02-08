@@ -56,6 +56,7 @@ const { data: clinicas, pending } = await useLazyFetch(
               </div>
               <WebsiteClinicasListItem
                 v-for="clinica in clinicas"
+                :key="clinica.id"
                 :clinica="clinica"
               />
             </div>
