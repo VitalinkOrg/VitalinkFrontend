@@ -1,11 +1,10 @@
-// middleware/auth.ts
+// middleware/authPacientes.ts
 import { useStore } from "~/store";
 
 export default defineNuxtRouteMiddleware((to) => {
     const store = useStore();
-    const token = useCookie('token');
   
-    if (token.value) {
-      store.authenticated = true;
+    if (!store.authenticated) {
+      return navigateTo('/');
     }
 });

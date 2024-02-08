@@ -76,7 +76,7 @@ const login = async () => {
     }
   );
   if (data.value) {
-    router.push("/");
+    router.push("/pacientes/inicio");
     store.authenticated = true;
     store.user = data?.value?.data?.user_info;
     token.value = data?.value?.data?.access_token;

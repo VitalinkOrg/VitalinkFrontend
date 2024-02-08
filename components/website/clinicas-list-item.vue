@@ -1,7 +1,8 @@
 <script setup>
-import { ref, defineProps} from "vue";
+import { ref, defineProps } from "vue";
 const panel = ref(false);
-const props = defineProps(['clinica']);
+const props = defineProps(["clinica"]);
+const offers = ref([]);
 const config = useRuntimeConfig();
 function goTo(type, id) {
   if (type == "doctor") {
@@ -13,22 +14,30 @@ function goTo(type, id) {
       path: `perfiles/hospital/${id}`,
     });
   }
+}
+const getOffers = async (type, id) => {
+  if(panel.value === true) {
+    return panel.value = false;
+  }
+  let url;
+
+  if (type === "doctor") {
+    url =
+      config.public.API_BASE_URL +
+      `/patient_dashboard/offers_by_doctor?doctor_id=${id}`;
+  } else {
+    url =
+      config.public.API_BASE_URL +
+      `/patient_dashboard/offers_by_hospital?hospital_id=${id}`;
+  }
+
+  const { data, pending } = await useFetch(url);
+  if (data.value) {
+    panel.value = true;
+    offers.value = data.value.data;
+    console.log(data.value.data, "data");
+  }
 };
-// const getOffers = async (type, id) => {
-//   let url;
-
-//   if (type === "doctor") {
-//     url = config.public.API_BASE_URL + `/patient_dashboard/offers_by_doctor?doctor_id=${id}`;
-//   } else {
-//     url = config.public.API_BASE_URL + `/patient_dashboard/offers_by_hospital?hospital_id=${id}`;
-//   }
-
-//   const { data, pending } = await useFetch(
-//     url,
-//     () => {
-//       return panel = true;
-// });
-// }
 </script>
 
 <template>
@@ -118,22 +127,24 @@ function goTo(type, id) {
           </div>
         </div>
       </div>
-
+      <div v-if="pending">Loading offers...</div>
       <div v-if="panel" class="my-4">
         <p class="text-center text-primary h6 fw-medium fs-4">
           Compara las ofertas
         </p>
         <div class="row row-cols-1 row-cols-sm-3 g-4">
-          <div class="col" v-for="oferta in 3">
+          <div class="col" v-for="offer in offers" :key="offer.doctor_id">
             <div class="card rounded-4">
               <div class="card-header bg-primary text-light rounded-top-4">
                 <h5 class="card-title fw-medium h6 text-center pt-2">
-                  Clinica Santa Lucia
+                  {{ clinica.hospital_name || clinica.name }}
                 </h5>
               </div>
               <div class="card-body d-flex flex-column">
                 <p class="card-text text-center">
-                  <small class="fw-semibold">5.0</small>
+                  <small class="fw-semibold">
+                    {{ parseFloat(offer.review_score).toFixed(1) || "" }}
+                  </small>
                   <AtomsIconsStar />
                   <small class="text-muted">(13 Reseñas)</small>
                 </p>
@@ -141,9 +152,9 @@ function goTo(type, id) {
                   <small class="mb-0">Servicios</small>
                 </p>
                 <ul class="list-unstyled fw-light mx-auto mb-0 text--muted">
-                  <li><small>[I]Médico Oftalmólogo</small></li>
-                  <li><small>[I]Sala de cirugía</small></li>
-                  <li><small>[I]Habitación privada</small></li>
+                  <li><small>[I]{{ offer.service }}</small></li>
+                  <!-- <li><small>[I]Sala de cirugía</small></li>
+                  <li><small>[I]Habitación privada</small></li> -->
                 </ul>
                 <hr />
                 <p class="card-text text-center text-muted">
@@ -156,8 +167,9 @@ function goTo(type, id) {
                   <small class="text-muted"
                     >Precio original
                     <span class="text-decoration-line-through"
-                      >23.000 USD</span
-                    ></small
+                      >{{ parseFloat(offer.price).toLocaleString() }}
+                      {{ offer.currency }}
+                    </span></small
                   ><br />
                   <small class="fw-medium">Con Váucher:</small> <br />
                   <button class="btn btn-outline-success btn-sm rounded-4">
