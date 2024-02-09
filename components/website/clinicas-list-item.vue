@@ -4,13 +4,14 @@ const panel = ref(false);
 const props = defineProps(["clinica"]);
 const offers = ref([]);
 const config = useRuntimeConfig();
+const router = useRouter();
 function goTo(type, id) {
   if (type == "doctor") {
-    this.$router.push({
+    router.push({
       path: `perfiles/doctor/${id}`,
     });
   } else {
-    this.$router.push({
+    router.push({
       path: `perfiles/hospital/${id}`,
     });
   }
