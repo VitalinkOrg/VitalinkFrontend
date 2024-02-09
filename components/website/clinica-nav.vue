@@ -1,6 +1,6 @@
 <script>
 export default {
-  props: ['clinica'],
+  props: ['data'],
   data: () => ({
     tab: 1
   })
@@ -23,13 +23,14 @@ export default {
     <li class="nav-item"><button class="nav-link" :class="tab === 6 ? 'active' : ''" @click="tab = 6">Perfil</button></li>
   </ul>
 
+
   <section class="py-4 px-1">
     <!-- Dsiponibilidad  -->
     <div v-if="tab === 1">
       <p class="fw-semibold">Reserva una cita</p>
     </div>
     <!-- Servicios  -->
-    <WebsiteClinicaServiciosTab :clinica="clinica" v-if="tab === 2" />
+    <WebsiteClinicaServiciosTab :data="data.data.servicesResult" v-if="tab === 2" />
     <!-- Ubicacion -->
     <div v-if="tab === 3">Encuentranos Facilmente</div>
     <!-- Galeria  -->
@@ -37,6 +38,9 @@ export default {
     <!-- Reseñas  -->
     <div v-if="tab === 5">Reseñas logradas</div>
     <!-- Perfil  -->
-    <div v-if="tab === 6">Nuestra Historia</div>
+    <div v-if="tab === 6">
+      <h5>Nuestra historia</h5>
+      <p>{{ data.data.doctor_information.personal.description }}</p>
+    </div>
   </section>
 </template>

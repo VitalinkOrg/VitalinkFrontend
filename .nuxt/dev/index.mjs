@@ -62,7 +62,7 @@ const _inlineRuntimeConfig = {
     }
   },
   "public": {
-    "API_BASE_URL": "http://13.58.69.25:3000"
+    "API_BASE_URL": "https://stg.vitalink.cr"
   }
 };
 const ENV_PREFIX = "NITRO_";

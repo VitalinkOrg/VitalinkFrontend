@@ -1,5 +1,5 @@
 <template>
-  <NuxtLayout name="login">
+  <NuxtLayout name="pacientes-login">
     <h1 class="fw-semibold fs-2">Ingrese a su cuenta</h1>
     <hr />
     <form @submit.prevent="login">
@@ -8,7 +8,7 @@
           >Correo Electrónico</label
         >
         <input
-          v-model="user.email"
+          v-model="email"
           type="email"
           class="form-control"
           placeholder="Escribe tu correo electrónico"
@@ -22,7 +22,7 @@
           >Contraseña</label
         >
         <input
-          v-model="user.password"
+          v-model="password"
           type="password"
           class="form-control"
           id="password"
@@ -55,24 +55,34 @@
 </template>
 
 <script lang="ts" setup>
-import { storeToRefs } from 'pinia'; // import storeToRefs helper hook from pinia
-import { useAuthStore } from '~/store/auth'; // import the auth store we just created
+import { useStore } from "~/store";
 
-const { authenticateUser } = useAuthStore(); // use authenticateUser action from  auth store
-
-const { authenticated } = storeToRefs(useAuthStore()); // make authenticated state reactive with storeToRefs
-
-const user = ref({
-  email: 'test@gmail.com', 
-  password: 'test',
-});
+const config = useRuntimeConfig();
 const router = useRouter();
+const store = useStore();
+const token = useCookie("token");
+const email = ref("patient@gmail.com");
+const password = ref("patient");
 
 const login = async () => {
-  await authenticateUser(user.value); // call authenticateUser and pass the user object
-  // redirect to homepage if user is authenticated
-  if (authenticated) {
-    router.push('/');
+  const { data, error }: any = await useFetch(
+    config.public.API_BASE_URL + "/users/login",
+    {
+      method: "POST",
+      body: {
+        email,
+        password,
+      },
+    }
+  );
+  if (data.value) {
+    router.push("/pacientes/inicio");
+    store.authenticated = true;
+    store.user = data?.value?.data?.user_info;
+    token.value = data?.value?.data?.access_token;
+  }
+  if (error.value) {
+    console.log(error.value, "data");
   }
 };
 </script>

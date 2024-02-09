@@ -1,0 +1,233 @@
+<script>
+export default {
+	data: () => ({
+		tab: 1
+	})
+}
+</script>
+<template>
+	<main class="d-flex" style="background-color: #F8F8F8">
+		<section class="left text-center d-sm-flex d-none">
+			<!-- <NuxtLink class="logo" href="/"><img src="@/src/assets/img-vitalink-logo.svg" alt="Vitalink Logo"></NuxtLink> -->
+			<!-- <img src="@/src/assets/img-login.png" alt=""> -->
+			<div>
+				<h1 class="text-primary">Únete a la Comunidad<br>Médica de Vitalink</h1>
+				<p class="fs-5 fw-light text-muted mx-auto my-4">Selecciona tu Rol Médico y Comienza a Conectar con Pacientes
+				</p>
+				<div class="d-flex justify-content-center">
+					<span class="btn-custom btn-custom-active rounded-4">
+						<span class="btn-custom-check"></span>
+						<span class="btn-custom-text btn-custom-active-text fw-semibold">Médico</span>
+					</span>
+					<NuxtLink href="/clinicas/registro" class="btn-custom btn-custom-inactive rounded-4">
+						<span class="btn-custom-check"></span>
+						<span class="btn-custom-text btn-custom-inactive-text fw-semibold">Hospital</span>
+					</NuxtLink>
+				</div>
+			</div>
+		</section>
+
+
+
+		<section class="right bg-light">
+
+			<div class="d-flex align-items-center justify-content-between">
+				<h2 class="h1 fw-bold fs-2 text-primary m-0">Registrarse</h2>
+				<span class=" text-primary">Es gratis y fácil</span>
+			</div>
+			<div class="fw-semibold my-4">
+				<span class="text-success me-5">Datos Personales</span>
+				<span :class="tab === 2 ? 'text-success' : 'text-muted'">Información Profesional</span>
+			</div>
+			<form>
+				<!-- TAB DATOS PERSONALES -->
+				<div v-if="tab === 1">
+					<label class="form-label mb-4 text-dark text-capitalize">Completa los datos de registro</label>
+					<div class="row row-cols-2">
+						<div class="form-group mb-4">
+							<label for="nombre" class="form-label text-capitalize">Nombre</label>
+							<input type="text" class="form-control" placeholder="Escribe tu nombre" name="nombre" required />
+							<!-- <div id="nombreHelp" class="form-text">We'll never share your email with anyone else.</div> -->
+						</div>
+						<div class="form-group mb-4">
+							<label for="apellido" class="form-label text-capitalize">Apellido</label>
+							<input type="text" class="form-control" placeholder="Escribe tu apellido" name="apellido" required />
+							<!-- <div id="nombreHelp" class="form-text">We'll never share your email with anyone else.</div> -->
+						</div>
+						<div class="form-group mb-4">
+							<label for="telefono" class="form-label text-capitalize">Número de teléfono</label>
+							<input type="phone" class="form-control" placeholder="0000-0000" name="telefono" required />
+							<!-- <div id="nombreHelp" class="form-text">We'll never share your email with anyone else.</div> -->
+						</div>
+						<div class="form-group mb-4">
+							<label for="dob" class="form-label text-capitalize">Fecha de nacimiento</label>
+							<input type="date" class="form-control" placeholder="15/06/1996" name="dob" required />
+							<!-- <div id="nombreHelp" class="form-text">We'll never share your email with anyone else.</div> -->
+						</div>
+					</div>
+					<hr>
+					<div class="form-group mb-4">
+						<label for="email" class="form-label text-capitalize">Correo Electrónico</label>
+						<input type="email" class="form-control" placeholder="Escribe tu correo electrónico" name="email" required />
+						<!-- <div id="nombreHelp" class="form-text">We'll never share your email with anyone else.</div> -->
+					</div>
+					<div class="row row-cols-2">
+						<div class="form-group mb-4">
+							<label for="password" class="form-label text-capitalize">Contraseña</label>
+							<input type="password" class="form-control" id="password" placeholder="Escribe tu contraseña"
+								aria-describedby="passwordHelp" required name="password" />
+							<!-- <div id="passwordHelp" class="form-text">Deben ser 8 caracteres como mínimo</div> -->
+						</div>
+						<div class="form-group mb-4">
+							<label for="confirmPassword" class="form-label text-capitalize">Confirmar Contraseña</label>
+							<input type="password" class="form-control" id="confirmPassword" placeholder="Escribe tu contraseña"
+								aria-describedby="confirmPasswordHelp" required name="confirmPassword" />
+							<!-- <div id="passwordHelp" class="form-text">Deben ser 8 caracteres como mínimo</div> -->
+						</div>
+					</div>
+
+
+					<button @click="tab = 2" class="btn btn-primary">
+						Siguiente Paso
+						<AtomsIconsArrowRightIcon />
+					</button>
+
+
+
+				</div>
+				<div v-if="tab === 2">
+					<label class="form-label mb-4 text-dark text-capitalize">Completa la información básica profesional</label>
+
+					<div class="form-group mb-4">
+						<label for="matricula" class="form-label text-capitalize">No de Matricula</label>
+						<input type="number" class="form-control" placeholder="Escribe tu número de matricula" name="matricula"
+							required />
+						<!-- <div id="matriculaHelp" class="form-text">We'll never share your email with anyone else.</div> -->
+					</div>
+					<div class="form-group mb-4">
+						<label for="servicios" class="form-label text-capitalize">Servicios que ofrecen</label>
+						<input type="text" class="form-control" placeholder="Oftalmología" name="servicios" required />
+						<!-- <div id="matriculaHelp" class="form-text">We'll never share your email with anyone else.</div> -->
+					</div>
+					<div class="mb-3 form-check">
+						<input type="checkbox" class="form-check-input border-dark" id="recordarme">
+						<label class="form-check-label border" for="recordarme">Recordarme</label>
+					</div>
+					<div class="mb-3 form-check">
+						<input type="checkbox" class="form-check-input border-dark" id="politicas">
+						<label class="form-check-label " for="politicas">He leído y acepto la Política de Privacidad y
+							condiciones de
+							uso</label>
+					</div>
+					<button @click="tab = 1" class="btn btn-light border-dark w-100">
+						<AtomsIconsArrowLeftIcon />
+						Volver Atrás
+					</button>
+					<button type="submit" class="btn btn-primary w-100 mt-2">Registrarme</button>
+
+				</div>
+
+
+			</form>
+			<hr>
+			<p class="text-center"><small class="text-muted">O hacerlo con estas cuentas</small></p>
+			<div class="text-center">
+				<button class="btn btn-light border-dark-subtle">
+					<AtomsIconsGoogleIcon />
+				</button>
+				<button class="btn btn-light border-dark-subtle mx-4">
+					<AtomsIconsAppleIcon />
+				</button>
+				<button class="btn btn-light border-dark-subtle">
+					<AtomsIconsFacebookIcon />
+				</button>
+			</div>
+			<p class="text-center mt-3">
+				<span class="text-muted">Ya tienes Cuenta? </span>
+				<NuxtLink href="/medicos/registro" class="btn-link text-dark fw-medium">Iniciar Sesión</NuxtLink>
+			</p>
+
+		</section>
+	</main>
+</template>
+ <style src="@/assets/styles/vitalink.scss" />
+ 
+<style lang="scss" scoped>
+main {
+	height: 100vh;
+}
+
+.left,
+.right {
+	width: 100%;
+	height: 100%;
+}
+
+.left {
+	background-color: #EBECF7;
+	background-image: url('@/src/assets/bg-login-medicos-clinicas.svg');
+	background-size: 100% auto;
+	background-position: center center;
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	justify-content: space-around;
+	padding: 1rem;
+	background-repeat: no-repeat;
+}
+
+.right {
+	padding: 2rem;
+	display: flex;
+	flex-direction: column;
+	justify-content: center;
+	// align-items: center;
+	overflow-y: auto;
+}
+
+.btn-custom {
+	height: 10rem;
+	width: 10rem;
+	display: flex;
+	margin: 1rem;
+	flex-direction: column;
+	justify-content: flex-end;
+	overflow: hidden;
+	text-decoration: none;
+	background-size: 80%;
+	background-repeat: no-repeat;
+	background-position: center 1.5rem;
+
+	&-active {
+		background-color: #3541B4;
+		box-shadow: 13px 9px 51.3px 0px rgba(0, 0, 0, 0.15), 0 0 0 9px #C2EBEE;
+		background-image: url('@/src/assets/img-icon-medico-active.svg');
+
+		&-text {
+			background: linear-gradient(0deg, #0CADBB 35.25%, #C2EBEE 149.99%);
+			color: white;
+		}
+	}
+
+	&-inactive {
+		background-color: white;
+		background-image: url('@/src/assets/img-icon-clinica-inactive.svg');
+
+		&-text {
+			background-color: #E7F7F8;
+			color: #85D6DD;
+		}
+	}
+
+	&-text {
+		height: 3rem;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		font-size: 1.1rem;
+		border-radius: .7rem;
+	}
+
+	&-check {}
+}
+</style>
