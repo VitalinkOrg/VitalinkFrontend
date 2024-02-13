@@ -3,7 +3,7 @@
 // 
 export interface IServicioClinica {
   id: string,
-  nombre: string, //66821 - Operación de Cataratas
+  name: string, //66821 - Operación de Cataratas
   descripcion?: string //La cirugía de cataratas es un procedimiento oftalmológico comúnmente realizado para restaurar la visión nublada debido a la opacificación del cristalino del ojo. 
   amenidades?: IAmenidadClinica[],
   precio?: number // en USD ,
@@ -22,9 +22,12 @@ export interface IDireccion {
 
 export interface IClinica {
   id: string;
-  nombre?: string;
-  servicios?: IServicioClinica[];
-  rating?: IRating,
+  name?: string;
+  // servicios?: IServicioClinica[];
+  specialties: IServicioClinica[];
+  // rating?: IRating, //Old
+  review_score?: number,
+  review_count?: number,
   otrasOfertas?: IClinica[],
   imagen?: string,
   direccion?: IDireccion,

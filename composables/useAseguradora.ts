@@ -1,4 +1,4 @@
-import { type IVaucher, EVaucherEstado } from '@/types'
+import { type IVaucher, EVaucherEstado, type IClinica } from '@/types'
 
 export default function useAseguradora() {
 
@@ -26,8 +26,31 @@ export default function useAseguradora() {
     }
   }])
 
+  const proveedores = useState<IClinica[]>('clinicas', () => [{
+    id: '1',
+    name: 'Hospital Clínica Bíblica',
+    review_score: 5.0,
+    review_count: 15,
+    // rating: {
+    //   ratingNumber: '5.0',
+    //   reviews: 13
+    // },
+    service_name: [
+      { id: '125', name: 'oftalmología' },
+      { id: '5733', name: 'cirugía' },
+      { id: '845', name: 'pediatría' },
+    ],
+    otrasOfertas: [],
+    experiencia: 10,
+    pacientes: 1000,
+    direccion: {
+      texto: 'C. 24, San José, San Bosco, Costa Rica'
+    }
+  }])
+
   return {
     vaucherChart,
-    historialVauchers
+    historialVauchers,
+    proveedores
   }
 }
