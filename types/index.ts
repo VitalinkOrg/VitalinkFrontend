@@ -59,6 +59,7 @@ export enum EWeekDays {
 export interface IPaciente {
   nombre: string,
   apellidos: string,
+  id: number
 }
 
 export interface ICita {
@@ -89,7 +90,9 @@ export interface IVaucher {
   hora: string,
   lugar: IDireccion,
   aseguradora: IAseguradora,
-  costoUSD: number
+  costoUSD?: number,
+  vencimiento?: string,
+  asegurado?: IPaciente
 }
 
 export enum ECitaEstado {
