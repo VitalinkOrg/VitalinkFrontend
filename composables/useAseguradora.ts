@@ -9,7 +9,12 @@ export default function useAseguradora() {
     servicio: 'Operación de Cataratas', // Procedimiento 
     estado: EVaucherEstado.UTILIZADA,
     aseguradora: { id: '23567', nombre: 'ASIS' },
-    lugar: { texto: 'Hospital CIMA' },
+    // lugar: {
+    //   id: '253467474587',
+    //   direccion: 'Calle Ficticia 123',
+    //   telefono: '+506 6123-3466',
+    //   nombre: 'Hospital CIMA',
+    // },
     fecha: '26/09/2023',
     hora: '18:00 - 18:45',
     costoUSD: 100,

@@ -31,6 +31,7 @@ export interface IClinica {
   experiencia?: number, //en años
   pacientes?: number,
   horario?: IHorarioDiario[],
+  telefono?: string
   // clinica: string
 }
 
@@ -88,11 +89,12 @@ export interface IVaucher {
   estado: EVaucherEstado,
   fecha: string,
   hora: string,
-  lugar: IDireccion,
+  lugar?: IClinica,
   aseguradora: IAseguradora,
   costoUSD?: number,
   vencimiento?: string,
-  asegurado?: IPaciente
+  asegurado?: IPaciente,
+
 }
 
 export enum ECitaEstado {
