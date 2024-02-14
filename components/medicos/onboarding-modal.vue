@@ -201,7 +201,28 @@ const { onboarding } = useMedico()
         <!-- Step 5 -->
         <span v-if="onboarding[0].step === 5">
           <div class="modal-body">
-            Step 5
+            <div class="bg-primary rounded-4 d-flex align-items-center justify-content-center text-center py-5"
+              style="--bs-bg-opacity: 0.05">
+              <div class="my-5 text-center">
+                <img src="@/src/assets/img-fuegos-artificiales-felicidades.svg" alt="Felicidades">
+                <div class="display-3 text-primary">Felicidades!</div>
+                <p class="w-50 mx-auto fw-normal text-muted fs-5">Has completado una buena parte de tu perfil, esto te
+                  ayudará
+                  a destacar
+                  y
+                  conectar
+                  con más pacientes.</p>
+              </div>
+
+              <!-- <div class="col">
+                <img src="@/src/assets/img-bienvenida-medicos.svg" class="img-fluid" alt="Bienvenido!">
+              </div>
+              <div class="col">
+                <span class="display-3 text-primary">Bienvenido!</span>
+                <p class="lead pe-5">Completar tu perfil te ayudará a destacar y conectar con más pacientes.</p>
+              </div> -->
+            </div>
+
           </div>
           <div class="modal-footer">
             <button type="button" class="btn btn-primary w-100 btn-lg"
