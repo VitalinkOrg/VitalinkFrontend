@@ -48,6 +48,7 @@ export default function useMedico() {
   }
   ])
 
+  // Update this open depending on API 
   const onboarding = useState('onboarding', () => [{
     open: true,
     step: 1
