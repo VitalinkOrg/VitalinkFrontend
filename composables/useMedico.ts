@@ -48,10 +48,14 @@ export default function useMedico() {
   }
   ])
 
-  // const getCitas = (page: number) => { console.log(page) }
+  const onboarding = useState('onboarding', () => [{
+    open: true,
+    step: 1
+  }])
 
 
   return {
     citas,
+    onboarding
   }
 }
