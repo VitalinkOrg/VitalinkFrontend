@@ -1,4 +1,3 @@
-
 <template>
   <NuxtLayout name="medicos-dashboard">
     <div class="row row-cols-4 mb-3">
@@ -113,6 +112,6 @@
         </div>
       </div>
     </div>
-
+    <MedicosOnboardingModal />
   </NuxtLayout>
 </template>
