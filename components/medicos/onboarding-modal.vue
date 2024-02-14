@@ -51,7 +51,7 @@ const { onboarding } = useMedico()
             <div class="container">
               <div class="row">
                 <div class="col-3">
-                  <div class="bg-primary rounded-4 p-4" style="--bs-bg-opacity: 0.1">
+                  <div class="bg-primary rounded-4 p-4 h-100" style="--bs-bg-opacity: 0.07">
                     <span class="text-success fw-bold pt-4 d-block">1 a 2 pasos</span>
                     <span class="text-primary fw-bold fs-4 py-4 d-block">Completa tus Datos Personales</span>
                     <p class=" text-muted fw-medium">Empieza completando por tus datos personales o de empresa
@@ -61,7 +61,7 @@ const { onboarding } = useMedico()
                   </div>
                 </div>
                 <div class="col">
-                  <div class="bg-primary rounded-4 h-100 p-4" style="--bs-bg-opacity: 0.05">
+                  <div class="bg-primary rounded-4 h-100 p-4" style="--bs-bg-opacity: 0.04">
                     <div class="form-group mb-3">
                       <label for="nombre" class="form-label">Nombre (s)</label>
                       <input type="text" placeholder="Escribe tu nombre" class="form-control shadow-sm " id="nombre"
@@ -122,7 +122,46 @@ const { onboarding } = useMedico()
         <!-- Step 3 -->
         <span v-if="onboarding[0].step === 3">
           <div class="modal-body">
-            Step 3
+            <div class="container">
+              <div class="row">
+                <div class="col-3">
+                  <div class="bg-primary rounded-4 p-4 h-100" style="--bs-bg-opacity: 0.07">
+                    <span class="text-success fw-bold pt-4 d-block">2 a 2 pasos</span>
+                    <span class="text-primary fw-bold fs-4 py-4 d-block">Información Profesional</span>
+                    <p class=" text-muted fw-medium">Esto ayudará a los pacientes a conocerte mejor.</p>
+                  </div>
+                </div>
+                <div class="col">
+                  <div class="bg-primary rounded-4 h-100 p-4" style="--bs-bg-opacity: 0.04">
+                    <div class="form-group mb-3">
+                      <label for="nombre" class="form-label">Foto de Perfil</label>
+                      <div class="mb-3 text-muted fw-light">Esta será la foto que vean tu pacientes cuando encuentren tu
+                        perfil en
+                        Vitalink
+                      </div>
+                      <!-- <input type="text" placeholder="Escribe tu nombre" class="form-control shadow-sm " id="nombre"
+                        name="nombre"> -->
+                      <!-- <form action="/action_page.php"> -->
+                      <input type="file" id="myFile" name="filename" class="form-control">
+                      <!-- <input type="submit"> -->
+                      <!-- </form> -->
+                    </div>
+                    <hr>
+                    <div class="form-group mb-3">
+                      <label for="descripcion" class="form-label">Escribe una breve descripción profesional</label>
+                      <textarea placeholder="Escribe una descripción sobre ti y tu experiencia profesional"
+                        class="form-control shadow-sm " id="descripcion" name="descripcion" rows="4" />
+                    </div>
+                    <div class="form-group mb-3">
+                      <label for="numero-matricula" class="form-label">Nº Matrícula Medica </label>
+                      <input type="text" placeholder="Escribe el número de tu matrícula" class="form-control shadow-sm "
+                        id="numero-matricula" name="numero-matricula">
+                    </div>
+
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
           <div class="modal-footer">
             <div class="col">
