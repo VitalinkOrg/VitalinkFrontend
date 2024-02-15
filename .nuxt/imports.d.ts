@@ -26,6 +26,7 @@ export { default as useAseguradora } from '../composables/useAseguradora';
 export { default as useClinica } from '../composables/useClinica';
 export { default as useMedico } from '../composables/useMedico';
 export { default as usePaciente } from '../composables/usePaciente';
+export { default as useRefreshToken } from '../composables/useRefreshToken';
 export { default as useSearch } from '../composables/useSearch';
 export { default as useServicios } from '../composables/useServicios';
 export { defineStore, acceptHMRUpdate, usePinia, storeToRefs } from '../node_modules/@pinia/nuxt/dist/runtime/composables';
