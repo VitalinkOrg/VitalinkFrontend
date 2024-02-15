@@ -1,9 +1,9 @@
 <script setup>
-const { vauchers, getVauchers } = usePaciente()
+const props = defineProps(["vouchers"]);
 </script>
 <template>
   <div class="card">
-    <table class="table fw-light">
+    <table v-if="vouchers !== null" class="table fw-light">
       <thead>
         <tr>
           <th scope="col"></th>
@@ -19,26 +19,40 @@ const { vauchers, getVauchers } = usePaciente()
       </thead>
 
       <tbody>
-        <tr v-for="vaucher in vauchers">
+        <tr v-for="voucher in vouchers" :key="voucher.id">
           <td>
             <div class="form-check">
-              <input class="form-check-input border-dark" type="checkbox" value="" :id="vaucher.id">
+              <input class="form-check-input border-dark" type="checkbox" value="" :id="vaucher.code">
               <!-- <label class="form-check-label" for="flexCheckDefault"></label> -->
             </div>
           </td>
-          <td>{{ vaucher.id }}</td>
-          <td>{{ vaucher.fecha }} a las {{ vaucher.hora }}</td>
-          <td>{{ vaucher.servicio }}</td>
-          <td>{{ vaucher.lugar.texto }}</td>
-          <td>{{ vaucher.aseguradora.nombre }}</td>
-          <td><span class="badge bg-success-subtle rounded-5 text-dark">{{ vaucher.estado }} </span></td>
-          <td><small>{{ vaucher.costoUSD }} USD</small></td>
+          <td>{{ vaucher.code }}</td>
+          <!-- <td>{{ vaucher.fecha }} a las {{ vaucher.hora }}</td> -->
+          <td>{{ vaucher.service_name }}</td>
+          <td>{{ vaucher.description }}</td>
+          <td>{{ vaucher.cpt_name }}</td>
+          <td><span class="badge bg-success-subtle rounded-5 text-dark">{{ vaucher.status }} </span></td>
+          <td><small>{{ vaucher.discount_percent }} USD</small></td>
           <td>
             <AtomsIconsDownloadIcon />
           </td>
         </tr>
       </tbody>
     </table>
+    <div v-else class="card-body d-flex py-5">
+      <div class="col-sm-5 text-end">
+        <AtomsIconsChartVacio />
+      </div>
+      <div class="col-sm-7">
+        <p class="fs-5 text-muted fw-medium">
+          Aún no tienes actividad en tu tablero
+        </p>
+        <p class="fw-light text-secondary">
+          Muy pronto podrás administrar y verificar tu actividad.
+        </p>
+        <button class="btn btn-primary border-danger">Empezar</button>
+      </div>
+    </div>
 
     <div class="card-footer bg-transparent justify-content-end d-flex">
       <nav>
