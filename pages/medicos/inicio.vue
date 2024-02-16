@@ -1,4 +1,3 @@
-
 <template>
   <NuxtLayout name="medicos-dashboard">
     <div class="row row-cols-4 mb-3">
@@ -56,7 +55,7 @@
       <div class="col-sm-8">
         <p class="mx-2 d-flex align-items-center justify-content-between">
           <span class="fw-medium fs-5">Próximas Citas</span>
-          <NuxtLink class="btn btn-link text-dark" href="/pacientes/citas">Ver Todo
+          <NuxtLink class="btn btn-link text-dark" href="/medicos/inicio">Ver Todo
             <AtomsIconsArrowRightIcon />
           </NuxtLink>
         </p>
@@ -74,7 +73,7 @@
       <div class="col">
         <p class="mx-2 d-flex align-items-center justify-content-between">
           <span class="fw-medium fs-5">Pacientes</span>
-          <NuxtLink class="btn btn-link text-dark" href="/pacientes/citas">Ver Todo
+          <NuxtLink class="btn btn-link text-dark" href="/medicos/inicio">Ver Todo
             <AtomsIconsArrowRightIcon />
           </NuxtLink>
         </p>
@@ -96,7 +95,7 @@
     <div class="row">
       <p class="mx-2 d-flex align-items-center justify-content-between">
         <span class="fw-medium fs-5">Historial</span>
-        <NuxtLink class="btn btn-link text-dark" href="/pacientes/citas">Ver Todo
+        <NuxtLink class="btn btn-link text-dark" href="/medicos/inicio">Ver Todo
           <AtomsIconsArrowRightIcon />
         </NuxtLink>
       </p>
@@ -113,6 +112,6 @@
         </div>
       </div>
     </div>
-
+    <MedicosOnboardingModal />
   </NuxtLayout>
 </template>

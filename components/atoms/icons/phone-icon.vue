@@ -1,3 +1,3 @@
 <template>
-  <span>[AR]</span>
+  <span>[PI]</span>
 </template>

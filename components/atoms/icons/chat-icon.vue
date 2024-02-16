@@ -1,3 +1,3 @@
 <template>
-  <span>[AR]</span>
+  <span>[CI]</span>
 </template>

@@ -17,17 +17,13 @@ const { data, pending } = await useLazyFetch(
     <main class="pt-2 pb-5">
       <div class="container-fluid">
         <div class="d-flex align-items-center">
-          <button
-            class="btn btn-link text-dark fw-light me-0 text-decoration-none"
-          >
+          <button class="btn btn-link text-dark fw-light me-0 text-decoration-none">
             [A] Volver
           </button>
           <nav aria-label="breadcrumb">
             <ol class="breadcrumb m-0">
               <li class="breadcrumb-item">
-                <NuxtLink href="/" class="text-decoration-none"
-                  >Inicio</NuxtLink
-                >
+                <NuxtLink href="/" class="text-decoration-none">Inicio</NuxtLink>
               </li>
               <li class="breadcrumb-item">Resultados de búsqueda</li>
               <li class="breadcrumb-item active" aria-current="page">
@@ -41,11 +37,7 @@ const { data, pending } = await useLazyFetch(
           <div class="col-sm-4">
             <div class="card shadow border-0">
               <div class="card-body text-center">
-                <img
-                  src="@/src/assets/img-clinica-thumbnail-md.png"
-                  alt=""
-                  class="img-fluid mb-3"
-                />
+                <img src="@/src/assets/img-clinica-thumbnail-md.png" alt="" class="img-fluid mb-3" />
                 <div>
                   <small>
                     <span class="fw-semibold me-2">
@@ -53,9 +45,7 @@ const { data, pending } = await useLazyFetch(
 
                       <IconStar />
                     </span>
-                    <span class="text-muted"
-                      >13 Reseñas</span
-                    >
+                    <span class="text-muted">13 Reseñas</span>
                   </small>
                 </div>
                 <h2 class="h5 fw-semibold my-2">
@@ -73,77 +63,46 @@ const { data, pending } = await useLazyFetch(
                   <span class="badge bg-success rounded-4 mx-1 p-2">[E]</span>
                 </div>
                 <p class="card-text py-2 text-muted fw-light">
-                  <small v-if="data">[I] 
+                  <small v-if="data">[I]
                     {{ data.data.hospital_information.address + ', ' + data.data.hospital_information.city }}
                   </small>
                 </p>
                 <div class="row row-cols-2">
                   <div class="col">
-                    <div
-                      class="card bg-primary rounded-4 border-0"
-                      style="--bs-bg-opacity: 0.05"
-                    >
+                    <div class="card bg-primary rounded-4 border-0" style="--bs-bg-opacity: 0.05">
                       <div class="card-body py-2">
                         <span class="text-muted">Experiencia</span><br />
-                        <span class="fw-semibold text-primary fs-5"
-                          >+10 años</span
-                        >
+                        <span class="fw-semibold text-primary fs-5">+10 años</span>
                       </div>
                     </div>
                   </div>
                   <div class="col">
-                    <div
-                      class="card bg-primary rounded-4 border-0"
-                      style="--bs-bg-opacity: 0.05"
-                    >
+                    <div class="card bg-primary rounded-4 border-0" style="--bs-bg-opacity: 0.05">
                       <div class="card-body py-2">
                         <span class="text-muted">Pacientes</span><br />
-                        <span class="fw-semibold text-primary fs-5"
-                          >+1000</span
-                        >
+                        <span class="fw-semibold text-primary fs-5">+1000</span>
                       </div>
                     </div>
                   </div>
                 </div>
 
-                <div
-                  class="card bg-primary rounded-4 border-0 mt-3"
-                  style="--bs-bg-opacity: 0.05"
-                >
+                <div class="card bg-primary rounded-4 border-0 mt-3" style="--bs-bg-opacity: 0.05">
                   <div class="card-body">
                     <div class="row row-cols-4 gx-2 mb-2">
                       <div class="col">
-                        <img
-                          src="@/src/assets/img-clinica-thumbnail-xs.png"
-                          class="img-fluid"
-                          alt=""
-                        />
+                        <img src="@/src/assets/img-clinica-thumbnail-xs.png" class="img-fluid" alt="" />
                       </div>
                       <div class="col">
-                        <img
-                          src="@/src/assets/img-clinica-thumbnail-xs.png"
-                          class="img-fluid"
-                          alt=""
-                        />
+                        <img src="@/src/assets/img-clinica-thumbnail-xs.png" class="img-fluid" alt="" />
                       </div>
                       <div class="col">
-                        <img
-                          src="@/src/assets/img-clinica-thumbnail-xs.png"
-                          class="img-fluid"
-                          alt=""
-                        />
+                        <img src="@/src/assets/img-clinica-thumbnail-xs.png" class="img-fluid" alt="" />
                       </div>
                       <div class="col">
-                        <img
-                          src="@/src/assets/img-clinica-thumbnail-xs.png"
-                          class="img-fluid"
-                          alt=""
-                        />
+                        <img src="@/src/assets/img-clinica-thumbnail-xs.png" class="img-fluid" alt="" />
                       </div>
                     </div>
-                    <button
-                      class="btn btn-light border-dark-subtle w-100 bg-white"
-                    >
+                    <button class="btn btn-light border-dark-subtle w-100 bg-white">
                       Ver más fotos
                     </button>
                   </div>

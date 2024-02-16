@@ -61,6 +61,7 @@ const config = useRuntimeConfig();
 const router = useRouter();
 const store = useStore();
 const token = useCookie("token");
+const refreshToken = useCookie("refresh_token");
 const email = ref("patient@gmail.com");
 const password = ref("patient");
 
@@ -80,6 +81,7 @@ const login = async () => {
     store.authenticated = true;
     store.user = data?.value?.data?.user_info;
     token.value = data?.value?.data?.access_token;
+    refreshToken.value = data?.value?.data?.refresh_token;
   }
   if (error.value) {
     console.log(error.value, "data");
