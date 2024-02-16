@@ -1,15 +1,33 @@
-<script>
-export default {
-  data: () => ({
-    tab: 1,
-    sort: false
-  })
+<script setup>
+import { useStore } from "~/store";
+import { ref } from "vue";
+import { useRefreshToken } from "#imports";
+definePageMeta({
+  middleware: "auth-pacientes",
+});
+const store = useStore();
+const config = useRuntimeConfig();
+const token = useCookie("token");
+const tab = ref(1);
+const sort = ref(false);
+
+const { data: vouchers, loading } = await useFetch(
+  config.public.API_BASE_URL + "/internal_patient_dashboard/vouchers",
+  {
+    headers: { Authorization: token.value },
+    transform: (_vouchers) => _vouchers.data,
+  }
+);
+if (vouchers) {
+  store.user.vouchers = vouchers;
+  useRefreshToken();
 }
 </script>
 
 <template>
   <NuxtLayout name="pacientes-dashboard">
-    <main class="bg-light" style="min-height: 100vh">
+    <div v-if="loading"></div>
+    <main v-else class="bg-light" style="min-height: 100vh">
       <section class="container-fluid py-5">
         <p>
           <span class="fw-semibold fs-5">Mis Váuchers</span>
@@ -61,7 +79,7 @@ export default {
         </div>
 
         <div class="card">
-          <PacientesVauchersTable v-if="tab === 1" />
+          <PacientesVauchersTable :vouchers="vouchers" v-if="tab === 1" />
         </div>
 
 

@@ -36,7 +36,6 @@ const getOffers = async (type, id) => {
   if (data.value) {
     panel.value = true;
     offers.value = data.value.data;
-    console.log(data.value.data, "data");
   }
 };
 </script>

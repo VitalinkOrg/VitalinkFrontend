@@ -112,14 +112,13 @@ const password = ref("");
 
 const register = async () => {
   const { data, error }: any = await useFetch(
-    config.public.API_BASE_URL + "/users/register",
+    config.public.API_BASE_URL + "/users/register_patient",
     {
       method: "POST",
       body: {
         name,
         email,
         password,
-        role: "R_PAT"
       },
     }
   );
