@@ -1,3 +1,3 @@
 <template>
-  <span>[D]</span>
+  <Icon name="material-symbols:download-rounded" />
 </template>

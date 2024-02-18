@@ -1,3 +1,3 @@
 <template>
-  <span>[MI]</span>
+  <Icon name="ph:map-pin" />
 </template>

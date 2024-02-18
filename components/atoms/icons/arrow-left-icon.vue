@@ -1,3 +1,3 @@
 <template>
-  <span>[AL]</span>
+  <Icon name="material-symbols:arrow-left-alt-rounded" />
 </template>
