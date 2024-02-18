@@ -1,1 +1,3 @@
-<template>[T]</template>
+<template>
+  <Icon name="carbon:trash-can" />
+</template>

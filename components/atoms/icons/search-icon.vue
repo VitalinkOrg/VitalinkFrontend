@@ -1,3 +1,3 @@
 <template>
-  <span>[I]</span>
+  <Icon name="ph:magnifying-glass-bold" />
 </template>

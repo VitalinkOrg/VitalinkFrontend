@@ -1,3 +1,3 @@
 <template>
-  <span>[PI]</span>
+  <Icon name="solar:phone-rounded-outline" />
 </template>

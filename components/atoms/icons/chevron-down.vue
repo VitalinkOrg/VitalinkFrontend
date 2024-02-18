@@ -1,3 +1,3 @@
 <template>
-  <span>[IC]</span>
+  <Icon name="charm:chevron-down" />
 </template>

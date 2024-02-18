@@ -1,3 +1,3 @@
 <template>
-  <span>[MLI]</span>
+  <Icon name="ic:outline-mail-outline" />
 </template>
