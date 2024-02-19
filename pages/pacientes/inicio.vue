@@ -44,7 +44,7 @@ if (vouchers) {
 
 const { data: historial, pending: pendingHistorial } = await useFetch(
   config.public.API_BASE_URL +
-    "/internal_patient_dashboard/doctors_and_hospitals",
+  "/internal_patient_dashboard/doctors_and_hospitals",
   {
     headers: { Authorization: token.value },
     transform: (_historial) => _historial.data,
@@ -61,12 +61,8 @@ if (historial) {
       <header class="d-flex align-items-center">
         <div class="container">
           <h1 class="text-center fs-3 mb-4">
-            <span class="fw-semibold"
-              >Bienvenida {{ user.first_name + " " + user.last_name }}</span
-            >
-            <span class="fw-light ms-1"
-              >¿Qué servicio médico estás buscando?</span
-            >
+            <span class="fw-semibold">Bienvenida {{ user.first_name + " " + user.last_name }}</span>
+            <span class="fw-light ms-1">¿Qué servicio médico estás buscando?</span>
           </h1>
           <WebsiteSearchBar :solicitar="true" />
         </div>
@@ -77,16 +73,12 @@ if (historial) {
           <section class="mb-4">
             <p class="mx-2 d-flex align-items-center justify-content-between">
               <span class="fw-semibold fs-5">Próximas Citas</span>
-              <NuxtLink class="btn btn-link text-dark" href="/pacientes/citas"
-                >Ver Todo [I]</NuxtLink
-              >
+              <NuxtLink class="btn btn-link text-dark" href="/pacientes/citas">Ver Todo
+                <AtomsIconsArrowRightIcon />
+              </NuxtLink>
             </p>
             <div v-if="pendingAppointments"></div>
-            <div
-              v-else
-              class="card shadow-sm border-0"
-              style="min-height: 15rem"
-            >
+            <div v-else class="card shadow-sm border-0" style="min-height: 15rem">
               <table class="table table-hover" v-if="appointments !== null">
                 <thead>
                   <tr>
@@ -111,10 +103,7 @@ if (historial) {
                     <td class="fw-light">{{ appointment.service_name }}</td>
                     <td class="fw-light">{{ appointment.hospital_address }}</td>
                     <td class="fw-light">
-                      <span
-                        class="badge bg-success-subtle text-dark rounded-5 w-100"
-                        >{{ appointment.state }}</span
-                      >
+                      <span class="badge bg-success-subtle text-dark rounded-5 w-100">{{ appointment.state }}</span>
                     </td>
                     <td>
                       <AtomsIconsTrashIcon />
@@ -141,39 +130,24 @@ if (historial) {
           <section class="mb-5 pb-5">
             <div class="row">
               <div class="col">
-                <p
-                  class="mx-2 d-flex align-items-center justify-content-between"
-                >
-                  <span class="fw-semibold fs-5"
-                    >Historial de Hospitales y Médicos</span
-                  >
-                  <NuxtLink
-                    class="btn btn-link text-dark"
-                    href="/pacientes/inicio"
-                    >Ver Todo [I]</NuxtLink
-                  >
+                <p class="mx-2 d-flex align-items-center justify-content-between">
+                  <span class="fw-semibold fs-5">Historial de Hospitales y Médicos</span>
+                  <NuxtLink class="btn btn-link text-dark" href="/pacientes/inicio">Ver Todo
+                    <AtomsIconsArrowRightIcon />
+                  </NuxtLink>
                 </p>
                 <div v-if="pendingHistorial"></div>
                 <div v-else class="card shadow-sm border-0 h-100">
                   <div v-if="historial !== null" class="card-body">
-                    <div
-                      v-for="medico in historial"
-                      :key="medico.id"
-                      class="row border-bottom pb-3"
-                    >
+                    <div v-for="medico in historial" :key="medico.id" class="row border-bottom pb-3">
                       <div class="col-3">
-                        <img
-                          src="@/src/assets/img-medico-thumbnail.png"
-                          alt=""
-                          class="img-fluid"
-                        />
+                        <img src="@/src/assets/img-medico-thumbnail.png" alt="" class="img-fluid" />
                       </div>
                       <div class="col">
                         <div class="fs-5">
-                          {{ medico.review_score }} <AtomsIconsStar />
-                          <span class="fw-light text-muted"
-                            >({{ medico.review_count }} Reseñas)</span
-                          >
+                          {{ medico.review_score }}
+                          <AtomsIconsStar />
+                          <span class="fw-light text-muted">({{ medico.review_count }} Reseñas)</span>
                         </div>
                         <p class="fs-5 fw-semibold mt-2 mb-3">
                           {{ medico.name }}
@@ -207,15 +181,11 @@ if (historial) {
                 </div>
               </div>
               <div class="col">
-                <p
-                  class="mx-2 d-flex align-items-center justify-content-between"
-                >
+                <p class="mx-2 d-flex align-items-center justify-content-between">
                   <span class="fw-semibold fs-5">Mis Váuchers</span>
-                  <NuxtLink
-                    class="btn btn-link text-dark"
-                    href="/pacientes/vauchers"
-                    >Ver Todo [I]</NuxtLink
-                  >
+                  <NuxtLink class="btn btn-link text-dark" href="/pacientes/vauchers">Ver Todo
+                    <AtomsIconsArrowRightIcon />
+                  </NuxtLink>
                 </p>
                 <div v-if="pendingVouchers"></div>
                 <div v-else class="card shadow-sm border-0 h-100">
@@ -225,10 +195,7 @@ if (historial) {
                         <td class="fw-semibold fs-5">#{{ voucher.code }}</td>
                         <td class="fs-5">{{ voucher.service_name }}</td>
                         <td>
-                          <span
-                            class="badge bg-success-subtle text-dark rounded-5 w-100 fs-5"
-                            >{{ voucher.status }}</span
-                          >
+                          <span class="badge bg-success-subtle text-dark rounded-5 w-100 fs-5">{{ voucher.status }}</span>
                         </td>
                       </tr>
                     </tbody>
