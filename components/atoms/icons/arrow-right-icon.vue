@@ -1,3 +1,3 @@
 <template>
-  <span>[AR]</span>
+  <Icon name="material-symbols:arrow-right-alt-rounded" />
 </template>

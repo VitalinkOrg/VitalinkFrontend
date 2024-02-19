@@ -1,3 +1,3 @@
 <template>
-  [I3D]
+  <Icon name="humbleicons:dots-horizontal" />
 </template>

@@ -1,3 +1,3 @@
 <template>
-  <span>[CI]</span>
+  <Icon name="ph:chat-circle-dots-light" />
 </template>

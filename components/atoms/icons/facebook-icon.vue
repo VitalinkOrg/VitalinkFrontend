@@ -1,3 +1,3 @@
 <template>
-  [FI]
+  <Icon name="logos:facebook" />
 </template>

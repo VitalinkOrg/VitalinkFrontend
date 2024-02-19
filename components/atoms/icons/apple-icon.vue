@@ -1,3 +1,3 @@
 <template>
-  [AI]
+  <Icon name="uiw:apple" />
 </template>

@@ -83,7 +83,7 @@ export default {
                 <input type="text" class="form-control border-start-0 rounded-end-3" placeholder="Buscar"
                   aria-label="Buscar" aria-describedby="basic-addon1">
               </div>
-              <button class="btn btn-link">
+              <button class="btn btn-link mx-2">
                 <AtomsIconsNotificationsIcon />
               </button>
               <div class="dropdown">

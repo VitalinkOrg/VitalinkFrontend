@@ -1,3 +1,3 @@
 <template>
-  [IX]
+  <Icon name="humbleicons:times" />
 </template>
