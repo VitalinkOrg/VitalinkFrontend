@@ -23,7 +23,7 @@ export default {
     <td><span class="badge bg-success-subtle rounded-5 text-dark">{{ vaucher.estado }} </span></td>
     <td>
       <button @click="open = !open" class="btn btn-sm ">
-        <AtomsIconsDownloadIcon />
+        <AtomsIconsChevronDown />
       </button>
     </td>
   </tr>
