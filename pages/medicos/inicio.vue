@@ -1,14 +1,49 @@
+<script setup>
+import { useStore } from "~/store";
+import { useRefreshToken } from "#imports";
+definePageMeta({
+  middleware: "auth-doctors",
+});
+const store = useStore();
+const config = useRuntimeConfig();
+const token = useCookie("token");
+// const { pacientes, citas, vauchers, historial } = usePaciente();
+const { data: hospital, pending: pendingHospital } = await useFetch(
+  config.public.API_BASE_URL + "/hospitals/get_hospital_info",
+  {
+    headers: { Authorization: token.value },
+    transform: (_hospital) => _hospital.data,
+  }
+);
+if (hospital) {
+  store.user = hospital;
+  useRefreshToken();
+}
+
+const { data: procedures, pending: pendingProcedures } = await useFetch(
+  config.public.API_BASE_URL + "/hospital_dashboard/count_procedures",
+  {
+    headers: { Authorization: token.value },
+    transform: (_procedures) => _procedures.data,
+  }
+);
+if (procedures) {
+  store.user.procedures = procedures;
+}
+
+</script>
 <template>
-  <NuxtLayout name="medicos-dashboard">
+  <NuxtLayout name="medicos-dashboard" :hospital="hospital">
     <div class="row row-cols-4 mb-3">
       <div class="col">
         <div class="card rounded-3 border-0 shadow-sm">
           <div class="card-body d-flex align-items-center px-1">
-
             <AtomsIconsNoActivityIcon />
             <p class="d-flex flex-column ms-3 mb-0">
               Aún no tienes actividad
-              <button class="btn btn-primary btn-sm mt-2 rounded-3">Empezar</button>
+              <button class="btn btn-primary btn-sm mt-2 rounded-3">
+                Empezar
+              </button>
             </p>
           </div>
         </div>
@@ -16,11 +51,12 @@
       <div class="col">
         <div class="card rounded-3 border-0 shadow-sm">
           <div class="card-body d-flex align-items-center px-1">
-
             <AtomsIconsNoActivityIcon />
             <p class="d-flex flex-column ms-3 mb-0">
               Aún no tienes actividad
-              <button class="btn btn-primary btn-sm mt-2 rounded-3">Empezar</button>
+              <button class="btn btn-primary btn-sm mt-2 rounded-3">
+                Empezar
+              </button>
             </p>
           </div>
         </div>
@@ -28,11 +64,12 @@
       <div class="col">
         <div class="card rounded-3 border-0 shadow-sm">
           <div class="card-body d-flex align-items-center px-1">
-
             <AtomsIconsNoActivityIcon />
             <p class="d-flex flex-column ms-3 mb-0">
               Aún no tienes actividad
-              <button class="btn btn-primary btn-sm mt-2 rounded-3">Empezar</button>
+              <button class="btn btn-primary btn-sm mt-2 rounded-3">
+                Empezar
+              </button>
             </p>
           </div>
         </div>
@@ -40,11 +77,12 @@
       <div class="col">
         <div class="card rounded-3 border-0 shadow-sm">
           <div class="card-body d-flex align-items-center px-1">
-
             <AtomsIconsNoActivityIcon />
             <p class="d-flex flex-column ms-3 mb-0">
               Aún no tienes actividad
-              <button class="btn btn-primary btn-sm mt-2 rounded-3">Empezar</button>
+              <button class="btn btn-primary btn-sm mt-2 rounded-3">
+                Empezar
+              </button>
             </p>
           </div>
         </div>
@@ -55,7 +93,8 @@
       <div class="col-sm-8">
         <p class="mx-2 d-flex align-items-center justify-content-between">
           <span class="fw-medium fs-5">Próximas Citas</span>
-          <NuxtLink class="btn btn-link text-dark" href="/medicos/inicio">Ver Todo
+          <NuxtLink class="btn btn-link text-dark" href="/medicos/inicio"
+            >Ver Todo
             <AtomsIconsArrowRightIcon />
           </NuxtLink>
         </p>
@@ -63,9 +102,15 @@
           <div class="card-body d-flex align-items-center p-5">
             <AtomsIconsChartVacio />
             <p class="d-flex flex-column align-items-start ms-3">
-              <span class="fw-medium text-muted fs-5">Aún no tienes actividad en tu tablero</span>
-              <span class="fw-light text-muted">Muy pronto podrás administrar y verificar tu actividad.</span>
-              <button class="btn btn-primary btn-sm mt-2 rounded-3">Empezar</button>
+              <span class="fw-medium text-muted fs-5"
+                >Aún no tienes actividad en tu tablero</span
+              >
+              <span class="fw-light text-muted"
+                >Muy pronto podrás administrar y verificar tu actividad.</span
+              >
+              <button class="btn btn-primary btn-sm mt-2 rounded-3">
+                Empezar
+              </button>
             </p>
           </div>
         </div>
@@ -73,19 +118,26 @@
       <div class="col">
         <p class="mx-2 d-flex align-items-center justify-content-between">
           <span class="fw-medium fs-5">Pacientes</span>
-          <NuxtLink class="btn btn-link text-dark" href="/medicos/inicio">Ver Todo
+          <NuxtLink class="btn btn-link text-dark" href="/medicos/inicio"
+            >Ver Todo
             <AtomsIconsArrowRightIcon />
           </NuxtLink>
         </p>
-        <div class="card border-0 shadow rounded-3 ">
+        <div class="card border-0 shadow rounded-3">
           <div class="card-body d-flex flex-column text-center p-5">
             <span class="w-75 mx-auto">
               <AtomsIconsChartVacio />
             </span>
             <p class="d-flex flex-column align-items-start ms-3">
-              <span class="fw-medium text-muted fs-6">Aún no tienes actividad en tu tablero</span>
-              <span class="fw-light text-muted fs-6">Muy pronto podrás administrar y verificar tu actividad.</span>
-              <button class="btn btn-primary btn-sm mt-2 rounded-3 mx-auto">Empezar</button>
+              <span class="fw-medium text-muted fs-6"
+                >Aún no tienes actividad en tu tablero</span
+              >
+              <span class="fw-light text-muted fs-6"
+                >Muy pronto podrás administrar y verificar tu actividad.</span
+              >
+              <button class="btn btn-primary btn-sm mt-2 rounded-3 mx-auto">
+                Empezar
+              </button>
             </p>
           </div>
         </div>
@@ -95,7 +147,8 @@
     <div class="row">
       <p class="mx-2 d-flex align-items-center justify-content-between">
         <span class="fw-medium fs-5">Historial</span>
-        <NuxtLink class="btn btn-link text-dark" href="/medicos/inicio">Ver Todo
+        <NuxtLink class="btn btn-link text-dark" href="/medicos/inicio"
+          >Ver Todo
           <AtomsIconsArrowRightIcon />
         </NuxtLink>
       </p>
@@ -105,9 +158,15 @@
             <AtomsIconsChartVacio />
           </span>
           <p class="d-flex flex-column align-items-start ms-3">
-            <span class="fw-medium text-muted fs-5">Aún no tienes actividad en tu tablero</span>
-            <span class="fw-light text-muted">Muy pronto podrás administrar y verificar tu actividad.</span>
-            <button class="btn btn-primary btn-sm mt-2 rounded-3">Empezar</button>
+            <span class="fw-medium text-muted fs-5"
+              >Aún no tienes actividad en tu tablero</span
+            >
+            <span class="fw-light text-muted"
+              >Muy pronto podrás administrar y verificar tu actividad.</span
+            >
+            <button class="btn btn-primary btn-sm mt-2 rounded-3">
+              Empezar
+            </button>
           </p>
         </div>
       </div>

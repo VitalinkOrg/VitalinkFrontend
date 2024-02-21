@@ -77,11 +77,16 @@ const login = async () => {
     }
   );
   if (data.value) {
-    router.push("/pacientes/inicio");
     store.authenticated = true;
+    store.role = data?.value?.data?.user_info.role;
     store.user = data?.value?.data?.user_info;
     token.value = data?.value?.data?.access_token;
     refreshToken.value = data?.value?.data?.refresh_token;
+    if(data?.value?.data?.user_info.role === "R_PAT") {
+      router.push("/pacientes/inicio");
+    } else {
+      router.push("/medicos/inicio");
+    }
   }
   if (error.value) {
     console.log(error.value, "data");

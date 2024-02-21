@@ -96,7 +96,7 @@ if (historial) {
                     <th scope="row" class="fw-light">
                       {{ appointment.professional_name }}
                     </th>
-                    <td class="fw-light">{{ appointment.date }}</td>
+                    <td class="fw-light">{{ new Date(appointment.date).toLocaleDateString() }}</td>
                     <td class="fw-light">
                       {{ appointment.time_from + " - " + appointment.time_to }}
                     </td>
