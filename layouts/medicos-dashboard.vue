@@ -1,10 +1,3 @@
-<script>
-export default {
-  data: () => ({
-    sort: false
-  })
-}
-</script>
 <template>
   <div class="dashboard bg-light">
     <div class="dashboard-sidebar bg-white shadow p-4">
@@ -13,100 +6,158 @@ export default {
           <AtomsVitalinkLogo />
         </span>
         <li class="nav-item w-100 mb-3">
-          <NuxtLink href="/medicos/inicio" class="nav-link rounded-3 py-3 text-dark d-flex align-items-center"
-            active-class="bg-primary" style="--bs-bg-opacity: 0.05">
+          <NuxtLink
+            href="/medicos/inicio"
+            class="nav-link rounded-3 py-3 text-dark d-flex align-items-center"
+            active-class="bg-primary"
+            style="--bs-bg-opacity: 0.05"
+          >
             <span class="text-primary me-3">
               <AtomsIconsHomeIcon />
-            </span> Inicio
+            </span>
+            Inicio
           </NuxtLink>
         </li>
         <li class="nav-item w-100 mb-3">
-          <NuxtLink href="/medicos/citas" class="nav-link rounded-3 py-3 text-dark d-flex align-items-center"
-            active-class="bg-primary" style="--bs-bg-opacity: 0.05">
+          <NuxtLink
+            href="/medicos/citas"
+            class="nav-link rounded-3 py-3 text-dark d-flex align-items-center"
+            active-class="bg-primary"
+            style="--bs-bg-opacity: 0.05"
+          >
             <span class="text-primary me-3">
               <AtomsIconsCitasIcon />
-            </span> Citas
+            </span>
+            Citas
           </NuxtLink>
         </li>
         <li class="nav-item w-100 mb-3">
-          <NuxtLink href="/medicos/servicios" class="nav-link rounded-3 py-3 text-dark d-flex align-items-center"
-            active-class="bg-primary" style="--bs-bg-opacity: 0.05">
+          <NuxtLink
+            href="/medicos/servicios"
+            class="nav-link rounded-3 py-3 text-dark d-flex align-items-center"
+            active-class="bg-primary"
+            style="--bs-bg-opacity: 0.05"
+          >
             <span class="text-primary me-3">
               <AtomsIconsServiciosIcon />
-            </span> Servicios
+            </span>
+            Servicios
           </NuxtLink>
         </li>
         <li class="nav-item w-100 mb-3">
-          <NuxtLink href="/medicos/pacientes" class="nav-link rounded-3 py-3 text-dark d-flex align-items-center"
-            active-class="bg-primary" style="--bs-bg-opacity: 0.05">
+          <NuxtLink
+            href="/medicos/pacientes"
+            class="nav-link rounded-3 py-3 text-dark d-flex align-items-center"
+            active-class="bg-primary"
+            style="--bs-bg-opacity: 0.05"
+          >
             <span class="text-primary me-3">
               <AtomsIconsPacientesIcon />
-            </span> Pacientes
+            </span>
+            Pacientes
           </NuxtLink>
         </li>
         <li class="nav-item w-100 mb-3">
-          <NuxtLink href="/medicos/hospitales" class="nav-link rounded-3 py-3 text-dark d-flex align-items-center"
-            active-class="bg-primary" style="--bs-bg-opacity: 0.05">
+          <NuxtLink
+            href="/medicos/hospitales"
+            class="nav-link rounded-3 py-3 text-dark d-flex align-items-center"
+            active-class="bg-primary"
+            style="--bs-bg-opacity: 0.05"
+          >
             <span class="text-primary me-3">
               <AtomsIconsHospitalesIcon />
-            </span> Hospitales
+            </span>
+            Hospitales
           </NuxtLink>
         </li>
       </nav>
       <nav class="nav">
-        <hr>
+        <hr />
         <li class="nav-item">
-          <NuxtLink class="nav-link text-dark d-flex align-items-center" href="/medicos/inicio">
+          <NuxtLink
+            class="nav-link text-dark d-flex align-items-center"
+            href="/medicos/inicio"
+          >
             <span class="text-success me-3">
               <AtomsIconsInfoIcon />
-            </span> Ayuda y Soporte
+            </span>
+            Ayuda y Soporte
           </NuxtLink>
         </li>
         <li class="nav-item">
-          <button class="nav-link text-dark d-flex align-items-center">
+          <button
+            class="nav-link text-dark d-flex align-items-center"
+            @click="logout"
+          >
             <span class="text-success me-3">
               <AtomsIconsLogoutDashboardIcon />
-            </span> Cerrar Sesión
+            </span>
+            Cerrar Sesión
           </button>
         </li>
       </nav>
     </div>
-    <main class="w-100 px-3 pb-5" style="height: 100vh; overflow-y: auto;">
+    <main class="w-100 px-3 pb-5" style="height: 100vh; overflow-y: auto">
       <div class="container-fluid">
         <div class="row">
           <div class="col">
-            <div class=" d-flex justify-content-end align-items-center py-3">
+            <div class="d-flex justify-content-end align-items-center py-3">
               <div class="input-group shadow-sm w-auto">
-                <span class="input-group-text bg-transparent border-end-0 rounded-start-3" id="basic-addon1">
+                <span
+                  class="input-group-text bg-transparent border-end-0 rounded-start-3"
+                  id="basic-addon1"
+                >
                   <AtomsIconsSearchIcon />
                 </span>
-                <input type="text" class="form-control border-start-0 rounded-end-3" placeholder="Buscar"
-                  aria-label="Buscar" aria-describedby="basic-addon1">
+                <input
+                  type="text"
+                  class="form-control border-start-0 rounded-end-3"
+                  placeholder="Buscar"
+                  aria-label="Buscar"
+                  aria-describedby="basic-addon1"
+                />
               </div>
               <button class="btn btn-link mx-2">
                 <AtomsIconsNotificationsIcon />
               </button>
               <div class="dropdown">
-                <button class="btn dropdown-toggle" @click="sort = !sort" type="button" data-bs-toggle="dropdown"
-                  aria-expanded="false">
-                  Foto
+                <button
+                  class="btn dropdown-toggle"
+                  @click="sort = !sort"
+                  type="button"
+                  data-bs-toggle="dropdown"
+                  aria-expanded="false"
+                >
+                  {{ props.hospital.name }}
                 </button>
-                <ul class="dropdown-menu dropdown-menu-end" :class="sort ? 'show' : ''">
+                <ul
+                  class="dropdown-menu dropdown-menu-end"
+                  :class="sort ? 'show' : ''"
+                >
                   <li>
-                    <NuxtLink class="dropdown-item" href="/medicos/perfil">Perfil
+                    <NuxtLink class="dropdown-item" href="/medicos/perfil"
+                      >Perfil
                     </NuxtLink>
                   </li>
                   <li>
-                    <NuxtLink class="dropdown-item" href="/medicos/perfil">Configuración</NuxtLink>
+                    <NuxtLink class="dropdown-item" href="/medicos/perfil"
+                      >Configuración</NuxtLink
+                    >
                   </li>
                   <li>
-                    <NuxtLink class="dropdown-item" href="/medicos/perfil">Reseñas</NuxtLink>
+                    <NuxtLink class="dropdown-item" href="/medicos/perfil"
+                      >Reseñas</NuxtLink
+                    >
                   </li>
                   <li>
-                    <NuxtLink class="dropdown-item" href="/medicos/perfil">Ayuda y Soporte</NuxtLink>
+                    <NuxtLink class="dropdown-item" href="/medicos/perfil"
+                      >Ayuda y Soporte</NuxtLink
+                    >
                   </li>
                   <li>
-                    <NuxtLink class="dropdown-item" href="/medicos/inicio">Cerrar Sesión</NuxtLink>
+                    <NuxtLink class="dropdown-item" @click="logout"
+                      >Cerrar Sesión</NuxtLink
+                    >
                   </li>
                 </ul>
               </div>
@@ -118,12 +169,29 @@ export default {
     </main>
   </div>
 </template>
+
+<script lang="ts" setup>
+import { useStore } from "~/store";
+import { ref } from "vue";
+const props = defineProps(["hospital"]);
+const sort = ref(false);
+const store = useStore();
+const token = useCookie("token");
+const router = useRouter();
+console.log(props.hospital, 'info');
+
+const logout = () => {
+  store.authenticated = false;
+  token.value = null;
+  router.push("/pacientes/login");
+};
+</script>
+
 <style src="@/assets/styles/vitalink.scss" />
 <style scoped lang="scss">
 .dashboard {
   height: 100vh;
   display: flex;
-
 
   &-sidebar {
     height: 100%;
