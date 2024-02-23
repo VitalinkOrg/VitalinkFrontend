@@ -1,3 +1,3 @@
 <template>
-  <span>+</span>
+  <Icon name="ph:plus-bold" />
 </template>

@@ -1,3 +1,3 @@
 <template>
-  [GI]
+  <Icon name="logos:google-icon" />
 </template>

@@ -19,7 +19,7 @@ const props = defineProps(["appointments"]);
       <tbody>
         <tr v-for="appointment in appointments" :key="appointment.id">
           <td>{{ appointment.professional_name }}</td>
-          <td>{{ appointment.date }}</td>
+          <td>{{ new Date(appointment.date).toLocaleDateString() }}</td>
           <td>{{ appointment.time_from + " - " + appointment.time_to }}</td>
           <td>{{ appointment.service_name }}</td>
           <td>
@@ -27,7 +27,7 @@ const props = defineProps(["appointments"]);
           </td>
           <td>
             <span class="badge bg-success-subtle rounded-5 text-dark"
-              >{{ appointment.state }} [I]</span
+              >{{ appointment.status }} [I]</span
             >
           </td>
         </tr>

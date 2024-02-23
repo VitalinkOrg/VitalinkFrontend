@@ -100,12 +100,8 @@
 </template>
 
 <script lang="ts" setup>
-import { useStore } from "~/store";
-
 const config = useRuntimeConfig();
 const router = useRouter();
-const store = useStore();
-const token = useCookie("token");
 const name = ref("");
 const email = ref("");
 const password = ref("");
