@@ -81,6 +81,8 @@ const router = useRouter();
 
 const logout = () => {
   store.authenticated = false;
+  store.user = [];
+  store.role = '';
   token.value = null;
   router.push("/pacientes/login");
 };

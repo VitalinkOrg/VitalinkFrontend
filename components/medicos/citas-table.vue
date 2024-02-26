@@ -1,11 +1,9 @@
-
 <script setup>
-
-const { citas, getCitas } = useMedico()
+const props = defineProps(["appointments"]);
 </script>
 <template>
   <div class="card">
-    <table class="table fw-light">
+    <table v-if="appointments !== null" class="table fw-light">
       <thead>
         <tr>
           <th scope="col"></th>
@@ -21,21 +19,21 @@ const { citas, getCitas } = useMedico()
       </thead>
 
       <tbody>
-        <tr v-for="cita in citas">
+        <tr v-for="appointment in appointments" :key="appointment.id">
           <td>
             <div class="form-check">
-              <input class="form-check-input border-dark" type="checkbox" value="" :id="cita.id">
+              <input class="form-check-input border-dark" type="checkbox" value="" :id="appointment.id">
               <!-- <label class="form-check-label" for="flexCheckDefault"></label> -->
             </div>
           </td>
-          <td>{{ cita.paciente }}</td>
-          <td>{{ cita.fecha }}</td>
-          <td>{{ cita.hora }}</td>
-          <td>{{ cita.procedimiento }}</td>
-          <td><small>{{ cita.lugar.texto }}</small></td>
-          <td><span class="badge text-muted bg-white border rounded-5 w-100">{{ cita.vaucher }}</span></td>
+          <td>{{ appointment.patient_name }}</td>
+          <td>{{ new Date(appointment.date).toLocaleDateString() }}</td>
+          <td>{{ appointment.time_from + " - " + appointment.time_to }}</td>
+          <td>{{ appointment.service_name }}</td>
+          <td><small>{{ appointment.patient_address }}</small></td>
+          <td><span class="badge text-muted bg-white border rounded-5 w-100">{{ appointment.code }}</span></td>
           <td>
-            <span class="badge bg-success-subtle rounded-5 text-dark w-100">{{ cita.estado }}
+            <span class="badge bg-success-subtle rounded-5 text-dark w-100">{{ appointment.status }}
               <AtomsIconsChevronDown />
             </span>
           </td>

@@ -1,9 +1,31 @@
-<script>
-export default {
-  data: () => ({
-    sort: false
-  })
+<script setup>
+import { useStore } from "~/store";
+import { ref } from "vue";
+const sort = ref(false);
+const router = useRouter();
+const store = useStore();
+const config = useRuntimeConfig();
+const token = useCookie("token");
+
+const { data: insurance } = await useFetch(
+  config.public.API_BASE_URL + "/insurances/get_insurance_info",
+  {
+    headers: { Authorization: token.value },
+    transform: (_insurance) => _insurance.data,
+  }
+);
+if (insurance) {
+  store.user = insurance;
+  useRefreshToken();
 }
+
+const logout = () => {
+  store.authenticated = false;
+  store.user = [];
+  store.role = '';
+  token.value = null;
+  router.push("/pacientes/login");
+};
 </script>
 <template>
   <div class="dashboard bg-light">
@@ -47,7 +69,7 @@ export default {
           </NuxtLink>
         </li>
         <li class="nav-item">
-          <NuxtLink class="nav-link text-dark d-flex align-items-center" href="/aseguradoras/login">
+          <NuxtLink class="nav-link text-dark d-flex align-items-center" @click="logout">
             <span class="text-success me-3">
               <AtomsIconsLogoutDashboardIcon />
             </span> Cerrar Sesión
@@ -73,7 +95,7 @@ export default {
               <div class="dropdown">
                 <button class="btn dropdown-toggle" @click="sort = !sort" type="button" data-bs-toggle="dropdown"
                   aria-expanded="false">
-                  Foto
+                  {{ insurance.name }}
                 </button>
                 <ul class="dropdown-menu dropdown-menu-end" :class="sort ? 'show' : ''">
                   <li>
@@ -85,7 +107,7 @@ export default {
                     <NuxtLink class="dropdown-item" href="/aseguradoras/inicio">Ayuda y Soporte</NuxtLink>
                   </li>
                   <li>
-                    <NuxtLink class="dropdown-item" href="/aseguradoras/login">Cerrar Sesión</NuxtLink>
+                    <NuxtLink class="dropdown-item" @click="logout">Cerrar Sesión</NuxtLink>
                   </li>
                 </ul>
               </div>

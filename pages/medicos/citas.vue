@@ -1,11 +1,29 @@
-<script>
-export default {
-  data: () => ({
-    tab: 1,
-    sort: false
-  })
+<script setup>
+import { useStore } from "~/store";
+import { ref } from "vue";
+import { useRefreshToken } from "#imports";
+definePageMeta({
+  middleware: "auth-doctors",
+});
+const store = useStore();
+const config = useRuntimeConfig();
+const token = useCookie("token");
+const tab = ref(1);
+const sort = ref(false);
+
+const { data: appointments, loading } = await useFetch(
+  config.public.API_BASE_URL + "/hospital_dashboard/history_appointments",
+  {
+    headers: { Authorization: token.value },
+    transform: (_appointments) => _appointments.data,
+  }
+);
+if (appointments) {
+  store.user.appointments = appointments;
+  useRefreshToken();
 }
 </script>
+
 <template>
   <NuxtLayout name="medicos-dashboard">
     <nav style="--bs-breadcrumb-divider: '/';" aria-label="breadcrumb">
@@ -66,7 +84,7 @@ export default {
     </div>
 
     <div class="card">
-      <MedicosCitasTable v-if="tab === 1" />
+      <MedicosCitasTable :appointments="appointments" v-if="tab === 1" />
     </div>
 
   </NuxtLayout>
