@@ -2,7 +2,7 @@
 import { useStore } from "~/store";
 import { useRefreshToken } from "#imports";
 definePageMeta({
-  middleware: "auth-pacientes",
+  middleware: ["auth-pacientes"],
 });
 const store = useStore();
 const config = useRuntimeConfig();

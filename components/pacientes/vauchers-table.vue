@@ -8,7 +8,7 @@ const props = defineProps(["vouchers"]);
         <tr>
           <th scope="col"></th>
           <th scope="col" class="text-muted">Código</th>
-          <th scope="col" class="text-muted">Fecha y hora de uso</th>
+          <!-- <th scope="col" class="text-muted">Fecha y hora de uso</th> -->
           <th scope="col" class="text-muted">Procedimiento</th>
           <th scope="col" class="text-muted">Lugar</th>
           <th scope="col" class="text-muted">Aseguradora</th>
@@ -22,17 +22,17 @@ const props = defineProps(["vouchers"]);
         <tr v-for="voucher in vouchers" :key="voucher.id">
           <td>
             <div class="form-check">
-              <input class="form-check-input border-dark" type="checkbox" value="" :id="vaucher.code">
+              <input class="form-check-input border-dark" type="checkbox" value="" :id="voucher.code">
               <!-- <label class="form-check-label" for="flexCheckDefault"></label> -->
             </div>
           </td>
-          <td>{{ vaucher.code }}</td>
+          <td>{{ voucher.code }}</td>
           <!-- <td>{{ vaucher.fecha }} a las {{ vaucher.hora }}</td> -->
-          <td>{{ vaucher.service_name }}</td>
-          <td>{{ vaucher.description }}</td>
-          <td>{{ vaucher.cpt_name }}</td>
-          <td><span class="badge bg-success-subtle rounded-5 text-dark">{{ vaucher.status }} </span></td>
-          <td><small>{{ vaucher.discount_percent }} USD</small></td>
+          <td>{{ voucher.service_name }}</td>
+          <td>{{ voucher.description }}</td>
+          <td>{{ voucher.insurance_name }}</td>
+          <td><span class="badge bg-success-subtle rounded-5 text-dark">{{ voucher.status }} </span></td>
+          <td><small>{{ voucher.discount_percent }} USD</small></td>
           <td>
             <AtomsIconsDownloadIcon />
           </td>
