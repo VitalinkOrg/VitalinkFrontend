@@ -1,6 +1,5 @@
 <script setup>
 import { useStore } from "~/store";
-import { useRefreshToken } from "#imports";
 definePageMeta({
   middleware: "auth-doctors",
 });
@@ -8,17 +7,6 @@ const store = useStore();
 const config = useRuntimeConfig();
 const token = useCookie("token");
 // const { pacientes, citas, vauchers, historial } = usePaciente();
-const { data: hospital, pending: pendingHospital } = await useFetch(
-  config.public.API_BASE_URL + "/hospitals/get_hospital_info",
-  {
-    headers: { Authorization: token.value },
-    transform: (_hospital) => _hospital.data,
-  }
-);
-if (hospital) {
-  store.user = hospital;
-  useRefreshToken();
-}
 
 const { data: procedures, pending: pendingProcedures } = await useFetch(
   config.public.API_BASE_URL + "/hospital_dashboard/count_procedures",
@@ -33,7 +21,7 @@ if (procedures) {
 
 </script>
 <template>
-  <NuxtLayout name="medicos-dashboard" :hospital="hospital">
+  <NuxtLayout name="medicos-dashboard">
     <div class="row row-cols-4 mb-3">
       <div class="col">
         <div class="card rounded-3 border-0 shadow-sm">

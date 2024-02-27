@@ -260,7 +260,7 @@ const tab = ref(1);
 
 const register = async () => {
   const { data, error }: any = await useFetch(
-    config.public.API_BASE_URL + "/users/register_doctor",
+    config.public.API_BASE_URL + "/users/register_hospital",
     {
       method: "POST",
       body: {
