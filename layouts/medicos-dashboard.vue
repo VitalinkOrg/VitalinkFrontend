@@ -1,3 +1,33 @@
+<script setup>
+import { useStore } from "~/store";
+import { ref } from "vue";
+const sort = ref(false);
+const router = useRouter();
+const store = useStore();
+const config = useRuntimeConfig();
+const token = useCookie("token");
+
+const { data: hospital } = await useFetch(
+  config.public.API_BASE_URL + "/hospitals/get_hospital_info",
+  {
+    headers: { Authorization: token.value },
+    transform: (_hospital) => _hospital.data,
+  }
+);
+if (hospital) {
+  store.user = hospital;
+  useRefreshToken();
+}
+
+const logout = () => {
+  store.authenticated = false;
+  store.user = [];
+  store.role = '';
+  token.value = null;
+  router.push("/pacientes/login");
+};
+</script>
+
 <template>
   <div class="dashboard bg-light">
     <div class="dashboard-sidebar bg-white shadow p-4">
@@ -128,7 +158,7 @@
                   data-bs-toggle="dropdown"
                   aria-expanded="false"
                 >
-                  {{ props.hospital.name }}
+                  {{ hospital.name }}
                 </button>
                 <ul
                   class="dropdown-menu dropdown-menu-end"
@@ -169,23 +199,6 @@
     </main>
   </div>
 </template>
-
-<script lang="ts" setup>
-import { useStore } from "~/store";
-import { ref } from "vue";
-const props = defineProps(["hospital"]);
-const sort = ref(false);
-const store = useStore();
-const token = useCookie("token");
-const router = useRouter();
-console.log(props.hospital, 'info');
-
-const logout = () => {
-  store.authenticated = false;
-  token.value = null;
-  router.push("/pacientes/login");
-};
-</script>
 
 <style src="@/assets/styles/vitalink.scss" />
 <style scoped lang="scss">

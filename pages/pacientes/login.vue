@@ -33,6 +33,9 @@
         />
         <!-- <div id="passwordHelp" class="form-text">Deben ser 8 caracteres como mínimo</div> -->
       </div>
+      <div v-if="errorText">
+        <p>{{ errorText }}</p>
+      </div>
       <button type="submit" class="btn btn-primary w-100 mt-4">Ingresar</button>
     </form>
     <hr />
@@ -62,8 +65,10 @@ const router = useRouter();
 const store = useStore();
 const token = useCookie("token");
 const refreshToken = useCookie("refresh_token");
+const role = useCookie("role");
 const email = ref("patient@gmail.com");
 const password = ref("patient");
+const errorText = ref(null);
 
 const login = async () => {
   const { data, error }: any = await useFetch(
@@ -82,14 +87,18 @@ const login = async () => {
     store.user = data?.value?.data?.user_info;
     token.value = data?.value?.data?.access_token;
     refreshToken.value = data?.value?.data?.refresh_token;
+    role.value = data?.value?.data?.user_info.role;
     if(data?.value?.data?.user_info.role === "R_PAT") {
       router.push("/pacientes/inicio");
+    } else if (data?.value?.data?.user_info.role === "R_INS") {
+      router.push("/aseguradoras/inicio");
     } else {
-      router.push("/medicos/inicio");
+      router.push("/medicos/inicio")
     }
   }
-  if (error.value) {
-    console.log(error.value, "data");
+  if (error) {
+    console.log(error, "data error");
+    errorText.value = error.value.data.info;
   }
 };
 </script>
