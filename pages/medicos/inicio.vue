@@ -1,23 +1,25 @@
 <script setup>
 import { useStore } from "~/store";
 definePageMeta({
-  middleware: "auth-doctors",
+  middleware: ["auth-doctors-hospitals"],
 });
 const store = useStore();
 const config = useRuntimeConfig();
 const token = useCookie("token");
-// const { pacientes, citas, vauchers, historial } = usePaciente();
+const role = useCookie("role");
 
-const { data: procedures, pending: pendingProcedures } = await useFetch(
-  config.public.API_BASE_URL + "/hospital_dashboard/count_procedures",
-  {
-    headers: { Authorization: token.value },
-    transform: (_procedures) => _procedures.data,
-  }
-);
-if (procedures) {
-  store.user.procedures = procedures;
-}
+// if(role.value == 'R_HOS') {
+//   const { data: procedures, pending: pendingProcedures } = await useFetch(
+//     config.public.API_BASE_URL + "/hospital_dashboard/count_procedures",
+//     {
+//       headers: { Authorization: token.value },
+//       transform: (_procedures) => _procedures.data,
+//     }
+//   );
+//   if (procedures) {
+//     store.user.procedures = procedures;
+//   }
+// }
 
 </script>
 <template>
