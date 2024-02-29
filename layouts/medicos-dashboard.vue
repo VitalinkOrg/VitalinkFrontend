@@ -6,30 +6,39 @@ const router = useRouter();
 const store = useStore();
 const config = useRuntimeConfig();
 const token = useCookie("token");
+const role = useCookie("role");
 
-const { data: hospital } = await useFetch(
-  config.public.API_BASE_URL + "/hospitals/get_hospital_info",
+let url;
+if (role.value == "R_HOS") {
+  url = "/hospitals/get_hospital_info";
+} else {
+  url = "/doctors/get_doctor_info";
+}
+
+const { data: res, pending } = await useFetch(
+  config.public.API_BASE_URL + url,
   {
     headers: { Authorization: token.value },
-    transform: (_hospital) => _hospital.data,
+    transform: (_res) => _res.data,
   }
 );
-if (hospital) {
-  store.user = hospital;
+if (res) {
+  store.user = res;
   useRefreshToken();
 }
 
 const logout = () => {
   store.authenticated = false;
   store.user = [];
-  store.role = '';
+  store.role = "";
   token.value = null;
   router.push("/pacientes/login");
 };
 </script>
 
 <template>
-  <div class="dashboard bg-light">
+  <div v-if="pending"></div>
+  <div v-else class="dashboard bg-light">
     <div class="dashboard-sidebar bg-white shadow p-4">
       <nav class="nav d-flex flex-column align-items-start w-100">
         <span class="mb-5 ps-3">
@@ -158,7 +167,10 @@ const logout = () => {
                   data-bs-toggle="dropdown"
                   aria-expanded="false"
                 >
-                  {{ hospital.name }}
+                  {{ 
+                    res.name ||
+                    res.first_name + ' ' + res.last_name 
+                  }}
                 </button>
                 <ul
                   class="dropdown-menu dropdown-menu-end"
