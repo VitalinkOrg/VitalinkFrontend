@@ -3,16 +3,24 @@ import { useStore } from "~/store";
 import { ref } from "vue";
 import { useRefreshToken } from "#imports";
 definePageMeta({
-  middleware: "auth-doctors",
+  middleware: ["auth-doctors-hospitals"],
 });
 const store = useStore();
 const config = useRuntimeConfig();
 const token = useCookie("token");
+const role = useCookie("role");
 const tab = ref(1);
 const sort = ref(false);
 
+let url;
+if (role.value == "R_HOS") {
+  url = "/hospital_dashboard/history_appointments";
+} else {
+  url = "/doctor_dashboard/history_appointments";
+}
+
 const { data: appointments, loading } = await useFetch(
-  config.public.API_BASE_URL + "/hospital_dashboard/history_appointments",
+  config.public.API_BASE_URL + url,
   {
     headers: { Authorization: token.value },
     transform: (_appointments) => _appointments.data,
