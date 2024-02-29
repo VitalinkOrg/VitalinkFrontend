@@ -84,6 +84,7 @@ const logout = () => {
   store.user = [];
   store.role = '';
   token.value = null;
+  
   router.push("/pacientes/login");
 };
 </script>
