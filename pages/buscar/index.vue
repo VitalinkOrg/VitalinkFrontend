@@ -16,9 +16,6 @@ const { data: clinicas, pending } = await useLazyFetch(
 <template>
   <NuxtLayout name="web">
 
-    <!-- This WONT go in here  -->
-    <WebsiteReservarCitaModal />
-
     <main class="bg-light">
       <section class="bg-primary mb-4" style="--bs-bg-opacity: 0.03">
         <div class="container">
