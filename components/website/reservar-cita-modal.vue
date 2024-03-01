@@ -102,56 +102,15 @@ const { reserva } = useReserva()
         <!-- Step 2 -->
         <div class="modal-body" v-if="reserva[0].step === 2">
           <div class="container">
-            <div class="row">
-              <div class="col-3">
-                <div class="bg-primary rounded-4 p-4 h-100" style="--bs-bg-opacity: 0.07">
-                  <span class="text-success fw-bold pt-4 d-block">1 a 3 pasos</span>
-                  <span class="text-primary fw-bold fs-4 py-4 d-block">Completa tus Datos Personales</span>
-                  <p class=" text-muted fw-medium">Empieza completando por tus datos personales o de empresa
-                    imprescindibles para
-                    la
-                    plataforma</p>
-                </div>
+
+            <div class="bg-primary rounded-4 h-100 p-4" style="--bs-bg-opacity: 0.04">
+              <div class="form-group mb-3">
+                <label for="fecha" class="form-label">Fecha</label>
+                <input type="date" name="fecha" id="fecha" class="form-control">
               </div>
-              <div class="col">
-                <div class="bg-primary rounded-4 h-100 p-4" style="--bs-bg-opacity: 0.04">
-                  <div class="form-group mb-3">
-                    <label for="nombre" class="form-label">Nombre (s)</label>
-                    <input type="text" placeholder="Escribe tu nombre" class="form-control shadow-sm " id="nombre"
-                      name="nombre">
-                  </div>
-                  <div class="form-group mb-3">
-                    <label for="apellidos" class="form-label">Apellidos (s)</label>
-                    <input type="text" placeholder="Escribe tu apellido" class="form-control shadow-sm " id="apellidos"
-                      name="apellidos">
-                  </div>
-                  <div class="form-group mb-3">
-                    <label for="telefono" class="form-label">Número de teléfono</label>
-                    <input type="phone" placeholder="+1(555) 000-0000" class="form-control shadow-sm " id="telefono"
-                      name="telefono">
-                  </div>
-                  <div class="form-group mb-3">
-                    <label for="direccion" class="form-label">Dirección</label>
-                    <input type="text" placeholder="Dirección" class="form-control shadow-sm " id="direccion"
-                      name="direccion">
-                  </div>
-                  <div class="row row-cols-sm-3 mb-5">
-                    <div class="form-group">
-                      <label for="postal" class="form-label">Código Postal</label>
-                      <input type="text" placeholder="0000000" class="form-control shadow-sm " id="postal" name="postal">
-                    </div>
-                    <div class="form-group">
-                      <label for="ciudad" class="form-label">Ciudad*</label>
-                      <input type="text" placeholder="Ciudad" class="form-control shadow-sm " required id="ciudad"
-                        name="ciudad">
-                    </div>
-                    <div class="form-group">
-                      <label for="pais" class="form-label">País*</label>
-                      <input type="text" placeholder="País" class="form-control shadow-sm " required id="pais"
-                        name="pais">
-                    </div>
-                  </div>
-                </div>
+              <div class="form-group mb-3">
+                <label for="hora" class="form-label">Hora</label>
+                <input type="time" id="hora" name="hora" min="09:00" max="18:00" required class="form-control" />
               </div>
             </div>
           </div>
@@ -164,7 +123,7 @@ const { reserva } = useReserva()
             </button>
           </div>
           <div class="col">
-            <button type="button" class="btn btn-primary w-100 btn-lg" @click="reserva[0].step = 3">Siguiente</button>
+            <button type="button" class="btn btn-primary w-100 btn-lg" @click="reserva[0].step = 3">Continuar</button>
           </div>
         </div>
 
