@@ -57,13 +57,32 @@ const { reserva } = useReserva()
         </div>
         <!-- Step 1 -->
         <div class="modal-body" v-if="reserva[0].step === 1">
-          <div class="bg-primary rounded-4 d-flex align-items-center" style="--bs-bg-opacity: 0.05">
-            <div class="col">
-              <img src="@/src/assets/img-bienvenida-medicos.svg" class="img-fluid" alt="Bienvenido!">
-            </div>
-            <div class="col">
-              <span class="display-3 text-primary">Bienvenido!</span>
-              <p class="lead pe-5">Completar tu perfil te ayudará a destacar y conectar con más pacientes.</p>
+          <div class="bg-primary rounded-4 h-100 p-4" style="--bs-bg-opacity: 0.04">
+            <div class="row row-cols-sm-2 mb-3">
+              <div class="form-group">
+                <label for="especialidad" class="form-label">Especialidad</label>
+                <select name="especialidad" id="especialidad" class="form-select">
+                  <option disabled selected>Oftalmología</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label for="procedimiento" class="form-label">Procedimiento</label>
+                <select name="procedimiento" id="procedimiento" class="form-select">
+                  <option disabled selected>Cirugía de Cataratas</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label for="lugar" class="form-label">Lugar</label>
+                <select name="lugar" id="lugar" class="form-select">
+                  <option disabled selected>Hospital Clínica Bíblica</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label for="tipodecita" class="form-label">Tipo de cita</label>
+                <select name="tipodecita" id="tipodecita" class="form-select">
+                  <option disabled selected>Cirugía</option>
+                </select>
+              </div>
             </div>
           </div>
         </div>
