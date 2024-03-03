@@ -17,7 +17,7 @@ function goTo(type, id) {
   }
 }
 const getOffers = async (type, id) => {
-  if(panel.value === true) {
+  if (panel.value === true) {
     return panel.value = false;
   }
   let url;
@@ -44,22 +44,14 @@ const getOffers = async (type, id) => {
   <div class="card shadow border-0 rounded-4 mb-4">
     <div class="card-body">
       <div class="row">
-        <div
-          class="col-sm-3"
-          style="cursor: pointer"
-          @click="goTo(clinica.entity_type, clinica.id)"
-        >
+        <div class="col-sm-3" style="cursor: pointer" @click="goTo(clinica.entity_type, clinica.id)">
           <!-- <img
             v-if="clinica.picture"
             :src="clinica.picture"
             class="img-fluid rounded-4"
             alt="clinica"
           /> -->
-          <img
-            src="@/src/assets/img-clinica-thumbnail.png"
-            class="img-fluid rounded-4"
-            alt="clinica"
-          />
+          <img src="@/src/assets/img-clinica-thumbnail.png" class="img-fluid rounded-4" alt="clinica" />
         </div>
         <div class="col">
           <small>
@@ -69,24 +61,13 @@ const getOffers = async (type, id) => {
               <AtomsIconsStar />
             </span>
             <!-- <span class="text-muted">({{ clinica.rating.reviews || 0 }} Reseñas)</span> -->
-            <span class="text-muted"
-              >({{ clinica.review_count || 0 }} Reseñas)</span
-            >
+            <span class="text-muted">({{ clinica.review_count || 0 }} Reseñas)</span>
           </small>
           <h2 class="h5 fw-semibold my-2">{{ clinica.name }}</h2>
-          <span
-            class="badge bg-primary text-primary me-2 rounded-5 text-capitalize p-2"
-            style="--bs-bg-opacity: 0.07"
-            v-for="specialty in clinica.specialty_name"
-            :key="specialty.length"
-            >{{ specialty }}</span
-          >
+          <span class="badge bg-primary text-primary me-2 rounded-5 text-capitalize p-2" style="--bs-bg-opacity: 0.07"
+            v-for="specialty in clinica.specialty_name" :key="specialty.length">{{ specialty }}</span>
           <div class="d-flex my-3" v-if="clinica.service_name">
-            <span
-              class="badge rounded-circle bg-primary text-primary me-2"
-              style="--bs-bg-opacity: 0.05"
-              >I</span
-            >
+            <span class="badge rounded-circle bg-primary text-primary me-2" style="--bs-bg-opacity: 0.05">I</span>
             <p class="fw-light text-muted mb-0">
               {{ clinica.service_name[0] }}
             </p>
@@ -99,30 +80,21 @@ const getOffers = async (type, id) => {
             </p> -->
           </div>
           <p class="fw-light text-muted">
-            <span
-              class="badge rounded-circle bg-primary text-primary me-2"
-              style="--bs-bg-opacity: 0.05"
-              >I</span
-            >+5 Hospitales diferentes
+            <span class="badge rounded-circle bg-primary text-primary me-2" style="--bs-bg-opacity: 0.05">I</span>+5
+            Hospitales diferentes
           </p>
           <div class="d-flex justify-content-between align-items-center">
             <div class="card bg-light rounded-4 border-0">
               <div class="card-body py-2">
                 <span class="text-muted">Disponibilidad:</span><br />
-                <span class="fw-normal"
-                  >[I] 5 de Octubre de 2023 [I] 11:00 am</span
-                >
+                <span class="fw-normal">[I] 5 de Octubre de 2023 [I] 11:00 am</span>
               </div>
             </div>
-            <div
-              class="d-flex flex-column align-items-end btn btn-light bg-white"
-              @click="getOffers(clinica.entity_type, clinica.id)"
-            >
+            <div class="d-flex flex-column align-items-end btn btn-light bg-white"
+              @click="getOffers(clinica.entity_type, clinica.id)">
               <span class="text-muted">A partir de</span>
-              <span class="fw-bold text-nowrap"
-                >{{ parseFloat(clinica.min_price).toLocaleString() }} USD
-                A</span
-              >
+              <span class="fw-bold text-nowrap">{{ parseFloat(clinica.min_price).toLocaleString() }} USD
+                A</span>
             </div>
           </div>
         </div>
@@ -164,23 +136,17 @@ const getOffers = async (type, id) => {
                 <div class="text-center bg-light rounded-3">
                   <span class="fw-semibold text-primary">Reembolso total</span>
                   <br />
-                  <small class="text-muted"
-                    >Precio original
-                    <span class="text-decoration-line-through"
-                      >{{ parseFloat(offer.price).toLocaleString() }}
+                  <small class="text-muted">Precio original
+                    <span class="text-decoration-line-through">{{ parseFloat(offer.price).toLocaleString() }}
                       {{ offer.currency }}
-                    </span></small
-                  ><br />
+                    </span></small><br />
                   <small class="fw-medium">Con Váucher:</small> <br />
                   <button class="btn btn-outline-success btn-sm rounded-4">
                     AG5228GE6
                   </button>
                 </div>
-                <NuxtLink
-                  href="/perfiles/clinica-biblica"
-                  class="btn btn-primary mt-2 rounded-3"
-                  >Pedir Cita
-                </NuxtLink>
+                <button @click="goTo(clinica.entity_type, clinica.id)" class="btn btn-primary mt-2 rounded-3">Pedir
+                  Cita</button>
               </div>
             </div>
           </div>
