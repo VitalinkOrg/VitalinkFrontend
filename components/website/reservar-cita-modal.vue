@@ -130,46 +130,69 @@ const { reserva } = useReserva()
 
         <!-- Step 3 -->
         <div class="modal-body" v-if="reserva[0].step === 3">
-          <div class="container">
-            <div class="row">
-              <div class="col-3">
-                <div class="bg-primary rounded-4 p-4 h-100" style="--bs-bg-opacity: 0.07">
-                  <span class="text-success fw-bold pt-4 d-block">2 a 3 pasos</span>
-                  <span class="text-primary fw-bold fs-4 py-4 d-block">Información Profesional</span>
-                  <p class=" text-muted fw-medium">Esto ayudará a los pacientes a conocerte mejor.</p>
-                </div>
+          <div class="bg-primary rounded-4 h-100 p-4" style="--bs-bg-opacity: 0.04">
+            <div class="form-group mb-3">
+              <label for="persona" class="form-label">¿Para quien es la cita?</label>
+              <div class="form-check">
+                <input class="form-check-input" type="radio" name="persona" id="persona1">
+                <label class="form-check-label" for="persona1">
+                  Para mí
+                </label>
               </div>
-              <div class="col">
-                <div class="bg-primary rounded-4 h-100 p-4" style="--bs-bg-opacity: 0.04">
-                  <div class="form-group mb-3">
-                    <label for="nombre" class="form-label">Foto de Perfil</label>
-                    <div class="mb-3 text-muted fw-light">Esta será la foto que vean tu pacientes cuando
-                      encuentren tu
-                      perfil en
-                      Vitalink
-                    </div>
-                    <!-- <input type="text" placeholder="Escribe tu nombre" class="form-control shadow-sm " id="nombre"
-                        name="nombre"> -->
-                    <!-- <form action="/action_page.php"> -->
-                    <input type="file" id="myFile" name="filename" class="form-control">
-                    <!-- <input type="submit"> -->
-                    <!-- </form> -->
-                  </div>
-                  <hr>
-                  <div class="form-group mb-3">
-                    <label for="descripcion" class="form-label">Escribe una breve descripción profesional</label>
-                    <textarea placeholder="Escribe una descripción sobre ti y tu experiencia profesional"
-                      class="form-control shadow-sm " id="descripcion" name="descripcion" rows="4" />
-                  </div>
-                  <div class="form-group mb-3">
-                    <label for="numero-matricula" class="form-label">Nº Matrícula Medica </label>
-                    <input type="text" placeholder="Escribe el número de tu matrícula" class="form-control shadow-sm "
-                      id="numero-matricula" name="numero-matricula">
-                  </div>
-
-                </div>
+              <div class="form-check">
+                <input class="form-check-input" type="radio" name="persona" id="persona2" checked>
+                <label class="form-check-label" for="persona2">
+                  Para otra persona
+                </label>
               </div>
             </div>
+            <div class="form-group mb-3">
+              <label for="modelo" class="form-label">Selecciona el modelo de servicio</label>
+              <div class="form-check">
+                <input class="form-check-input" type="radio" name="modelo" id="modelo1">
+                <label class="form-check-label" for="modelo1">
+                  Tengo seguro médico
+                </label>
+              </div>
+              <div class="form-check">
+                <input class="form-check-input" type="radio" name="modelo" id="modelo2" checked>
+                <label class="form-check-label" for="modelo2">
+                  Cita Privada
+                </label>
+              </div>
+            </div>
+            <div class="form-group mb-3">
+              <label for="aseguradora" class="form-label">Selecciona o busca tu aseguradora</label>
+              <select name="aseguradora" id="aseguradora" class="form-select">
+                <option disabled selected>Selecciona una aseguradora</option>
+              </select>
+            </div>
+
+            <div class="form-group mb-4">
+              <label for="vaucher" class="form-label">Ingresa el váucher</label>
+              <p class="form-text">Su su aseguradora le generó un váucher para este servicio, por favor agrégelo aquí.
+              </p>
+              <p class="form-label">Código de Váucher </p>
+              <input type="text" placeholder="XNROEBPORB" class="form-control">
+            </div>
+
+            <div class="form-group d-flex mb-3">
+              <div class="form-check mt-2">
+                <input type="checkbox" class="form-check-input" id="no-vaucher">
+                <label class="form-check-label" for="no-vaucher">No tengo Váucher</label>
+              </div>
+              <div class="form-group ms-5">
+                <button class="btn btn-light bg-white border">Solicitar un Váucher</button>
+              </div>
+            </div>
+
+          </div>
+
+          <div class="text-center py-3">
+            <p class="fs-5 mb-1"><span class="text-muted">Precio final del servicio</span> <span
+                class="fw-semibold text-primary ms-2">₡23000.00</span></p>
+            <p><small class="text-primary text-decoration-line-through">Antes ₡44000.00</small></p>
+
           </div>
         </div>
         <div class="modal-footer" v-if="reserva[0].step === 3">
@@ -180,7 +203,7 @@ const { reserva } = useReserva()
             </button>
           </div>
           <div class="col">
-            <button type="button" class="btn btn-primary w-100 btn-lg" @click="reserva[0].step = 4">Siguiente</button>
+            <button type="button" class="btn btn-primary w-100 btn-lg" @click="reserva[0].step = 4">Continuar</button>
           </div>
         </div>
 
