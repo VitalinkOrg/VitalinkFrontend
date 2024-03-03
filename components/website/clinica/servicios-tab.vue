@@ -19,30 +19,23 @@ export default {
             }}</small>
             </li>
           </ul> -->
-          <p
-            v-if="servicio.hospital_name"
-            class="card-text text-center text-success fs-6 fw-semibold border-bottom py-2"
-          >
+          <p v-if="servicio.hospital_name" class="card-text text-center text-success fs-6 fw-semibold border-bottom py-2">
             <small>{{ servicio.hospital_name }}</small>
           </p>
           <div class="text-center border-bottom pb-2" v-if="servicio.schedule">
-            <small
-              v-for="horario in servicio.schedule"
-              :key="horario.length"
-              class="me-2 text-nowrap"
-              ><strong class="fw-semibold me-1">{{ horario.day }}</strong>
-              <span class="fw-light">{{ horario.open }} - {{ horario.close }}</span></small
-            >
+            <small v-for="horario in servicio.schedule" :key="horario.length" class="me-2 text-nowrap"><strong
+                class="fw-semibold me-1">{{ horario.day }}</strong>
+              <span class="fw-light">{{ horario.open }} - {{ horario.close }}</span></small>
           </div>
           <div class="d-flex flex-column align-items-center pt-2">
             <small class="text-muted fw-light">Precio a partir de:</small>
-            <span class="fw-semibold fs-5 text-primary"
-              >{{ parseFloat(servicio.price).toLocaleString() }} {{ servicio.currency }}</span
-            >
+            <span class="fw-semibold fs-5 text-primary">{{ parseFloat(servicio.price).toLocaleString() }} {{
+              servicio.currency }}</span>
           </div>
-          <button class="btn btn-primary w-100 btn-sm mt-2 rounded-2">
-            Reservar una cita
-          </button>
+
+
+
+          <WebsiteReservarCitaModal />
         </div>
       </div>
     </div>
