@@ -393,8 +393,6 @@
       </section>
     </div>
 
-    <!-- This WONT go in here  -->
-    <WebsiteReservarCitaModal />
 
   </NuxtLayout>
 </template>

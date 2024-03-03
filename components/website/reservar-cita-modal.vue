@@ -7,7 +7,7 @@ const { reserva } = useReserva()
   <!-- <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#exampleModal">
     Launch demo modal
   </button> -->
-
+  <button @click="reserva[0].open = true" class="btn btn-primary w-100 btn-sm mt-2 rounded-2">Reserva Cita</button>
   <!-- Modal -->
   <div class="modal fade " :class="reserva[0].open ? 'show' : ''" id="exampleModal" tabindex="-1"
     aria-labelledby="exampleModalLabel" aria-hidden="true">

@@ -28,6 +28,8 @@ export default {
     <!-- Dsiponibilidad  -->
     <div v-if="tab === 1">
       <p class="fw-semibold">Reserva una cita</p>
+
+
     </div>
     <!-- Servicios  -->
     <WebsiteClinicaServiciosTab :data="data.data.servicesResult" v-if="tab === 2" />

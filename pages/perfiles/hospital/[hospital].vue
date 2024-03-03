@@ -127,5 +127,6 @@ const { data, pending } = await useLazyFetch(
         </div>
       </div>
     </main>
+
   </NuxtLayout>
 </template>
