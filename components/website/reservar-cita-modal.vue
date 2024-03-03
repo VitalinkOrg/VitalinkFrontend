@@ -11,7 +11,8 @@ const { reserva } = useReserva()
   <!-- Modal -->
   <div class="modal fade " :class="reserva[0].open ? 'show' : ''" id="exampleModal" tabindex="-1"
     aria-labelledby="exampleModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable">
+    <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable"
+      :class="reserva[0].step !== 5 ? 'modal-xl' : ''">
       <div class="modal-content">
         <div class="modal-header border-bottom align-items-center d-flex">
           <h1 class="modal-title fs-4 fw-normal ms-2 mt-2" id="exampleModalLabel">Reservar una Cita</h1>
@@ -210,145 +211,36 @@ const { reserva } = useReserva()
 
         <!-- Step 4 -->
         <div class="modal-body" v-if="reserva[0].step === 4">
-          <div class="container">
-            <div class="row">
-              <div class="col-3">
-                <div class="bg-primary rounded-4 p-4 h-100" style="--bs-bg-opacity: 0.07">
-                  <span class="text-success fw-bold pt-4 d-block">3 a 3 pasos</span>
-                  <span class="text-primary fw-bold fs-4 py-4 d-block">Información Profesional</span>
-                  <p class=" text-muted fw-medium">Esto ayudará a los pacientes a conocerte mejor.</p>
-                </div>
-              </div>
-              <div class="col">
-                <div class="bg-primary rounded-4 h-100 p-4" style="--bs-bg-opacity: 0.04">
-                  <!-- Hospitales CLinicas  -->
-                  <p class="m-0">Selecciona Hospitales o Clínicas</p>
-                  <p class="text-muted fw-light">Selecciona los lugares donde tendrá disponibilidad para atender a
-                    sus
-                    pacientes </p>
-                  <button
-                    class="btn btn-light border w-100 fw-light text-start d-flex bg-white justify-content-between align-items-center mb-3">
-                    <span>Hospital SIMA (Calle Nº....)</span>
-                    <span class="fw-semibold">
-                      <AtomsIconsTimesXIcon />
-                    </span>
-                  </button>
-
-                  <!-- Agregar nuevo hospital o clinica -->
-                  <div class="bg-primary rounded-4 p-3 mb-3" style="--bs-bg-opacity: 0.1">
-                    <div class="form-group mb-4">
-                      <label for="nombre" class="form-label text-capitalize">Nombre del Hospital/Clinica</label>
-                      <input type="text" class="form-control" placeholder="Escribe el nombre del hospital" name="nombre"
-                        required />
-                      <!-- <div id="nombreHelp" class="form-text">We'll never share your email with anyone else.</div> -->
-                    </div>
-                    <div class="row row-cols-2">
-                      <div class="form-group mb-4">
-                        <label for="telefono" class="form-label text-capitalize">Número de teléfono</label>
-                        <input type="phone" class="form-control" placeholder="0000-0000" name="telefono" required />
-                        <!-- <div id="nombreHelp" class="form-text">We'll never share your email with anyone else.</div> -->
-                      </div>
-                      <div class="form-group mb-4">
-                        <label for="direccion" class="form-label text-capitalize">Dirección</label>
-                        <input type="text" class="form-control" placeholder="Escribe la dirección" name="direccion"
-                          required />
-                        <!-- <div id="nombreHelp" class="form-text">We'll never share your email with anyone else.</div> -->
-                      </div>
-                    </div>
-                    <hr>
-                    <div class="form-group mb-4">
-                      <label for="email" class="form-label text-capitalize">Correo Electrónico</label>
-                      <input type="email" class="form-control" placeholder="Escribe tu correo electrónico" name="email"
-                        required />
-                      <!-- <div id="nombreHelp" class="form-text">We'll never share your email with anyone else.</div> -->
-                    </div>
-                    <div class="row row-cols-2">
-                      <div class="form-group mb-4">
-                        <label for="password" class="form-label text-capitalize">Contraseña</label>
-                        <input type="password" class="form-control" id="password" placeholder="Escribe tu contraseña"
-                          aria-describedby="passwordHelp" required name="password" />
-                        <!-- <div id="passwordHelp" class="form-text">Deben ser 8 caracteres como mínimo</div> -->
-                      </div>
-                      <div class="form-group mb-4">
-                        <label for="confirmPassword" class="form-label text-capitalize">Confirmar
-                          Contraseña</label>
-                        <input type="password" class="form-control" id="confirmPassword"
-                          placeholder="Escribe tu contraseña" aria-describedby="confirmPasswordHelp" required
-                          name="confirmPassword" />
-                        <!-- <div id="passwordHelp" class="form-text">Deben ser 8 caracteres como mínimo</div> -->
-                      </div>
-                    </div>
-                    <div class="row row-cols-2 mt-4">
-                      <div class="col">
-                        <button class="btn btn-light border-dark w-100">
-                          Volver, no guardar
-                        </button>
-                      </div>
-                      <div class="col">
-                        <button class="btn btn-primary w-100">
-                          Guardar y Continuar
-                        </button>
-                      </div>
-                    </div>
-
-                  </div>
-
-                  <button class="btn btn-info  text-white ">
-                    <AtomsIconsPlusIcon /> Agregar Hospital o Clínica
-                  </button>
-
-                  <hr>
-                  <!-- Especialidades Medicas  -->
-                  <!-- Hospitales CLinicas  -->
-                  <p class="m-0">Especialidades Médicas</p>
-                  <p class="text-muted fw-light">Escribe las Especialidades médicas que ofrecerás en la
-                    plataforma.</p>
-                  <button
-                    class="btn btn-light border w-100 fw-light text-start d-flex bg-white justify-content-between align-items-center mb-3">
-                    <span>Oftalmología</span>
-                    <span class="fw-semibold">
-                      <AtomsIconsTimesXIcon />
-                    </span>
-                  </button>
-                  <div class="bg-primary rounded-4 p-3 mb-3" style="--bs-bg-opacity: 0.1">
-                    <input type="text" placeholder="Escriba la especialidad" class="form-control">
-                    <div class="text-end mt-2">
-                      <button class="btn btn-link text-dark">Cancelar</button>
-                      <button class="btn btn-light fw-light border-dark">Guardar</button>
-                    </div>
-                  </div>
-
-                  <button class="btn btn-info  text-white ">
-                    <AtomsIconsPlusIcon /> Agregar
-                  </button>
-
-                  <hr>
-
-                  <!-- Servicios Procedimientos  -->
-                  <p class="m-0">Servicios / Procedimientos</p>
-                  <p class="text-muted fw-light">Agrega los servicios médicos que ofrecerás en la plataforma.</p>
-                  <button
-                    class="btn btn-light border w-100 fw-light text-start d-flex bg-white justify-content-between align-items-center mb-3">
-                    <span>Cirugía de catarata monofocal</span>
-                    <span class="fw-semibold">
-                      <AtomsIconsTimesXIcon />
-                    </span>
-                  </button>
-                  <div class="bg-primary rounded-4 p-3 mb-3" style="--bs-bg-opacity: 0.1">
-                    <input type="text" placeholder="Escriba la especialidad" class="form-control">
-                    <div class="text-end mt-2">
-                      <button class="btn btn-link text-dark">Cancelar</button>
-                      <button class="btn btn-light fw-light border-dark">Guardar</button>
-                    </div>
-                  </div>
-
-                  <button class="btn btn-info  text-white ">
-                    <AtomsIconsPlusIcon /> Agregar
-                  </button>
-
-                </div>
-              </div>
-            </div>
+          <p class="my-4 fw-medium ps-4">Revisa los datos antes de confirmar la cita:</p>
+          <div class="border p-3 rounded-4">
+            <dl>
+              <dt>Fecha</dt>
+              <dd>Martes 26 Septiembre de 2023 a las 09:00 am.</dd>
+            </dl>
+            <dl>
+              <dt>Hospital o centro</dt>
+              <dd>Hospital San José</dd>
+            </dl>
+            <dl>
+              <dt>Especialidad / motivo</dt>
+              <dd>Operación de cataratas</dd>
+            </dl>
+            <dl>
+              <dt>Médico / Especialista</dt>
+              <dd>Stephanie Powell</dd>
+            </dl>
+            <dl>
+              <dt>Paciente titular</dt>
+              <dd>Ana Lorens</dd>
+            </dl>
+            <dl>
+              <dt>Modelo de servicio</dt>
+              <dd>Seguro Médico: ASIS</dd>
+            </dl>
+            <dl>
+              <dt>Precio Final del servicio</dt>
+              <dd>¢23000.00</dd>
+            </dl>
           </div>
         </div>
         <div class="modal-footer" v-if="reserva[0].step === 4">
@@ -359,7 +251,8 @@ const { reserva } = useReserva()
             </button>
           </div>
           <div class="col">
-            <button type="button" class="btn btn-primary w-100 btn-lg" @click="reserva[0].step = 5">Siguiente</button>
+            <button type="button" class="btn btn-primary w-100 btn-lg" @click="reserva[0].step = 5">Confirmar
+              Reservar</button>
           </div>
         </div>
 
@@ -367,32 +260,55 @@ const { reserva } = useReserva()
         <!-- Step 5 -->
         <span v-if="reserva[0].step === 5">
           <div class="modal-body">
-            <div class="bg-primary rounded-4 d-flex align-items-center justify-content-center text-center py-5"
-              style="--bs-bg-opacity: 0.05">
-              <div class="my-5 text-center">
-                <img src="@/src/assets/img-fuegos-artificiales-felicidades.svg" alt="Felicidades">
-                <div class="display-3 text-primary">Felicidades!</div>
-                <p class="w-50 mx-auto fw-normal text-muted fs-5">Has completado una buena parte de tu perfil, esto
-                  te
-                  ayudará
-                  a destacar
-                  y
-                  conectar
-                  con más pacientes.</p>
-              </div>
+            <div class="text-center">
+              <img src="@/src/assets/img-fuegos-artificiales-felicidades.svg" alt="Felicidades" style="height:3rem;">
+              <div class="text-primary fs-5 fw-semibold">Felicidades!</div>
+            </div>
 
-              <!-- <div class="col">
-                <img src="@/src/assets/img-bienvenida-medicos.svg" class="img-fluid" alt="Bienvenido!">
-              </div>
-              <div class="col">
-                <span class="display-3 text-primary">Bienvenido!</span>
-                <p class="lead pe-5">Completar tu perfil te ayudará a destacar y conectar con más pacientes.</p>
-              </div> -->
+            <div class="bg-primary rounded-4 px-4 py-2" style="--bs-bg-opacity: 0.3">
+              <dl>
+                <dt class="text-white ">Fecha</dt>
+                <dd class="text-primary fw-semibold">Martes 26 Septiembre de 2023 a las 09:00 am.</dd>
+              </dl>
+              <dl>
+                <dt class="text-white ">Hospital o centro</dt>
+                <dd class="text-primary fw-semibold">Hospital San José</dd>
+              </dl>
+              <dl>
+                <dt class="text-white ">Especialidad / motivo</dt>
+                <dd class="text-primary fw-semibold">Operación de cataratas</dd>
+              </dl>
+              <dl>
+                <dt class="text-white ">Médico / Especialista</dt>
+                <dd class="text-primary fw-semibold">Stephanie Powell</dd>
+              </dl>
+              <dl>
+                <dt class="text-white ">Paciente titular</dt>
+                <dd class="text-primary fw-semibold">Ana Lorens</dd>
+              </dl>
+              <dl>
+                <dt class="text-white ">Modelo de servicio</dt>
+                <dd class="text-primary fw-semibold">Seguro Médico: ASIS</dd>
+              </dl>
+              <dl>
+                <dt class="text-white ">Precio Final del servicio</dt>
+                <dd class="text-primary fw-semibold">¢23000.00</dd>
+              </dl>
+
             </div>
 
           </div>
           <div class="modal-footer">
-            <button type="button" class="btn btn-primary w-100 btn-lg" @click="reserva[0].open = false">Siguiente</button>
+            <div class="col">
+              <button type="button" class="btn btn-white border w-100 btn-lg" data-bs-dismiss="modal"
+                @click="reserva[0].open = null">
+                Salir
+              </button>
+            </div>
+            <div class="col">
+              <button type="button" class="btn btn-primary w-100 btn-lg" @click="reserva[0].open = null">Ver En
+                Citas</button>
+            </div>
           </div>
         </span>
 
