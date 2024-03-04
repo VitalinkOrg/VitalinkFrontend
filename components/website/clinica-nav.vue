@@ -99,14 +99,31 @@ export default {
       </div>
 
       <div class="text-end pt-4">
-        <button class="btn btn-primary btn-lg">Reservar Cita</button>
+        <button class="btn btn-primary btn-lg" >Reservar Cita</button>
       </div>
 
     </div>
     <!-- Servicios  -->
     <WebsiteClinicaServiciosTab :data="data.data.servicesResult" v-if="tab === 2" />
     <!-- Ubicacion -->
-    <div v-if="tab === 3">Encuentranos Facilmente</div>
+    <div v-if="tab === 3">
+      <div class="row">
+        <div class="col-3">
+          <p class="fw-semibold">Encuentranos Facilmente</p>
+          <p class="d-flex">
+            <span class="fs-4 text-success me-2"><AtomsIconsMapPointerIcon/></span>
+            <span class="fw-light">C. 24, San José, San Bosco, Costa Rica</span>
+          </p>
+          <div>
+            <button class="btn btn-info rounded-4 text-white me-2 py-1 px-2"><span class="fs-5"><AtomsIconsPhoneIcon/></span></button>
+            <button class="btn btn-info rounded-4 text-white py-1 px-2"><span class="fs-5"><AtomsIconsMailIcon/></span></button>
+          </div>
+        </div>
+        <div class="col">
+          <AtomsMapaInteractivo/>
+        </div>
+      </div>
+    </div>
     <!-- Galeria  -->
     <div v-if="tab === 4">Fotos</div>
     <!-- Reseñas  -->
