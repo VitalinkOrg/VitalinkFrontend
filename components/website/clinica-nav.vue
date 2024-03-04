@@ -125,7 +125,27 @@ export default {
       </div>
     </div>
     <!-- Galeria  -->
-    <div v-if="tab === 4">Fotos</div>
+    <div v-if="tab === 4">
+      <div class="row row-cols-3">
+        <div class="col">
+          <img src="@/src/assets/img-perfil-galeria-item.png" alt="" class="img-fluid">
+        </div>
+        <div class="col">
+          <img src="@/src/assets/img-perfil-galeria-item.png" alt="" class="img-fluid">
+        </div>
+        <div class="col">
+          <img src="@/src/assets/img-perfil-galeria-item.png" alt="" class="img-fluid">
+        </div>
+      </div>
+
+      <nav aria-label="gallery pagination" class="d-flex justify-content-end pt-4">
+        <ul class="pagination">
+          <li class="page-item"><a class="page-link" href="#"><AtomsIconsArrowLeftIcon/></a></li>
+          <li class="page-item"><a class="page-link active" href="#"><AtomsIconsArrowRightIcon/></a></li>
+        </ul>
+      </nav>
+      
+    </div>
     <!-- Reseñas  -->
     <div v-if="tab === 5">Reseñas logradas</div>
     <!-- Perfil  -->

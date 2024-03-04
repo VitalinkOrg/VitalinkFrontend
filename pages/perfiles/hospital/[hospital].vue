@@ -43,7 +43,7 @@ const { data, pending } = await useLazyFetch(
                     <span class="fw-semibold me-2">
                       5.0
 
-                      <IconStar />
+                      <AtomsIconsStarFilled/>
                     </span>
                     <span class="text-muted">13 Reseñas</span>
                   </small>
