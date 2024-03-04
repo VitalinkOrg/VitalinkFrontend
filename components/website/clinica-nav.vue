@@ -29,6 +29,78 @@ export default {
     <div v-if="tab === 1">
       <p class="fw-semibold">Reserva una cita</p>
 
+      <div class="bg-primary rounded-4 h-100 p-4 mb-3" style="--bs-bg-opacity: 0.04">
+        
+        <div class="row row-cols-sm-2 mb-3">
+          <div class="form-group">
+            <label for="especialidad" class="form-label">Especialidad</label>
+            <select name="especialidad" id="especialidad" class="form-select">
+              <option disabled selected>Oftalmología</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="procedimiento" class="form-label">Procedimiento</label>
+            <select name="procedimiento" id="procedimiento" class="form-select">
+              <option disabled selected>Cirugía de Cataratas</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="lugar" class="form-label">Lugar</label>
+            <select name="lugar" id="lugar" class="form-select">
+              <option disabled selected>Hospital Clínica Bíblica</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="tipodecita" class="form-label">Tipo de cita</label>
+            <select name="tipodecita" id="tipodecita" class="form-select">
+              <option disabled selected>Cirugía</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="d-flex justify-content-end">
+          <button class="btn btn-outline-primary rounded-4 "><AtomsIconsActualizarIcon/> Actualizar Búsqueda</button>
+        </div>
+        <hr>
+
+        <div class="d-flex align-items-center justify-content-between">
+          <div>
+            <div class="btn btn-outline-primary rounded-5">Váucher: <strong>Ninguno</strong></div>
+            <button class="btn text-primary"><AtomsIconsPlusIcon/></button>
+          </div>
+          <div class="d-flex flex-column">
+            <span class="fs-6">Precio final del servicio:</span>
+            <span class="fs-5 fw-semibold">₡23000 CRC</span>
+            <small class="text-muted">Precio original <span class="text-decoration-line-through">₡33000 CRC</span></small>
+          </div>
+        </div>
+
+      </div>
+
+      <div class="mb-2 d-flex align-items-center justify-content-between">
+        <span class="fw-semibold">Resultados de la Disponibilidad:</span>
+        <div class="d-flex align-items-center">
+          <button class="btn rounded-5 btn-outline-success btn-sm me-2">Hospital Clinica Biblica <AtomsIconsTimesXIcon/></button>
+          <button class="btn rounded-5 btn-outline-success btn-sm">Operación de Cataratas <AtomsIconsTimesXIcon/></button>
+        </div>
+      </div>
+
+      <div class="bg-primary rounded-4 h-100 p-4" style="--bs-bg-opacity: 0.04">
+        <div class="row row-cols-2">
+          <div class="form-group mb-3">
+          <label for="fecha" class="form-label">Seleccione una fecha</label>
+          <input type="date" name="fecha" id="fecha" class="form-control">
+        </div>
+        <div class="form-group mb-3">
+          <label for="hora" class="form-label">Seleccione la Hora</label>
+          <input type="time" id="hora" name="hora" min="09:00" max="18:00" required class="form-control" />
+        </div>
+        </div>
+      </div>
+
+      <div class="text-end pt-4">
+        <button class="btn btn-primary btn-lg">Reservar Cita</button>
+      </div>
 
     </div>
     <!-- Servicios  -->
