@@ -1,5 +1,5 @@
 <script setup>
-const { updateEducacion } = useMedico()
+const { updateEducacion, updateExperiencia } = useMedico()
 
 </script>
 <template>
@@ -55,7 +55,7 @@ const { updateEducacion } = useMedico()
     <!-- Experiencia  -->
     <div class="d-flex justify-content-between align-items-center mb-3">
       <h4 class="fw-normal m-0">Experiencia</h4>
-      <button class="btn btn-white border-dark fw-light">
+      <button class="btn btn-white border-dark fw-light" @click="updateExperiencia[0].open = true">
         <span class="fw-semibold me-2">
           <AtomsIconsPlusIcon />
         </span> Agregar Nueva
@@ -126,6 +126,7 @@ const { updateEducacion } = useMedico()
     </div>
 
     <MedicosEducacion/>
+    <MedicosExperienciaTrabajo/>
 
   </NuxtLayout>
 </template>
