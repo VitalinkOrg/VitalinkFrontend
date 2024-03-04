@@ -1,5 +1,5 @@
 <script setup>
-const { updateEducacion, updateExperiencia } = useMedico()
+const { updateEducacion, updateExperiencia, updateIdioma } = useMedico()
 
 </script>
 <template>
@@ -91,7 +91,7 @@ const { updateEducacion, updateExperiencia } = useMedico()
               credibilidad
               a tus pacientes.
             </p>
-            <button class="btn btn-primary">Agregar Experiencia</button>
+            <button class="btn btn-primary" @click="updateExperiencia[0].open = true">Agregar Experiencia</button>
           </div>
         </div>
       </div>
@@ -101,7 +101,7 @@ const { updateEducacion, updateExperiencia } = useMedico()
 
     <div class="d-flex justify-content-between align-items-center mb-3">
       <h4 class="fw-normal m-0">Idiomas</h4>
-      <button class="btn btn-white border-dark fw-light">
+      <button class="btn btn-white border-dark fw-light" @click="updateIdioma[0].open = true">
         <span class="fw-semibold me-2">
           <AtomsIconsPlusIcon />
         </span> Agregar Nueva
@@ -127,6 +127,7 @@ const { updateEducacion, updateExperiencia } = useMedico()
 
     <MedicosEducacion/>
     <MedicosExperienciaTrabajo/>
+    <MedicosIdioma/>
 
   </NuxtLayout>
 </template>
