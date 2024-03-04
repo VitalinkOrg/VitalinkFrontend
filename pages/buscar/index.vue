@@ -51,9 +51,7 @@ const { data: clinicas, pending } = await useLazyFetch(
               <WebsiteClinicasListItem v-for="clinica in clinicas" :key="clinica.id" :clinica="clinica" />
             </div>
             <div class="col">
-              <div class="card bg-dark-subtle d-flex align-items-center justify-content-center" style="min-height: 30rem">
-                MAPA INTERACTIVO
-              </div>
+              <AtomsMapaInteractivo/>
             </div>
           </div>
         </section>
