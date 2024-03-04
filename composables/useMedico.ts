@@ -54,9 +54,14 @@ export default function useMedico() {
     step: 1
   }])
 
+  const updateEducacion = useState('updateEducacion', () => [{
+    open: false
+  }])
+
 
   return {
     citas,
-    onboarding
+    onboarding,
+    updateEducacion
   }
 }
