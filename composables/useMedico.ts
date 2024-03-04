@@ -58,10 +58,15 @@ export default function useMedico() {
     open: false
   }])
 
+  const updateExperiencia = useState('updateExperiencia', () => [{
+    open: false
+  }])
+
 
   return {
     citas,
     onboarding,
-    updateEducacion
+    updateEducacion,
+    updateExperiencia
   }
 }
