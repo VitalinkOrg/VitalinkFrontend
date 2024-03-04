@@ -147,7 +147,60 @@ export default {
       
     </div>
     <!-- Reseñas  -->
-    <div v-if="tab === 5">Reseñas logradas</div>
+    <div v-if="tab === 5">
+      <div class="card mb-4 rounded-4 ">
+        <div class="card-body">
+          <div class="row row-cols-sm-2">
+            <div class="col border-end">
+              <p class="fw-semibold d-flex align-items-center justify-content-between">Reseñas logradas  <small class="text-muted">5.0 <span class="fw-light">(13 Opiniones)</span></small></p>
+              <div class="d-flex justify-content-between fw-light text-muted">
+                Calidad de atención
+                <span class="text-warning">
+                  <AtomsIconsStarFilled v-for="i in 5"/>
+                </span>
+              </div>
+              <div class="d-flex justify-content-between fw-light text-muted">
+                Limpieza de instalaciones
+                <span class="text-warning"><AtomsIconsStarOutline/> <AtomsIconsStarFilled/> <AtomsIconsStarFilled/> <AtomsIconsStarFilled/> <AtomsIconsStarFilled/></span>
+              </div>
+              <div class="d-flex justify-content-between fw-light text-muted">
+                Amabilidad del Staff
+                <span class="text-warning"><AtomsIconsStarFilled/> <AtomsIconsStarFilled/> <AtomsIconsStarFilled/> <AtomsIconsStarFilled/> <AtomsIconsStarFilled/></span>
+              </div>
+              <div class="d-flex justify-content-between fw-light text-muted">
+                Relacion Precio/Calidad
+                <span class="text-warning"><AtomsIconsStarOutline/> <AtomsIconsStarFilled/> <AtomsIconsStarFilled/> <AtomsIconsStarFilled/> <AtomsIconsStarFilled/></span>
+              </div>
+            </div>
+            <div class="col">
+              <p class="fw-semibold">Servicios Destacados</p>
+              <div>
+                <span class="btn btn-outline-info rounded-5 btn-sm mb-2 me-2">Profesional</span>
+                <span class="btn btn-outline-info rounded-5 btn-sm mb-2 me-2">Enfermeros</span>
+                <span class="btn btn-outline-info rounded-5 btn-sm mb-2 me-2">Váucher</span>
+                <span class="btn btn-outline-info rounded-5 btn-sm mb-2 me-2">Oftalmólogo</span>
+                <span class="btn btn-outline-info rounded-5 btn-sm mb-2 me-2">Médicos</span>
+                <span class="btn btn-outline-info rounded-5 btn-sm mb-2 me-2">Buen trato</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="row row-cols-3">
+        <div class="col" v-for="i in 3">
+          <div class="card rounded-4 shadow-sm border-none" >
+            <div class="card-body">
+              <div class="text-warning">
+                <AtomsIconsStarFilled/><AtomsIconsStarFilled/><AtomsIconsStarFilled/><AtomsIconsStarFilled/><AtomsIconsStarFilled/>
+              </div>
+              <p class="fst-italic my-3">La cirugía de cataratas ha transformado mi vida visual por completo; el procedimiento rápido y preciso me permitió recuperar una claridad visual asombrosa, devolviéndome la independencia y la nitidez que había perdido.</p>
+              <p class="text-primary fw-semibold m-0">Brian Clark</p>
+              <p class="text-muted m-0">Paciente de Cirugía de Cataratas</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
     <!-- Perfil  -->
     <div v-if="tab === 6">
       <h5>Nuestra historia</h5>
