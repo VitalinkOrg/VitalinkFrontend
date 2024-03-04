@@ -3,6 +3,7 @@ declare module 'vue' {
   export interface GlobalComponents {
     'AseguradorasVaucherTableItem': typeof import("../components/aseguradoras/vaucher-table-item.vue")['default']
     'AtomsBadgeServicio': typeof import("../components/atoms/badge-servicio.vue")['default']
+    'AtomsIconsActualizarIcon': typeof import("../components/atoms/icons/actualizar-icon.vue")['default']
     'AtomsIconsAppleIcon': typeof import("../components/atoms/icons/apple-icon.vue")['default']
     'AtomsIconsArrowLeftIcon': typeof import("../components/atoms/icons/arrow-left-icon.vue")['default']
     'AtomsIconsArrowRightIcon': typeof import("../components/atoms/icons/arrow-right-icon.vue")['default']
@@ -71,6 +72,7 @@ declare module 'vue' {
     'Body': typeof import("../node_modules/nuxt/dist/head/runtime/components")['Body']
     'LazyAseguradorasVaucherTableItem': typeof import("../components/aseguradoras/vaucher-table-item.vue")['default']
     'LazyAtomsBadgeServicio': typeof import("../components/atoms/badge-servicio.vue")['default']
+    'LazyAtomsIconsActualizarIcon': typeof import("../components/atoms/icons/actualizar-icon.vue")['default']
     'LazyAtomsIconsAppleIcon': typeof import("../components/atoms/icons/apple-icon.vue")['default']
     'LazyAtomsIconsArrowLeftIcon': typeof import("../components/atoms/icons/arrow-left-icon.vue")['default']
     'LazyAtomsIconsArrowRightIcon': typeof import("../components/atoms/icons/arrow-right-icon.vue")['default']
@@ -142,6 +144,7 @@ declare module 'vue' {
 
 export const AseguradorasVaucherTableItem: typeof import("../components/aseguradoras/vaucher-table-item.vue")['default']
 export const AtomsBadgeServicio: typeof import("../components/atoms/badge-servicio.vue")['default']
+export const AtomsIconsActualizarIcon: typeof import("../components/atoms/icons/actualizar-icon.vue")['default']
 export const AtomsIconsAppleIcon: typeof import("../components/atoms/icons/apple-icon.vue")['default']
 export const AtomsIconsArrowLeftIcon: typeof import("../components/atoms/icons/arrow-left-icon.vue")['default']
 export const AtomsIconsArrowRightIcon: typeof import("../components/atoms/icons/arrow-right-icon.vue")['default']
@@ -210,6 +213,7 @@ export const Html: typeof import("../node_modules/nuxt/dist/head/runtime/compone
 export const Body: typeof import("../node_modules/nuxt/dist/head/runtime/components")['Body']
 export const LazyAseguradorasVaucherTableItem: typeof import("../components/aseguradoras/vaucher-table-item.vue")['default']
 export const LazyAtomsBadgeServicio: typeof import("../components/atoms/badge-servicio.vue")['default']
+export const LazyAtomsIconsActualizarIcon: typeof import("../components/atoms/icons/actualizar-icon.vue")['default']
 export const LazyAtomsIconsAppleIcon: typeof import("../components/atoms/icons/apple-icon.vue")['default']
 export const LazyAtomsIconsArrowLeftIcon: typeof import("../components/atoms/icons/arrow-left-icon.vue")['default']
 export const LazyAtomsIconsArrowRightIcon: typeof import("../components/atoms/icons/arrow-right-icon.vue")['default']
