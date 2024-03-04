@@ -62,11 +62,16 @@ export default function useMedico() {
     open: false
   }])
 
+  const updateIdioma = useState('updateIdioma', () => [{
+    open: false
+  }])
+
 
   return {
     citas,
     onboarding,
     updateEducacion,
-    updateExperiencia
+    updateExperiencia,
+    updateIdioma
   }
 }
