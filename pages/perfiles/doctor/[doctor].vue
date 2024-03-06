@@ -1,15 +1,14 @@
 <script setup>
 const config = useRuntimeConfig();
 const route = useRoute();
-const { reserva } = useReserva()
 
-
-const { data, pending } = await useLazyFetch(
+const { data: doctor, pending } = await useLazyFetch(
   config.public.API_BASE_URL + "/patient_dashboard/doctor_profile",
   {
     params: {
       doctor_id: route.params.doctor,
     },
+    transform: (_doctor) => _doctor.data,
   }
 );
 </script>
@@ -19,13 +18,17 @@ const { data, pending } = await useLazyFetch(
     <main class="pt-2 pb-5">
       <div class="container-fluid">
         <div class="d-flex align-items-center">
-          <button class="btn btn-link text-dark fw-light me-0 text-decoration-none">
+          <button
+            class="btn btn-link text-dark fw-light me-0 text-decoration-none"
+          >
             [A] Volver
           </button>
           <nav aria-label="breadcrumb">
             <ol class="breadcrumb m-0">
               <li class="breadcrumb-item">
-                <NuxtLink href="/" class="text-decoration-none">Inicio</NuxtLink>
+                <NuxtLink href="/" class="text-decoration-none"
+                  >Inicio</NuxtLink
+                >
               </li>
               <li class="breadcrumb-item">Resultados de búsqueda</li>
               <li class="breadcrumb-item active" aria-current="page">
@@ -34,25 +37,32 @@ const { data, pending } = await useLazyFetch(
             </ol>
           </nav>
         </div>
-        <div v-if="pending">Loading clinicas...</div>
+        <div v-if="pending">Loading clinica...</div>
         <div v-else class="row">
           <div class="col-sm-4">
             <div class="card shadow border-0">
               <div class="card-body text-center">
-                <img src="@/src/assets/img-clinica-thumbnail-md.png" alt="" class="img-fluid mb-3" />
+                <img
+                  src="@/src/assets/img-clinica-thumbnail-md.png"
+                  alt=""
+                  class="img-fluid mb-3"
+                />
                 <div>
                   <small>
                     <span class="fw-semibold me-2">
                       5.0
 
-                      <AtomsIconsStarFilled/>
+                      <AtomsIconsStarFilled />
                     </span>
                     <span class="text-muted">13 Reseñas</span>
                   </small>
                 </div>
                 <h2 class="h5 fw-semibold my-2">
-                  {{ data?.data.doctor_information.personal.first_name + ' ' +
-                    data.data.doctor_information.personal.last_name }}
+                  {{
+                    doctor.doctor_information.personal.first_name +
+                    " " +
+                    doctor.doctor_information.personal.last_name
+                  }}
                 </h2>
 
                 <!-- <span
@@ -62,26 +72,44 @@ const { data, pending } = await useLazyFetch(
                   >{{ servicio.nombre }}</span
                 > -->
                 <div class="my-2">
-                  <span class="badge bg-success rounded-4 mx-1 p-2">[P]</span>
-                  <span class="badge bg-success rounded-4 mx-1 p-2">[E]</span>
+                  <a :href="`tel:${doctor.doctor_information.personal.phone_number}`" class="badge bg-success rounded-4 mx-1 p-2"
+                    ><AtomsIconsPhoneIcon
+                  /></a>
+                  <a :href="`mailto:${doctor.doctor_information.personal.email}`" class="badge bg-success rounded-4 mx-1 p-2"
+                    ><AtomsIconsMailIcon
+                  /></a>
                 </div>
                 <p class="card-text py-2 text-muted fw-light">
-                  <small v-if="data">[I]
-                    {{ data.data.doctor_information.personal.address + ', ' + data.data.doctor_information.personal.city
+                  <small v-if="doctor"
+                    ><AtomsIconsMapPointerIcon />
+                    {{
+                      doctor.doctor_information.personal.address +
+                      ", " +
+                      doctor.doctor_information.personal.city +
+                      ", " +
+                      doctor.doctor_information.personal.country_iso_code
                     }}
                   </small>
                 </p>
                 <div class="row row-cols-2">
                   <div class="col">
-                    <div class="card bg-primary rounded-4 border-0" style="--bs-bg-opacity: 0.05">
+                    <div
+                      class="card bg-primary rounded-4 border-0"
+                      style="--bs-bg-opacity: 0.05"
+                    >
                       <div class="card-body py-2">
                         <span class="text-muted">Experiencia</span><br />
-                        <span class="fw-semibold text-primary fs-5">+10 años</span>
+                        <span class="fw-semibold text-primary fs-5"
+                          >+10 años</span
+                        >
                       </div>
                     </div>
                   </div>
                   <div class="col">
-                    <div class="card bg-primary rounded-4 border-0" style="--bs-bg-opacity: 0.05">
+                    <div
+                      class="card bg-primary rounded-4 border-0"
+                      style="--bs-bg-opacity: 0.05"
+                    >
                       <div class="card-body py-2">
                         <span class="text-muted">Pacientes</span><br />
                         <span class="fw-semibold text-primary fs-5">+1000</span>
@@ -90,23 +118,44 @@ const { data, pending } = await useLazyFetch(
                   </div>
                 </div>
 
-                <div class="card bg-primary rounded-4 border-0 mt-3" style="--bs-bg-opacity: 0.05">
+                <div
+                  class="card bg-primary rounded-4 border-0 mt-3"
+                  style="--bs-bg-opacity: 0.05"
+                >
                   <div class="card-body">
                     <div class="row row-cols-4 gx-2 mb-2">
                       <div class="col">
-                        <img src="@/src/assets/img-clinica-thumbnail-xs.png" class="img-fluid" alt="" />
+                        <img
+                          src="@/src/assets/img-clinica-thumbnail-xs.png"
+                          class="img-fluid"
+                          alt=""
+                        />
                       </div>
                       <div class="col">
-                        <img src="@/src/assets/img-clinica-thumbnail-xs.png" class="img-fluid" alt="" />
+                        <img
+                          src="@/src/assets/img-clinica-thumbnail-xs.png"
+                          class="img-fluid"
+                          alt=""
+                        />
                       </div>
                       <div class="col">
-                        <img src="@/src/assets/img-clinica-thumbnail-xs.png" class="img-fluid" alt="" />
+                        <img
+                          src="@/src/assets/img-clinica-thumbnail-xs.png"
+                          class="img-fluid"
+                          alt=""
+                        />
                       </div>
                       <div class="col">
-                        <img src="@/src/assets/img-clinica-thumbnail-xs.png" class="img-fluid" alt="" />
+                        <img
+                          src="@/src/assets/img-clinica-thumbnail-xs.png"
+                          class="img-fluid"
+                          alt=""
+                        />
                       </div>
                     </div>
-                    <button class="btn btn-light border-dark-subtle w-100 bg-white">
+                    <button
+                      class="btn btn-light border-dark-subtle w-100 bg-white"
+                    >
                       Ver más fotos
                     </button>
                   </div>
@@ -124,14 +173,12 @@ const { data, pending } = await useLazyFetch(
                   atención médica personalizada.
                 </p>
 
-                <WebsiteClinicaNav :data="data" />
+                <WebsiteDoctorNav :doctor="doctor" />
               </div>
             </div>
           </div>
         </div>
       </div>
     </main>
-
-
   </NuxtLayout>
 </template>
