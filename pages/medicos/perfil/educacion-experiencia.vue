@@ -1,9 +1,13 @@
+<script setup>
+const { updateEducacion, updateExperiencia, updateIdioma } = useMedico()
+
+</script>
 <template>
   <NuxtLayout name="medicos-dashboard-perfil">
     <!-- Educacion -->
     <div class="d-flex justify-content-between align-items-center mb-3">
       <h4 class="fw-normal m-0">Educación o Estudios</h4>
-      <button class="btn btn-white border-dark fw-light">
+      <button class="btn btn-white border-dark fw-light" @click="updateEducacion[0].open = true">
         <span class="fw-semibold me-2">
           <AtomsIconsPlusIcon />
         </span> Agregar Nueva
@@ -51,7 +55,7 @@
     <!-- Experiencia  -->
     <div class="d-flex justify-content-between align-items-center mb-3">
       <h4 class="fw-normal m-0">Experiencia</h4>
-      <button class="btn btn-white border-dark fw-light">
+      <button class="btn btn-white border-dark fw-light" @click="updateExperiencia[0].open = true">
         <span class="fw-semibold me-2">
           <AtomsIconsPlusIcon />
         </span> Agregar Nueva
@@ -87,7 +91,7 @@
               credibilidad
               a tus pacientes.
             </p>
-            <button class="btn btn-primary">Agregar Experiencia</button>
+            <button class="btn btn-primary" @click="updateExperiencia[0].open = true">Agregar Experiencia</button>
           </div>
         </div>
       </div>
@@ -97,7 +101,7 @@
 
     <div class="d-flex justify-content-between align-items-center mb-3">
       <h4 class="fw-normal m-0">Idiomas</h4>
-      <button class="btn btn-white border-dark fw-light">
+      <button class="btn btn-white border-dark fw-light" @click="updateIdioma[0].open = true">
         <span class="fw-semibold me-2">
           <AtomsIconsPlusIcon />
         </span> Agregar Nueva
@@ -120,6 +124,10 @@
         </div>
       </div>
     </div>
+
+    <MedicosEducacion/>
+    <MedicosExperienciaTrabajo/>
+    <MedicosIdioma/>
 
   </NuxtLayout>
 </template>

@@ -2,12 +2,13 @@
 const config = useRuntimeConfig();
 const route = useRoute();
 
-const { data, pending } = await useLazyFetch(
+const { data: doctor, pending } = await useLazyFetch(
   config.public.API_BASE_URL + "/patient_dashboard/doctor_profile",
   {
     params: {
       doctor_id: route.params.doctor,
     },
+    transform: (_doctor) => _doctor.data,
   }
 );
 </script>
@@ -36,7 +37,7 @@ const { data, pending } = await useLazyFetch(
             </ol>
           </nav>
         </div>
-        <div v-if="pending">Loading clinicas...</div>
+        <div v-if="pending">Loading clinica...</div>
         <div v-else class="row">
           <div class="col-sm-4">
             <div class="card shadow border-0">
@@ -51,15 +52,17 @@ const { data, pending } = await useLazyFetch(
                     <span class="fw-semibold me-2">
                       5.0
 
-                      <IconStar />
+                      <AtomsIconsStarFilled />
                     </span>
-                    <span class="text-muted"
-                      >13 Reseñas</span
-                    >
+                    <span class="text-muted">13 Reseñas</span>
                   </small>
                 </div>
                 <h2 class="h5 fw-semibold my-2">
-                  {{ data?.data.doctor_information.personal.first_name + ' ' + data.data.doctor_information.personal.last_name }}
+                  {{
+                    doctor.doctor_information.personal.first_name +
+                    " " +
+                    doctor.doctor_information.personal.last_name
+                  }}
                 </h2>
 
                 <!-- <span
@@ -69,12 +72,23 @@ const { data, pending } = await useLazyFetch(
                   >{{ servicio.nombre }}</span
                 > -->
                 <div class="my-2">
-                  <span class="badge bg-success rounded-4 mx-1 p-2">[P]</span>
-                  <span class="badge bg-success rounded-4 mx-1 p-2">[E]</span>
+                  <a :href="`tel:${doctor.doctor_information.personal.phone_number}`" class="badge bg-success rounded-4 mx-1 p-2"
+                    ><AtomsIconsPhoneIcon
+                  /></a>
+                  <a :href="`mailto:${doctor.doctor_information.personal.email}`" class="badge bg-success rounded-4 mx-1 p-2"
+                    ><AtomsIconsMailIcon
+                  /></a>
                 </div>
                 <p class="card-text py-2 text-muted fw-light">
-                  <small v-if="data">[I] 
-                    {{ data.data.doctor_information.personal.address + ', ' + data.data.doctor_information.personal.city }}
+                  <small v-if="doctor"
+                    ><AtomsIconsMapPointerIcon />
+                    {{
+                      doctor.doctor_information.personal.address +
+                      ", " +
+                      doctor.doctor_information.personal.city +
+                      ", " +
+                      doctor.doctor_information.personal.country_iso_code
+                    }}
                   </small>
                 </p>
                 <div class="row row-cols-2">
@@ -98,9 +112,7 @@ const { data, pending } = await useLazyFetch(
                     >
                       <div class="card-body py-2">
                         <span class="text-muted">Pacientes</span><br />
-                        <span class="fw-semibold text-primary fs-5"
-                          >+1000</span
-                        >
+                        <span class="fw-semibold text-primary fs-5">+1000</span>
                       </div>
                     </div>
                   </div>
@@ -161,7 +173,7 @@ const { data, pending } = await useLazyFetch(
                   atención médica personalizada.
                 </p>
 
-                <WebsiteClinicaNav :data="data" />
+                <WebsiteDoctorNav :doctor="doctor" />
               </div>
             </div>
           </div>
