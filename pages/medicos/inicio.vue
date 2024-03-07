@@ -1,6 +1,6 @@
 <script setup>
 import { useStore } from "~/store";
-const { citas } = useMedico()
+const { citas } = useMedico();
 
 definePageMeta({
   middleware: ["auth-doctors-hospitals"],
@@ -10,19 +10,23 @@ const config = useRuntimeConfig();
 const token = useCookie("token");
 const role = useCookie("role");
 
-// if(role.value == 'R_HOS') {
-//   const { data: procedures, pending: pendingProcedures } = await useFetch(
-//     config.public.API_BASE_URL + "/hospital_dashboard/count_procedures",
-//     {
-//       headers: { Authorization: token.value },
-//       transform: (_procedures) => _procedures.data,
-//     }
-//   );
-//   if (procedures) {
-//     store.user.procedures = procedures;
-//   }
-// }
+let url;
+if (role.value == "R_HOS") {
+  url = "/hospital_dashboard/count_procedures";
+} else {
+  url = "/doctor_dashboard/count_procedures";
+}
 
+const { data: procedures, pending: pendingProcedures } = await useFetch(
+  config.public.API_BASE_URL + url,
+  {
+    headers: { Authorization: token.value },
+    transform: (_procedures) => _procedures.data[0],
+  }
+);
+if (procedures) {
+  store.user.procedures = procedures;
+}
 </script>
 <template>
   <NuxtLayout name="medicos-dashboard">
@@ -30,7 +34,7 @@ const role = useCookie("role");
       <div class="col">
         <!-- Citas Pendientes  -->
         <!-- Vacio  -->
-        <!-- <div class="card rounded-3 border-0 shadow-sm">
+        <div v-if="procedures.pending_appointments == 0" class="card rounded-3 border-0 shadow-sm">
           <div class="card-body d-flex align-items-center px-1">
             <AtomsIconsNoActivityIcon />
             <p class="d-flex flex-column ms-3 mb-0">
@@ -41,16 +45,16 @@ const role = useCookie("role");
             </p>
           </div>
           
-        </div> -->
+        </div>
         <!-- con Data  -->
-        <div class="card rounded-3 border-0 shadow-sm">
-          <div class="card-body d-flex align-items-center ">
+        <div v-else class="card rounded-3 border-0 shadow-sm">
+          <div class="card-body d-flex align-items-center">
             <!-- <AtomsIconsNoActivityIcon /> -->
             <span class="icon-indicator bg-warning-subtle text-warning">
-              <Icon name="fa6-solid:address-book"/>
+              <Icon name="fa6-solid:address-book" />
             </span>
             <p class="d-flex flex-column ms-3 mb-0">
-              <span class="fs-5 fw-semibold">202</span>
+              <span class="fs-5 fw-semibold">{{ procedures.pending_appointments }}</span>
               <small class="text-muted">Citas Pendientes</small>
             </p>
           </div>
@@ -58,7 +62,7 @@ const role = useCookie("role");
       </div>
       <div class="col">
         <!-- Pacientes Atendidos  -->
-        <!-- <div class="card rounded-3 border-0 shadow-sm">
+        <div v-if="procedures.completed_appointments == 0" class="card rounded-3 border-0 shadow-sm">
           <div class="card-body d-flex align-items-center px-1">
             <AtomsIconsNoActivityIcon />
             <p class="d-flex flex-column ms-3 mb-0">
@@ -68,16 +72,16 @@ const role = useCookie("role");
               </button>
             </p>
           </div>
-        </div> -->
+        </div>
         <!-- con Data  -->
         <div class="card rounded-3 border-0 shadow-sm">
-          <div class="card-body d-flex align-items-center ">
+          <div class="card-body d-flex align-items-center">
             <!-- <AtomsIconsNoActivityIcon /> -->
             <span class="icon-indicator bg-warning-subtle text-warning">
-              <Icon name="ic:round-favorite"/>
+              <Icon name="ic:round-favorite" />
             </span>
             <p class="d-flex flex-column ms-3 mb-0">
-              <span class="fs-5 fw-semibold">202</span>
+              <span class="fs-5 fw-semibold">{{ procedures.completed_appointments }}</span>
               <small class="text-muted">Pacientes Atendidos</small>
             </p>
           </div>
@@ -85,7 +89,7 @@ const role = useCookie("role");
       </div>
       <div class="col">
         <!-- Reseñas Recibidas  -->
-        <!-- <div class="card rounded-3 border-0 shadow-sm">
+        <div v-if="procedures.reviews_count == 0" class="card rounded-3 border-0 shadow-sm">
           <div class="card-body d-flex align-items-center px-1">
             <AtomsIconsNoActivityIcon />
             <p class="d-flex flex-column ms-3 mb-0">
@@ -95,16 +99,16 @@ const role = useCookie("role");
               </button>
             </p>
           </div>
-        </div> -->
+        </div>
         <!-- con Data  -->
         <div class="card rounded-3 border-0 shadow-sm">
-          <div class="card-body d-flex align-items-center ">
+          <div class="card-body d-flex align-items-center">
             <!-- <AtomsIconsNoActivityIcon /> -->
             <span class="icon-indicator bg-warning-subtle text-warning">
-              <Icon name="mdi:star-shooting"/>
+              <Icon name="mdi:star-shooting" />
             </span>
             <p class="d-flex flex-column ms-3 mb-0">
-              <span class="fs-5 fw-semibold">202</span>
+              <span class="fs-5 fw-semibold">{{ procedures.reviews_count }}</span>
               <small class="text-muted">Reseñas Recibidas</small>
             </p>
           </div>
@@ -112,7 +116,7 @@ const role = useCookie("role");
       </div>
       <div class="col">
         <!-- Procedimientos  -->
-        <!-- <div class="card rounded-3 border-0 shadow-sm">
+        <div v-if="procedures.unique_service_codes_count == 0" class="card rounded-3 border-0 shadow-sm">
           <div class="card-body d-flex align-items-center px-1">
             <AtomsIconsNoActivityIcon />
             <p class="d-flex flex-column ms-3 mb-0">
@@ -122,16 +126,16 @@ const role = useCookie("role");
               </button>
             </p>
           </div>
-        </div> -->
+        </div>
         <!-- con Data  -->
         <div class="card rounded-3 border-0 shadow-sm">
-          <div class="card-body d-flex align-items-center ">
+          <div class="card-body d-flex align-items-center">
             <!-- <AtomsIconsNoActivityIcon /> -->
             <span class="icon-indicator bg-warning-subtle text-warning">
-              <Icon name="ph:calendar-plus-fill"/>
+              <Icon name="ph:calendar-plus-fill" />
             </span>
             <p class="d-flex flex-column ms-3 mb-0">
-              <span class="fs-5 fw-semibold">202</span>
+              <span class="fs-5 fw-semibold">{{ procedures.unique_service_codes_count }}</span>
               <small class="text-muted">Procedimientos</small>
             </p>
           </div>
@@ -202,8 +206,53 @@ const role = useCookie("role");
           <AtomsIconsArrowRightIcon />
         </NuxtLink>
       </p>
+      <!-- Con Citas  -->
+      <div v-if="citas !== null" class="card">
+        <table class="table fw-light">
+          <thead>
+            <tr>
+              <th scope="col"></th>
+              <th scope="col" class="text-muted">Nombre del paciente</th>
+              <th scope="col" class="text-muted">Fecha</th>
+              <th scope="col" class="text-muted">Hora</th>
+              <th scope="col" class="text-muted">Procedimiento</th>
+              <th scope="col" class="text-muted">Lugar</th>
+              <th scope="col" class="text-muted">Váucher</th>
+              <th scope="col" class="text-muted">Estado</th>
+              <th scope="col" class="text-muted"></th>
+            </tr>
+          </thead>
+
+          <tbody>
+            <tr v-for="cita in citas" :key="cita.id">
+              <td>{{ cita.paciente }}</td>
+              <td>{{ cita.fecha }}</td>
+              <td>{{ cita.hora }}</td>
+              <td>{{ cita.procedimiento }}</td>
+              <td>
+                <small>{{ cita.lugar.texto }}</small>
+              </td>
+              <td>
+                <span
+                  class="badge text-muted bg-white border rounded-5 w-100"
+                  >{{ cita.vaucher }}</span
+                >
+              </td>
+              <td>
+                <span class="badge bg-success-subtle rounded-5 text-dark w-100"
+                  >{{ cita.estado }}
+                  <AtomsIconsChevronDown />
+                </span>
+              </td>
+              <td>
+                <AtomsIconsThreeDotsHorizontalIcon />
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
       <!-- Sin Citas  -->
-      <!-- <div class="card border-0 shadow rounded-3 py-4">
+      <div v-else class="card border-0 shadow rounded-3 py-4">
         <div class="card-body d-flex align-items-center p-5">
           <span class="w-50 text-center">
             <AtomsIconsChartVacio />
@@ -220,45 +269,8 @@ const role = useCookie("role");
             </button>
           </p>
         </div>
-      </div> -->
-        <!-- Con Citas  -->
-        <div class="card">
-          <table v-if="citas !== null" class="table fw-light">
-            <thead>
-              <tr>
-                <th scope="col"></th>
-                <th scope="col" class="text-muted">Nombre del paciente</th>
-                <th scope="col" class="text-muted">Fecha</th>
-                <th scope="col" class="text-muted">Hora</th>
-                <th scope="col" class="text-muted">Procedimiento</th>
-                <th scope="col" class="text-muted">Lugar</th>
-                <th scope="col" class="text-muted">Váucher</th>
-                <th scope="col" class="text-muted">Estado</th>
-                <th scope="col" class="text-muted"></th>
-              </tr>
-            </thead>
-
-            <tbody>
-              <tr v-for="cita in citas" :key="cita.id">
-                <td>{{ cita.paciente }}</td>
-                <td>{{ cita.fecha }}</td>
-                <td>{{ cita.hora }}</td>
-                <td>{{ cita.procedimiento }}</td>
-                <td><small>{{ cita.lugar.texto }}</small></td>
-                <td><span class="badge text-muted bg-white border rounded-5 w-100">{{ cita.vaucher }}</span></td>
-                <td>
-                  <span class="badge bg-success-subtle rounded-5 text-dark w-100">{{ cita.estado }}
-                    <AtomsIconsChevronDown />
-                  </span>
-                </td>
-                <td>
-                  <AtomsIconsThreeDotsHorizontalIcon />
-                </td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
       </div>
+    </div>
     <MedicosOnboardingModal />
   </NuxtLayout>
 </template>
