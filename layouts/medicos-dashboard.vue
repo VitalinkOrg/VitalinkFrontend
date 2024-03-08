@@ -204,7 +204,7 @@ const logout = () => {
                 </ul>
               </div>
             </div>
-            <slot />
+            <slot :res="res" />
           </div>
         </div>
       </div>
