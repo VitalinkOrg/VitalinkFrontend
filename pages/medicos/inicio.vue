@@ -74,7 +74,7 @@ if (procedures) {
           </div>
         </div>
         <!-- con Data  -->
-        <div class="card rounded-3 border-0 shadow-sm">
+        <div v-else class="card rounded-3 border-0 shadow-sm">
           <div class="card-body d-flex align-items-center">
             <!-- <AtomsIconsNoActivityIcon /> -->
             <span class="icon-indicator bg-warning-subtle text-warning">
@@ -101,7 +101,7 @@ if (procedures) {
           </div>
         </div>
         <!-- con Data  -->
-        <div class="card rounded-3 border-0 shadow-sm">
+        <div v-else class="card rounded-3 border-0 shadow-sm">
           <div class="card-body d-flex align-items-center">
             <!-- <AtomsIconsNoActivityIcon /> -->
             <span class="icon-indicator bg-warning-subtle text-warning">
@@ -128,7 +128,7 @@ if (procedures) {
           </div>
         </div>
         <!-- con Data  -->
-        <div class="card rounded-3 border-0 shadow-sm">
+        <div v-else class="card rounded-3 border-0 shadow-sm">
           <div class="card-body d-flex align-items-center">
             <!-- <AtomsIconsNoActivityIcon /> -->
             <span class="icon-indicator bg-warning-subtle text-warning">

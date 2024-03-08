@@ -77,8 +77,14 @@ export default {
         <div class="row row-cols-sm-2 mb-3">
           <div class="form-group">
             <label for="especialidad" class="form-label">Especialidad</label>
-            <select name="especialidad" id="especialidad" class="form-select">
-              <option disabled selected>Oftalmología</option>
+            <select class="form-select">
+              <option
+                v-for="specialty in doctor.servicesResult"
+                :key="specialty.length"
+                selected
+              >
+                {{ specialty.specialty }}
+              </option>
             </select>
           </div>
           <div class="form-group">
@@ -188,10 +194,16 @@ export default {
             }}</span>
           </p>
           <div>
-            <a :href="`tel:${doctor.doctor_information.personal.phone_number}`" class="btn btn-info rounded-4 text-white me-2 py-1 px-2">
+            <a
+              :href="`tel:${doctor.doctor_information.personal.phone_number}`"
+              class="btn btn-info rounded-4 text-white me-2 py-1 px-2"
+            >
               <span class="fs-5"><AtomsIconsPhoneIcon /></span>
             </a>
-            <a :href="`mailto:${doctor.doctor_information.personal.email}`" class="btn btn-info rounded-4 text-white py-1 px-2">
+            <a
+              :href="`mailto:${doctor.doctor_information.personal.email}`"
+              class="btn btn-info rounded-4 text-white py-1 px-2"
+            >
               <span class="fs-5"><AtomsIconsMailIcon /></span>
             </a>
           </div>
@@ -254,7 +266,10 @@ export default {
               >
                 Reseñas logradas
                 <small class="text-muted"
-                  >5.0 <span class="fw-light">({{ doctor.reviews.length }} Opiniones)</span></small
+                  >5.0
+                  <span class="fw-light"
+                    >({{ doctor.reviews.length }} Opiniones)</span
+                  ></small
                 >
               </p>
               <div class="d-flex justify-content-between fw-light text-muted">
@@ -324,7 +339,9 @@ export default {
               <p class="fst-italic my-3">
                 {{ review.reply }}
               </p>
-              <p class="text-primary fw-semibold m-0">{{ review.first_name + ' ' + review.last_name }}</p>
+              <p class="text-primary fw-semibold m-0">
+                {{ review.first_name + " " + review.last_name }}
+              </p>
               <p class="text-muted m-0">{{ review.message }}</p>
             </div>
           </div>
