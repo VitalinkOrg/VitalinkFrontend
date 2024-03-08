@@ -3,11 +3,10 @@ const config = useRuntimeConfig();
 const route = useRoute();
 const { query } = route;
 
-
-const { data: clinicas, pending } = await useLazyFetch(
+const { data: clinicas, pending, refresh } = await useLazyFetch(
   config.public.API_BASE_URL + "/patient_dashboard/search_doctors_hospitals",
   {
-    params: query,
+    query: query,
     transform: (_clinicas) => _clinicas.data,
   }
 );
@@ -35,7 +34,7 @@ const { data: clinicas, pending } = await useLazyFetch(
           <div class="row">
             <div class="col-7">
               <div class="d-flex align-items-center justify-content-between mb-3">
-                <span class="fw-medium ms-2" v-if="clinicas">{{ clinicas.length }} Medicos disponibles</span>
+                <span class="fw-medium ms-2" v-if="clinicas">{{ clinicas.length }} Medicos y Hospitales disponibles</span>
                 <span class="d-flex align-items-center">
                   <span class="text-nowrap">Ordenar por:</span>
                   <select name="medicos-sort" id="medicos-sort" class="form-select form-select-sm border-0">
