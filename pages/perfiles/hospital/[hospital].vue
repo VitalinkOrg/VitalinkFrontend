@@ -21,7 +21,7 @@ const { data: hospital, pending } = await useLazyFetch(
           <button
             class="btn btn-link text-dark fw-light me-0 text-decoration-none"
           >
-            [A] Volver
+          <AtomsIconsArrowLeftIcon /> Volver
           </button>
           <nav aria-label="breadcrumb">
             <ol class="breadcrumb m-0">

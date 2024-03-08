@@ -97,7 +97,6 @@ const login = async () => {
     }
   }
   if (error) {
-    console.log(error, "data error");
     errorText.value = error.value.data.info;
   }
 };
