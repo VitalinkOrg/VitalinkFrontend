@@ -1,3 +1,8 @@
+<script setup>
+import { useStore } from "~/store";
+const store = useStore();
+const user = store.user;
+</script>
 <template>
   <NuxtLayout name="medicos-dashboard">
     <nav style="--bs-breadcrumb-divider: '/';" aria-label="breadcrumb">
@@ -23,7 +28,7 @@
             Datos Profesionales
           </NuxtLink>
         </li>
-        <li class="nav-item">
+        <li class="nav-item" v-if="user.last_name">
           <NuxtLink href="/medicos/perfil/educacion-experiencia" class="nav-link" active-class="active text-primary">
             Educación y Experiencia
           </NuxtLink>
