@@ -1,20 +1,68 @@
-<script setup>
-const config = useRuntimeConfig();
-const route = useRoute();
-const { query } = route;
+<script>
+import axios from "axios";
 
-const { data: clinicas, pending, refresh } = await useLazyFetch(
-  config.public.API_BASE_URL + "/patient_dashboard/search_doctors_hospitals",
-  {
-    query: query,
-    transform: (_clinicas) => _clinicas.data,
-  }
-);
+export default {
+  data() {
+    return {
+      clinicas: [],
+      isLoading: true,
+      filter_query: this.$route.query.filter_name,
+      insurance: this.$route.query.insurance,
+    }
+  },
+  watchQuery: true,
+  watch: {
+    '$route.query.filter_name': {
+      handler(oldUrl) {
+        this.filter_query = oldUrl
+        this.search()
+      },
+    },
+    '$route.query.insurance': {
+      handler(oldUrl) {
+        this.insurance = oldUrl
+        this.search()
+      },
+    },
+    search_query(newKeyword) {
+      if (newKeyword === '') {
+        this.search()
+      }
+    },
+    insurance(newKeyword) {
+      if (newKeyword === '') {
+        this.search()
+      }
+    },
+  },
+  created() {
+    this.search();
+  },
+  methods: {
+    async search() {
+      this.isLoading = true;
+      this.clinicas = [];
+      const setup = {
+        params: {
+          ...(this.filter_query !== '' ? { filter_name: this.filter_query } : {}),
+          ...(this.insurance !== '' ? { insurance: this.insurance } : {}),
+        }
+      }
+      try {
+        await axios.get(this.$config.public.API_BASE_URL + '/patient_dashboard/search_doctors_hospitals', setup).then((r) => {
+          this.clinicas = r.data.data;
+          this.isLoading = false
+        })
+      } catch (e) {
+        this.isLoading = false
+      }
+    },
+}}
 </script>
+
 
 <template>
   <NuxtLayout name="web">
-
     <main class="bg-light">
       <section class="bg-primary mb-4" style="--bs-bg-opacity: 0.03">
         <div class="container">
@@ -28,16 +76,24 @@ const { data: clinicas, pending, refresh } = await useLazyFetch(
           </div>
         </div>
       </section>
-      <div v-if="pending">Loading clinicas...</div>
+      <div v-if="isLoading">Loading clinicas...</div>
       <div v-else class="container-fluid">
         <section class="pb-5">
           <div class="row">
             <div class="col-7">
-              <div class="d-flex align-items-center justify-content-between mb-3">
-                <span class="fw-medium ms-2" v-if="clinicas">{{ clinicas.length }} Medicos y Hospitales disponibles</span>
+              <div
+                class="d-flex align-items-center justify-content-between mb-3"
+              >
+                <span class="fw-medium ms-2" v-if="clinicas"
+                  >{{ clinicas.length }} Medicos y Hospitales disponibles</span
+                >
                 <span class="d-flex align-items-center">
                   <span class="text-nowrap">Ordenar por:</span>
-                  <select name="medicos-sort" id="medicos-sort" class="form-select form-select-sm border-0">
+                  <select
+                    name="medicos-sort"
+                    id="medicos-sort"
+                    class="form-select form-select-sm border-0"
+                  >
                     <option value="recomendados">Recomendados</option>
                     <option value="valoraciones">Valoraciones</option>
                     <option value="disponibilidad" selected>
@@ -47,10 +103,14 @@ const { data: clinicas, pending, refresh } = await useLazyFetch(
                   </select>
                 </span>
               </div>
-              <WebsiteClinicasListItem v-for="clinica in clinicas" :key="clinica.id" :clinica="clinica" />
+              <WebsiteClinicasListItem
+                v-for="clinica in clinicas"
+                :key="clinica.id"
+                :clinica="clinica"
+              />
             </div>
             <div class="col">
-              <AtomsMapaInteractivo/>
+              <AtomsMapaInteractivo />
             </div>
           </div>
         </section>
