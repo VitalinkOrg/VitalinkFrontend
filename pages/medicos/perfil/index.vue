@@ -1,5 +1,8 @@
 <script setup>
 import { useStore } from "~/store";
+definePageMeta({
+  middleware: ["auth-doctors-hospitals"],
+});
 const config = useRuntimeConfig();
 const token = useCookie("token");
 const store = useStore();

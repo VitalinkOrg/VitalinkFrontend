@@ -45,7 +45,7 @@
             <AtomsIconsNotificationsIcon />
           </button></li>
         <li class="nav-item dropdown">
-          <a class="nav-link dropdown-toggle" :class="open ? 'show' : ''" @click="open = !open" href="#" role="button"
+          <a class="nav-link" :class="open ? 'show' : ''" @click="open = !open" href="#" role="button"
             data-bs-toggle="dropdown" aria-expanded="false" data-bs-display="static">
             <img src="@/src/assets/img-avatar-sm.png" alt="avatar" />
             <AtomsIconsChevronDown />
@@ -81,7 +81,7 @@ const router = useRouter();
 
 const logout = () => {
   store.authenticated = false;
-  store.user = [];
+  store.user = null;
   store.role = '';
   token.value = null;
   

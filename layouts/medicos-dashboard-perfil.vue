@@ -33,11 +33,11 @@ const user = store.user;
             Educación y Experiencia
           </NuxtLink>
         </li>
-        <li class="nav-item">
+        <!-- <li class="nav-item">
           <NuxtLink href="/medicos/perfil/galeria" class="nav-link" active-class="active text-primary">
             Galería
           </NuxtLink>
-        </li>
+        </li> -->
         <li class="nav-item">
           <NuxtLink href="/medicos/perfil/especialidades" class="nav-link" active-class="active text-primary">
             Especialidades
