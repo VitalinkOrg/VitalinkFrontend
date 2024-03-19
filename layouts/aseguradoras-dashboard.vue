@@ -1,6 +1,7 @@
 <script setup>
 import { useStore } from "~/store";
 import { ref } from "vue";
+import { useRefreshToken } from "#imports";
 const sort = ref(false);
 const router = useRouter();
 const store = useStore();
@@ -21,7 +22,7 @@ if (insurance) {
 
 const logout = () => {
   store.authenticated = false;
-  store.user = [];
+  store.user = null;
   store.role = '';
   token.value = null;
   router.push("/pacientes/login");

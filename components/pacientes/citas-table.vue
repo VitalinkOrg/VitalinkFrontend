@@ -27,7 +27,7 @@ const props = defineProps(["appointments"]);
           </td>
           <td>
             <span class="badge bg-success-subtle rounded-5 text-dark"
-              >{{ appointment.status }} [I]</span
+              >{{ appointment.status }} <AtomsIconsNotificationsIcon /></span
             >
           </td>
         </tr>

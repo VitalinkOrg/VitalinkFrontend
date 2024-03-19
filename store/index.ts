@@ -4,7 +4,7 @@ export const useStore = defineStore('store', {
     state: () => ({
       authenticated: false,
       role: '',
-      user: [],
+      user: null,
     }),
     getters: {},
     actions: {}

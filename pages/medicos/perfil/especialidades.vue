@@ -1,51 +1,7 @@
 <script setup>
 import { useStore } from "~/store";
-const config = useRuntimeConfig();
-const token = useCookie("token");
 const store = useStore();
 const user = store.user;
-const specialties = ref([]);
-const services = ref([]);
-
-const getSpecialities = async () => {
-  const {
-    data: res,
-    error,
-  } = await useFetch(config.public.API_BASE_URL + "/specialties", {
-    transform: (_res) => _res.data,
-  });
-  if (res) {
-    specialties.value = res.value.filter((item1) => {
-      return store.user.specialties.find((item2) => item1.code === item2);
-    });
-  }
-  if (error.value) {
-    console.log(error.value, "data");
-  }
-};
-
-const getServices = async () => {
-  const {
-    data: res,
-    error,
-    pending,
-  } = await useFetch(config.public.API_BASE_URL + "/services", {
-    transform: (_res) => _res.data,
-  });
-  if (res) {
-    services.value = res.value.filter((item1) => {
-      return store.user.services.find((item2) => item1.code === item2);
-    });
-  }
-  if (error.value) {
-    console.log(error.value, "data");
-  }
-};
-
-onMounted(() => {
-  getSpecialities();
-  getServices();
-});
 </script>
 
 <template>
@@ -57,11 +13,11 @@ onMounted(() => {
         Escribe las Especialidades médicas que ofrecerás en la plataforma.
       </p>
       <button
-        v-for="specialty in specialties"
-        :key="specialty.id"
+        v-for="(specialty, index) in user.specialties_names"
+        :key="index"
         class="btn btn-light border w-100 fw-light text-start d-flex bg-white justify-content-between align-items-center mb-3"
       >
-        <span>{{ specialty.name }}</span>
+        <span>{{ specialty }}</span>
         <span class="fw-semibold">
           <AtomsIconsTimesXIcon />
         </span>
@@ -89,11 +45,11 @@ onMounted(() => {
         Agrega los servicios médicos que ofrecerás en la plataforma.
       </p>
       <button
-        v-for="service in services"
-        :key="service.id"
+        v-for="(service, index) in user.services_names"
+        :key="index"
         class="btn btn-light border w-100 fw-light text-start d-flex bg-white justify-content-between align-items-center mb-3"
       >
-        <span>{{ service.name }}</span>
+        <span>{{ service }}</span>
         <span class="fw-semibold">
           <AtomsIconsTimesXIcon />
         </span>
