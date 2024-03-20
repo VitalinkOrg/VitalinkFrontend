@@ -20,7 +20,7 @@ const createAppointment = async () => {
         date: props.appointment.date,
         time_from: props.appointment.time,
         time_to: "13:00",
-        state: "pending",
+        status: "CREATED",
         service_code: props.result.service_code,
         specialty_code: props.result.specialty_code,
         cpt_code: props.result.cpt_code,
@@ -77,7 +77,13 @@ const createAppointment = async () => {
           <div class="border p-3 rounded-4">
             <dl>
               <dt>Fecha</dt>
-              <dd>{{ new Date(appointment.date).toDateString() + ' a las ' + appointment.time }}</dd>
+              <dd>
+                {{
+                  new Date(appointment.date).toDateString() +
+                  " a las " +
+                  appointment.time
+                }}
+              </dd>
             </dl>
             <dl>
               <dt>Hospital o centro</dt>
@@ -154,32 +160,47 @@ const createAppointment = async () => {
               <dl>
                 <dt class="text-white">Fecha</dt>
                 <dd class="text-primary fw-semibold">
-                  Martes 26 Septiembre de 2023 a las 09:00 am.
+                  {{
+                    new Date(appointment.date).toDateString() +
+                    " a las " +
+                    appointment.time
+                  }}
                 </dd>
               </dl>
               <dl>
                 <dt class="text-white">Hospital o centro</dt>
-                <dd class="text-primary fw-semibold">Hospital San José</dd>
+                <dd class="text-primary fw-semibold">
+                  {{ appointment.location }}
+                </dd>
               </dl>
               <dl>
                 <dt class="text-white">Especialidad / motivo</dt>
-                <dd class="text-primary fw-semibold">Operación de cataratas</dd>
+                <dd class="text-primary fw-semibold">
+                  {{ appointment.service }}
+                </dd>
               </dl>
-              <dl>
+              <dl v-if="result.doctor_name">
                 <dt class="text-white">Médico / Especialista</dt>
-                <dd class="text-primary fw-semibold">Stephanie Powell</dd>
+                <dd class="text-primary fw-semibold">
+                  {{ result.doctor_name }}
+                </dd>
               </dl>
               <dl>
                 <dt class="text-white">Paciente titular</dt>
-                <dd class="text-primary fw-semibold">Ana Lorens</dd>
+                <dd class="text-primary fw-semibold">
+                  {{ user.first_name + " " + user.last_name }}
+                </dd>
               </dl>
-              <dl>
+              <!-- <dl>
                 <dt class="text-white">Modelo de servicio</dt>
                 <dd class="text-primary fw-semibold">Seguro Médico: ASIS</dd>
-              </dl>
+              </dl> -->
               <dl>
                 <dt class="text-white">Precio Final del servicio</dt>
-                <dd class="text-primary fw-semibold">¢23000.00</dd>
+                <dd class="text-primary fw-semibold">
+                  {{ parseFloat(result.price).toLocaleString() }}
+                  {{ result.currency }}
+                </dd>
               </dl>
             </div>
           </div>
@@ -195,13 +216,12 @@ const createAppointment = async () => {
               </button>
             </div>
             <div class="col">
-              <button
-                type="button"
+              <NuxtLink
                 class="btn btn-primary w-100 btn-lg"
-                @click="$emit('close-modal')"
+                href="/pacientes/citas"
               >
                 Ver En Citas
-              </button>
+              </NuxtLink>
             </div>
           </div>
         </span>

@@ -6,7 +6,7 @@ const props = defineProps(["appointments"]);
     <table v-if="appointments !== null" class="table fw-light">
       <thead>
         <tr>
-          <th scope="col" class="text-muted">Doctor</th>
+          <th scope="col" class="text-muted">Doctor / Hospital</th>
           <th scope="col" class="text-muted">Fecha</th>
           <th scope="col" class="text-muted">Hora</th>
           <th scope="col" class="text-muted">Procedimiento</th>
@@ -18,7 +18,7 @@ const props = defineProps(["appointments"]);
 
       <tbody>
         <tr v-for="appointment in appointments" :key="appointment.id">
-          <td>{{ appointment.professional_name }}</td>
+          <td>{{ appointment.professional_name || appointment.hospital_name }}</td>
           <td>{{ new Date(appointment.date).toLocaleDateString() }}</td>
           <td>{{ appointment.time_from + " - " + appointment.time_to }}</td>
           <td>{{ appointment.service_name }}</td>
