@@ -72,26 +72,17 @@ const getOffers = async (type, id) => {
             <span class="text-muted me-2"
               >({{ clinica.review_count || 0 }} Reseñas)</span
             >
-            <span
-              v-if="[2000].includes(clinica.id)"
-              class="badge bg-warning"
-            >
+            <span v-if="[2000].includes(clinica.id)" class="badge bg-warning">
               <p class="fw-light text-muted mb-0 p-1">
                 Preferido por aseguradora ABC
               </p>
             </span>
-            <span
-              v-if="[2001].includes(clinica.id)"
-              class="badge bg-warning"
-            >
+            <span v-if="[2001].includes(clinica.id)" class="badge bg-warning">
               <p class="fw-light text-muted mb-0 p-1">
                 Preferido por aseguradora CBA
               </p>
             </span>
-            <span
-              v-if="[2002].includes(clinica.id)"
-              class="badge bg-warning"
-            >
+            <span v-if="[2002].includes(clinica.id)" class="badge bg-warning">
               <p class="fw-light text-muted mb-0 p-1">
                 Preferido por aseguradora TAT
               </p>
@@ -109,8 +100,8 @@ const getOffers = async (type, id) => {
             <span
               class="badge rounded-circle bg-primary text-primary me-2"
               style="--bs-bg-opacity: 0.05"
-              >I</span
-            >
+              ><Icon name="ph:virus"
+            /></span>
             <p class="fw-light text-muted mb-0">
               {{ clinica.service_name[0] }}
             </p>
@@ -122,30 +113,34 @@ const getOffers = async (type, id) => {
               {{ service }}
             </p> -->
           </div>
-          <p class="fw-light text-muted">
+          <p
+            v-if="clinica.hospital_count && clinica.hospital_count !== '0'"
+            class="fw-light text-muted"
+          >
             <span
               class="badge rounded-circle bg-primary text-primary me-2"
               style="--bs-bg-opacity: 0.05"
-              >I</span
-            >+5 Hospitales diferentes
+              ><AtomsIconsMapPointerIcon /></span
+            >+{{ clinica.hospital_count }} Hospitales diferentes
           </p>
           <div class="d-flex justify-content-between align-items-center">
             <div class="card bg-light rounded-4 border-0">
               <div class="card-body py-2">
                 <span class="text-muted">Disponibilidad:</span><br />
                 <span class="fw-normal"
-                  >[I] 5 de Octubre de 2023 [I] 11:00 am</span
+                  ><Icon name="ph:calendar" /> 5 de Octubre de 2023
+                  <Icon name="ph:clock" /> 11:00 am</span
                 >
               </div>
             </div>
             <div
+              v-if="clinica.min_price"
               class="d-flex flex-column align-items-end btn btn-light bg-white"
               @click="getOffers(clinica.entity_type, clinica.id)"
             >
               <span class="text-muted">A partir de</span>
               <span class="fw-bold text-nowrap"
-                >{{ parseFloat(clinica.min_price).toLocaleString() }} USD
-                A</span
+                >{{ parseFloat(clinica.min_price).toLocaleString() }} USD</span
               >
             </div>
           </div>
@@ -166,7 +161,7 @@ const getOffers = async (type, id) => {
               </div>
               <div class="card-body d-flex flex-column">
                 <p class="card-text text-center">
-                  <small class="fw-semibold">
+                  <small class="fw-semibold" v-if="offer.review_score">
                     {{ parseFloat(offer.review_score).toFixed(1) || "" }}
                   </small>
                   <AtomsIconsStar />
@@ -177,15 +172,17 @@ const getOffers = async (type, id) => {
                 </p>
                 <ul class="list-unstyled fw-light mx-auto mb-0 text--muted">
                   <li>
-                    <small>[I]{{ offer.service }}</small>
+                    <small><Icon name="ph:virus" />{{ offer.service }}</small>
                   </li>
                   <!-- <li><small>[I]Sala de cirugía</small></li>
                   <li><small>[I]Habitación privada</small></li> -->
                 </ul>
                 <hr />
-                <p class="card-text text-center text-muted">
+                <p class="card-text text-center text-muted mb-0">
                   <small>Próxima Disponibilidad</small>
-                  <small>[I] 5/10/2024 11:00 AM</small>
+                </p>
+                <p class="card-text text-center text-muted">
+                  <small>5/10/2024 11:00 AM</small>
                 </p>
                 <div class="text-center bg-light rounded-3">
                   <span class="fw-semibold text-primary">Reembolso total</span>
