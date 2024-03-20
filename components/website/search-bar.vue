@@ -76,9 +76,9 @@ function searchResults() {
       <button class="btn rounded-5 bg-white border-secondary-subtle shadow-sm mx-1 fw-light">
         Hora
       </button>
-      <button class="btn rounded-5 bg-white border-secondary-subtle shadow-sm mx-1 fw-light">
+      <!-- <button class="btn rounded-5 bg-white border-secondary-subtle shadow-sm mx-1 fw-light">
         Cancelación Gratis
-      </button>
+      </button> -->
       <button class="btn rounded-5 bg-white border-secondary-subtle shadow-sm mx-1 fw-light">
         Más Filtros
       </button>

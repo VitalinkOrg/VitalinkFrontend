@@ -1,9 +1,57 @@
 <script>
 export default {
-  props: ["doctor"],
-  data: () => ({
-    tab: 1,
-  }),
+  props: {
+    doctor: {
+      type: Object,
+      default: [],
+    },
+  },
+  data() {
+    return {
+      tab: 1,
+      appointment: {
+        specialty: "",
+        service: "",
+        location: "",
+        type: "",
+        date: "",
+        time: "",
+      },
+      result: null,
+      open: false,
+      errorText: "",
+    };
+  },
+  methods: {
+    search() {
+      let filter = this.doctor.servicesResult;
+
+      filter = filter.filter((item) => {
+        return (
+          item.specialty === this.appointment.specialty &&
+          item.service === this.appointment.service &&
+          item.hospital_name === this.appointment.location &&
+          item.cpt === this.appointment.type
+        );
+      });
+      if (!filter[0].schedule) {
+        this.errorText = "No hay disponibilidad para esta cita";
+      } else {
+        this.errorText = "";
+      }
+      return (this.result = filter[0]);
+    },
+    openConfirmationModal() {
+      if (this.$pinia.state.value.store.authenticated) {
+        this.open = true;
+      } else {
+        this.$router.push("/pacientes/login");
+      }
+    },
+    closeModal() {
+      this.open = false;
+    }
+  },
 };
 </script>
 
@@ -15,7 +63,7 @@ export default {
         :class="tab === 1 ? 'active' : ''"
         @click="tab = 1"
       >
-        Disponibilidad
+        Disponibilidad {{ user }}
       </button>
     </li>
     <li class="nav-item">
@@ -36,7 +84,7 @@ export default {
         Ubicación
       </button>
     </li>
-    <li class="nav-item">
+    <!-- <li class="nav-item">
       <button
         class="nav-link"
         :class="tab === 4 ? 'active' : ''"
@@ -44,7 +92,7 @@ export default {
       >
         Galería de fotos
       </button>
-    </li>
+    </li> -->
     <li class="nav-item">
       <button
         class="nav-link"
@@ -74,47 +122,92 @@ export default {
         class="bg-primary rounded-4 h-100 p-4 mb-3"
         style="--bs-bg-opacity: 0.04"
       >
-        <div class="row row-cols-sm-2 mb-3">
-          <div class="form-group">
-            <label for="especialidad" class="form-label">Especialidad</label>
-            <select class="form-select">
-              <option
-                v-for="specialty in doctor.servicesResult"
-                :key="specialty.length"
-                selected
+        <form @submit.prevent="search">
+          <div class="row row-cols-sm-2 mb-3">
+            <div class="form-group">
+              <label for="especialidad" class="form-label">Especialidad</label>
+              <select
+                class="form-select"
+                v-model="appointment.specialty"
+                required
               >
-                {{ specialty.specialty }}
-              </option>
-            </select>
+                <option
+                  v-for="service in doctor.servicesResult"
+                  :key="service.doctor_service_id"
+                  :value="service.specialty"
+                >
+                  {{service.doctor_service_id + ' ' + service.specialty }}
+                </option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label for="procedimiento" class="form-label"
+                >Procedimiento</label
+              >
+              <select
+                name="procedimiento"
+                id="procedimiento"
+                class="form-select"
+                v-model="appointment.service"
+                required
+              >
+                <option
+                  v-for="service in doctor.servicesResult"
+                  :key="service.doctor_service_id"
+                  :value="service.service"
+                >
+                {{service.doctor_service_id + ' ' + service.service }}
+                </option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label for="lugar" class="form-label">Lugar</label>
+              <select
+                name="lugar"
+                id="lugar"
+                class="form-select"
+                v-model="appointment.location"
+              >
+                <option
+                  v-for="service in doctor.servicesResult"
+                  :key="service.doctor_service_id"
+                  :value="service.hospital_name"
+                >
+                {{service.doctor_service_id + ' ' + service.hospital_name }}
+                </option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label for="tipodecita" class="form-label">Tipo de cita</label>
+              <select
+                name="tipodecita"
+                id="tipodecita"
+                class="form-select"
+                v-model="appointment.type"
+              >
+                <option
+                  v-for="service in doctor.servicesResult"
+                  :key="service.doctor_service_id"
+                  :value="service.cpt"
+                >
+                {{service.doctor_service_id + ' ' + service.cpt }}
+                </option>
+              </select>
+            </div>
           </div>
-          <div class="form-group">
-            <label for="procedimiento" class="form-label">Procedimiento</label>
-            <select name="procedimiento" id="procedimiento" class="form-select">
-              <option disabled selected>Cirugía de Cataratas</option>
-            </select>
-          </div>
-          <div class="form-group">
-            <label for="lugar" class="form-label">Lugar</label>
-            <select name="lugar" id="lugar" class="form-select">
-              <option disabled selected>Hospital Clínica Bíblica</option>
-            </select>
-          </div>
-          <div class="form-group">
-            <label for="tipodecita" class="form-label">Tipo de cita</label>
-            <select name="tipodecita" id="tipodecita" class="form-select">
-              <option disabled selected>Cirugía</option>
-            </select>
-          </div>
-        </div>
 
-        <div class="d-flex justify-content-end">
-          <button class="btn btn-outline-primary rounded-4">
-            <AtomsIconsActualizarIcon /> Actualizar Búsqueda
-          </button>
-        </div>
+          <div class="d-flex justify-content-end">
+            <button type="submit" class="btn btn-outline-primary rounded-4">
+              <AtomsIconsActualizarIcon /> Actualizar Búsqueda
+            </button>
+          </div>
+        </form>
         <hr />
 
-        <div class="d-flex align-items-center justify-content-between">
+        <div
+          v-if="result"
+          class="d-flex align-items-center justify-content-between"
+        >
           <div>
             <div class="btn btn-outline-primary rounded-5">
               Váucher: <strong>Ninguno</strong>
@@ -123,52 +216,96 @@ export default {
           </div>
           <div class="d-flex flex-column">
             <span class="fs-6">Precio final del servicio:</span>
-            <span class="fs-5 fw-semibold">₡23000 CRC</span>
-            <small class="text-muted"
+            <span class="fs-5 fw-semibold"
+              >{{ parseFloat(result.price).toLocaleString() }}
+              {{ result.currency }}</span
+            >
+            <!-- <small class="text-muted"
               >Precio original
               <span class="text-decoration-line-through"
                 >₡33000 CRC</span
               ></small
-            >
+            > -->
           </div>
         </div>
       </div>
 
-      <div class="mb-2 d-flex align-items-center justify-content-between">
-        <span class="fw-semibold">Resultados de la Disponibilidad:</span>
-        <div class="d-flex align-items-center">
-          <button class="btn rounded-5 btn-outline-success btn-sm me-2">
-            Hospital Clinica Biblica <AtomsIconsTimesXIcon />
-          </button>
-          <button class="btn rounded-5 btn-outline-success btn-sm">
-            Operación de Cataratas <AtomsIconsTimesXIcon />
-          </button>
-        </div>
-      </div>
-
-      <div class="bg-primary rounded-4 h-100 p-4" style="--bs-bg-opacity: 0.04">
-        <div class="row row-cols-2">
-          <div class="form-group mb-3">
-            <label for="fecha" class="form-label">Seleccione una fecha</label>
-            <input type="date" name="fecha" id="fecha" class="form-control" />
+      <div v-if="result && result.schedule">
+        <form @submit.prevent="openConfirmationModal">
+          <div class="mb-2 d-flex align-items-center justify-content-between">
+            <span class="fw-semibold">Resultados de la Disponibilidad:</span>
+            <div class="d-flex align-items-center">
+              <div class="btn rounded-5 btn-outline-success btn-sm me-1">
+                <small>
+                  {{ this.appointment.specialty }}
+                </small>
+              </div>
+              <div class="btn rounded-5 btn-outline-success btn-sm me-1">
+                <small>
+                  {{ this.appointment.service }}
+                </small>
+              </div>
+              <div class="btn rounded-5 btn-outline-success btn-sm me-1">
+                <small>
+                  {{ this.appointment.location }}
+                </small>
+              </div>
+              <div class="btn rounded-5 btn-outline-success btn-sm me-1">
+                <small>
+                  {{ this.appointment.type }}
+                </small>
+              </div>
+            </div>
           </div>
-          <div class="form-group mb-3">
-            <label for="hora" class="form-label">Seleccione la Hora</label>
-            <input
-              type="time"
-              id="hora"
-              name="hora"
-              min="09:00"
-              max="18:00"
-              required
-              class="form-control"
-            />
-          </div>
-        </div>
-      </div>
 
-      <div class="text-end pt-4">
-        <button class="btn btn-primary btn-lg">Reservar Cita</button>
+          <div
+            class="bg-primary rounded-4 h-100 p-4"
+            style="--bs-bg-opacity: 0.04"
+          >
+            <div class="row row-cols-2">
+              <div class="form-group mb-3">
+                <label for="fecha" class="form-label"
+                  >Seleccione una fecha</label
+                >
+                <input
+                  type="date"
+                  name="fecha"
+                  id="fecha"
+                  class="form-control"
+                  v-model="appointment.date"
+                  required
+                />
+              </div>
+              <div class="form-group mb-3">
+                <label for="hora" class="form-label">Seleccione la Hora</label>
+                <input
+                  type="time"
+                  id="hora"
+                  name="hora"
+                  :min="result.schedule[0].open + ':00'"
+                  :max="result.schedule[0].close + ':00'"
+                  class="form-control"
+                  v-model="appointment.time"
+                  required
+                />
+              </div>
+            </div>
+          </div>
+          <div class="text-end pt-4">
+            <button type="submit" class="btn btn-primary btn-lg">
+              Reservar Cita
+            </button>
+          </div>
+        </form>
+        <WebsiteConfirmationCitaModal
+          :open="open"
+          :appointment="appointment"
+          :result="result"
+          @close-modal="closeModal"
+        />
+      </div>
+      <div v-else>
+        <p>{{ errorText }}</p>
       </div>
     </div>
     <!-- Servicios  -->

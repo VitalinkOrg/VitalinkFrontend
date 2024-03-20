@@ -1,6 +1,10 @@
 <script setup>
 import { useStore } from "~/store";
 import { ref } from "vue";
+import { useRefreshToken } from "#imports";
+definePageMeta({
+  middleware: ["auth-doctors-hospitals"],
+});
 const sort = ref(false);
 const router = useRouter();
 const store = useStore();
@@ -29,7 +33,7 @@ if (res) {
 
 const logout = () => {
   store.authenticated = false;
-  store.user = [];
+  store.user = null;
   store.role = "";
   token.value = null;
   router.push("/pacientes/login");
@@ -41,9 +45,9 @@ const logout = () => {
   <div v-else class="dashboard bg-light">
     <div class="dashboard-sidebar bg-white shadow p-4">
       <nav class="nav d-flex flex-column align-items-start w-100">
-        <span class="mb-5 ps-3">
+        <NuxtLink href="/" class="mb-5 ps-3">
           <AtomsVitalinkLogo />
-        </span>
+        </NuxtLink>
         <li class="nav-item w-100 mb-3">
           <NuxtLink
             href="/medicos/inicio"
@@ -167,10 +171,7 @@ const logout = () => {
                   data-bs-toggle="dropdown"
                   aria-expanded="false"
                 >
-                  {{ 
-                    res.name ||
-                    res.first_name + ' ' + res.last_name 
-                  }}
+                  {{ res.name || res.first_name + " " + res.last_name }}
                 </button>
                 <ul
                   class="dropdown-menu dropdown-menu-end"

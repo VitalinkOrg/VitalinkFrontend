@@ -17,20 +17,17 @@ const { data: hospital, pending } = await useLazyFetch(
   <NuxtLayout name="web">
     <main class="pt-2 pb-5">
       <div class="container-fluid">
-        <div class="d-flex align-items-center">
-          <button
-            class="btn btn-link text-dark fw-light me-0 text-decoration-none"
-          >
-          <AtomsIconsArrowLeftIcon /> Volver
-          </button>
+        <div class="d-flex align-items-center mb-2">
           <nav aria-label="breadcrumb">
             <ol class="breadcrumb m-0">
+              <li class="breadcrumb-item">
+              </li>
               <li class="breadcrumb-item">
                 <NuxtLink href="/" class="text-decoration-none"
                   >Inicio</NuxtLink
                 >
               </li>
-              <li class="breadcrumb-item">Resultados de búsqueda</li>
+              <a href="javascript:history.back()" class="breadcrumb-item text-decoration-none">Resultados de búsqueda</a>
               <li class="breadcrumb-item active" aria-current="page">
                 Perfil medico
               </li>
@@ -61,12 +58,13 @@ const { data: hospital, pending } = await useLazyFetch(
                   {{ hospital.hospital_information.name }}
                 </h2>
 
-                <!-- <span
+                <span
                   class="badge bg-primary text-primary me-2 rounded-5 text-capitalize"
                   style="--bs-bg-opacity: 0.07"
-                  v-for="servicio in hospital.servicios"
-                  >{{ servicio.nombre }}</span
-                > -->
+                  v-for="service in hospital.servicesResult"
+                  :key="service.hospital_service_id"
+                  >{{ service.specialty }}</span
+                >
                 <div class="my-2">
                   <a :href="`tel:${hospital.hospital_information.phone_number_1}`" class="badge bg-success rounded-4 mx-1 p-2">
                     <AtomsIconsPhoneIcon />

@@ -4,7 +4,7 @@ export default {
 };
 </script>
 <template>
-  <div class="row row-cols-3 gx-3">
+  <div v-if="services.length" class="row row-cols-3 gx-3">
     <div class="col" v-for="service in services" :key="service.id">
       <div class="card border shadow-sm rounded-4">
         <div class="card-body px-2">
@@ -12,7 +12,7 @@ export default {
             {{ service.doctor_service_id || service.hospital_service_id }} - {{ service.service }}
           </p>
           <p class="lh-sm fw-light text-muted mb-2">
-            <small>{{ service.CPT }}</small>
+            <small>{{ service.cpt }}</small>
           </p>
           <!-- <ul class="text-muted list-unstyled border-top border-bottom py-1 mb-0">
             <li v-for="amenidad in service.amenidades" class="text-muted fw-light"><small>[I] {{ amenidad.nombre
@@ -35,9 +35,12 @@ export default {
 
 
 
-          <WebsiteReservarCitaModal />
+          <WebsiteReservarCitaModal :service="service" />
         </div>
       </div>
     </div>
+  </div>
+  <div v-else>
+    <p>No hay servicios disponibles.</p>
   </div>
 </template>

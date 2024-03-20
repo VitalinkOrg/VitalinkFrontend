@@ -1,10 +1,9 @@
 <script setup>
 import { useStore } from "~/store";
-const { citas } = useMedico();
-
 definePageMeta({
   middleware: ["auth-doctors-hospitals"],
 });
+const { citas } = useMedico();
 const store = useStore();
 const config = useRuntimeConfig();
 const token = useCookie("token");
@@ -12,13 +11,13 @@ const role = useCookie("role");
 
 let url;
 if (role.value == "R_HOS") {
-  url = "/hospital_dashboard/count_procedures";
+  url = "/hospital_dashboard/";
 } else {
-  url = "/doctor_dashboard/count_procedures";
+  url = "/doctor_dashboard/";
 }
 
 const { data: procedures, pending: pendingProcedures } = await useFetch(
-  config.public.API_BASE_URL + url,
+  config.public.API_BASE_URL + url + "count_procedures",
   {
     headers: { Authorization: token.value },
     transform: (_procedures) => _procedures.data[0],
@@ -27,6 +26,18 @@ const { data: procedures, pending: pendingProcedures } = await useFetch(
 if (procedures) {
   store.user.procedures = procedures;
 }
+
+const { data: appointments, loading } = await useFetch(
+  config.public.API_BASE_URL + url + "history_appointments",
+  {
+    headers: { Authorization: token.value },
+    transform: (_appointments) => _appointments.data,
+  }
+);
+if (appointments) {
+  store.user.appointments = appointments;
+  useRefreshToken();
+}
 </script>
 <template>
   <NuxtLayout name="medicos-dashboard">
@@ -34,7 +45,10 @@ if (procedures) {
       <div class="col">
         <!-- Citas Pendientes  -->
         <!-- Vacio  -->
-        <div v-if="procedures.pending_appointments == 0" class="card rounded-3 border-0 shadow-sm">
+        <div
+          v-if="procedures.pending_appointments == 0"
+          class="card rounded-3 border-0 shadow-sm"
+        >
           <div class="card-body d-flex align-items-center px-1">
             <AtomsIconsNoActivityIcon />
             <p class="d-flex flex-column ms-3 mb-0">
@@ -44,7 +58,6 @@ if (procedures) {
               </button>
             </p>
           </div>
-          
         </div>
         <!-- con Data  -->
         <div v-else class="card rounded-3 border-0 shadow-sm">
@@ -54,7 +67,9 @@ if (procedures) {
               <Icon name="fa6-solid:address-book" />
             </span>
             <p class="d-flex flex-column ms-3 mb-0">
-              <span class="fs-5 fw-semibold">{{ procedures.pending_appointments }}</span>
+              <span class="fs-5 fw-semibold">{{
+                procedures.pending_appointments
+              }}</span>
               <small class="text-muted">Citas Pendientes</small>
             </p>
           </div>
@@ -62,7 +77,10 @@ if (procedures) {
       </div>
       <div class="col">
         <!-- Pacientes Atendidos  -->
-        <div v-if="procedures.completed_appointments == 0" class="card rounded-3 border-0 shadow-sm">
+        <div
+          v-if="procedures.completed_appointments == 0"
+          class="card rounded-3 border-0 shadow-sm"
+        >
           <div class="card-body d-flex align-items-center px-1">
             <AtomsIconsNoActivityIcon />
             <p class="d-flex flex-column ms-3 mb-0">
@@ -81,7 +99,9 @@ if (procedures) {
               <Icon name="ic:round-favorite" />
             </span>
             <p class="d-flex flex-column ms-3 mb-0">
-              <span class="fs-5 fw-semibold">{{ procedures.completed_appointments }}</span>
+              <span class="fs-5 fw-semibold">{{
+                procedures.completed_appointments
+              }}</span>
               <small class="text-muted">Pacientes Atendidos</small>
             </p>
           </div>
@@ -89,7 +109,10 @@ if (procedures) {
       </div>
       <div class="col">
         <!-- Reseñas Recibidas  -->
-        <div v-if="procedures.reviews_count == 0" class="card rounded-3 border-0 shadow-sm">
+        <div
+          v-if="procedures.reviews_count == 0"
+          class="card rounded-3 border-0 shadow-sm"
+        >
           <div class="card-body d-flex align-items-center px-1">
             <AtomsIconsNoActivityIcon />
             <p class="d-flex flex-column ms-3 mb-0">
@@ -108,7 +131,9 @@ if (procedures) {
               <Icon name="mdi:star-shooting" />
             </span>
             <p class="d-flex flex-column ms-3 mb-0">
-              <span class="fs-5 fw-semibold">{{ procedures.reviews_count }}</span>
+              <span class="fs-5 fw-semibold">{{
+                procedures.reviews_count
+              }}</span>
               <small class="text-muted">Reseñas Recibidas</small>
             </p>
           </div>
@@ -116,7 +141,10 @@ if (procedures) {
       </div>
       <div class="col">
         <!-- Procedimientos  -->
-        <div v-if="procedures.unique_service_codes_count == 0" class="card rounded-3 border-0 shadow-sm">
+        <div
+          v-if="procedures.unique_service_codes_count == 0"
+          class="card rounded-3 border-0 shadow-sm"
+        >
           <div class="card-body d-flex align-items-center px-1">
             <AtomsIconsNoActivityIcon />
             <p class="d-flex flex-column ms-3 mb-0">
@@ -135,7 +163,9 @@ if (procedures) {
               <Icon name="ph:calendar-plus-fill" />
             </span>
             <p class="d-flex flex-column ms-3 mb-0">
-              <span class="fs-5 fw-semibold">{{ procedures.unique_service_codes_count }}</span>
+              <span class="fs-5 fw-semibold">{{
+                procedures.unique_service_codes_count
+              }}</span>
               <small class="text-muted">Procedimientos</small>
             </p>
           </div>
@@ -147,7 +177,7 @@ if (procedures) {
       <div class="col-sm-8">
         <p class="mx-2 d-flex align-items-center justify-content-between">
           <span class="fw-medium fs-5">Próximas Citas</span>
-          <NuxtLink class="btn btn-link text-dark" href="/medicos/inicio"
+          <NuxtLink class="btn btn-link text-dark" href="/medicos/citas"
             >Ver Todo
             <AtomsIconsArrowRightIcon />
           </NuxtLink>
@@ -172,7 +202,7 @@ if (procedures) {
       <div class="col">
         <p class="mx-2 d-flex align-items-center justify-content-between">
           <span class="fw-medium fs-5">Pacientes</span>
-          <NuxtLink class="btn btn-link text-dark" href="/medicos/inicio"
+          <NuxtLink class="btn btn-link text-dark" href="/medicos/pacientes"
             >Ver Todo
             <AtomsIconsArrowRightIcon />
           </NuxtLink>
@@ -207,7 +237,7 @@ if (procedures) {
         </NuxtLink>
       </p>
       <!-- Con Citas  -->
-      <div v-if="citas !== null" class="card">
+      <div v-if="appointments !== null" class="card">
         <table class="table fw-light">
           <thead>
             <tr>
@@ -224,23 +254,34 @@ if (procedures) {
           </thead>
 
           <tbody>
-            <tr v-for="cita in citas" :key="cita.id">
-              <td>{{ cita.paciente }}</td>
-              <td>{{ cita.fecha }}</td>
-              <td>{{ cita.hora }}</td>
-              <td>{{ cita.procedimiento }}</td>
+            <tr v-for="appointment in appointments" :key="appointment.id">
               <td>
-                <small>{{ cita.lugar.texto }}</small>
+                <div class="form-check">
+                  <input
+                    class="form-check-input border-dark"
+                    type="checkbox"
+                    value=""
+                    :id="appointment.id"
+                  />
+                  <!-- <label class="form-check-label" for="flexCheckDefault"></label> -->
+                </div>
+              </td>
+              <td>{{ appointment.patient_name }}</td>
+              <td>{{ new Date(appointment.date).toLocaleDateString() }}</td>
+              <td>{{ appointment.time_from + " - " + appointment.time_to }}</td>
+              <td>{{ appointment.service_name }}</td>
+              <td>
+                <small>{{ appointment.patient_address }}</small>
               </td>
               <td>
                 <span
                   class="badge text-muted bg-white border rounded-5 w-100"
-                  >{{ cita.vaucher }}</span
+                  >{{ appointment.code }}</span
                 >
               </td>
               <td>
                 <span class="badge bg-success-subtle rounded-5 text-dark w-100"
-                  >{{ cita.estado }}
+                  >{{ appointment.status }}
                   <AtomsIconsChevronDown />
                 </span>
               </td>
@@ -271,7 +312,7 @@ if (procedures) {
         </div>
       </div>
     </div>
-    <MedicosOnboardingModal />
+    <MedicosOnboardingModal :data="store.user" />
   </NuxtLayout>
 </template>
 

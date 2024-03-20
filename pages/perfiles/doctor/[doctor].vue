@@ -17,20 +17,17 @@ const { data: doctor, pending } = await useLazyFetch(
   <NuxtLayout name="web">
     <main class="pt-2 pb-5">
       <div class="container-fluid">
-        <div class="d-flex align-items-center">
-          <button
-            class="btn btn-link text-dark fw-light me-0 text-decoration-none"
-          >
-          <AtomsIconsArrowLeftIcon /> Volver
-          </button>
+        <div class="d-flex align-items-center mb-2">
           <nav aria-label="breadcrumb">
             <ol class="breadcrumb m-0">
+              <li class="breadcrumb-item">
+              </li>
               <li class="breadcrumb-item">
                 <NuxtLink href="/" class="text-decoration-none"
                   >Inicio</NuxtLink
                 >
               </li>
-              <li class="breadcrumb-item">Resultados de búsqueda</li>
+              <a href="javascript:history.back()" class="breadcrumb-item text-decoration-none">Resultados de búsqueda</a>
               <li class="breadcrumb-item active" aria-current="page">
                 Perfil medico
               </li>
@@ -65,17 +62,22 @@ const { data: doctor, pending } = await useLazyFetch(
                   }}
                 </h2>
 
-                <!-- <span
+                <span
                   class="badge bg-primary text-primary me-2 rounded-5 text-capitalize"
                   style="--bs-bg-opacity: 0.07"
-                  v-for="servicio in data.servicios"
-                  >{{ servicio.nombre }}</span
-                > -->
+                  v-for="service in doctor.servicesResult"
+                  :key="service.doctor_service_id"
+                  >{{ service.specialty }}</span
+                >
                 <div class="my-2">
-                  <a :href="`tel:${doctor.doctor_information.personal.phone_number}`" class="badge bg-success rounded-4 mx-1 p-2"
+                  <a
+                    :href="`tel:${doctor.doctor_information.personal.phone_number}`"
+                    class="badge bg-success rounded-4 mx-1 p-2"
                     ><AtomsIconsPhoneIcon
                   /></a>
-                  <a :href="`mailto:${doctor.doctor_information.personal.email}`" class="badge bg-success rounded-4 mx-1 p-2"
+                  <a
+                    :href="`mailto:${doctor.doctor_information.personal.email}`"
+                    class="badge bg-success rounded-4 mx-1 p-2"
                     ><AtomsIconsMailIcon
                   /></a>
                 </div>

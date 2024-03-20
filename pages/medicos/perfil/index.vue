@@ -1,13 +1,69 @@
 <script setup>
 import { useStore } from "~/store";
+definePageMeta({
+  middleware: ["auth-doctors-hospitals"],
+});
+const config = useRuntimeConfig();
+const token = useCookie("token");
 const store = useStore();
 const user = store.user;
+const firstName = ref(user.first_name || user.name);
+const lastName = ref(user.last_name);
+const phoneNumber = ref(user.phone_number || user.phone_number_1);
+const address = ref(user.address);
+const city = ref(user.city);
+const country_iso_code = ref(user.country_iso_code);
+const postal_code = ref(user.postal_code);
+
+const updateDoctor = async () => {
+  const { data, error } = await useFetch(
+    config.public.API_BASE_URL + "/doctors/update_doctor",
+    {
+      method: "PUT",
+      headers: { Authorization: token.value },
+      body: {
+        first_name: firstName,
+        last_name: lastName,
+        phone_number: phoneNumber,
+        address,
+        city,
+        country_iso_code
+      },
+    }
+  );
+  if (error.value) {
+    console.log(error.value, "data");
+  }
+};
+
+const updateHospital = async () => {
+  const { data, error } = await useFetch(
+    config.public.API_BASE_URL + "/hospitals/update_hospital",
+    {
+      method: "PUT",
+      headers: { Authorization: token.value },
+      body: {
+        group_name: user.group_name,
+        medical_number: user.medical_number,
+        name: firstName,
+        phone_number_1: phoneNumber,
+        address,
+        city,
+        country_iso_code,
+        postal_code
+      },
+    }
+  );
+  if (error.value) {
+    console.log(error.value, "data");
+  }
+};
 </script>
 
 <template>
   <NuxtLayout name="medicos-dashboard-perfil">
     <h4 class="fw-normal">Datos Personales</h4>
-    <form class="mt-4">
+    <form class="mt-4" @submit.prevent="user.last_name ? updateDoctor($event) : updateHospital($event)">
       <div class="row row-cols-2">
         <div class="form-group mb-3">
           <label for="nombre" class="form-label text-capitalize"
@@ -17,12 +73,12 @@ const user = store.user;
             type="text"
             class="form-control"
             placeholder="Escribe tu nombre"
-            :value="user.first_name || user.name"
+            v-model="firstName"
             name="nombre"
             id="nombre"
           />
         </div>
-        <div class="form-group mb-3">
+        <div v-if="user.last_name" class="form-group mb-3">
           <label for="apellido" class="form-label text-capitalize"
             >Apellido (s)</label
           >
@@ -42,7 +98,7 @@ const user = store.user;
           <input
             type="phone"
             placeholder="00000000"
-            :value="user.phone_number || user.phone_number_1"
+            v-model="phoneNumber"
             id="telefono"
             name="telefono"
             class="form-control"
@@ -59,14 +115,14 @@ const user = store.user;
             type="text"
             placeholder="Dirección"
             id="direccion"
-            :value="user.address"
+            v-model="address"
             name="direccion"
             class="form-control"
           />
         </div>
       </div>
       <div class="row row-cols-3">
-        <div class="form-group mb-3">
+        <div v-if="user.postal_code" class="form-group mb-3">
           <label class="form-label text-capitalize" for="postal"
             >Código Postal</label
           >
@@ -75,6 +131,7 @@ const user = store.user;
             placeholder="00000000"
             id="postal"
             name="postal"
+            v-model="postal_code"
             class="form-control"
           />
         </div>
@@ -85,7 +142,7 @@ const user = store.user;
             placeholder="Ciudad"
             id="ciudad"
             name="ciudad"
-            :value="user.city"
+            v-model="city"
             class="form-control"
             required
           />
@@ -97,14 +154,14 @@ const user = store.user;
             placeholder="País"
             id="pais"
             name="pais"
-            :value="user.country_iso_code"
+            v-model="country_iso_code"
             class="form-control"
             required
           />
         </div>
       </div>
       <div class="mt-5">
-        <button on-submit="" class="btn btn-primary">Actualizar Perfil</button>
+        <button type="submit" class="btn btn-primary">Actualizar Perfil</button>
       </div>
     </form>
   </NuxtLayout>

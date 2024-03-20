@@ -123,17 +123,34 @@ if (suppliers) {
                 <p class="fw-light text-muted d-flex align-items-center">
                   <span class="text-info me-2" style="--bs-bg-opacity: 0.05">
                     <AtomsIconsMapPointerIcon /> </span
+                  >{{
+                    supplier.address +
+                    ", " +
+                    supplier.city +
+                    ", " +
+                    supplier.country_iso_code
+                  }}
+                </p>
+                <p class="fw-light text-muted d-flex align-items-center">
+                  <span class="text-info me-2" style="--bs-bg-opacity: 0.05">
+                    <AtomsIconsMapPointerIcon /> </span
                   >+5 Hospitales diferentes
                 </p>
                 <div class="d-flex align-items-center justify-content-between">
                   <button class="btn btn-primary">Ir a la página web</button>
                   <div>
-                    <button class="btn btn-light border fw-light bg-white me-2">
-                      <AtomsIconsMailIcon />
-                    </button>
-                    <button class="btn btn-light border fw-light bg-white">
-                      <AtomsIconsPhoneIcon />
-                    </button>
+                    <a
+                      :href="`mailto:${supplier.email}`"
+                      class="btn btn-light border fw-light bg-white me-2"
+                    >
+                      <span class="fs-5"><AtomsIconsMailIcon /></span>
+                    </a>
+                    <a
+                      :href="`tel:${supplier.phone_number}`"
+                      class="btn btn-light border fw-light bg-white"
+                    >
+                      <span class="fs-5"><AtomsIconsPhoneIcon /></span>
+                    </a>
                   </div>
                 </div>
               </div>
