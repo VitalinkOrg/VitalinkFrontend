@@ -40,7 +40,7 @@
           >Información General</span
         >
       </div>
-      <form @submit.prevent="register">
+      <form @submit="register">
         <!-- TAB DATOS PERSONALES -->
         <div v-if="tab === 1">
           <label class="form-label mb-4 text-dark text-capitalize"
@@ -126,6 +126,7 @@
                 >Confirmar Contraseña</label
               >
               <input
+                v-model="passwordConfirmation"
                 type="password"
                 class="form-control"
                 id="confirmPassword"
@@ -136,8 +137,11 @@
               <!-- <div id="passwordHelp" class="form-text">Deben ser 8 caracteres como mínimo</div> -->
             </div>
           </div>
+          <div v-if="errorPassword">
+            <p>{{ errorPassword }}</p>
+          </div>
 
-          <button @click="tab = 2" class="btn btn-primary">
+          <button @click="nextStep" class="btn btn-primary">
             Siguiente Paso
             <AtomsIconsArrowRightIcon />
           </button>
@@ -171,44 +175,49 @@
               class="form-control"
               placeholder="Escribe el Nombre del Hospital central"
               id="nombre-central"
+              required
             />
             <!-- <div id="nombreHelp" class="form-text">We'll never share your email with anyone else.</div> -->
           </div>
           <div class="form-group mb-4">
-            <label for="especialidades" class="form-label text-capitalize"
+            <label for="servicios" class="form-label text-capitalize"
               >Especialidades Médicas</label
             >
             <select
-              id="especialidades"
-              v-model="specialties"
+              id="servicios"
               class="form-select"
+              multiple
+              size="6"
+              v-model="specialtiesSelected"
             >
-              <option disabled selected>Oftalmología</option>
-              <option value="oftalmologia">Oftalmología</option>
-            </select>
-            <div>
-              <span
-                class="badge rounded-circle bg-primary text-primary me-2"
-                style="--bs-bg-opacity: 0.05"
-                >Oftalmología x</span
+              <option
+                v-for="specialty in specialties"
+                :key="specialty.id"
+                :value="specialty.code"
               >
-            </div>
+                {{ specialty.name }}
+              </option>
+            </select>
           </div>
           <div class="form-group mb-4">
             <label for="servicios" class="form-label text-capitalize"
               >Servicios que se practican</label
             >
-            <select v-model="services" id="servicios" class="form-select">
-              <option disabled selected>Cirugía</option>
-              <option value="oftalmologia">Cirugía</option>
-            </select>
-            <div>
-              <span
-                class="badge rounded-circle bg-primary text-primary me-2"
-                style="--bs-bg-opacity: 0.05"
-                >Cirugía x</span
+            <select
+              id="servicios"
+              class="form-select"
+              multiple
+              size="6"
+              v-model="servicesSelected"
+            >
+              <option
+                v-for="service in services"
+                :key="service.id"
+                :value="service.code"
               >
-            </div>
+                {{ service.name }}
+              </option>
+            </select>
           </div>
           <button @click="tab = 1" class="btn btn-light border-dark w-100">
             <AtomsIconsArrowLeftIcon />
@@ -217,6 +226,9 @@
           <button type="submit" class="btn btn-primary w-100 mt-2">
             Registrarme
           </button>
+        </div>
+        <div class="modal-footer justify-content-center" v-if="errorText">
+          <p>{{ errorText }}</p>
         </div>
       </form>
       <hr />
@@ -236,7 +248,7 @@
       </div>
       <p class="text-center mt-3">
         <span class="text-muted">Ya tienes Cuenta? </span>
-        <NuxtLink href="/clinicas/registro" class="btn-link text-dark fw-medium"
+        <NuxtLink href="/pacientes/login" class="btn-link text-dark fw-medium"
           >Iniciar Sesión</NuxtLink
         >
       </p>
@@ -244,35 +256,78 @@
   </main>
 </template>
 
-<script lang="ts" setup>
+<script setup>
 const config = useRuntimeConfig();
 const router = useRouter();
 const email = ref("");
 const password = ref("");
+const passwordConfirmation = ref("");
 const name = ref("");
 const address = ref("");
 const legal_name = ref("");
 const phone_number_1 = ref("");
 const medical_number = ref("");
-const services = ref([]);
-const specialties = ref([""]);
+const servicesSelected = ref([]);
+const specialtiesSelected = ref([""]);
 const tab = ref(1);
+const errorPassword = ref("");
+const errorText = ref(null);
 
-const register = async () => {
-  const { data, error }: any = await useFetch(
+const { data: specialties } = await useFetch(
+  config.public.API_BASE_URL + "/specialties",
+  {
+    transform: (_specialties) => _specialties.data,
+  }
+);
+
+const { data: services } = await useFetch(
+  config.public.API_BASE_URL + "/services",
+  {
+    transform: (_services) => _services.data,
+  }
+);
+
+const nextStep = () => {
+  const { value: nameValue } = name;
+  const { value: phoneNumberValue } = phone_number_1;
+  const { value: addressValue } = address;
+  const { value: emailValue } = email;
+  const { value: passwordValue } = password;
+  const { value: passwordConfirmationValue } = passwordConfirmation;
+
+  if (
+    nameValue &&
+    phoneNumberValue &&
+    addressValue &&
+    emailValue &&
+    passwordValue &&
+    passwordConfirmationValue
+  ) {
+    if (passwordValue === passwordConfirmationValue) {
+      tab.value = 2;
+    } else {
+      errorPassword.value = "Passwords do not match";
+    }
+  }
+};
+
+const register = async (e) => {
+  e.preventDefault();
+  const { data, error } = await useFetch(
     config.public.API_BASE_URL + "/users/register_hospital",
     {
       method: "POST",
       body: {
         password,
-		email,
-		name,
-		phone_number_1,
-		medical_number,
-		services,
-    specialties,
-    address,
-    legal_name,
+        email,
+        name,
+        phone_number_1,
+        medical_number,
+        services: servicesSelected,
+        specialties: specialtiesSelected,
+        address,
+        legal_name,
+        group_name: 'Test',
       },
     }
   );
@@ -281,6 +336,7 @@ const register = async () => {
   }
   if (error.value) {
     console.log(error.value, "data");
+    errorText.value = error.value.data.info;
   }
 };
 </script>

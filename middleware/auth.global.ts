@@ -7,7 +7,6 @@ export default defineNuxtRouteMiddleware((to) => {
   const token = useCookie("token");
   const role = useCookie("role");
   const config = useRuntimeConfig();
-  console.log(store.user, "test");
 
   if (token.value) {
     store.authenticated = true;

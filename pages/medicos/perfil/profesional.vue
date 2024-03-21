@@ -1,9 +1,13 @@
 <script setup>
 import { useStore } from "~/store";
+definePageMeta({
+  middleware: ["auth-doctors-hospitals"],
+});
 const config = useRuntimeConfig();
 const token = useCookie("token");
 const store = useStore();
 const user = store.user;
+console.log(user, 'test');
 const description = ref(user.description);
 const medicalNumber = ref(user.medical_license_number || user.medical_number);
 
@@ -46,13 +50,13 @@ const updateHospital = async () => {
 
 <template>
   <NuxtLayout name="medicos-dashboard-perfil">
-    <p class="mb-0">Foto de Perfil</p>
+    <!-- <p class="mb-0">Foto de Perfil</p>
     <p class="text-muted fw-light">
       Esta será la foto que vean tu pacientes cuando encuentren tu perfil en
       Vitalink
-    </p>
+    </p> -->
     <form @submit.prevent="user.last_name ? updateDoctor($event) : updateHospital($event)">
-      <div>
+      <!-- <div>
         <input
           type="file"
           id="avatar"
@@ -61,7 +65,7 @@ const updateHospital = async () => {
           class="form-control"
         />
       </div>
-      <hr />
+      <hr /> -->
       <div class="form-group mb-3">
         <label for="descripcion" class="form-label text-capitalize"
           >Escribe una breve descripción profesional</label
