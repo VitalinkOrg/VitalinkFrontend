@@ -393,7 +393,7 @@
               <dt>Médico / Especialista</dt>
               <dd>{{ service.doctor_name }}</dd>
             </dl>
-            <dl>
+            <dl v-if="user">
               <dt>Paciente titular</dt>
               <dd>{{ user.first_name + " " + user.last_name }}</dd>
             </dl>
