@@ -97,7 +97,7 @@ const createAppointment = async () => {
               <dt>Médico / Especialista</dt>
               <dd>{{ result.doctor_name }}</dd>
             </dl>
-            <dl>
+            <dl v-if="user">
               <dt>Paciente titular</dt>
               <dd>{{ user.first_name + " " + user.last_name }}</dd>
             </dl>
