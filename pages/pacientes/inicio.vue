@@ -82,7 +82,7 @@ if (historial) {
               <table class="table table-hover" v-if="appointments !== null">
                 <thead>
                   <tr>
-                    <th scope="col">Doctor</th>
+                    <th scope="col">Doctor / Hospital</th>
                     <th scope="col">Fecha</th>
                     <th scope="col">Hora</th>
                     <th scope="col">Procedimiento</th>
@@ -94,7 +94,7 @@ if (historial) {
                 <tbody>
                   <tr v-for="appointment in appointments" :key="appointment.id">
                     <th scope="row" class="fw-light">
-                      {{ appointment.professional_name }}
+                      {{ appointment.professional_name || appointment.hospital_name }}
                     </th>
                     <td class="fw-light">{{ new Date(appointment.date).toLocaleDateString() }}</td>
                     <td class="fw-light">
@@ -103,7 +103,7 @@ if (historial) {
                     <td class="fw-light">{{ appointment.service_name }}</td>
                     <td class="fw-light">{{ appointment.hospital_address }}</td>
                     <td class="fw-light">
-                      <span class="badge bg-success-subtle text-dark rounded-5 w-100">{{ appointment.state }}</span>
+                      <span class="badge bg-success-subtle text-dark rounded-5 w-100">{{ appointment.status }}</span>
                     </td>
                     <td>
                       <AtomsIconsTrashIcon />
