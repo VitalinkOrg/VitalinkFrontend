@@ -53,7 +53,7 @@
                 >Nombre</label
               >
               <input
-				v-model="first_name"
+                v-model="first_name"
                 type="text"
                 class="form-control"
                 placeholder="Escribe tu nombre"
@@ -67,7 +67,7 @@
                 >Apellido</label
               >
               <input
-				v-model="last_name"
+                v-model="last_name"
                 type="text"
                 class="form-control"
                 placeholder="Escribe tu apellido"
@@ -81,7 +81,7 @@
                 >Número de teléfono</label
               >
               <input
-				v-model="phone_number"
+                v-model="phone_number"
                 type="phone"
                 class="form-control"
                 placeholder="0000-0000"
@@ -95,7 +95,7 @@
                 >Fecha de nacimiento</label
               >
               <input
-				v-model="date_birth"
+                v-model="date_birth"
                 type="date"
                 class="form-control"
                 placeholder="15/06/1996"
@@ -111,7 +111,7 @@
               >Correo Electrónico</label
             >
             <input
-			  v-model="email"
+              v-model="email"
               type="email"
               class="form-control"
               placeholder="Escribe tu correo electrónico"
@@ -126,7 +126,7 @@
                 >Contraseña</label
               >
               <input
-				v-model="password"
+                v-model="password"
                 type="password"
                 class="form-control"
                 id="password"
@@ -141,18 +141,23 @@
                 >Confirmar Contraseña</label
               >
               <input
+                v-model="passwordConfirmation"
                 type="password"
                 class="form-control"
                 id="confirmPassword"
                 placeholder="Escribe tu contraseña"
                 aria-describedby="confirmPasswordHelp"
                 name="confirmPassword"
+                required
               />
               <!-- <div id="passwordHelp" class="form-text">Deben ser 8 caracteres como mínimo</div> -->
             </div>
           </div>
+          <div v-if="errorPassword">
+            <p>{{ errorPassword }}</p>
+          </div>
 
-          <button @click="tab = 2" class="btn btn-primary">
+          <button @click="nextStep" class="btn btn-primary">
             Siguiente Paso
             <AtomsIconsArrowRightIcon />
           </button>
@@ -167,28 +172,33 @@
               >No de Matricula</label
             >
             <input
-			  v-model="medical_number"
+              v-model="medical_number"
               type="text"
               class="form-control"
               placeholder="Escribe tu número de matricula"
               id="matricula"
               required
             />
-            <!-- <div id="matriculaHelp" class="form-text">We'll never share your email with anyone else.</div> -->
           </div>
           <div class="form-group mb-4">
             <label for="servicios" class="form-label text-capitalize"
               >Servicios que ofrecen</label
             >
-            <input
-			  v-model="services"
-              type="text"
-              class="form-control"
-              placeholder="Oftalmología"
-              name="servicios"
-              required
-            />
-            <!-- <div id="matriculaHelp" class="form-text">We'll never share your email with anyone else.</div> -->
+            <select
+              id="servicios"
+              class="form-select"
+              multiple
+              size="6"
+              v-model="specialtiesSelected"
+            >
+              <option
+                v-for="specialty in specialties"
+                :key="specialty.id"
+                :value="specialty.code"
+              >
+                {{ specialty.name }}
+              </option>
+            </select>
           </div>
           <div class="mb-3 form-check">
             <input
@@ -219,6 +229,9 @@
             Registrarme
           </button>
         </div>
+        <div class="modal-footer justify-content-center" v-if="errorText">
+          <p>{{ errorText }}</p>
+        </div>
       </form>
       <hr />
       <p class="text-center">
@@ -237,7 +250,7 @@
       </div>
       <p class="text-center mt-3">
         <span class="text-muted">Ya tienes Cuenta? </span>
-        <NuxtLink href="/medicos/registro" class="btn-link text-dark fw-medium"
+        <NuxtLink href="/pacientes/login" class="btn-link text-dark fw-medium"
           >Iniciar Sesión</NuxtLink
         >
       </p>
@@ -245,33 +258,69 @@
   </main>
 </template>
 
-<script lang="ts" setup>
+<script setup>
 const config = useRuntimeConfig();
 const router = useRouter();
 const email = ref("");
 const password = ref("");
+const passwordConfirmation = ref("");
 const first_name = ref("");
 const last_name = ref("");
 const phone_number = ref("");
 const date_birth = ref("");
 const medical_number = ref("");
-const services = ref([""]);
+const specialtiesSelected = ref([]);
 const tab = ref(1);
+const errorPassword = ref("");
+const errorText = ref(null);
+
+const { data: specialties } = await useFetch(
+  config.public.API_BASE_URL + "/specialties",
+  {
+    transform: (_specialties) => _specialties.data,
+  }
+);
+
+const nextStep = () => {
+  const { value: firstNameValue } = first_name;
+  const { value: lastNameValue } = last_name;
+  const { value: phoneNumberValue } = phone_number;
+  const { value: dateOfBirthValue } = date_birth;
+  const { value: emailValue } = email;
+  const { value: passwordValue } = password;
+  const { value: passwordConfirmationValue } = passwordConfirmation;
+
+  if (
+    firstNameValue &&
+    lastNameValue &&
+    phoneNumberValue &&
+    dateOfBirthValue &&
+    emailValue &&
+    passwordValue &&
+    passwordConfirmationValue
+  ) {
+    if (passwordValue === passwordConfirmationValue) {
+      tab.value = 2;
+    } else {
+      errorPassword.value = "Passwords do not match";
+    }
+  }
+};
 
 const register = async () => {
-  const { data, error }: any = await useFetch(
+  const { data, error } = await useFetch(
     config.public.API_BASE_URL + "/users/register_doctor",
     {
       method: "POST",
       body: {
         password,
-		email,
-		first_name,
-		last_name,
-		phone_number,
-		date_birth,
-		medical_number,
-		services,
+        email,
+        first_name,
+        last_name,
+        phone_number,
+        date_birth,
+        medical_number,
+        specialties: specialtiesSelected,
       },
     }
   );
@@ -280,6 +329,7 @@ const register = async () => {
   }
   if (error.value) {
     console.log(error.value, "data");
+    errorText.value = error.value.data.info;
   }
 };
 </script>

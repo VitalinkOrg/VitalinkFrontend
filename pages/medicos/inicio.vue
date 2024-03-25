@@ -3,7 +3,6 @@ import { useStore } from "~/store";
 definePageMeta({
   middleware: ["auth-doctors-hospitals"],
 });
-const { citas } = useMedico();
 const store = useStore();
 const config = useRuntimeConfig();
 const token = useCookie("token");
@@ -24,6 +23,7 @@ const { data: procedures, pending: pendingProcedures } = await useFetch(
   }
 );
 if (procedures) {
+  store.user = [];
   store.user.procedures = procedures;
 }
 

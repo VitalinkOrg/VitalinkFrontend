@@ -80,6 +80,12 @@
           >Ya tienes una cuenta?</NuxtLink
         >
       </div>
+      <div class="text-center">
+        Quieres registrarte como hospital o médico?
+        <NuxtLink class="btn-link" href="/medicos/registro"
+          >Entra aquí</NuxtLink
+        >
+      </div>
     </form>
     <hr />
     <p class="text-center">
