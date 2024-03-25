@@ -15,6 +15,7 @@ const { data: vouchers, pending: pendingVouchers } = await useFetch(
   }
 );
 if (vouchers) {
+  store.user = [];
   store.user.vouchers = vouchers;
 }
 </script>
