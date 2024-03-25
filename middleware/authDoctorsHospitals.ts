@@ -4,6 +4,8 @@ import { useStore } from "~/store";
 export default defineNuxtRouteMiddleware((to) => {
   const store = useStore();
   const role = useCookie("role");
+  const config = useRuntimeConfig();
+  const token = useCookie("token");
 
   if (!store.authenticated) {
     return navigateTo("/");

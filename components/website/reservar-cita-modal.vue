@@ -151,25 +151,25 @@
         </div>
         <div v-if="step === 1">
           <div class="modal-footer">
-          <div class="col">
-            <button
-              type="button"
-              class="btn btn-white border w-100 btn-lg"
-              data-bs-dismiss="modal"
-              @click="open = false"
-            >
-              Cancelar
-            </button>
-          </div>
-          <div class="col">
-            <button
-              type="button"
-              class="btn btn-primary w-100 btn-lg"
-              @click="nextStep"
-            >
-              Continuar
-            </button>
-          </div>
+            <div class="col">
+              <button
+                type="button"
+                class="btn btn-white border w-100 btn-lg"
+                data-bs-dismiss="modal"
+                @click="open = false"
+              >
+                Cancelar
+              </button>
+            </div>
+            <div class="col">
+              <button
+                type="button"
+                class="btn btn-primary w-100 btn-lg"
+                @click="nextStep"
+              >
+                Continuar
+              </button>
+            </div>
           </div>
           <div class="modal-footer justify-content-center" v-if="errorSchedule">
             <p>{{ errorSchedule }}</p>
@@ -379,7 +379,7 @@
           <div class="border p-3 rounded-4">
             <dl>
               <dt>Fecha</dt>
-              <dd>{{ new Date(date).toDateString() + ' a las ' + time }}</dd>
+              <dd>{{ new Date(date).toDateString() + " a las " + time }}</dd>
             </dl>
             <dl>
               <dt>Hospital o centro</dt>
@@ -393,7 +393,7 @@
               <dt>Médico / Especialista</dt>
               <dd>{{ service.doctor_name }}</dd>
             </dl>
-            <dl>
+            <dl v-if="user">
               <dt>Paciente titular</dt>
               <dd>{{ user.first_name + " " + user.last_name }}</dd>
             </dl>
@@ -456,32 +456,43 @@
               <dl>
                 <dt class="text-white">Fecha</dt>
                 <dd class="text-primary fw-semibold">
-                  Martes 26 Septiembre de 2023 a las 09:00 am.
+                  {{ new Date(date).toDateString() + " a las " + time }}
                 </dd>
               </dl>
               <dl>
                 <dt class="text-white">Hospital o centro</dt>
-                <dd class="text-primary fw-semibold">Hospital San José</dd>
+                <dd class="text-primary fw-semibold">
+                  {{ service.hospital_name }}
+                </dd>
               </dl>
               <dl>
                 <dt class="text-white">Especialidad / motivo</dt>
-                <dd class="text-primary fw-semibold">Operación de cataratas</dd>
+                <dd class="text-primary fw-semibold">
+                  {{ service.service }}
+                </dd>
               </dl>
-              <dl>
+              <dl v-if="service.doctor_name">
                 <dt class="text-white">Médico / Especialista</dt>
-                <dd class="text-primary fw-semibold">Stephanie Powell</dd>
+                <dd class="text-primary fw-semibold">
+                  {{ service.doctor_name }}
+                </dd>
               </dl>
               <dl>
                 <dt class="text-white">Paciente titular</dt>
-                <dd class="text-primary fw-semibold">Ana Lorens</dd>
+                <dd class="text-primary fw-semibold">
+                  {{ user.first_name + " " + user.last_name }}
+                </dd>
               </dl>
-              <dl>
+              <!-- <dl>
                 <dt class="text-white">Modelo de servicio</dt>
                 <dd class="text-primary fw-semibold">Seguro Médico: ASIS</dd>
-              </dl>
+              </dl> -->
               <dl>
                 <dt class="text-white">Precio Final del servicio</dt>
-                <dd class="text-primary fw-semibold">¢23000.00</dd>
+                <dd class="text-primary fw-semibold">
+                  {{ parseFloat(service.price).toLocaleString() }}
+                  {{ service.currency }}
+                </dd>
               </dl>
             </div>
           </div>
@@ -497,13 +508,12 @@
               </button>
             </div>
             <div class="col">
-              <button
-                type="button"
+              <NuxtLink
                 class="btn btn-primary w-100 btn-lg"
-                @click="open = false"
+                href="/pacientes/citas"
               >
                 Ver En Citas
-              </button>
+              </NuxtLink>
             </div>
           </div>
         </span>
@@ -538,8 +548,8 @@ function openConfirmationModal() {
 }
 
 function nextStep() {
-  if(!props.service.schedule) {
-    errorSchedule.value = 'No hay disponibilidad para este servicio.'
+  if (!props.service.schedule) {
+    errorSchedule.value = "No hay disponibilidad para este servicio.";
   } else {
     step.value = 2;
   }
@@ -555,7 +565,7 @@ const createAppointment = async () => {
         date: date.value,
         time_from: time.value,
         time_to: "13:00",
-        state: "pending",
+        status: "CREATED",
         service_code: props.service.service_code,
         specialty_code: props.service.specialty_code,
         cpt_code: props.service.cpt_code,
