@@ -97,7 +97,7 @@ const updateHospital = async () => {
           >
           <input
             type="phone"
-            placeholder="00000000"
+            placeholder="+1(555) 000-0000"
             v-model="phoneNumber"
             id="telefono"
             name="telefono"

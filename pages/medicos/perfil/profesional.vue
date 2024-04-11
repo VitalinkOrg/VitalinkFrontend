@@ -82,7 +82,7 @@ const updateHospital = async () => {
       </div>
       <div class="form-group mb-3">
         <label for="matricula-medica" class="form-label text-capitalize"
-          >Nº Matrícula Medica
+          >Nº Matrícula Médica
         </label>
         <input
           type="text"

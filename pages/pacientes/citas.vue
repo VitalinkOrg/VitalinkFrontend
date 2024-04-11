@@ -10,6 +10,7 @@ const config = useRuntimeConfig();
 const token = useCookie("token");
 const tab = ref(1);
 const sort = ref(false);
+const allAppointments = ref();
 
 const { data: appointments, loading } = await useFetch(
   config.public.API_BASE_URL + "/internal_patient_dashboard/appointments",
@@ -19,9 +20,22 @@ const { data: appointments, loading } = await useFetch(
   }
 );
 if (appointments) {
+  store.user = [];
   store.user.appointments = appointments;
+  allAppointments.value = appointments.value;
   useRefreshToken();
 }
+
+const applyFilter = (statusFilter, tabNumber) => {
+  let filteredAppointments = allAppointments.value;
+  if (statusFilter !== "ALL") {
+    filteredAppointments = filteredAppointments.filter(
+      (appointment) => appointment.status === statusFilter
+    );
+  }
+  appointments.value = filteredAppointments;
+  tab.value = tabNumber;
+};
 </script>
 
 <template>
@@ -39,7 +53,7 @@ if (appointments) {
               <button
                 class="nav-link"
                 :class="tab === 1 ? 'active' : ''"
-                @click="tab = 1"
+                @click="applyFilter('ALL', 1)"
               >
                 Todas las citas
               </button>
@@ -48,7 +62,7 @@ if (appointments) {
               <button
                 class="nav-link"
                 :class="tab === 2 ? 'active' : ''"
-                @click="tab = 2"
+                @click="applyFilter('COMPLETED', 2)"
               >
                 Concretadas
               </button>
@@ -57,7 +71,7 @@ if (appointments) {
               <button
                 class="nav-link"
                 :class="tab === 3 ? 'active' : ''"
-                @click="tab = 3"
+                @click="applyFilter('CREATED', 3)"
               >
                 Pendientes
               </button>
@@ -66,7 +80,7 @@ if (appointments) {
               <button
                 class="nav-link"
                 :class="tab === 4 ? 'active' : ''"
-                @click="tab = 4"
+                @click="applyFilter('CANCELED', 4)"
               >
                 Canceladas
               </button>
@@ -121,7 +135,7 @@ if (appointments) {
         </div>
 
         <div class="card">
-          <PacientesCitasTable :appointments="appointments" v-if="tab === 1" />
+          <PacientesCitasTable :appointments="appointments" />
         </div>
       </section>
     </main>

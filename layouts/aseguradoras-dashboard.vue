@@ -15,7 +15,8 @@ const { data: insurance } = await useFetch(
     transform: (_insurance) => _insurance.data,
   }
 );
-if (insurance) {
+if (insurance.length) {
+  store.user = [];
   store.user = insurance;
   useRefreshToken();
 }

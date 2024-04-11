@@ -26,15 +26,15 @@
             >
           </li>
           <li class="nav-item">
-            <NuxtLink href="" class="nav-link">¿Eres paciente?</NuxtLink>
+            <NuxtLink href="/pacientes/registro" class="nav-link">¿Eres paciente?</NuxtLink>
           </li>
           <li class="nav-item">
-            <NuxtLink href="" class="nav-link"
+            <NuxtLink href="/medicos/registro" class="nav-link"
               >¿Eres Doctor o Clínica?</NuxtLink
             >
           </li>
           <li class="nav-item">
-            <NuxtLink href="" class="nav-link">¿Eres aseguradora?</NuxtLink>
+            <NuxtLink href="/aseguradoras/registro" class="nav-link">¿Eres aseguradora?</NuxtLink>
           </li>
           <li class="nav-item">
             <NuxtLink href="" class="nav-link">Nosotros</NuxtLink>

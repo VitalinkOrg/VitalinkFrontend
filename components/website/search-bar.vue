@@ -83,8 +83,6 @@ function searchResults() {
         Más Filtros
       </button>
     </div>
-    <p class="text-center">
-      <NuxtLink class="btn-link">Solicitar un Vaucher Request</NuxtLink>
-    </p>
+    <WebsiteSolicitarVaucher />
   </div>
 </template>
