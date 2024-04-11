@@ -366,7 +366,7 @@ onMounted(() => {
                   </div>
                   <div class="form-group mb-3">
                     <label for="numero-matricula" class="form-label"
-                      >Nº Matrícula Medica
+                      >Nº Matrícula Médica
                     </label>
                     <input
                       type="text"
