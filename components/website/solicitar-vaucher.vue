@@ -1,9 +1,9 @@
 <template>
   <!-- Button trigger modal -->
   <div class="text-center">
-  <p @click="openConfirmationModal" class="btn btn-link text-center">
-    Solicitar un Vaucher Request
-  </p>
+    <p @click="openConfirmationModal" class="btn btn-link text-center">
+      Solicitar un Vaucher Request
+    </p>
   </div>
   <!-- Modal -->
   <div
@@ -14,16 +14,14 @@
     aria-labelledby="exampleModalLabel"
     aria-hidden="true"
   >
-    <div
-      class="modal-dialog modal-dialog-centered modal-dialog-scrollable"
-    >
+    <div class="modal-dialog modal-lg modal-dialog-centered">
       <div class="modal-content">
         <div class="modal-header border-bottom align-items-center d-flex">
           <h1
-            class="modal-title fs-4 fw-normal ms-2 mt-2"
+            class="modal-title fs-5 fw-normal ms-2 mt-2"
             id="exampleModalLabel"
           >
-          Solicitud de Vaucher
+            Solicitud de Vaucher
           </h1>
           <button
             type="button"
@@ -34,186 +32,239 @@
           ></button>
         </div>
         <!-- Step 1 -->
-        <div class="modal-body" v-if="step === 1">
-          <div
-            class="bg-primary rounded-4 h-100 p-4"
-            style="--bs-bg-opacity: 0.04"
-          >
-          <h6>Datos Personales del Beneficiado</h6>
-            <div class="form-group mb-3">
-              <label for="persona" class="form-label"
-                >¿Para quien es la cita?</label
-              >
-              <div class="form-check">
-                <input
-                  class="form-check-input"
-                  type="radio"
-                  name="persona"
-                  id="persona1"
-                />
-                <label class="form-check-label" for="persona1"> Para mí </label>
-              </div>
-              <div class="form-check">
-                <input
-                  class="form-check-input"
-                  type="radio"
-                  name="persona"
-                  id="persona2"
-                  checked
-                />
-                <label class="form-check-label" for="persona2">
-                  Para otra persona
-                </label>
-              </div>
-            </div>
-            <div class="form-group mb-3">
-              <label for="modelo" class="form-label"
-                >Selecciona el modelo de servicio</label
-              >
-              <div class="form-check">
-                <input
-                  class="form-check-input"
-                  type="radio"
-                  name="modelo"
-                  id="modelo1"
-                />
-                <label class="form-check-label" for="modelo1">
-                  Tengo seguro médico
-                </label>
-              </div>
-              <div class="form-check">
-                <input
-                  class="form-check-input"
-                  type="radio"
-                  name="modelo"
-                  id="modelo2"
-                  checked
-                />
-                <label class="form-check-label" for="modelo2">
-                  Cita Privada
-                </label>
-              </div>
-            </div>
-            <div class="form-group mb-3">
-              <label for="aseguradora" class="form-label"
-                >Selecciona o busca tu aseguradora</label
-              >
-              <select name="aseguradora" id="aseguradora" class="form-select">
-                <option disabled selected>Selecciona una aseguradora</option>
-              </select>
-            </div>
-
-            <div class="form-group mb-4">
-              <label for="vaucher" class="form-label">Ingresa el váucher</label>
-              <p class="form-text">
-                Su su aseguradora le generó un váucher para este servicio, por
-                favor agrégelo aquí.
-              </p>
-              <p class="form-label">Código de Váucher</p>
-              <input
-                type="text"
-                placeholder="XNROEBPORB"
-                class="form-control"
-              />
-            </div>
-
-            <div class="form-group d-flex mb-3">
-              <div class="form-check mt-2">
-                <input
-                  type="checkbox"
-                  class="form-check-input"
-                  id="no-vaucher"
-                />
-                <label class="form-check-label" for="no-vaucher"
-                  >No tengo Váucher</label
+        <form @submit.prevent="register" v-if="step === 1">
+          <div class="modal-body">
+            <div
+              class="bg-primary rounded-4 h-100 p-4"
+              style="--bs-bg-opacity: 0.04"
+            >
+              <div>
+                <label class="form-label text-dark text-capitalize"
+                  >Datos Personales del Beneficiado</label
                 >
+                <div class="row row-cols-2 my-2">
+                  <div class="form-group mb-2">
+                    <label for="nombre" class="form-label text-capitalize"
+                      >Nombre</label
+                    >
+                    <input
+                      v-model="name"
+                      type="text"
+                      class="form-control"
+                      placeholder="Escribe tu nombre"
+                      id="nombre"
+                      required
+                    />
+                    <!-- <div id="nombreHelp" class="form-text">We'll never share your email with anyone else.</div> -->
+                  </div>
+                  <div class="form-group mb-2">
+                    <label for="telefono" class="form-label text-capitalize"
+                      >Apellido</label
+                    >
+                    <input
+                      v-model="last_name"
+                      type="text"
+                      class="form-control"
+                      placeholder="Escribe tu apellido"
+                      id="telefono"
+                      required
+                    />
+                    <!-- <div id="nombreHelp" class="form-text">We'll never share your email with anyone else.</div> -->
+                  </div>
+                  <div class="form-group mb-2">
+                    <label for="dob" class="form-label text-capitalize"
+                      >Número de teléfono</label
+                    >
+                    <input
+                      v-model="phone_number"
+                      type="phone"
+                      class="form-control"
+                      placeholder="000-0000"
+                      id="dob"
+                      required
+                    />
+                    <!-- <div id="nombreHelp" class="form-text">We'll never share your email with anyone else.</div> -->
+                  </div>
+                  <div class="form-group mb-2">
+                    <label for="dob" class="form-label text-capitalize"
+                      >Dirección</label
+                    >
+                    <input
+                      v-model="address"
+                      type="text"
+                      class="form-control"
+                      placeholder="Dirección"
+                      id="dob"
+                      required
+                    />
+                    <!-- <div id="nombreHelp" class="form-text">We'll never share your email with anyone else.</div> -->
+                  </div>
+                </div>
+                <div class="row row-cols-3">
+                  <div class="form-group mb-2">
+                    <label for="apellido" class="form-label text-capitalize"
+                      >Código Postal</label
+                    >
+                    <input
+                      v-model="postal_code"
+                      type="number"
+                      class="form-control"
+                      placeholder="000000"
+                      id="apellido"
+                      required
+                    />
+                    <!-- <div id="nombreHelp" class="form-text">We'll never share your email with anyone else.</div> -->
+                  </div>
+                  <div class="form-group mb-2">
+                    <label for="apellido" class="form-label text-capitalize"
+                      >Ciudad</label
+                    >
+                    <input
+                      v-model="city"
+                      type="text"
+                      class="form-control"
+                      placeholder="Ciudad"
+                      id="apellido"
+                      required
+                    />
+                    <!-- <div id="nombreHelp" class="form-text">We'll never share your email with anyone else.</div> -->
+                  </div>
+                  <div class="form-group mb-2">
+                    <label for="apellido" class="form-label text-capitalize"
+                      >País</label
+                    >
+                    <input
+                      v-model="country"
+                      type="text"
+                      class="form-control"
+                      placeholder="País"
+                      id="apellido"
+                      required
+                    />
+                    <!-- <div id="nombreHelp" class="form-text">We'll never share your email with anyone else.</div> -->
+                  </div>
+                </div>
+                <label class="form-label text-dark text-capitalize"
+                  >Datos de la Aseguradora</label
+                >
+                <div class="row row-cols-2 my-2">
+                  <div class="form-group mb-2">
+                    <label for="nombre" class="form-label text-capitalize"
+                      >Selecciona tu aseguradora</label
+                    >
+                    <input
+                      v-model="name"
+                      type="text"
+                      class="form-control"
+                      placeholder="Escribe tu nombre"
+                      id="nombre"
+                      required
+                    />
+                    <!-- <div id="nombreHelp" class="form-text">We'll never share your email with anyone else.</div> -->
+                  </div>
+                  <div class="form-group mb-2">
+                    <label for="nombre" class="form-label text-capitalize"
+                      >Busca tu aseguradora</label
+                    >
+                    <input
+                      v-model="name"
+                      type="text"
+                      class="form-control"
+                      placeholder="Escribe tu nombre"
+                      id="nombre"
+                      required
+                    />
+                    <!-- <div id="nombreHelp" class="form-text">We'll never share your email with anyone else.</div> -->
+                  </div>
+                </div>
+                <div class="form-group my-2">
+                  <label for="email" class="form-label text-capitalize"
+                    >Número de asegurado</label
+                  >
+                  <input
+                    v-model="medical_number"
+                    type="number"
+                    class="form-control"
+                    placeholder="Escribe tu número de asegurado"
+                    id="email"
+                    required
+                  />
+                  <!-- <div id="nombreHelp" class="form-text">We'll never share your email with anyone else.</div> -->
+                </div>
+                <div class="form-group my-2">
+                  <label for="email" class="form-label text-capitalize"
+                    >Motivo de la solicitud</label
+                  >
+                  <input
+                    v-model="medical_number"
+                    type="number"
+                    class="form-control"
+                    placeholder="Escribe tu número de asegurado"
+                    id="email"
+                    required
+                  />
+                  <!-- <div id="nombreHelp" class="form-text">We'll never share your email with anyone else.</div> -->
+                </div>
+                <div class="form-group my-2">
+                  <label for="email" class="form-label text-capitalize"
+                    >Otros</label
+                  >
+                  <input
+                    v-model="medical_number"
+                    type="text"
+                    class="form-control"
+                    placeholder="Escribe los motivos"
+                    id="email"
+                    required
+                  />
+                  <!-- <div id="nombreHelp" class="form-text">We'll never share your email with anyone else.</div> -->
+                </div>
+                <div class="form-group my-2">
+                  <label for="email" class="form-label text-capitalize"
+                    >Número de asegurado</label
+                  >
+                  <textarea
+                    v-model="medical_number"
+                    type="text"
+                    class="form-control"
+                    placeholder="Escribe una descripción"
+                    id="email"
+                    required
+                  ></textarea>
+                  <!-- <div id="nombreHelp" class="form-text">We'll never share your email with anyone else.</div> -->
+                </div>
+                
+                <div v-if="errorPassword">
+                  <p>{{ errorPassword }}</p>
+                </div>
               </div>
-              <div class="form-group ms-5">
-                <button class="btn btn-light bg-white border">
-                  Solicitar un Váucher
-                </button>
+              <div class="modal-footer justify-content-center" v-if="errorText">
+                <p>{{ errorText }}</p>
               </div>
             </div>
           </div>
-
-        </div>
-        <div class="modal-footer" v-if="step === 1">
-          <div class="col">
-            <button
-              type="button"
-              class="btn btn-white border w-100 btn-lg"
-              data-bs-dismiss="modal"
-              @click="step = 2"
-            >
-              Cancelar
-            </button>
-          </div>
-          <div class="col">
-            <button
-              type="button"
-              class="btn btn-primary w-100 btn-lg"
-              @click="step = 4"
-            >
-              Enviar
-            </button>
-          </div>
-        </div>
-
-        <!-- Step 4 -->
-        <div class="modal-body" v-if="step === 4">
-          <p class="my-4 fw-medium ps-4">
-            Revisa los datos antes de confirmar la cita:
-          </p>
-          <div class="border p-3 rounded-4">
-            <dl>
-              <dt>Fecha</dt>
-              <dd></dd>
-            </dl>
-            <dl>
-              <dt>Hospital o centro</dt>
-              <dd></dd>
-            </dl>
-            <dl>
-              <dt>Especialidad / motivo</dt>
-              <dd></dd>
-            </dl>
-            <dl v-if="service.doctor_name">
-              <dt>Médico / Especialista</dt>
-              <dd></dd>
-            </dl>
-            <dl v-if="user">
-              <dt>Paciente titular</dt>
-              <dd>{{ user.first_name + " " + user.last_name }}</dd>
-            </dl>
-          </div>
-        </div>
-        <div v-if="step === 4">
           <div class="modal-footer">
             <div class="col">
               <button
                 type="button"
-                class="btn btn-white border w-100 btn-lg"
+                class="btn btn-white border w-100"
                 data-bs-dismiss="modal"
-                @click="step = 3"
+                @click="step = 2"
               >
-                Volver
+                Cancelar
               </button>
             </div>
             <div class="col">
               <button
                 type="button"
-                class="btn btn-primary w-100 btn-lg"
-                @click="createAppointment"
+                class="btn btn-primary w-100"
+                @click="step = 4"
               >
-                Confirmar Reservar
+                Enviar
               </button>
             </div>
           </div>
-          <div class="modal-footer justify-content-center" v-if="errorText">
-            <p>{{ errorText }}</p>
-          </div>
-        </div>
-
+        </form>
         <!-- Step 5 -->
         <span v-if="step === 5">
           <div class="modal-body">
@@ -260,7 +311,7 @@
             <div class="col">
               <button
                 type="button"
-                class="btn btn-white border w-100 btn-lg"
+                class="btn btn-white border w-100"
                 data-bs-dismiss="modal"
                 @click="open = false"
               >
@@ -269,7 +320,7 @@
             </div>
             <div class="col">
               <NuxtLink
-                class="btn btn-primary w-100 btn-lg"
+                class="btn btn-primary w-100"
                 href="/pacientes/citas"
               >
                 Ver En Citas

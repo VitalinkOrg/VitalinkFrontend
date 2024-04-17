@@ -1,6 +1,7 @@
 <script setup>
 import { ref, defineProps } from "vue";
 import { useStore } from "~/store";
+const emit = defineEmits(['close-modal'])
 const config = useRuntimeConfig();
 const token = useCookie("token");
 const store = useStore();
@@ -39,6 +40,11 @@ const createAppointment = async () => {
     errorText.value = error.value.data.info;
   }
 };
+
+function closeConfirmationModal() {
+  emit('close-modal')
+  step.value = 4;
+}
 </script>
 <template>
   <div
@@ -51,7 +57,7 @@ const createAppointment = async () => {
   >
     <div
       class="modal-dialog modal-dialog-centered modal-dialog-scrollable"
-      :class="step !== 5 ? 'modal-xl' : ''"
+      :class="step < 5 ? 'modal-xl' : ''"
     >
       <div class="modal-content">
         <div class="modal-header border-bottom align-items-center d-flex">
@@ -66,7 +72,7 @@ const createAppointment = async () => {
             class="btn-close btn btn-light me-2"
             data-bs-dismiss="modal"
             aria-label="Close"
-            @click="$emit('close-modal')"
+            @click="closeConfirmationModal"
           ></button>
         </div>
         <!-- Step 4 -->
@@ -121,7 +127,7 @@ const createAppointment = async () => {
                 type="button"
                 class="btn btn-white border w-100 btn-lg"
                 data-bs-dismiss="modal"
-                @click="$emit('close-modal')"
+                @click="step = 6"
               >
                 Salir
               </button>
@@ -210,7 +216,7 @@ const createAppointment = async () => {
                 type="button"
                 class="btn btn-white border w-100 btn-lg"
                 data-bs-dismiss="modal"
-                @click="$emit('close-modal')"
+                @click="closeConfirmationModal"
               >
                 Salir
               </button>
@@ -222,6 +228,41 @@ const createAppointment = async () => {
               >
                 Ver En Citas
               </NuxtLink>
+            </div>
+          </div>
+        </span>
+        <span v-if="step === 6">
+          <div class="modal-body">
+            <div class="text-center">
+              <img
+                src="@/src/assets/alert-triangle.svg"
+                alt="Alerta"
+                style="height: 4rem"
+              />
+              <div class="text-secondary fs-5 fw-semibold">Aún no has solicitado tu cita</div>
+              <h4 class="fs-3 fw-semibold">¿Quieres salir del proceso de reserva?</h4>
+            </div>
+          </div>
+          <div class="modal-footer">
+            <div class="col">
+              <button
+                type="button"
+                class="btn btn-white border w-100"
+                data-bs-dismiss="modal"
+                @click="step = 4"
+              >
+                Continuar con la reserva
+              </button>
+            </div>
+            <div class="col">
+              <button
+                type="button"
+                class="btn btn-danger border w-100"
+                data-bs-dismiss="modal"
+                @click="closeConfirmationModal"
+              >
+                Cancelar
+              </button>
             </div>
           </div>
         </span>
