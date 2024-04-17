@@ -4,7 +4,7 @@
     @click="openConfirmationModal"
     class="btn btn-primary w-100 btn-sm mt-2 rounded-2"
   >
-    Reserva Cita
+    Reservar Cita
   </button>
   <!-- Modal -->
   <div
@@ -17,7 +17,7 @@
   >
     <div
       class="modal-dialog modal-dialog-centered modal-dialog-scrollable"
-      :class="step !== 5 ? 'modal-xl' : ''"
+      :class="step < 5 ? 'modal-xl' : ''"
     >
       <div class="modal-content">
         <div class="modal-header border-bottom align-items-center d-flex">
@@ -32,7 +32,7 @@
             class="btn-close btn btn-light me-2"
             data-bs-dismiss="modal"
             aria-label="Close"
-            @click="open = false"
+            @click="closeConfirmationModal"
           ></button>
         </div>
         <div
@@ -156,7 +156,7 @@
                 type="button"
                 class="btn btn-white border w-100 btn-lg"
                 data-bs-dismiss="modal"
-                @click="open = false"
+                @click="step = 6"
               >
                 Cancelar
               </button>
@@ -328,7 +328,7 @@
               </div>
               <div class="form-group ms-5">
                 <button class="btn btn-light bg-white border">
-                  Solicitar un Váucher
+                  Solicitar un Vaucher
                 </button>
               </div>
             </div>
@@ -502,7 +502,7 @@
                 type="button"
                 class="btn btn-white border w-100 btn-lg"
                 data-bs-dismiss="modal"
-                @click="open = false"
+                @click="closeConfirmationModal"
               >
                 Salir
               </button>
@@ -514,6 +514,41 @@
               >
                 Ver En Citas
               </NuxtLink>
+            </div>
+          </div>
+        </span>
+        <span v-if="step === 6">
+          <div class="modal-body">
+            <div class="text-center">
+              <img
+                src="@/src/assets/alert-triangle.svg"
+                alt="Alerta"
+                style="height: 4rem"
+              />
+              <div class="text-secondary fs-5 fw-semibold">Aún no has solicitado tu cita</div>
+              <h4 class="fs-3 fw-semibold">¿Quieres salir del proceso de reserva?</h4>
+            </div>
+          </div>
+          <div class="modal-footer">
+            <div class="col">
+              <button
+                type="button"
+                class="btn btn-white border w-100"
+                data-bs-dismiss="modal"
+                @click="step = 1"
+              >
+                Continuar con la reserva
+              </button>
+            </div>
+            <div class="col">
+              <button
+                type="button"
+                class="btn btn-danger border w-100"
+                data-bs-dismiss="modal"
+                @click="closeConfirmationModal"
+              >
+                Cancelar
+              </button>
             </div>
           </div>
         </span>
@@ -545,6 +580,11 @@ function openConfirmationModal() {
   } else {
     router.push("/pacientes/login");
   }
+}
+
+function closeConfirmationModal() {
+  open.value = false;
+  step.value = 1;
 }
 
 function nextStep() {

@@ -1,11 +1,3 @@
-<script>
-export default {
-  props: ["voucher", "selectable"],
-  data: () => ({
-    open: false,
-  }),
-};
-</script>
 <template>
   <tr>
     <td v-if="selectable">
@@ -118,7 +110,7 @@ export default {
             <button class="btn btn-light border-dark fw-normal me-3">
               Ver Seguimiento de Reclamaciones
             </button>
-            <button class="btn btn-info text-white fw-normal me-3">
+            <button class="btn btn-info text-white fw-normal me-3" @click="openConfirmationModal">
               Agregar Comentarios o Notas
             </button>
             <button class="btn btn-info text-white fw-normal">
@@ -128,5 +120,44 @@ export default {
         </span>
       </span>
     </td>
+    <!-- Modal -->
+    <div
+      class="modal fade show"
+      :id="voucher.voucher_id"
+      tabindex="-1"
+      aria-labelledby="exampleModalLabel"
+      aria-hidden="true"
+    >
+      <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
+        <div class="modal-content">
+          <div class="modal-header border-bottom align-items-center d-flex">
+            <h1
+              class="modal-title fs-4 fw-normal ms-2 mt-2"
+              id="exampleModalLabel"
+            >
+              Reservar una Cita
+            </h1>
+            <button
+              type="button"
+              class="btn-close btn btn-light me-2"
+              data-bs-dismiss="modal"
+              aria-label="Close"
+              @click="modal = false"
+            ></button>
+          </div>
+        </div>
+      </div>
+    </div>
   </tr>
 </template>
+
+<script setup>
+import { ref, defineProps } from "vue";
+const props = defineProps(["voucher", "selectable"]);
+const open = ref(false);
+const modal = ref(false);
+
+function openConfirmationModal() {
+  modal.value = true;
+}
+</script>

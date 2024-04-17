@@ -79,9 +79,7 @@ function searchResults() {
       <!-- <button class="btn rounded-5 bg-white border-secondary-subtle shadow-sm mx-1 fw-light">
         Cancelación Gratis
       </button> -->
-      <button class="btn rounded-5 bg-white border-secondary-subtle shadow-sm mx-1 fw-light">
-        Más Filtros
-      </button>
+      <WebsiteMasFiltrosModal />
     </div>
     <WebsiteSolicitarVaucher />
   </div>
