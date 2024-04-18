@@ -28,6 +28,7 @@ const { data: appointments, loading } = await useFetch(
   }
 );
 if (appointments) {
+  store.user = [];
   store.user.appointments = appointments;
   allAppointments.value = appointments.value;
   useRefreshToken();
