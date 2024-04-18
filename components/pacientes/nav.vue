@@ -51,7 +51,7 @@
             <AtomsIconsChevronDown />
           </a>
           <ul class="dropdown-menu dropdown-menu-start" :class="open ? 'show' : ''" style="transform: translateX(-5rem)">
-            <li><a class="dropdown-item" href="#">[I] Mi Cuenta</a></li>
+            <li><a class="dropdown-item" href="/pacientes/cuenta">[I] Mi Cuenta</a></li>
             <li><a class="dropdown-item" href="#">[I] Mis Reseñas</a></li>
             <li>
               <a class="dropdown-item" href="#">

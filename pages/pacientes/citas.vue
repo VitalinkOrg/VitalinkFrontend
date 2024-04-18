@@ -42,7 +42,7 @@ const applyFilter = (statusFilter, tabNumber) => {
   <NuxtLayout name="pacientes-dashboard">
     <div v-if="loading"></div>
     <main v-else class="bg-light" style="min-height: 100vh">
-      <section class="container py-5">
+      <section class="p-5">
         <p>
           <span class="fw-semibold fs-5">Mis Citas</span>
         </p>
