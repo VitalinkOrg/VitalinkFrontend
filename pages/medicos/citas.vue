@@ -10,7 +10,6 @@ const config = useRuntimeConfig();
 const token = useCookie("token");
 const role = useCookie("role");
 const tab = ref(1);
-const sort = ref(false);
 const allAppointments = ref();
 
 let url;
@@ -128,14 +127,13 @@ const applyFilter = (statusFilter, tabNumber) => {
         <div class="dropdown">
           <button
             class="btn btn-outline-dark dropdown-toggle"
-            @click="sort = !sort"
             type="button"
             data-bs-toggle="dropdown"
             aria-expanded="false"
           >
             Ordenar por
           </button>
-          <ul class="dropdown-menu" :class="sort ? 'show' : ''">
+          <ul class="dropdown-menu">
             <li><a class="dropdown-item" href="#">Action</a></li>
             <li><a class="dropdown-item" href="#">Another action</a></li>
             <li><a class="dropdown-item" href="#">Something else here</a></li>

@@ -1,3 +1,34 @@
+<script>
+export default {
+  props: {
+    voucher: {
+      type: Object,
+      default: [],
+    },
+    selectable: {
+      type: Boolean,
+      default: false,
+    },
+  },
+  data() {
+    return {
+      open: false,
+      expand: false,
+      modalData: null,
+    };
+  },
+  methods: {
+    addCommentsModal(data) {
+      this.modalData = data;
+      this.open = true;
+    },
+    closeModal() {
+      this.modalData = null;
+      this.open = false;
+    },
+  },
+};
+</script>
 <template>
   <tr>
     <td v-if="selectable">
@@ -26,12 +57,12 @@
       </span>
     </td>
     <td>
-      <button @click="open = !open" class="btn btn-sm">
+      <button @click="expand = !expand" class="btn btn-sm">
         <AtomsIconsChevronDown />
       </button>
     </td>
   </tr>
-  <tr v-if="open" class="shadow mb-3 rounded-4">
+  <tr v-if="expand" class="shadow mb-3 rounded-4">
     <td colspan="8" class="px-4">
       <span class="row">
         <span class="col-3">
@@ -110,7 +141,10 @@
             <button class="btn btn-light border-dark fw-normal me-3">
               Ver Seguimiento de Reclamaciones
             </button>
-            <button class="btn btn-info text-white fw-normal me-3" @click="openConfirmationModal">
+            <button
+              class="btn btn-info text-white fw-normal me-3"
+              @click="addCommentsModal(voucher)"
+            >
               Agregar Comentarios o Notas
             </button>
             <button class="btn btn-info text-white fw-normal">
@@ -120,44 +154,10 @@
         </span>
       </span>
     </td>
-    <!-- Modal -->
-    <div
-      class="modal fade show"
-      :id="voucher.voucher_id"
-      tabindex="-1"
-      aria-labelledby="exampleModalLabel"
-      aria-hidden="true"
-    >
-      <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
-        <div class="modal-content">
-          <div class="modal-header border-bottom align-items-center d-flex">
-            <h1
-              class="modal-title fs-4 fw-normal ms-2 mt-2"
-              id="exampleModalLabel"
-            >
-              Reservar una Cita
-            </h1>
-            <button
-              type="button"
-              class="btn-close btn btn-light me-2"
-              data-bs-dismiss="modal"
-              aria-label="Close"
-              @click="modal = false"
-            ></button>
-          </div>
-        </div>
-      </div>
-    </div>
   </tr>
+  <AseguradorasAddCommentsModal
+    :open="open"
+    :voucher="modalData"
+    @close-modal="closeModal"
+  />
 </template>
-
-<script setup>
-import { ref, defineProps } from "vue";
-const props = defineProps(["voucher", "selectable"]);
-const open = ref(false);
-const modal = ref(false);
-
-function openConfirmationModal() {
-  modal.value = true;
-}
-</script>

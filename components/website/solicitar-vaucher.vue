@@ -48,12 +48,12 @@
                       >Nombre</label
                     >
                     <input
-                      v-model="name"
+                      v-model="user.first_name"
                       type="text"
                       class="form-control"
                       placeholder="Escribe tu nombre"
                       id="nombre"
-                      required
+                      disabled
                     />
                     <!-- <div id="nombreHelp" class="form-text">We'll never share your email with anyone else.</div> -->
                   </div>
@@ -62,12 +62,12 @@
                       >Apellido</label
                     >
                     <input
-                      v-model="last_name"
+                      v-model="user.last_name"
                       type="text"
                       class="form-control"
                       placeholder="Escribe tu apellido"
                       id="telefono"
-                      required
+                      disabled
                     />
                     <!-- <div id="nombreHelp" class="form-text">We'll never share your email with anyone else.</div> -->
                   </div>
@@ -76,12 +76,12 @@
                       >Número de teléfono</label
                     >
                     <input
-                      v-model="phone_number"
+                      v-model="user.phone_number"
                       type="phone"
                       class="form-control"
                       placeholder="000-0000"
                       id="dob"
-                      required
+                      disabled
                     />
                     <!-- <div id="nombreHelp" class="form-text">We'll never share your email with anyone else.</div> -->
                   </div>
@@ -90,12 +90,12 @@
                       >Dirección</label
                     >
                     <input
-                      v-model="address"
+                      v-model="user.address"
                       type="text"
                       class="form-control"
                       placeholder="Dirección"
                       id="dob"
-                      required
+                      disabled
                     />
                     <!-- <div id="nombreHelp" class="form-text">We'll never share your email with anyone else.</div> -->
                   </div>
@@ -106,12 +106,12 @@
                       >Código Postal</label
                     >
                     <input
-                      v-model="postal_code"
+                      v-model="user.postal_code"
                       type="number"
                       class="form-control"
                       placeholder="000000"
                       id="apellido"
-                      required
+                      disabled
                     />
                     <!-- <div id="nombreHelp" class="form-text">We'll never share your email with anyone else.</div> -->
                   </div>
@@ -120,12 +120,12 @@
                       >Ciudad</label
                     >
                     <input
-                      v-model="city"
+                      v-model="user.city"
                       type="text"
                       class="form-control"
                       placeholder="Ciudad"
                       id="apellido"
-                      required
+                      disabled
                     />
                     <!-- <div id="nombreHelp" class="form-text">We'll never share your email with anyone else.</div> -->
                   </div>
@@ -134,12 +134,12 @@
                       >País</label
                     >
                     <input
-                      v-model="country"
+                      v-model="user.country_iso_code"
                       type="text"
                       class="form-control"
                       placeholder="País"
                       id="apellido"
-                      required
+                      disabled
                     />
                     <!-- <div id="nombreHelp" class="form-text">We'll never share your email with anyone else.</div> -->
                   </div>
@@ -221,7 +221,7 @@
                 </div>
                 <div class="form-group my-2">
                   <label for="email" class="form-label text-capitalize"
-                    >Número de asegurado</label
+                    >Descripción</label
                   >
                   <textarea
                     v-model="medical_number"
@@ -336,32 +336,38 @@
 <script setup>
 import { ref } from "vue";
 import { useStore } from "~/store";
+import { useRefreshToken } from "#imports";
+definePageMeta({
+  middleware: ["auth-pacientes"],
+});
 const router = useRouter();
 const config = useRuntimeConfig();
 const token = useCookie("token");
 const store = useStore();
-const user = store.user;
 const open = ref(false);
 const step = ref(1);
 const route = useRoute();
 const date = ref("");
 const time = ref("");
 const errorText = ref(null);
-const errorSchedule = ref(null);
+
+const { data: user, pending: pendingUser } = await useFetch(
+  config.public.API_BASE_URL + "/patients/getByUser",
+  {
+    headers: { Authorization: token.value },
+    transform: (_user) => _user.data,
+  }
+);
+if (user) {
+  store.user = user;
+  useRefreshToken();
+}
 
 function openConfirmationModal() {
   if (store.authenticated) {
     open.value = true;
   } else {
     router.push("/pacientes/login");
-  }
-}
-
-function nextStep() {
-  if (!props.service.schedule) {
-    errorSchedule.value = "No hay disponibilidad para este servicio.";
-  } else {
-    step.value = 2;
   }
 }
 
