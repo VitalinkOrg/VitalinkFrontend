@@ -49,8 +49,8 @@
           >
         </div>
         <div class="d-flex" v-if="store.authenticated">
-          <NuxtLink @click="logout" class="btn btn-primary"
-            >Cerrar sesión</NuxtLink
+          <button @click="logout" class="btn btn-primary"
+            >Cerrar sesión</button
           >
         </div>
       </div>

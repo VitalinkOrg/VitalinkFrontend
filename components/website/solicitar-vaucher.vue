@@ -14,7 +14,7 @@
     aria-labelledby="exampleModalLabel"
     aria-hidden="true"
   >
-    <div class="modal-dialog modal-lg modal-dialog-centered">
+    <div v-if="store.user" class="modal-dialog modal-lg modal-dialog-centered">
       <div class="modal-content">
         <div class="modal-header border-bottom align-items-center d-flex">
           <h1
@@ -48,7 +48,7 @@
                       >Nombre</label
                     >
                     <input
-                      v-model="user.first_name"
+                      v-model="store.user.first_name"
                       type="text"
                       class="form-control"
                       placeholder="Escribe tu nombre"
@@ -62,7 +62,7 @@
                       >Apellido</label
                     >
                     <input
-                      v-model="user.last_name"
+                      v-model="store.user.last_name"
                       type="text"
                       class="form-control"
                       placeholder="Escribe tu apellido"
@@ -76,7 +76,7 @@
                       >Número de teléfono</label
                     >
                     <input
-                      v-model="user.phone_number"
+                      v-model="store.user.phone_number"
                       type="phone"
                       class="form-control"
                       placeholder="000-0000"
@@ -90,7 +90,7 @@
                       >Dirección</label
                     >
                     <input
-                      v-model="user.address"
+                      v-model="store.user.address"
                       type="text"
                       class="form-control"
                       placeholder="Dirección"
@@ -106,7 +106,7 @@
                       >Código Postal</label
                     >
                     <input
-                      v-model="user.postal_code"
+                      v-model="store.user.postal_code"
                       type="number"
                       class="form-control"
                       placeholder="000000"
@@ -120,7 +120,7 @@
                       >Ciudad</label
                     >
                     <input
-                      v-model="user.city"
+                      v-model="store.user.city"
                       type="text"
                       class="form-control"
                       placeholder="Ciudad"
@@ -134,7 +134,7 @@
                       >País</label
                     >
                     <input
-                      v-model="user.country_iso_code"
+                      v-model="store.user.country_iso_code"
                       type="text"
                       class="form-control"
                       placeholder="País"
@@ -233,7 +233,7 @@
                   ></textarea>
                   <!-- <div id="nombreHelp" class="form-text">We'll never share your email with anyone else.</div> -->
                 </div>
-                
+
                 <div v-if="errorPassword">
                   <p>{{ errorPassword }}</p>
                 </div>
@@ -319,10 +319,7 @@
               </button>
             </div>
             <div class="col">
-              <NuxtLink
-                class="btn btn-primary w-100"
-                href="/pacientes/citas"
-              >
+              <NuxtLink class="btn btn-primary w-100" href="/pacientes/citas">
                 Ver En Citas
               </NuxtLink>
             </div>
@@ -351,16 +348,18 @@ const date = ref("");
 const time = ref("");
 const errorText = ref(null);
 
-const { data: user, pending: pendingUser } = await useFetch(
-  config.public.API_BASE_URL + "/patients/getByUser",
-  {
-    headers: { Authorization: token.value },
-    transform: (_user) => _user.data,
+if (store.authenticated) {
+  const { data: user, pending: pendingUser } = await useFetch(
+    config.public.API_BASE_URL + "/patients/getByUser",
+    {
+      headers: { Authorization: token.value },
+      transform: (_user) => _user.data,
+    }
+  );
+  if (user) {
+    store.user = user;
+    useRefreshToken();
   }
-);
-if (user) {
-  store.user = user;
-  useRefreshToken();
 }
 
 function openConfirmationModal() {
