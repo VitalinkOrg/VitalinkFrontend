@@ -3,15 +3,9 @@
     <div class="bg-light">
       <header class="d-flex align-items-center">
         <div class="container">
-          <h1 class="display-3 text-center">BIENVENIDO A VITALINK:</h1>
-          <h1 class="display-5 text-center">
-            Tu Conexión con la Mejor Atención Quirúrgica
-          </h1>
-          <p class="text-center text-muted col-sm-8 mx-auto mb-0">
-            Conéctate con cirujanos de primer nivel e instituciones de salud.
-          </p>
-          <p class="text-center text-muted col-sm-8 mx-auto">
-            Tu camino hacia una atención quirúrgica superior comienza aquí.
+          <h1 class="display-3 text-center fw-bold mb-3">Bienestar a tu alcance: encuentra y programa citas médicas</h1>
+          <p class="text-center text-muted col-sm-6 mx-auto">
+            Pon tu salud en primer lugar con nuestro directorio de médicos y una forma conveniente de agendar tus citas.
           </p>
           <WebsiteSearchBar />
         </div>
@@ -19,7 +13,7 @@
 
       <section class="py-5">
         <div class="container">
-          <h2 class="display-5 text-center col-sm-8 mx-auto">
+          <h2 class="display-5 text-center col-sm-8 mx-auto fw-bold">
             Obtenga atención en tres sencillos pasos
           </h2>
 
@@ -76,7 +70,7 @@
             <div class="card-body ps-5">
               <div class="d-flex align-items-center">
                 <div class="col-sm-6">
-                  <h2 class="display-6">¿Listo para empezar la búsqueda?</h2>
+                  <h2 class="display-6 fw-bold">¿Listo para empezar la búsqueda?</h2>
                   <p class="text-muted mb-4">
                     Estamos aquí para hacer que el proceso de encontrar al
                     cirujano adecuado sea lo más fácil posible.
@@ -110,7 +104,7 @@
             />
           </div>
           <div class="col">
-            <h2 class="display-6">Números que muestran nuestro éxito</h2>
+            <h2 class="display-6 fw-bold">Números que muestran nuestro éxito</h2>
             <p class="text-muted">
               Algunos datos que reflejan nuestro éxito y la confianza depositada
               en nosotros por la comunidad de usuarios en busca de atención
@@ -119,7 +113,7 @@
 
             <div class="row row-cols-2 py-2">
               <div>
-                <p class="h3 text-warning">200+</p>
+                <p class="h3 text-warning fw-bold">200+</p>
                 <h4 class="h5">Profesionales Registrados</h4>
                 <p class="text-muted">
                   <small
@@ -129,7 +123,7 @@
                 </p>
               </div>
               <div>
-                <p class="h3 text-warning">97%</p>
+                <p class="h3 text-warning fw-bold">97%</p>
                 <h4 class="h5">Éxito en Coincidencias</h4>
                 <p class="text-muted">
                   <small
@@ -139,7 +133,7 @@
                 </p>
               </div>
               <div>
-                <p class="h3 text-warning">100%</p>
+                <p class="h3 text-warning fw-bold">100%</p>
                 <h4 class="h5">Opiniones Positivas</h4>
                 <p class="text-muted">
                   <small
@@ -149,7 +143,7 @@
                 </p>
               </div>
               <div>
-                <p class="h3 text-warning">5000+</p>
+                <p class="h3 text-warning fw-bold">5000+</p>
                 <h4 class="h5">Citas Programadas</h4>
                 <p class="text-muted">
                   <small
@@ -228,7 +222,7 @@
       <div class="container-fluid">
         <div class="row align-items-center">
           <div class="col ms-sm-5 col-sm-4">
-            <h2 class="display-6">Qué dicen de nuestro servicio?</h2>
+            <h2 class="display-6 fw-bold">Qué dicen de nuestro servicio?</h2>
             <p class="text-muted">
               Nuestra comunidad de usuarios ha expresado su satisfacción a
               través de calificaciones y opiniones positivas.
@@ -328,7 +322,7 @@
             <div class="card-body p-0">
               <div class="d-flex align-items-center">
                 <div class="co ps-5">
-                  <h2 class="display-6">
+                  <h2 class="display-6 fw-bold">
                     ¿Emocionado por empezar tu búsqueda?
                   </h2>
                   <p class="text-muted mb-4">
@@ -365,7 +359,7 @@
 
       <section class="py-5">
         <div class="container">
-          <h2 class="display-6 text-center">Déjanos saber que piensas</h2>
+          <h2 class="display-6 text-center fw-bold">Déjanos saber que piensas</h2>
           <p class="text-center text-muted col-sm-8 mx-auto">
             Si tienes alguna pregunta, o comentario sobre nuestros servicios,
             estamos felices de ayudar, escríbenos:
@@ -475,7 +469,7 @@
                 class="col bg-info rounded-start-5 rounded-0 p-5 align-items-center d-flex"
               >
                 <div class="py-4 ps-3">
-                  <h2 class="h2 text-light">Preguntas Frecuentes</h2>
+                  <h2 class="h2 text-light fw-bold">Preguntas Frecuentes</h2>
                   <p class="text-light">
                     Estas preguntas frecuentes están diseñadas para proporcionar
                     respuestas claras y útiles a los usuarios de VitaLink. Si

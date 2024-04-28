@@ -1,31 +1,50 @@
-<script setup>
-import { ref } from "vue";
-const router = useRouter();
-const procedimiento = ref("");
-const lugar = ref("");
-const vaucher = ref("");
-
-function searchResults() {
-  const routeOptions = {
-    path: "/buscar",
-    query: {}
-  };
-
-  if (procedimiento.value !== "") {
-    routeOptions.query.filter_name = procedimiento.value;
-  }
-
-  if (vaucher.value !== "") {
-    routeOptions.query.insurance = vaucher.value;
-  }
-
-  if (lugar.value !== "") {
-    routeOptions.query.lugar = lugar.value;
-  }
-
-  router.push(routeOptions);
-}
-
+<script>
+export default {
+  data() {
+    return {
+      filtersData: {
+        procedimiento: "",
+        lugar: "",
+        vaucher: "",
+        entity: "",
+        min: "",
+        max: "",
+        specialties: null,
+      },
+    };
+  },
+  methods: {
+    searchResults() {
+      console.log(this.filtersData, 'date');
+      this.$router.push({
+        path: "/buscar",
+        query: {
+          ...(this.filtersData.procedimiento !== ""
+            ? { filter_name: this.filtersData.procedimiento }
+            : {}),
+          ...(this.filtersData.lugar !== ""
+            ? { lugar: this.filtersData.lugar }
+            : {}),
+          ...(this.filtersData.vaucher !== ""
+            ? { insurance: this.filtersData.vaucher }
+            : {}),
+          ...(this.filtersData.min !== ""
+            ? { min_price: this.filtersData.min }
+            : {}),
+          ...(this.filtersData.max !== ""
+            ? { max_price: this.filtersData.max }
+            : {}),
+          ...(this.filtersData.entity !== ""
+            ? { entity_type: this.filtersData.entity }
+            : {}),
+            ...(this.filtersData.specialties
+            ? { specialty: this.filtersData.specialties.code }
+            : {}),
+        },
+      });
+    },
+  },
+};
 </script>
 
 <template>
@@ -36,21 +55,41 @@ function searchResults() {
           <!-- <form class="d-flex align-items-end" action="/buscar/wovnworv"> -->
           <div class="row row-cols-sm-3 w-100">
             <div class="form-group">
-              <label for="procedimiento" class="form-label text-uppercase">Procedimiento</label>
-              <input type="text" class="form-control" v-model="procedimiento" id="procedimiento"
-                placeholder="Operacion de cataratas" aria-describedby="procedimiento-help" />
+              <label for="procedimiento" class="form-label text-uppercase"
+                >Procedimiento</label
+              >
+              <input
+                type="text"
+                class="form-control"
+                v-model="filtersData.procedimiento"
+                id="procedimiento"
+                placeholder="Operacion de cataratas"
+                aria-describedby="procedimiento-help"
+              />
               <!-- <div id="procedimiento-help" class="form-text ">We'll never share your email with anyone else.</div> -->
             </div>
             <div class="form-group">
               <label for="lugar" class="form-label">Lugar</label>
-              <input type="text" class="form-control" v-model="lugar" id="lugar" aria-describedby="lugar-help"
-                placeholder="Costa Rica" />
+              <input
+                type="text"
+                class="form-control"
+                v-model="lugar"
+                id="lugar"
+                aria-describedby="lugar-help"
+                placeholder="Costa Rica"
+              />
               <!-- <div id="lugar-help" class="form-text ">We'll never share your email with anyone else.</div> -->
             </div>
             <div class="form-group">
               <label for="vaucher" class="form-label">Código de Vaucher</label>
-              <input type="text" class="form-control" v-model="vaucher" id="vaucher" aria-describedby="vaucher-help"
-                placeholder="Código de Vaucher" />
+              <input
+                type="text"
+                class="form-control"
+                v-model="vaucher"
+                id="vaucher"
+                aria-describedby="vaucher-help"
+                placeholder="Código de Vaucher"
+              />
               <!-- <div id="vaucher-help" class="form-text ">We'll never share your email with anyone else.</div> -->
             </div>
           </div>
@@ -61,26 +100,35 @@ function searchResults() {
       </div>
     </div>
     <div class="py-3 text-center">
-      <button class="btn rounded-5 bg-white border-secondary-subtle shadow-sm mx-1 fw-light">
-        Precio
+      <button
+        v-if="filtersData.entity"
+        class="btn rounded-5 bg-white border-secondary-subtle shadow-sm mx-1 fw-light"
+      >
+        Entidad: {{ filtersData.entity === "doctor" ? "Doctor" : "Hospital" }}
       </button>
-      <button class="btn rounded-5 bg-white border-secondary-subtle shadow-sm mx-1 fw-light">
-        Especialidad
+      <button
+        v-if="filtersData.min"
+        class="btn rounded-5 bg-white border-secondary-subtle shadow-sm mx-1 fw-light"
+      >
+        Precio mínimo: {{ filtersData.min }}
       </button>
-      <button class="btn rounded-5 bg-white border-secondary-subtle shadow-sm mx-1 fw-light">
-        Aseguradora
+      <button
+        v-if="filtersData.max"
+        class="btn rounded-5 bg-white border-secondary-subtle shadow-sm mx-1 fw-light"
+      >
+        Precio máximo: {{ filtersData.max }}
       </button>
-      <button class="btn rounded-5 bg-white border-secondary-subtle shadow-sm mx-1 fw-light">
-        Fecha
+      <button
+        v-if="filtersData.specialties"
+        class="btn rounded-5 bg-white border-secondary-subtle shadow-sm mx-1 fw-light"
+      >
+        Especialidades: {{ filtersData.specialties.name }}
+        <!-- <span v-for="specialty in filtersData.specialties" :key="specialty.id">
+          {{ specialty.name + " " }}</span
+        > -->
       </button>
-      <button class="btn rounded-5 bg-white border-secondary-subtle shadow-sm mx-1 fw-light">
-        Hora
-      </button>
-      <!-- <button class="btn rounded-5 bg-white border-secondary-subtle shadow-sm mx-1 fw-light">
-        Cancelación Gratis
-      </button> -->
-      <WebsiteMasFiltrosModal />
+      <WebsiteMasFiltrosModal :filters="filtersData" />
     </div>
-    <!-- <WebsiteSolicitarVaucher /> -->
+    <WebsiteSolicitarVaucher />
   </div>
 </template>

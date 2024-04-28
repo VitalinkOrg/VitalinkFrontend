@@ -1,17 +1,10 @@
 <script setup>
 import { useStore } from "~/store";
-import { ref } from "vue";
-import { useRefreshToken } from "#imports";
 definePageMeta({
   middleware: ["auth-doctors-hospitals"],
 });
 const store = useStore();
 const config = useRuntimeConfig();
-const token = useCookie("token");
-const role = useCookie("role");
-const tab = ref(1);
-const sort = ref(false);
-const allAppointments = ref();
 
 const { data: services } = await useFetch(
   config.public.API_BASE_URL + "/services",
@@ -19,7 +12,7 @@ const { data: services } = await useFetch(
     transform: (_services) => _services.data,
   }
 );
-const filteredArray = services.filter(item => store.user.services.includes(item));
+const filteredArray = services.value.filter(item => store.user?.services.includes(item.code));
 console.log(filteredArray, 'test');
 </script>
 
@@ -38,5 +31,8 @@ console.log(filteredArray, 'test');
     <p>
       <span class="fw-medium fs-4">Mis servicios</span>
     </p>
+    <WebsiteClinicaServiciosTab
+      :services="filteredArray"
+    />
   </NuxtLayout>
 </template>
