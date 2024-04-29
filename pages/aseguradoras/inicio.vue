@@ -16,6 +16,7 @@ const { data: insurance, pending: pendingUser } = await useFetch(
   }
 );
 if (insurance) {
+  store.user = [];
   store.user = insurance;
   useRefreshToken();
 }
@@ -27,7 +28,7 @@ const { data: vouchers, pending: pendingVouchers } = await useFetch(
     transform: (_vouchers) => _vouchers.data,
   }
 );
-if (vouchers) {
+if (vouchers.length) {
   store.user.vouchers = vouchers;
 }
 </script>

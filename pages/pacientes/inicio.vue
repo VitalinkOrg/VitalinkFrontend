@@ -69,7 +69,7 @@ if (historial) {
       </header>
 
       <main class="pt-3 pb-5 bg-light">
-        <div class="container-fluid">
+        <div class="container">
           <section class="mb-4">
             <p class="mx-2 d-flex align-items-center justify-content-between">
               <span class="fw-semibold fs-5">Próximas Citas</span>
@@ -78,7 +78,7 @@ if (historial) {
               </NuxtLink>
             </p>
             <div v-if="pendingAppointments"></div>
-            <div v-else class="card shadow-sm border-0" style="min-height: 15rem">
+            <div v-else class="card p-3 shadow-sm border-0" style="min-height: 15rem">
               <table class="table table-hover" v-if="appointments !== null">
                 <thead>
                   <tr>

@@ -1,34 +1,32 @@
 <script setup>
 import { useStore } from "~/store";
 definePageMeta({
-  middleware: ["auth-doctors-hospitals"],
+  middleware: ["auth-pacientes"],
 });
 const config = useRuntimeConfig();
 const token = useCookie("token");
 const store = useStore();
-const user = store.user;
-const firstName = ref(user.first_name || user.name);
-const lastName = ref(user.last_name);
-const phoneNumber = ref(user.phone_number || user.phone_number_1);
-const address = ref(user.address);
-const city = ref(user.city);
-const country_iso_code = ref(user.country_iso_code);
-const postal_code = ref(user.postal_code);
 
-const updateDoctor = async () => {
+const { data: user, pending: pendingUser } = await useFetch(
+  config.public.API_BASE_URL + "/patients/getByUser",
+  {
+    headers: { Authorization: token.value },
+    transform: (_user) => _user.data,
+  }
+);
+if (user) {
+  store.user = user;
+  useRefreshToken();
+}
+
+
+const updateUser = async () => {
   const { data, error } = await useFetch(
-    config.public.API_BASE_URL + "/doctors/update_doctor",
+    config.public.API_BASE_URL + "/patients/" + store.user.id,
     {
       method: "PUT",
       headers: { Authorization: token.value },
-      body: {
-        first_name: firstName,
-        last_name: lastName,
-        phone_number: phoneNumber,
-        address,
-        city,
-        country_iso_code
-      },
+      body: user
     }
   );
   if (error.value) {
@@ -36,34 +34,12 @@ const updateDoctor = async () => {
   }
 };
 
-const updateHospital = async () => {
-  const { data, error } = await useFetch(
-    config.public.API_BASE_URL + "/hospitals/update_hospital",
-    {
-      method: "PUT",
-      headers: { Authorization: token.value },
-      body: {
-        group_name: user.group_name,
-        medical_number: user.medical_number,
-        name: firstName,
-        phone_number_1: phoneNumber,
-        address,
-        city,
-        country_iso_code,
-        postal_code
-      },
-    }
-  );
-  if (error.value) {
-    console.log(error.value, "data");
-  }
-};
 </script>
 
 <template>
-  <NuxtLayout name="medicos-dashboard-perfil">
+  <NuxtLayout name="pacientes-dashboard-perfil">
     <h4 class="fw-normal">Datos Personales</h4>
-    <form class="mt-4" @submit.prevent="user.last_name ? updateDoctor($event) : updateHospital($event)">
+    <form class="mt-4" @submit.prevent="updateUser">
       <div class="row row-cols-2">
         <div class="form-group mb-3">
           <label for="nombre" class="form-label text-capitalize"
@@ -73,12 +49,12 @@ const updateHospital = async () => {
             type="text"
             class="form-control"
             placeholder="Escribe tu nombre"
-            v-model="firstName"
+            v-model="user.first_name"
             name="nombre"
             id="nombre"
           />
         </div>
-        <div v-if="user.last_name" class="form-group mb-3">
+        <div class="form-group mb-3">
           <label for="apellido" class="form-label text-capitalize"
             >Apellido (s)</label
           >
@@ -98,7 +74,7 @@ const updateHospital = async () => {
           <input
             type="phone"
             placeholder="+1(555) 000-0000"
-            v-model="phoneNumber"
+            v-model="user.phone_number"
             id="telefono"
             name="telefono"
             class="form-control"
@@ -115,14 +91,14 @@ const updateHospital = async () => {
             type="text"
             placeholder="Dirección"
             id="direccion"
-            v-model="address"
+            v-model="user.address"
             name="direccion"
             class="form-control"
           />
         </div>
       </div>
       <div class="row row-cols-3">
-        <div v-if="user.postal_code" class="form-group mb-3">
+        <div class="form-group mb-3">
           <label class="form-label text-capitalize" for="postal"
             >Código Postal</label
           >
@@ -131,7 +107,7 @@ const updateHospital = async () => {
             placeholder="00000000"
             id="postal"
             name="postal"
-            v-model="postal_code"
+            v-model="user.postal_code"
             class="form-control"
           />
         </div>
@@ -142,7 +118,7 @@ const updateHospital = async () => {
             placeholder="Ciudad"
             id="ciudad"
             name="ciudad"
-            v-model="city"
+            v-model="user.city"
             class="form-control"
             required
           />
@@ -154,7 +130,7 @@ const updateHospital = async () => {
             placeholder="País"
             id="pais"
             name="pais"
-            v-model="country_iso_code"
+            v-model="user.country_iso_code"
             class="form-control"
             required
           />

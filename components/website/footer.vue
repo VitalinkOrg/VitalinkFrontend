@@ -74,12 +74,12 @@
         </div>
       </div>
       <div class="row my-4">
-        <div class="col-auto">
+        <div class="col-6">
           <div
-            class="bg-light d-flex py-2 px-4 rounded-4 w-auto align-items-center"
+            class="bg-light d-flex py-2 px-4 rounded-4 align-items-center"
           >
             Recibe las últimas novedades
-            <form class="d-flex ms-2">
+            <form class="d-flex ms-2 w-100">
               <input
                 class="form-control me-2"
                 type="email"
