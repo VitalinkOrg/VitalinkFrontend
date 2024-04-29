@@ -19,26 +19,28 @@ const postal_code = ref(user.postal_code);
 const description = ref(user.description);
 const medicalNumber = ref(user.medical_license_number || user.medical_number);
 
-const { data: specialties } = await useFetch(
-  config.public.API_BASE_URL + "/specialties",
-  {
-    transform: (_specialties) => _specialties.data,
-  }
-);
+if (!props.data.description) {
+  const { data: specialties } = await useFetch(
+    config.public.API_BASE_URL + "/specialties",
+    {
+      transform: (_specialties) => _specialties.data,
+    }
+  );
 
-const { data: hospitals } = await useFetch(
-  config.public.API_BASE_URL + "/hospitals",
-  {
-    transform: (_hospitals) => _hospitals.data,
-  }
-);
+  const { data: hospitals } = await useFetch(
+    config.public.API_BASE_URL + "/hospitals",
+    {
+      transform: (_hospitals) => _hospitals.data,
+    }
+  );
 
-const { data: services } = await useFetch(
-  config.public.API_BASE_URL + "/services",
-  {
-    transform: (_services) => _services.data,
-  }
-);
+  const { data: services } = await useFetch(
+    config.public.API_BASE_URL + "/services",
+    {
+      transform: (_services) => _services.data,
+    }
+  );
+}
 
 const updateDoctor = async () => {
   const { data, error } = await useFetch(
@@ -366,7 +368,7 @@ onMounted(() => {
                   </div>
                   <div class="form-group mb-3">
                     <label for="numero-matricula" class="form-label"
-                      >Nº Matrícula Medica
+                      >Nº Matrícula Médica
                     </label>
                     <input
                       type="text"

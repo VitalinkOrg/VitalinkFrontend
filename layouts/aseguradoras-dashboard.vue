@@ -15,7 +15,8 @@ const { data: insurance } = await useFetch(
     transform: (_insurance) => _insurance.data,
   }
 );
-if (insurance) {
+if (insurance.length) {
+  store.user = [];
   store.user = insurance;
   useRefreshToken();
 }
@@ -70,11 +71,11 @@ const logout = () => {
           </NuxtLink>
         </li>
         <li class="nav-item">
-          <NuxtLink class="nav-link text-dark d-flex align-items-center" @click="logout">
+          <button class="dropdown-item text-dark d-flex align-items-center" @click="logout">
             <span class="text-success me-3">
               <AtomsIconsLogoutDashboardIcon />
             </span> Cerrar Sesión
-          </NuxtLink>
+          </button>
         </li>
       </nav>
     </div>
@@ -108,7 +109,7 @@ const logout = () => {
                     <NuxtLink class="dropdown-item" href="/aseguradoras/inicio">Ayuda y Soporte</NuxtLink>
                   </li>
                   <li>
-                    <NuxtLink class="dropdown-item" @click="logout">Cerrar Sesión</NuxtLink>
+                    <button class="dropdown-item" @click="logout">Cerrar Sesión</button>
                   </li>
                 </ul>
               </div>

@@ -8,6 +8,10 @@ export default {
       isLoading: true,
       filter_query: this.$route.query.filter_name,
       insurance: this.$route.query.insurance,
+      entity_type: this.$route.query.entity_type,
+      min_price: this.$route.query.min_price,
+      max_price: this.$route.query.max_price,
+      specialty: this.$route.query.specialty
     }
   },
   watchQuery: true,
@@ -24,15 +28,17 @@ export default {
         this.search()
       },
     },
-    search_query(newKeyword) {
-      if (newKeyword === '') {
+    '$route.query.entity_type': {
+      handler(oldUrl) {
+        this.entity_type = oldUrl
         this.search()
-      }
+      },
     },
-    insurance(newKeyword) {
-      if (newKeyword === '') {
+    '$route.query.specialty': {
+      handler(oldUrl) {
+        this.specialty = oldUrl
         this.search()
-      }
+      },
     },
   },
   created() {
@@ -46,6 +52,10 @@ export default {
         params: {
           ...(this.filter_query !== '' ? { filter_name: this.filter_query } : {}),
           ...(this.insurance !== '' ? { insurance: this.insurance } : {}),
+          ...(this.entity_type !== '' ? { entity_type: this.entity_type } : {}),
+          ...(this.min_price !== '' ? { min_price: this.min_price } : {}),
+          ...(this.max_price !== '' ? { max_price: this.max_price } : {}),
+          ...(this.specialty !== '' ? { specialty: this.specialty } : {}),
         }
       }
       try {

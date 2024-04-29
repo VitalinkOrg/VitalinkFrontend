@@ -1,6 +1,17 @@
 // https://nuxt.com/docs/api/configuration/nuxt-config
 
 export default defineNuxtConfig({
+  app: {
+    head: {
+      script: [
+        {
+          src: '/bootstrap.bundle.min.js',
+          tagPosition: 'bodyClose'
+        }
+      ]
+    }
+  },
+  css: ['@/assets/main.scss'],
   devtools: { enabled: true },
   modules: [
     '@pinia/nuxt',
