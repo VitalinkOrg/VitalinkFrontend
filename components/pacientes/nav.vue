@@ -14,7 +14,7 @@
       >
         <span class="navbar-toggler-icon"></span>
       </button>
-      <NuxtLink class="navbar-brand" href="/"
+      <NuxtLink class="navbar-brand" href="/pacientes/inicio"
         ><img src="@/src/assets/img-vitalink-logo.svg" alt="Vitalink"
       /></NuxtLink>
       <div class="collapse navbar-collapse" id="navbarTogglerDemo03">
@@ -63,13 +63,13 @@
           </li>
         </ul>
       </div>
-      <ul class="navbar-nav d-flex align-items-center">
-        <li class="nav-item">
+      <ul class="navbar-nav align-items-center">
+        <li class="d-none d-md-flex nav-item">
           <button class="nav-link">
             <AtomsIconsStarOutline />
           </button>
         </li>
-        <li class="nav-item">
+        <li class="nav-item d-none d-md-flex">
           <button class="nav-link">
             <AtomsIconsNotificationsIcon />
           </button>
@@ -97,7 +97,7 @@
                   <AtomsIconsNotificationsIcon /> Notificaciones
                 </a>
               </li>
-              <li><a class="dropdown-item" href="#">[I] Ayuda y Soporte</a></li>
+              <li><a class="dropdown-item" href="/pacientes/ayuda">[I] Ayuda y Soporte</a></li>
               <li>
                 <button class="dropdown-item" @click="logout">
                   [I] Cerrar Sesión
@@ -112,19 +112,19 @@
 </template>
 
 <script lang="ts" setup>
-import { useStore } from "~/store";
-import { ref } from "vue";
-const open = ref(false);
-const store = useStore();
 const token = useCookie("token");
+const refreshToken = useCookie("refresh_token");
+const role = useCookie("role");
+const authenticated = useCookie("authenticated");
+const user_info = useCookie("user_info");
 const router = useRouter();
 
 const logout = () => {
-  store.authenticated = false;
-  store.user = null;
-  store.role = "";
   token.value = null;
-
+  refreshToken.value = null;
+  role.value = null;
+  authenticated.value = null;
+  user_info.value = null;
   router.push("/pacientes/login");
 };
 </script>

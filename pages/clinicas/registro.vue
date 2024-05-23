@@ -153,7 +153,7 @@
 
           <div class="form-group mb-4">
             <label for="matricula-medica" class="form-label text-capitalize"
-              >No de Matricula Médica</label
+              >Nº de Matricula Médica</label
             >
             <input
               v-model="medical_number"
@@ -179,45 +179,47 @@
             />
             <!-- <div id="nombreHelp" class="form-text">We'll never share your email with anyone else.</div> -->
           </div>
-          <div class="form-group mb-4">
-            <label for="servicios" class="form-label text-capitalize"
-              >Especialidades Médicas</label
-            >
-            <select
-              id="servicios"
-              class="form-select"
-              multiple
-              size="6"
-              v-model="specialtiesSelected"
-            >
-              <option
-                v-for="specialty in specialties"
-                :key="specialty.id"
-                :value="specialty.code"
+          <div class="row">
+            <div class="form-group mb-4 col-6">
+              <label for="servicios" class="form-label text-capitalize"
+                >Especialidades Médicas</label
               >
-                {{ specialty.name }}
-              </option>
-            </select>
-          </div>
-          <div class="form-group mb-4">
-            <label for="servicios" class="form-label text-capitalize"
-              >Servicios que se practican</label
-            >
-            <select
-              id="servicios"
-              class="form-select"
-              multiple
-              size="6"
-              v-model="servicesSelected"
-            >
-              <option
-                v-for="service in services"
-                :key="service.id"
-                :value="service.code"
+              <select
+                id="servicios"
+                class="form-select"
+                multiple
+                size="6"
+                v-model="specialtiesSelected"
               >
-                {{ service.name }}
-              </option>
-            </select>
+                <option
+                  v-for="specialty in specialties"
+                  :key="specialty.id"
+                  :value="specialty.code"
+                >
+                  {{ specialty.name }}
+                </option>
+              </select>
+            </div>
+            <div class="form-group mb-4 col-6">
+              <label for="servicios" class="form-label text-capitalize"
+                >Servicios que se practican</label
+              >
+              <select
+                id="servicios"
+                class="form-select"
+                multiple
+                size="6"
+                v-model="servicesSelected"
+              >
+                <option
+                  v-for="service in services"
+                  :key="service.id"
+                  :value="service.code"
+                >
+                  {{ service.name }}
+                </option>
+              </select>
+            </div>
           </div>
           <button @click="tab = 1" class="btn btn-light border-dark w-100">
             <AtomsIconsArrowLeftIcon />
@@ -257,6 +259,9 @@
 </template>
 
 <script setup>
+definePageMeta({
+  middleware: ["auth-login"],
+});
 const config = useRuntimeConfig();
 const router = useRouter();
 const email = ref("");
@@ -327,7 +332,7 @@ const register = async (e) => {
         specialties: specialtiesSelected,
         address,
         legal_name,
-        group_name: 'Test',
+        group_name: "Test",
       },
     }
   );

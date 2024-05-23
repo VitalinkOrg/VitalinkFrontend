@@ -106,6 +106,9 @@
 </template>
 
 <script lang="ts" setup>
+definePageMeta({
+  middleware: ["auth-login"],
+});
 const config = useRuntimeConfig();
 const router = useRouter();
 const name = ref("");

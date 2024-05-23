@@ -1,7 +1,5 @@
 <script setup>
-import { useStore } from "~/store";
-const store = useStore();
-const user = store.user;
+const user_info = useCookie("user_info");
 </script>
 <template>
   <NuxtLayout name="medicos-dashboard">
@@ -28,7 +26,7 @@ const user = store.user;
             Datos Profesionales
           </NuxtLink>
         </li>
-        <li class="nav-item" v-if="user.last_name">
+        <li class="nav-item" v-if="user_info.last_name">
           <NuxtLink href="/medicos/perfil/educacion-experiencia" class="nav-link" active-class="active text-primary">
             Educación y Experiencia
           </NuxtLink>

@@ -1,11 +1,9 @@
 <script setup>
-import { useStore } from "~/store";
 import { ref } from "vue";
 import { useRefreshToken } from "#imports";
 definePageMeta({
   middleware: "auth-pacientes",
 });
-const store = useStore();
 const config = useRuntimeConfig();
 const token = useCookie("token");
 const tab = ref(1);
@@ -20,8 +18,6 @@ const { data: appointments, loading } = await useFetch(
   }
 );
 if (appointments) {
-  store.user = [];
-  store.user.appointments = appointments;
   allAppointments.value = appointments.value;
   useRefreshToken();
 }
@@ -47,9 +43,9 @@ const applyFilter = (statusFilter, tabNumber) => {
           <span class="fw-semibold fs-5">Mis Citas</span>
         </p>
 
-        <div class="d-flex align-items-end justify-content-between mb-4">
-          <ul class="nav nav-underline d-flex flex-row w-100">
-            <li class="nav-item">
+        <div class="row align-items-end justify-content-between mb-4">
+          <ul class="nav nav-underline row col-md-8">
+            <li class="col-auto nav-item">
               <button
                 class="nav-link"
                 :class="tab === 1 ? 'active' : ''"
@@ -58,7 +54,7 @@ const applyFilter = (statusFilter, tabNumber) => {
                 Todas las citas
               </button>
             </li>
-            <li class="nav-item">
+            <li class="col-auto nav-item">
               <button
                 class="nav-link"
                 :class="tab === 2 ? 'active' : ''"
@@ -67,7 +63,7 @@ const applyFilter = (statusFilter, tabNumber) => {
                 Concretadas
               </button>
             </li>
-            <li class="nav-item">
+            <li class="col-auto nav-item">
               <button
                 class="nav-link"
                 :class="tab === 3 ? 'active' : ''"
@@ -76,7 +72,7 @@ const applyFilter = (statusFilter, tabNumber) => {
                 Pendientes
               </button>
             </li>
-            <li class="nav-item">
+            <li class="col-auto nav-item">
               <button
                 class="nav-link"
                 :class="tab === 4 ? 'active' : ''"
@@ -86,7 +82,7 @@ const applyFilter = (statusFilter, tabNumber) => {
               </button>
             </li>
           </ul>
-          <NuxtLink href="/buscar" class="btn btn-primary text-nowrap px-4">
+          <NuxtLink href="/buscar" class="col-12 col-md-auto btn btn-primary text-nowrap px-4">
             <AtomsIconsPlusIcon /> Nueva Cita
           </NuxtLink>
         </div>

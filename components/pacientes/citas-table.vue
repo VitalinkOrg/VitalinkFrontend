@@ -3,36 +3,40 @@ const props = defineProps(["appointments"]);
 </script>
 <template>
   <div class="card">
-    <table v-if="appointments !== null" class="table fw-light">
-      <thead>
-        <tr>
-          <th scope="col" class="text-muted">Doctor / Hospital</th>
-          <th scope="col" class="text-muted">Fecha</th>
-          <th scope="col" class="text-muted">Hora</th>
-          <th scope="col" class="text-muted">Procedimiento</th>
-          <th scope="col" class="text-muted">Lugar</th>
-          <th scope="col" class="text-muted">Estado</th>
-          <th scope="col" class="text-muted"></th>
-        </tr>
-      </thead>
+    <div class="table-responsive" v-if="appointments !== null">
+      <table class="table fw-light">
+        <thead>
+          <tr>
+            <th scope="col" class="text-muted">Doctor / Hospital</th>
+            <th scope="col" class="text-muted">Fecha</th>
+            <th scope="col" class="text-muted">Hora</th>
+            <th scope="col" class="text-muted">Procedimiento</th>
+            <th scope="col" class="text-muted">Lugar</th>
+            <th scope="col" class="text-muted">Estado</th>
+            <th scope="col" class="text-muted"></th>
+          </tr>
+        </thead>
 
-      <tbody>
-        <tr v-for="appointment in appointments" :key="appointment.id">
-          <td>{{ appointment.professional_name || appointment.hospital_name }}</td>
-          <td>{{ new Date(appointment.date).toLocaleDateString() }}</td>
-          <td>{{ appointment.time_from + " - " + appointment.time_to }}</td>
-          <td>{{ appointment.service_name }}</td>
-          <td>
-            <small>{{ appointment.hospital_address }}</small>
-          </td>
-          <td>
-            <span class="badge bg-success-subtle rounded-5 text-dark"
-              >{{ appointment.status }} <AtomsIconsNotificationsIcon /></span
-            >
-          </td>
-        </tr>
-      </tbody>
-    </table>
+        <tbody>
+          <tr v-for="appointment in appointments" :key="appointment.id">
+            <td>
+              {{ appointment.professional_name || appointment.hospital_name }}
+            </td>
+            <td>{{ new Date(appointment.date).toLocaleDateString() }}</td>
+            <td>{{ appointment.time_from + " - " + appointment.time_to }}</td>
+            <td>{{ appointment.service_name }}</td>
+            <td>
+              <small>{{ appointment.hospital_address }}</small>
+            </td>
+            <td>
+              <span class="badge bg-success-subtle rounded-5 text-dark"
+                >{{ appointment.status }} <AtomsIconsNotificationsIcon
+              /></span>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
     <div v-else class="card-body d-flex py-5">
       <div class="col-sm-5 text-end">
         <AtomsIconsChartVacio />

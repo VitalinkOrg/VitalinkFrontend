@@ -1,38 +1,29 @@
 <script setup>
-import { useStore } from "~/store";
 definePageMeta({
   middleware: ["auth-pacientes"],
 });
 const config = useRuntimeConfig();
 const token = useCookie("token");
-const store = useStore();
+const refreshToken = useCookie("refresh_token");
+const role = useCookie("role");
+const authenticated = useCookie("authenticated");
+const user_info = useCookie("user_info");
 const router = useRouter();
-
-const { data: user, pending: pendingUser } = await useFetch(
-  config.public.API_BASE_URL + "/patients/getByUser",
-  {
-    headers: { Authorization: token.value },
-    transform: (_user) => _user.data,
-  }
-);
-if (user) {
-  store.user = user;
-  useRefreshToken();
-}
 
 const deleteAccount = async () => {
   const { data, error } = await useFetch(
-    config.public.API_BASE_URL + "/patients/" + store.user.id,
+    config.public.API_BASE_URL + "/patients/" + user_info.value.id,
     {
       method: "DELETE",
       headers: { Authorization: token.value },
     }
   );
   if (data) {
-    store.authenticated = false;
-    store.user = null;
-    store.role = "";
     token.value = null;
+    refreshToken.value = null;
+    role.value = null;
+    authenticated.value = null;
+    user_info.value = null;
     router.push("/pacientes/login");
   }
   if (error.value) {

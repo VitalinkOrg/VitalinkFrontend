@@ -17,11 +17,11 @@
             Obtenga atención en tres sencillos pasos
           </h2>
 
-          <div class="row row-cols-sm-3 py-5">
+          <div class="row row-cols-md-3 py-5">
             <div>
               <div class="card rounded-4 border-0 shadow text-center">
                 <div class="card-body">
-                  ICON
+                  <Icon name="fa6-solid:magnifying-glass" />
                   <h3 class="h6">Busca un procedimiento</h3>
                   <p class="text-muted">
                     Navega fácilmente por nuestra plataforma para descubrir
@@ -34,7 +34,7 @@
             <div>
               <div class="card rounded-4 border-0 shadow text-center">
                 <div class="card-body">
-                  ICON
+                  <Icon name="fa6-regular:envelope" />
                   <h3 class="h6">Compara ofertas</h3>
                   <p class="text-muted">
                     VitaLink te permite encontrar la combinación perfecta para
@@ -46,7 +46,7 @@
             <div>
               <div class="card rounded-4 border-0 shadow text-center">
                 <div class="card-body">
-                  ICON
+                  <Icon name="fa6-solid:book" />
                   <h3 class="h6">Reserva una cita</h3>
                   <p class="text-muted">
                     Una vez que hayas identificado al profesional o institución
@@ -221,7 +221,7 @@
     <section class="bg-white py-5">
       <div class="container-fluid">
         <div class="row align-items-center">
-          <div class="col ms-sm-5 col-sm-4">
+          <div class="ms-sm-5 col-md-4">
             <h2 class="display-6 fw-bold">Qué dicen de nuestro servicio?</h2>
             <p class="text-muted">
               Nuestra comunidad de usuarios ha expresado su satisfacción a
@@ -331,14 +331,16 @@
                     asegurarnos de que tu experiencia sea exitosa y positiva.
                   </p>
 
-                  <form class="d-flex ms-2">
-                    <input
-                      class="form-control me-2"
-                      type="email"
-                      placeholder="Escribe tu correo electrónico"
-                      aria-label="Search"
-                    />
-                    <button class="btn btn-primary" type="submit">
+                  <form class="row">
+                    <div class="col-md-8">
+                      <input
+                        class="form-control me-2"
+                        type="email"
+                        placeholder="Escribe tu correo electrónico"
+                        aria-label="Search"
+                      />
+                    </div>
+                    <button class="btn btn-primary col-sm-4" type="submit">
                       Suscribirse
                     </button>
                   </form>
@@ -368,18 +370,18 @@
           <div class="row">
             <div class="col-sm-11 mx-auto py-4">
               <div class="row align-items-center">
-                <div class="col">
+                <div class="col-md-6">
                   <h4 class="h5">Medios de Contacto</h4>
                   <p>Nos pondremos en contacto en las próximas 24 horas.</p>
                   <div class="d-flex align-items-center mb-3">
-                    ICON
+                    <Icon name="fa6-solid:inbox" />
                     <div class="d-flex flex-column ms-3">
                       <span class="h6">Email:</span>
                       <small>preguntas@vitalink.com</small>
                     </div>
                   </div>
                   <div class="d-flex align-items-center mb-3">
-                    ICON
+                    <Icon name="fa6-solid:phone" />
                     <div class="d-flex flex-column ms-3">
                       <span class="h6">Phone:</span>
                       <small>(414) 687 - 5892</small>
@@ -388,7 +390,7 @@
                   <p class="text-muted mb-0">Síguenos en redes sociales</p>
                   <p>Icon Icon Icon Icon Icon</p>
                 </div>
-                <div class="col">
+                <div class="col-md-6">
                   <div class="card shadow-lg border-0 rounded-5">
                     <div class="card-body p-4">
                       <form action="">
@@ -450,7 +452,7 @@
                           ></textarea>
                           <!-- <div id="emailHelp" class="form-text">We'll never share your email with anyone else.</div> -->
                         </div>
-                        <button class="btn btn-warning">Contactar</button>
+                        <button class="btn btn-warning mt-3">Contactar</button>
                       </form>
                     </div>
                   </div>

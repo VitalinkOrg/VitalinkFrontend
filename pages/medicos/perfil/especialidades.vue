@@ -1,7 +1,5 @@
 <script setup>
-import { useStore } from "~/store";
-const store = useStore();
-const user = store.user;
+const user_info = useCookie("user_info");
 </script>
 
 <template>
@@ -13,7 +11,7 @@ const user = store.user;
         Escribe las Especialidades médicas que ofrecerás en la plataforma.
       </p>
       <button
-        v-for="(specialty, index) in user.specialties_names"
+        v-for="(specialty, index) in user_info.specialties_names"
         :key="index"
         class="btn btn-light border w-100 fw-light text-start d-flex bg-white justify-content-between align-items-center mb-3"
       >
@@ -45,7 +43,7 @@ const user = store.user;
         Agrega los servicios médicos que ofrecerás en la plataforma.
       </p>
       <button
-        v-for="(service, index) in user.services_names"
+        v-for="(service, index) in user_info.services_names"
         :key="index"
         class="btn btn-light border w-100 fw-light text-start d-flex bg-white justify-content-between align-items-center mb-3"
       >

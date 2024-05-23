@@ -1,32 +1,18 @@
 <script setup>
-import { useStore } from "~/store";
 definePageMeta({
   middleware: ["auth-pacientes"],
 });
 const config = useRuntimeConfig();
 const token = useCookie("token");
-const store = useStore();
-
-const { data: user, pending: pendingUser } = await useFetch(
-  config.public.API_BASE_URL + "/patients/getByUser",
-  {
-    headers: { Authorization: token.value },
-    transform: (_user) => _user.data,
-  }
-);
-if (user) {
-  store.user = user;
-  useRefreshToken();
-}
-
+const user_info = useCookie("user_info");
 
 const updateUser = async () => {
   const { data, error } = await useFetch(
-    config.public.API_BASE_URL + "/patients/" + store.user.id,
+    config.public.API_BASE_URL + "/patients/" + user_info.value.id,
     {
       method: "PUT",
       headers: { Authorization: token.value },
-      body: user
+      body: user_info
     }
   );
   if (error.value) {
@@ -40,7 +26,7 @@ const updateUser = async () => {
   <NuxtLayout name="pacientes-dashboard-perfil">
     <h4 class="fw-normal">Datos Personales</h4>
     <form class="mt-4" @submit.prevent="updateUser">
-      <div class="row row-cols-2">
+      <div class="row row-cols-md-2">
         <div class="form-group mb-3">
           <label for="nombre" class="form-label text-capitalize"
             >Nombre (s)</label
@@ -49,7 +35,7 @@ const updateUser = async () => {
             type="text"
             class="form-control"
             placeholder="Escribe tu nombre"
-            v-model="user.first_name"
+            v-model="user_info.first_name"
             name="nombre"
             id="nombre"
           />
@@ -62,7 +48,7 @@ const updateUser = async () => {
             type="text"
             class="form-control"
             placeholder="Escribe tu apellido"
-            :value="user.last_name"
+            :value="user_info.last_name"
             id="apellido"
             name="apellido"
           />
@@ -74,7 +60,7 @@ const updateUser = async () => {
           <input
             type="phone"
             placeholder="+1(555) 000-0000"
-            v-model="user.phone_number"
+            v-model="user_info.phone_number"
             id="telefono"
             name="telefono"
             class="form-control"
@@ -91,7 +77,7 @@ const updateUser = async () => {
             type="text"
             placeholder="Dirección"
             id="direccion"
-            v-model="user.address"
+            v-model="user_info.address"
             name="direccion"
             class="form-control"
           />
@@ -107,7 +93,7 @@ const updateUser = async () => {
             placeholder="00000000"
             id="postal"
             name="postal"
-            v-model="user.postal_code"
+            v-model="user_info.postal_code"
             class="form-control"
           />
         </div>
@@ -118,7 +104,7 @@ const updateUser = async () => {
             placeholder="Ciudad"
             id="ciudad"
             name="ciudad"
-            v-model="user.city"
+            v-model="user_info.city"
             class="form-control"
             required
           />
@@ -130,7 +116,7 @@ const updateUser = async () => {
             placeholder="País"
             id="pais"
             name="pais"
-            v-model="user.country_iso_code"
+            v-model="user_info.country_iso_code"
             class="form-control"
             required
           />
