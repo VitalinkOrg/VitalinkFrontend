@@ -1,12 +1,11 @@
 <script setup>
-import { useStore } from "~/store";
 definePageMeta({
   middleware: ["auth-doctors-hospitals"],
 });
 const config = useRuntimeConfig();
 const token = useCookie("token");
-const store = useStore();
-const user = store.user;
+const user_info = useCookie("user_info");
+const user = user_info.value;
 const firstName = ref(user.first_name || user.name);
 const lastName = ref(user.last_name);
 const phoneNumber = ref(user.phone_number || user.phone_number_1);
@@ -16,11 +15,12 @@ const country_iso_code = ref(user.country_iso_code);
 const postal_code = ref(user.postal_code);
 
 const updateDoctor = async () => {
-  const { data, error } = await useFetch(
+  const { data: user, error } = await useFetch(
     config.public.API_BASE_URL + "/doctors/update_doctor",
     {
       method: "PUT",
       headers: { Authorization: token.value },
+      transform: (_user) => _user.data,
       body: {
         first_name: firstName,
         last_name: lastName,
@@ -31,6 +31,9 @@ const updateDoctor = async () => {
       },
     }
   );
+  if(user) {
+    user_info.value = user.value;
+  }
   if (error.value) {
     console.log(error.value, "data");
   }

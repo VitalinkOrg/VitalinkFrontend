@@ -1,25 +1,9 @@
 <script setup>
-import { useStore } from "~/store";
-import { useRefreshToken } from "#imports";
 definePageMeta({
   middleware: ["auth-insurances"],
 });
-const store = useStore();
 const config = useRuntimeConfig();
 const token = useCookie("token");
-// const { pacientes, citas, vauchers, historial } = usePaciente();
-const { data: insurance, pending: pendingUser } = await useFetch(
-  config.public.API_BASE_URL + "/insurances/get_insurance_info",
-  {
-    headers: { Authorization: token.value },
-    transform: (_insurance) => _insurance.data,
-  }
-);
-if (insurance) {
-  store.user = [];
-  store.user = insurance;
-  useRefreshToken();
-}
 
 const { data: vouchers, pending: pendingVouchers } = await useFetch(
   config.public.API_BASE_URL + "/insurance_dashboard/list_vouchers",
@@ -28,9 +12,6 @@ const { data: vouchers, pending: pendingVouchers } = await useFetch(
     transform: (_vouchers) => _vouchers.data,
   }
 );
-if (vouchers.length) {
-  store.user.vouchers = vouchers;
-}
 </script>
 <template>
   <NuxtLayout name="aseguradoras-dashboard">
@@ -45,7 +26,7 @@ if (vouchers.length) {
               <AtomsIconsArrowRightIcon />
             </NuxtLink>
           </p>
-          <div class="card border-0 shadow rounded-3">
+          <div class="card border-0 shadow rounded-3 h-100">
             <div v-if="vouchers !== null" class="card-body d-flex">
               <div
                 class="col text-center align-items-center d-flex justify-content-center"
@@ -100,8 +81,8 @@ if (vouchers.length) {
               <AtomsIconsArrowRightIcon />
             </NuxtLink>
           </p>
-          <div class="card border-0 shadow rounded-3">
-            <div class="card border-0 shadow rounded-3">
+          <div class="card border-0 shadow rounded-3 h-100">
+            <div class="card border-0 shadow rounded-3 h-100">
               <div v-if="vouchers !== null" class="card-body">
                 <div
                   class="d-flex align-items-center justify-content-center py-5 bg-light text-muted mb-3"
@@ -170,13 +151,13 @@ if (vouchers.length) {
             <AtomsIconsArrowRightIcon />
           </NuxtLink>
         </p>
-        <div v-if="vouchers !== null">
+        <div class="table-responsive card border-0 py-4 rounded-3 shadow" v-if="vouchers !== null">
           <table class="table fw-light">
             <thead>
               <tr>
                 <th scope="col" class="text-muted">Código</th>
                 <th scope="col" class="text-muted">Nombre del asegurado</th>
-                <th scope="col" class="text-muted">No de Asegurado</th>
+                <th scope="col" class="text-muted">Nº de Asegurado</th>
                 <th scope="col" class="text-muted">Procedimiento</th>
                 <th scope="col" class="text-muted">Vencimiento</th>
                 <th scope="col" class="text-muted">Estado</th>
@@ -193,7 +174,7 @@ if (vouchers.length) {
             </tbody>
           </table>
         </div>
-        <div class="card border-0 shadow rounded-3 py-4" v-else>
+        <div class="card border-0 shadow rounded-3 py-4 h-100" v-else>
           <div class="card-body d-flex align-items-center p-5">
             <span class="w-50 text-center">
               <AtomsIconsChartVacio />

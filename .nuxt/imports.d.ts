@@ -30,6 +30,5 @@ export { default as useRefreshToken } from '../composables/useRefreshToken';
 export { default as useReserva } from '../composables/useReserva';
 export { default as useSearch } from '../composables/useSearch';
 export { default as useServicios } from '../composables/useServicios';
-export { defineStore, acceptHMRUpdate, usePinia, storeToRefs } from '../node_modules/@pinia/nuxt/dist/runtime/composables';
 export { useNuxtDevTools } from '../node_modules/@nuxt/devtools/dist/runtime/use-nuxt-devtools';
 export { definePageMeta } from '../node_modules/nuxt/dist/pages/runtime/composables';

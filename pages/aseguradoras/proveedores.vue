@@ -1,9 +1,7 @@
 <script setup>
-import { useStore } from "~/store";
 definePageMeta({
   middleware: ["auth-insurances"],
 });
-const store = useStore();
 const config = useRuntimeConfig();
 const token = useCookie("token");
 
@@ -14,10 +12,6 @@ const { data: suppliers, pending: pendingSuppliers } = await useFetch(
     transform: (_suppliers) => _suppliers.data,
   }
 );
-if (suppliers) {
-  store.user = [];
-  store.user.suppliers = suppliers;
-}
 </script>
 
 <template>

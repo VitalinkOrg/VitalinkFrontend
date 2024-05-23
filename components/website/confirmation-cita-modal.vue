@@ -1,11 +1,9 @@
 <script setup>
 import { ref, defineProps } from "vue";
-import { useStore } from "~/store";
 const emit = defineEmits(['close-modal'])
 const config = useRuntimeConfig();
 const token = useCookie("token");
-const store = useStore();
-const user = store.user;
+const user_info = useCookie("user_info");
 const props = defineProps(["open", "appointment", "result"]);
 const step = ref(4);
 const route = useRoute();
@@ -27,7 +25,7 @@ const createAppointment = async () => {
         cpt_code: props.result.cpt_code,
         hospital_id: props.result.hospital_id,
         doctor_id: Number(route.params.doctor),
-        patient_id: user.id,
+        patient_id: user_info.value.id,
         is_in_person: 1,
       },
     }
@@ -103,9 +101,9 @@ function closeConfirmationModal() {
               <dt>Médico / Especialista</dt>
               <dd>{{ result.doctor_name }}</dd>
             </dl>
-            <dl v-if="user">
+            <dl v-if="user_info">
               <dt>Paciente titular</dt>
-              <dd>{{ user.first_name + " " + user.last_name }}</dd>
+              <dd>{{ user_info.first_name + " " + user_info.last_name }}</dd>
             </dl>
             <!-- <dl>
               <dt>Modelo de servicio</dt>
@@ -194,7 +192,7 @@ function closeConfirmationModal() {
               <dl>
                 <dt class="text-white">Paciente titular</dt>
                 <dd class="text-primary fw-semibold">
-                  {{ user.first_name + " " + user.last_name }}
+                  {{ user_info.first_name + " " + user_info.last_name }}
                 </dd>
               </dl>
               <!-- <dl>

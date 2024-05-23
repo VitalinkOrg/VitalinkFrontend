@@ -1,7 +1,5 @@
 <script setup>
-import { useStore } from "~/store";
-const store = useStore();
-const user = store.user;
+const user_info = useCookie("user_info");
 </script>
 <template>
   <NuxtLayout name="medicos-dashboard-perfil">
@@ -18,9 +16,9 @@ const user = store.user;
         Agregar Nueva
       </button>
     </div>
-    <div v-if="user.degrees && user.degrees.length">
+    <div v-if="user_info.degrees && user_info.degrees.length">
       <div
-        v-for="degree in user.degrees"
+        v-for="degree in user_info.degrees"
         :key="degree.id"
         class="card rounded-4 mb-3"
       >
@@ -90,9 +88,9 @@ const user = store.user;
     </div>
 
     <!-- Cuando hay datos  -->
-    <div v-if="user.experiences && user.experiences.length">
+    <div v-if="user_info.experiences && user_info.experiences.length">
       <div
-        v-for="experience in user.experiences"
+        v-for="experience in user_info.experiences"
         :key="experience.id"
         class="card rounded-4 mb-3"
       >
@@ -162,9 +160,9 @@ const user = store.user;
         Agregar Nueva
       </button>
     </div>
-    <div v-if="user.languages && user.languages.length">
+    <div v-if="user_info.languages && user_info.languages.length">
       <div
-        v-for="language in user.languages"
+        v-for="language in user_info.languages"
         :key="language.id"
         class="card rounded-4 mb-3"
       >

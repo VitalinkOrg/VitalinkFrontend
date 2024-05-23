@@ -1,11 +1,9 @@
 <script setup>
-import { useStore } from "~/store";
 import { ref } from "vue";
 import { useRefreshToken } from "#imports";
 definePageMeta({
   middleware: ["auth-doctors-hospitals"],
 });
-const store = useStore();
 const config = useRuntimeConfig();
 const token = useCookie("token");
 const role = useCookie("role");
@@ -27,8 +25,6 @@ const { data: appointments, loading } = await useFetch(
   }
 );
 if (appointments) {
-  store.user = [];
-  store.user.appointments = appointments;
   allAppointments.value = appointments.value;
   useRefreshToken();
 }

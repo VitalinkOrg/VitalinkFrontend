@@ -40,7 +40,7 @@
             <NuxtLink href="" class="nav-link">Nosotros</NuxtLink>
           </li>
         </ul>
-        <div v-if="!store.authenticated">
+        <div v-if="!authenticated">
           <NuxtLink href="/pacientes/login" class="btn btn-outline-dark me-2"
             >Ingresar</NuxtLink
           >
@@ -48,7 +48,7 @@
             >Registrarse</NuxtLink
           >
         </div>
-        <div class="d-flex" v-if="store.authenticated">
+        <div class="d-flex" v-if="authenticated">
           <button @click="logout" class="btn btn-primary"
             >Cerrar sesión</button
           >
@@ -59,16 +59,19 @@
 </template>
 
 <script lang="ts" setup>
-import { useStore } from "~/store";
-const store = useStore();
 const token = useCookie("token");
+const refreshToken = useCookie("refresh_token");
+const role = useCookie("role");
+const authenticated = useCookie("authenticated");
+const user_info = useCookie("user_info");
 const router = useRouter();
 
 const logout = () => {
-  store.authenticated = false;
-  store.user = null;
-  store.role = '';
   token.value = null;
+  refreshToken.value = null;
+  role.value = null;
+  authenticated.value = null;
+  user_info.value = null;
   router.push("/pacientes/login");
 };
 </script>

@@ -57,21 +57,23 @@
   </NuxtLayout>
 </template>
 
-<script lang="ts" setup>
-import { useStore } from "~/store";
-
+<script setup>
+definePageMeta({
+  middleware: ["auth-login"],
+});
 const config = useRuntimeConfig();
 const router = useRouter();
-const store = useStore();
 const token = useCookie("token");
 const refreshToken = useCookie("refresh_token");
 const role = useCookie("role");
+const authenticated = useCookie("authenticated");
+const user_info = useCookie("user_info");
 const email = ref("patient@gmail.com");
 const password = ref("patient");
 const errorText = ref(null);
 
 const login = async () => {
-  const { data, error }: any = await useFetch(
+  const { data, error } = await useFetch(
     config.public.API_BASE_URL + "/users/login",
     {
       method: "POST",
@@ -82,22 +84,78 @@ const login = async () => {
     }
   );
   if (data.value) {
-    store.authenticated = true;
-    store.role = data?.value?.data?.user_info.role;
-    store.user = data?.value?.data?.user_info;
+    authenticated.value = true;
     token.value = data?.value?.data?.access_token;
     refreshToken.value = data?.value?.data?.refresh_token;
     role.value = data?.value?.data?.user_info.role;
-    if(data?.value?.data?.user_info.role === "R_PAT") {
-      router.push("/pacientes/inicio");
-    } else if (data?.value?.data?.user_info.role === "R_INS") {
-      router.push("/aseguradoras/inicio");
+    if (role.value === "R_PAT") {
+      getUserInfo();
+    } else if (role.value === "R_INS") {
+      getInsuranceInfo();
+    } else if (role.value === "R_HOS") {
+      getHospitalInfo();
     } else {
-      router.push("/medicos/inicio")
+      getDoctorInfo();
     }
   }
   if (error) {
     errorText.value = error.value.data.info;
+  }
+};
+
+const getUserInfo = async () => {
+  const { data: user } = await useFetch(
+    config.public.API_BASE_URL + "/patients/getByUser",
+    {
+      headers: { Authorization: token.value },
+      transform: (_user) => _user.data,
+    }
+  );
+  if (user) {
+    user_info.value = user.value;
+    router.push("/pacientes/inicio");
+  }
+};
+
+const getInsuranceInfo = async () => {
+  const { data: user } = await useFetch(
+    config.public.API_BASE_URL + "/insurances/get_insurance_info",
+    {
+      headers: { Authorization: token.value },
+      transform: (_user) => _user.data,
+    }
+  );
+  if (user) {
+    user_info.value = user.value;
+    router.push("/aseguradoras/inicio");
+  }
+};
+
+const getHospitalInfo = async () => {
+  const { data: user } = await useFetch(
+    config.public.API_BASE_URL + "/hospitals/get_hospital_info",
+    {
+      headers: { Authorization: token.value },
+      transform: (_user) => _user.data,
+    }
+  );
+  if (user) {
+    user_info.value = user.value;
+    router.push("/medicos/inicio");
+  }
+};
+
+const getDoctorInfo = async () => {
+  const { data: user } = await useFetch(
+    config.public.API_BASE_URL + "/doctors/get_doctor_info",
+    {
+      headers: { Authorization: token.value },
+      transform: (_user) => _user.data,
+    }
+  );
+  if (user) {
+    user_info.value = user.value;
+    router.push("/medicos/inicio");
   }
 };
 </script>
