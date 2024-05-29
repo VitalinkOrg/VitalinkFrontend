@@ -3,9 +3,12 @@
     <div class="bg-light">
       <header class="d-flex align-items-center">
         <div class="container">
-          <h1 class="display-3 text-center fw-bold mb-3">Bienestar a tu alcance: encuentra y programa citas médicas</h1>
+          <h1 class="display-3 text-center fw-bold mb-3">
+            Bienestar a tu alcance: encuentra y programa citas médicas
+          </h1>
           <p class="text-center text-muted col-sm-6 mx-auto">
-            Pon tu salud en primer lugar con nuestro directorio de médicos y una forma conveniente de agendar tus citas.
+            Pon tu salud en primer lugar con nuestro directorio de médicos y una
+            forma conveniente de agendar tus citas.
           </p>
           <WebsiteSearchBar />
         </div>
@@ -21,7 +24,11 @@
             <div>
               <div class="card rounded-4 border-0 shadow text-center">
                 <div class="card-body">
-                  <Icon name="fa6-solid:magnifying-glass" />
+                  <img
+                    src="@/src/assets/procedimiento.svg"
+                    alt="Busca centro medico"
+                    class="img-fluid mb-3"
+                  />
                   <h3 class="h6">Busca un procedimiento</h3>
                   <p class="text-muted">
                     Navega fácilmente por nuestra plataforma para descubrir
@@ -34,7 +41,11 @@
             <div>
               <div class="card rounded-4 border-0 shadow text-center">
                 <div class="card-body">
-                  <Icon name="fa6-regular:envelope" />
+                  <img
+                    src="@/src/assets/ofertas.svg"
+                    alt="Busca centro medico"
+                    class="img-fluid mb-3"
+                  />
                   <h3 class="h6">Compara ofertas</h3>
                   <p class="text-muted">
                     VitaLink te permite encontrar la combinación perfecta para
@@ -46,7 +57,11 @@
             <div>
               <div class="card rounded-4 border-0 shadow text-center">
                 <div class="card-body">
-                  <Icon name="fa6-solid:book" />
+                  <img
+                    src="@/src/assets/cita.svg"
+                    alt="Busca centro medico"
+                    class="img-fluid mb-3"
+                  />
                   <h3 class="h6">Reserva una cita</h3>
                   <p class="text-muted">
                     Una vez que hayas identificado al profesional o institución
@@ -70,7 +85,9 @@
             <div class="card-body ps-5">
               <div class="d-flex align-items-center">
                 <div class="col-sm-6">
-                  <h2 class="display-6 fw-bold">¿Listo para empezar la búsqueda?</h2>
+                  <h2 class="display-6 fw-bold">
+                    ¿Listo para empezar la búsqueda?
+                  </h2>
                   <p class="text-muted mb-4">
                     Estamos aquí para hacer que el proceso de encontrar al
                     cirujano adecuado sea lo más fácil posible.
@@ -104,7 +121,9 @@
             />
           </div>
           <div class="col">
-            <h2 class="display-6 fw-bold">Números que muestran nuestro éxito</h2>
+            <h2 class="display-6 fw-bold">
+              Números que muestran nuestro éxito
+            </h2>
             <p class="text-muted">
               Algunos datos que reflejan nuestro éxito y la confianza depositada
               en nosotros por la comunidad de usuarios en busca de atención
@@ -174,42 +193,15 @@
               </div>
               <div class="col">
                 <div class="row row-cols-3">
-                  <img
-                    src="@/src/assets/img-logo-quienes-confian.svg"
-                    alt="logo"
-                  />
-                  <img
-                    src="@/src/assets/img-logo-quienes-confian.svg"
-                    alt="logo"
-                  />
-                  <img
-                    src="@/src/assets/img-logo-quienes-confian.svg"
-                    alt="logo"
-                  />
-                  <img
-                    src="@/src/assets/img-logo-quienes-confian.svg"
-                    alt="logo"
-                  />
-                  <img
-                    src="@/src/assets/img-logo-quienes-confian.svg"
-                    alt="logo"
-                  />
-                  <img
-                    src="@/src/assets/img-logo-quienes-confian.svg"
-                    alt="logo"
-                  />
-                  <img
-                    src="@/src/assets/img-logo-quienes-confian.svg"
-                    alt="logo"
-                  />
-                  <img
-                    src="@/src/assets/img-logo-quienes-confian.svg"
-                    alt="logo"
-                  />
-                  <img
-                    src="@/src/assets/img-logo-quienes-confian.svg"
-                    alt="logo"
-                  />
+                  <img src="@/src/assets/netflix.svg" alt="logo" />
+                  <img src="@/src/assets/buffer.svg" alt="buffer" />
+                  <img src="@/src/assets/stripe.svg" alt="logo" />
+                  <img src="@/src/assets/hubspot.svg" alt="logo" />
+                  <img src="@/src/assets/dropbox.svg" alt="logo" />
+                  <img src="@/src/assets/framer.svg" alt="logo" />
+                  <img src="@/src/assets/netflix.svg" alt="logo" />
+                  <img src="@/src/assets/hubspot.svg" alt="logo" />
+                  <img src="@/src/assets/buffer.svg" alt="logo" />
                 </div>
               </div>
             </div>
@@ -304,9 +296,11 @@
         <div class="row">
           <div class="col d-flex justify-content-end me-5 mt-4">
             <button class="btn btn-circle btn-warning-subtle rounded-circle">
-              L
+              <Icon name="fa6-solid:arrow-left" />
             </button>
-            <button class="btn btn-circle btn-warning rounded-circle">R</button>
+            <button class="btn btn-circle btn-warning rounded-circle">
+              <Icon name="fa6-solid:arrow-right" />
+            </button>
           </div>
         </div>
       </div>
@@ -361,7 +355,9 @@
 
       <section class="py-5">
         <div class="container">
-          <h2 class="display-6 text-center fw-bold">Déjanos saber que piensas</h2>
+          <h2 class="display-6 text-center fw-bold">
+            Déjanos saber que piensas
+          </h2>
           <p class="text-center text-muted col-sm-8 mx-auto">
             Si tienes alguna pregunta, o comentario sobre nuestros servicios,
             estamos felices de ayudar, escríbenos:
@@ -388,7 +384,12 @@
                     </div>
                   </div>
                   <p class="text-muted mb-0">Síguenos en redes sociales</p>
-                  <p>Icon Icon Icon Icon Icon</p>
+                  <p>
+                    <Icon name="fa6-brands:facebook" /> |
+                    <Icon name="fa6-brands:instagram" /> |
+                    <Icon name="fa6-brands:linkedin" /> |
+                    <Icon name="fa6-brands:youtube" />
+                  </p>
                 </div>
                 <div class="col-md-6">
                   <div class="card shadow-lg border-0 rounded-5">

@@ -32,7 +32,7 @@
             class="btn-close btn btn-light me-2"
             data-bs-dismiss="modal"
             aria-label="Close"
-            @click="closeConfirmationModal"
+            @click="exitButton"
           ></button>
         </div>
         <div
@@ -585,6 +585,16 @@ function closeConfirmationModal() {
   open.value = false;
   step.value = 1;
 }
+
+function exitButton() {
+  if (step.value === 6) {
+    open.value = false;
+    step.value = 1;
+  } else {
+    step.value = 6;
+  }
+}
+
 
 function nextStep() {
   if (!props.service.schedule) {

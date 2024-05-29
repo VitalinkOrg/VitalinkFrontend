@@ -1,6 +1,6 @@
 <script setup>
 import { ref, defineProps } from "vue";
-const emit = defineEmits(['close-modal'])
+const emit = defineEmits(["close-modal"]);
 const config = useRuntimeConfig();
 const token = useCookie("token");
 const user_info = useCookie("user_info");
@@ -39,8 +39,17 @@ const createAppointment = async () => {
   }
 };
 
+function exitButton() {
+  if (step.value === 4) {
+    step.value = 6;
+  } else {
+    emit("close-modal");
+    step.value = 4;
+  }
+}
+
 function closeConfirmationModal() {
-  emit('close-modal')
+  emit("close-modal");
   step.value = 4;
 }
 </script>
@@ -70,7 +79,7 @@ function closeConfirmationModal() {
             class="btn-close btn btn-light me-2"
             data-bs-dismiss="modal"
             aria-label="Close"
-            @click="closeConfirmationModal"
+            @click="exitButton"
           ></button>
         </div>
         <!-- Step 4 -->
@@ -237,8 +246,12 @@ function closeConfirmationModal() {
                 alt="Alerta"
                 style="height: 4rem"
               />
-              <div class="text-secondary fs-5 fw-semibold">Aún no has solicitado tu cita</div>
-              <h4 class="fs-3 fw-semibold">¿Quieres salir del proceso de reserva?</h4>
+              <div class="text-secondary fs-5 fw-semibold">
+                Aún no has solicitado tu cita
+              </div>
+              <h4 class="fs-3 fw-semibold">
+                ¿Quieres salir del proceso de reserva?
+              </h4>
             </div>
           </div>
           <div class="modal-footer">
