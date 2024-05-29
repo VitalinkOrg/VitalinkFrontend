@@ -221,6 +221,27 @@
               </select>
             </div>
           </div>
+          <div class="mb-3 form-check">
+            <input
+              type="checkbox"
+              class="form-check-input border-dark"
+              id="recordarme"
+            />
+            <label class="form-check-label border" for="recordarme"
+              >Recordarme</label
+            >
+          </div>
+          <div class="mb-3 form-check">
+            <input
+              type="checkbox"
+              class="form-check-input border-dark"
+              id="politicas"
+            />
+            <label class="form-check-label" for="politicas"
+              >He leído y acepto la Política de Privacidad y condiciones de
+              uso</label
+            >
+          </div>
           <button @click="tab = 1" class="btn btn-light border-dark w-100">
             <AtomsIconsArrowLeftIcon />
             Volver Atrás
