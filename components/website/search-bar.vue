@@ -15,7 +15,6 @@ export default {
   },
   methods: {
     searchResults() {
-      console.log(this.filtersData, 'date');
       this.$router.push({
         path: "/buscar",
         query: {
@@ -51,10 +50,9 @@ export default {
   <div>
     <div class="card shadow border-0 rounded-4">
       <div class="card-body">
-        <form class="d-flex align-items-end" @submit.prevent="searchResults">
+        <form class="row align-items-end justify-content-between" @submit.prevent="searchResults">
           <!-- <form class="d-flex align-items-end" action="/buscar/wovnworv"> -->
-          <div class="row row-cols-sm-3 w-100">
-            <div class="form-group">
+            <div class="col-md-3 form-group">
               <label for="procedimiento" class="form-label text-uppercase"
                 >Procedimiento</label
               >
@@ -68,7 +66,7 @@ export default {
               />
               <!-- <div id="procedimiento-help" class="form-text ">We'll never share your email with anyone else.</div> -->
             </div>
-            <div class="form-group">
+            <div class="col-md-3 form-group">
               <label for="lugar" class="form-label">Lugar</label>
               <input
                 type="text"
@@ -80,7 +78,7 @@ export default {
               />
               <!-- <div id="lugar-help" class="form-text ">We'll never share your email with anyone else.</div> -->
             </div>
-            <div class="form-group">
+            <div class="col-md-3 form-group">
               <label for="vaucher" class="form-label">Código de Vaucher</label>
               <input
                 type="text"
@@ -92,9 +90,8 @@ export default {
               />
               <!-- <div id="vaucher-help" class="form-text ">We'll never share your email with anyone else.</div> -->
             </div>
-          </div>
-          <div class="form-group col-auto ms-4">
-            <button type="submit" class="btn btn-warning px-4">Buscar</button>
+          <div class="form-group col-md-2">
+            <button type="submit" class="btn btn-warning px-4 w-100">Buscar</button>
           </div>
         </form>
       </div>

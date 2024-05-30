@@ -169,7 +169,7 @@
 
           <div class="form-group mb-4">
             <label for="matricula" class="form-label text-capitalize"
-              >No de Matricula</label
+              >Nº de Matricula</label
             >
             <input
               v-model="medical_number"
@@ -259,6 +259,9 @@
 </template>
 
 <script setup>
+definePageMeta({
+  middleware: ["auth-login"],
+});
 const config = useRuntimeConfig();
 const router = useRouter();
 const email = ref("");

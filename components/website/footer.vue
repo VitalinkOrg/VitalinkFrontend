@@ -1,7 +1,7 @@
 <template>
   <footer class="py-5 border-top border-primary border-3 shadow-lg">
     <div class="container">
-      <div class="row row-cols-4">
+      <div class="row row-cols-md-4">
         <div class="col">
           <img
             src="@/src/assets/img-vitalink-logo.svg"
@@ -74,10 +74,8 @@
         </div>
       </div>
       <div class="row my-4">
-        <div class="col-6">
-          <div
-            class="bg-light d-flex py-2 px-4 rounded-4 align-items-center"
-          >
+        <div class="col-md-6">
+          <div class="bg-light d-flex py-2 px-4 rounded-4 align-items-center">
             Recibe las últimas novedades
             <form class="d-flex ms-2 w-100">
               <input
@@ -97,7 +95,12 @@
         <NuxtLink class="btn-link px-2" href="">Terms and Conditions </NuxtLink>
         | <NuxtLink class="btn-link px-2"> Privacy Policy</NuxtLink>
 
-        <div class="ms-auto">Icon | Icon | Icon | Icon</div>
+        <div class="ms-auto">
+          <Icon name="fa6-brands:facebook" /> |
+          <Icon name="fa6-brands:instagram" /> |
+          <Icon name="fa6-brands:linkedin" /> |
+          <Icon name="fa6-brands:youtube" />
+        </div>
       </div>
     </div>
   </footer>

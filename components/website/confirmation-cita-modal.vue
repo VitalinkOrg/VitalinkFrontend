@@ -1,11 +1,9 @@
 <script setup>
 import { ref, defineProps } from "vue";
-import { useStore } from "~/store";
-const emit = defineEmits(['close-modal'])
+const emit = defineEmits(["close-modal"]);
 const config = useRuntimeConfig();
 const token = useCookie("token");
-const store = useStore();
-const user = store.user;
+const user_info = useCookie("user_info");
 const props = defineProps(["open", "appointment", "result"]);
 const step = ref(4);
 const route = useRoute();
@@ -27,7 +25,7 @@ const createAppointment = async () => {
         cpt_code: props.result.cpt_code,
         hospital_id: props.result.hospital_id,
         doctor_id: Number(route.params.doctor),
-        patient_id: user.id,
+        patient_id: user_info.value.id,
         is_in_person: 1,
       },
     }
@@ -41,8 +39,17 @@ const createAppointment = async () => {
   }
 };
 
+function exitButton() {
+  if (step.value === 4) {
+    step.value = 6;
+  } else {
+    emit("close-modal");
+    step.value = 4;
+  }
+}
+
 function closeConfirmationModal() {
-  emit('close-modal')
+  emit("close-modal");
   step.value = 4;
 }
 </script>
@@ -72,7 +79,7 @@ function closeConfirmationModal() {
             class="btn-close btn btn-light me-2"
             data-bs-dismiss="modal"
             aria-label="Close"
-            @click="closeConfirmationModal"
+            @click="exitButton"
           ></button>
         </div>
         <!-- Step 4 -->
@@ -103,9 +110,9 @@ function closeConfirmationModal() {
               <dt>Médico / Especialista</dt>
               <dd>{{ result.doctor_name }}</dd>
             </dl>
-            <dl v-if="user">
+            <dl v-if="user_info">
               <dt>Paciente titular</dt>
-              <dd>{{ user.first_name + " " + user.last_name }}</dd>
+              <dd>{{ user_info.first_name + " " + user_info.last_name }}</dd>
             </dl>
             <!-- <dl>
               <dt>Modelo de servicio</dt>
@@ -194,7 +201,7 @@ function closeConfirmationModal() {
               <dl>
                 <dt class="text-white">Paciente titular</dt>
                 <dd class="text-primary fw-semibold">
-                  {{ user.first_name + " " + user.last_name }}
+                  {{ user_info.first_name + " " + user_info.last_name }}
                 </dd>
               </dl>
               <!-- <dl>
@@ -239,8 +246,12 @@ function closeConfirmationModal() {
                 alt="Alerta"
                 style="height: 4rem"
               />
-              <div class="text-secondary fs-5 fw-semibold">Aún no has solicitado tu cita</div>
-              <h4 class="fs-3 fw-semibold">¿Quieres salir del proceso de reserva?</h4>
+              <div class="text-secondary fs-5 fw-semibold">
+                Aún no has solicitado tu cita
+              </div>
+              <h4 class="fs-3 fw-semibold">
+                ¿Quieres salir del proceso de reserva?
+              </h4>
             </div>
           </div>
           <div class="modal-footer">

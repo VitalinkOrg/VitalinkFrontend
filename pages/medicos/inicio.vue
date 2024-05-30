@@ -1,12 +1,11 @@
 <script setup>
-import { useStore } from "~/store";
 definePageMeta({
   middleware: ["auth-doctors-hospitals"],
 });
-const store = useStore();
 const config = useRuntimeConfig();
 const token = useCookie("token");
 const role = useCookie("role");
+const user_info = useCookie("user_info");
 
 let url;
 if (role.value == "R_HOS") {
@@ -22,10 +21,6 @@ const { data: procedures, pending: pendingProcedures } = await useFetch(
     transform: (_procedures) => _procedures.data[0],
   }
 );
-if (procedures) {
-  store.user = [];
-  store.user.procedures = procedures;
-}
 
 const { data: appointments, loading } = await useFetch(
   config.public.API_BASE_URL + url + "history_appointments",
@@ -35,7 +30,6 @@ const { data: appointments, loading } = await useFetch(
   }
 );
 if (appointments) {
-  store.user.appointments = appointments;
   useRefreshToken();
 }
 </script>
@@ -182,7 +176,7 @@ if (appointments) {
             <AtomsIconsArrowRightIcon />
           </NuxtLink>
         </p>
-        <div class="card border-0 shadow rounded-3 py-5">
+        <div class="card border-0 shadow rounded-3 py-5 h-100">
           <div class="card-body d-flex align-items-center p-5">
             <AtomsIconsChartVacio />
             <p class="d-flex flex-column align-items-start ms-3">
@@ -207,7 +201,7 @@ if (appointments) {
             <AtomsIconsArrowRightIcon />
           </NuxtLink>
         </p>
-        <div class="card border-0 shadow rounded-3">
+        <div class="card border-0 shadow rounded-3 h-100">
           <div class="card-body d-flex flex-column text-center p-5">
             <span class="w-75 mx-auto">
               <AtomsIconsChartVacio />
@@ -240,7 +234,7 @@ if (appointments) {
         <MedicosCitasTable :appointments="appointments" />
       </div>
     </div>
-    <MedicosOnboardingModal :data="store.user" />
+    <MedicosOnboardingModal :data="user_info" />
   </NuxtLayout>
 </template>
 

@@ -32,7 +32,7 @@
             class="btn-close btn btn-light me-2"
             data-bs-dismiss="modal"
             aria-label="Close"
-            @click="closeConfirmationModal"
+            @click="exitButton"
           ></button>
         </div>
         <div
@@ -304,7 +304,7 @@
             <div class="form-group mb-4">
               <label for="vaucher" class="form-label">Ingresa el váucher</label>
               <p class="form-text">
-                Su su aseguradora le generó un váucher para este servicio, por
+                Su aseguradora le generó un váucher para este servicio, por
                 favor agrégelo aquí.
               </p>
               <p class="form-label">Código de Váucher</p>
@@ -393,9 +393,9 @@
               <dt>Médico / Especialista</dt>
               <dd>{{ service.doctor_name }}</dd>
             </dl>
-            <dl v-if="user">
+            <dl v-if="user_info">
               <dt>Paciente titular</dt>
-              <dd>{{ user.first_name + " " + user.last_name }}</dd>
+              <dd>{{ user_info.first_name + " " + user_info.last_name }}</dd>
             </dl>
             <!-- <dl>
               <dt>Modelo de servicio</dt>
@@ -480,7 +480,7 @@
               <dl>
                 <dt class="text-white">Paciente titular</dt>
                 <dd class="text-primary fw-semibold">
-                  {{ user.first_name + " " + user.last_name }}
+                  {{ user_info.first_name + " " + user_info.last_name }}
                 </dd>
               </dl>
               <!-- <dl>
@@ -559,12 +559,10 @@
 
 <script setup>
 import { ref, defineProps } from "vue";
-import { useStore } from "~/store";
 const router = useRouter();
 const config = useRuntimeConfig();
 const token = useCookie("token");
-const store = useStore();
-const user = store.user;
+const authenticated = useCookie("authenticated");
 const open = ref(false);
 const step = ref(1);
 const props = defineProps(["service"]);
@@ -573,9 +571,10 @@ const date = ref("");
 const time = ref("");
 const errorText = ref(null);
 const errorSchedule = ref(null);
+const user_info = useCookie("user_info");
 
 function openConfirmationModal() {
-  if (store.authenticated) {
+  if (authenticated.value) {
     open.value = true;
   } else {
     router.push("/pacientes/login");
@@ -586,6 +585,16 @@ function closeConfirmationModal() {
   open.value = false;
   step.value = 1;
 }
+
+function exitButton() {
+  if (step.value === 6) {
+    open.value = false;
+    step.value = 1;
+  } else {
+    step.value = 6;
+  }
+}
+
 
 function nextStep() {
   if (!props.service.schedule) {
@@ -611,7 +620,7 @@ const createAppointment = async () => {
         cpt_code: props.service.cpt_code,
         hospital_id: props.service.hospital_id,
         doctor_id: Number(route.params.doctor),
-        patient_id: user.id,
+        patient_id: user_info.value.id,
         is_in_person: 1,
       },
     }

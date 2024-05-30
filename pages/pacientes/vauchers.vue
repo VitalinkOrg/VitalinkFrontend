@@ -1,11 +1,9 @@
 <script setup>
-import { useStore } from "~/store";
 import { ref } from "vue";
 import { useRefreshToken } from "#imports";
 definePageMeta({
   middleware: "auth-pacientes",
 });
-const store = useStore();
 const config = useRuntimeConfig();
 const token = useCookie("token");
 const tab = ref(1);
@@ -20,8 +18,6 @@ const { data: vouchers, loading } = await useFetch(
   }
 );
 if (vouchers) {
-  store.user = [];
-  store.user.vouchers = vouchers;
   allVouchers.value = vouchers.value;
   useRefreshToken();
 }
@@ -86,7 +82,7 @@ const applyFilter = (statusFilter, tabNumber) => {
               </button>
             </li>
           </ul>
-          <NuxtLink href="/pacientes" class="btn btn-primary text-nowrap px-4">
+          <NuxtLink href="/pacientes/inicio" class="btn btn-primary text-nowrap px-4">
             <AtomsIconsPlusIcon /> Solicitar Nuevo Váucher
           </NuxtLink>
         </div>

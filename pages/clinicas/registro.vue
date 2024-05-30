@@ -153,7 +153,7 @@
 
           <div class="form-group mb-4">
             <label for="matricula-medica" class="form-label text-capitalize"
-              >No de Matricula Médica</label
+              >Nº de Matricula Médica</label
             >
             <input
               v-model="medical_number"
@@ -179,45 +179,68 @@
             />
             <!-- <div id="nombreHelp" class="form-text">We'll never share your email with anyone else.</div> -->
           </div>
-          <div class="form-group mb-4">
-            <label for="servicios" class="form-label text-capitalize"
-              >Especialidades Médicas</label
-            >
-            <select
-              id="servicios"
-              class="form-select"
-              multiple
-              size="6"
-              v-model="specialtiesSelected"
-            >
-              <option
-                v-for="specialty in specialties"
-                :key="specialty.id"
-                :value="specialty.code"
+          <div class="row">
+            <div class="form-group mb-4 col-6">
+              <label for="servicios" class="form-label text-capitalize"
+                >Especialidades Médicas</label
               >
-                {{ specialty.name }}
-              </option>
-            </select>
+              <select
+                id="servicios"
+                class="form-select"
+                multiple
+                size="6"
+                v-model="specialtiesSelected"
+              >
+                <option
+                  v-for="specialty in specialties"
+                  :key="specialty.id"
+                  :value="specialty.code"
+                >
+                  {{ specialty.name }}
+                </option>
+              </select>
+            </div>
+            <div class="form-group mb-4 col-6">
+              <label for="servicios" class="form-label text-capitalize"
+                >Servicios que se practican</label
+              >
+              <select
+                id="servicios"
+                class="form-select"
+                multiple
+                size="6"
+                v-model="servicesSelected"
+              >
+                <option
+                  v-for="service in services"
+                  :key="service.id"
+                  :value="service.code"
+                >
+                  {{ service.name }}
+                </option>
+              </select>
+            </div>
           </div>
-          <div class="form-group mb-4">
-            <label for="servicios" class="form-label text-capitalize"
-              >Servicios que se practican</label
+          <div class="mb-3 form-check">
+            <input
+              type="checkbox"
+              class="form-check-input border-dark"
+              id="recordarme"
+            />
+            <label class="form-check-label border" for="recordarme"
+              >Recordarme</label
             >
-            <select
-              id="servicios"
-              class="form-select"
-              multiple
-              size="6"
-              v-model="servicesSelected"
+          </div>
+          <div class="mb-3 form-check">
+            <input
+              type="checkbox"
+              class="form-check-input border-dark"
+              id="politicas"
+            />
+            <label class="form-check-label" for="politicas"
+              >He leído y acepto la Política de Privacidad y condiciones de
+              uso</label
             >
-              <option
-                v-for="service in services"
-                :key="service.id"
-                :value="service.code"
-              >
-                {{ service.name }}
-              </option>
-            </select>
           </div>
           <button @click="tab = 1" class="btn btn-light border-dark w-100">
             <AtomsIconsArrowLeftIcon />
@@ -257,6 +280,9 @@
 </template>
 
 <script setup>
+definePageMeta({
+  middleware: ["auth-login"],
+});
 const config = useRuntimeConfig();
 const router = useRouter();
 const email = ref("");
@@ -327,7 +353,7 @@ const register = async (e) => {
         specialties: specialtiesSelected,
         address,
         legal_name,
-        group_name: 'Test',
+        group_name: "Test",
       },
     }
   );
