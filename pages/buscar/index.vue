@@ -87,15 +87,15 @@ export default {
         </div>
       </section>
       <div v-if="isLoading">Loading clinicas...</div>
-      <div v-else class="container-fluid">
+      <div v-else class="container-fluid px-5">
         <section class="pb-5">
           <div class="row">
-            <div class="col-7">
+            <div class="col-md-7">
               <div
                 class="d-flex align-items-center justify-content-between mb-3"
               >
                 <span class="fw-medium ms-2" v-if="clinicas"
-                  >{{ clinicas.length }} Medicos y Hospitales disponibles</span
+                  >{{ clinicas.length }} Médicos y Hospitales disponibles</span
                 >
                 <span class="d-flex align-items-center">
                   <span class="text-nowrap">Ordenar por:</span>

@@ -1,9 +1,7 @@
 <script setup>
-import { useStore } from "~/store";
 definePageMeta({
   middleware: ["auth-insurances"],
 });
-const store = useStore();
 const config = useRuntimeConfig();
 const token = useCookie("token");
 
@@ -14,10 +12,6 @@ const { data: vouchers, pending: pendingVouchers } = await useFetch(
     transform: (_vouchers) => _vouchers.data,
   }
 );
-if (vouchers) {
-  store.user = [];
-  store.user.vouchers = vouchers;
-}
 </script>
 
 <template>
@@ -103,14 +97,14 @@ if (vouchers) {
         <span class="fw-semibold fs-5 px-4">Historial</span>
         <!-- <NuxtLink class="btn btn-link text-dark" href="/aseguradoas">Ver Todo [I]</NuxtLink> -->
       </p>
-      <div v-if="vouchers !== null" class="card">
+      <div v-if="vouchers !== null" class="card table-responsive">
         <table class="table fw-light">
           <thead>
             <tr>
               <th scope="col"></th>
               <th scope="col" class="text-muted">Código</th>
               <th scope="col" class="text-muted">Nombre del asegurado</th>
-              <th scope="col" class="text-muted">No de Asegurado</th>
+              <th scope="col" class="text-muted">Nº de Asegurado</th>
               <th scope="col" class="text-muted">Procedimiento</th>
               <th scope="col" class="text-muted">Vencimiento</th>
               <th scope="col" class="text-muted">Estado</th>

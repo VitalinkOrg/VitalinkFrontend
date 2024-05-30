@@ -51,8 +51,8 @@ const getOffers = async (type, id) => {
   >
     <div class="card shadow border-0 rounded-4 mb-4">
       <div class="card-body" style="cursor: pointer">
-        <div class="row">
-          <div class="col-sm-3">
+        <div class="row gap-2">
+          <div class="col-md-3 d-flex justify-content-center d-md-block">
             <!-- <img
             v-if="clinica.picture"
             :src="clinica.picture"

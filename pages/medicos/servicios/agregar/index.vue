@@ -1,11 +1,10 @@
 <script setup>
-import { useStore } from "~/store";
 definePageMeta({
   middleware: ["auth-doctors-hospitals"],
 });
-const store = useStore();
 const config = useRuntimeConfig();
 const token = useCookie("token");
+const user_info = useCookie("user_info");
 const firstName = ref("");
 const lastName = ref("");
 const phoneNumber = ref("");
@@ -22,10 +21,8 @@ const { data: hospitals } = await useFetch(
   }
 );
 const filteredArray = hospitals.value.filter((item) =>
-  store.user?.hospitals.includes(item.id)
+user_info.value.hospitals.includes(item.id)
 );
-console.log(filteredArray, store.user, "test");
-
 const updateDoctor = async () => {
   const { data, error } = await useFetch(
     config.public.API_BASE_URL + "/doctors/update_doctor",
@@ -187,7 +184,7 @@ const updateHospital = async () => {
               Selecciona el lugar de atención disponible para atender a los
               pacientes en este servicio
             </p>
-            <div v-if="store.user">
+            <div v-if="user_info">
               <div
                 v-for="hospital in filteredArray"
                 :key="hospital.id"

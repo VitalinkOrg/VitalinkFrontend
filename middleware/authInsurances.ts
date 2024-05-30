@@ -1,11 +1,9 @@
 // middleware/authPacientes.ts
-import { useStore } from "~/store";
-
 export default defineNuxtRouteMiddleware((to) => {
-    const store = useStore();
+    const authenticated = useCookie("authenticated");
     const role = useCookie("role");
   
-    if (!store.authenticated || role.value !== "R_INS") {
+    if (!authenticated.value || role.value !== "R_INS") {
       return navigateTo('/');
     }
 });

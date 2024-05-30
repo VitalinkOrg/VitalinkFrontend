@@ -1,28 +1,29 @@
 <script setup>
-import { useStore } from "~/store";
 definePageMeta({
   middleware: ["auth-doctors-hospitals"],
 });
 const config = useRuntimeConfig();
 const token = useCookie("token");
-const store = useStore();
-const user = store.user;
-console.log(user, 'test');
-const description = ref(user.description);
-const medicalNumber = ref(user.medical_license_number || user.medical_number);
+const user_info = useCookie("user_info");
+const description = ref(user_info.value.description);
+const medicalNumber = ref(user_info.value.medical_license_number || user_info.value.medical_number);
 
 const updateDoctor = async () => {
-  const { data, error } = await useFetch(
+  const { data: user, error } = await useFetch(
     config.public.API_BASE_URL + "/doctors/update_doctor",
     {
       method: "PUT",
       headers: { Authorization: token.value },
+      transform: (_user) => _user.data,
       body: {
         description,
         medical_license_number: medicalNumber,
       },
     }
   );
+  if(user) {
+    user_info.value = user.value;
+  }
   if (error.value) {
     console.log(error.value, "data");
   }
@@ -37,8 +38,8 @@ const updateHospital = async () => {
       body: {
         description,
         medical_number: medicalNumber,
-        group_name: user.group_name,
-        name: user.name
+        group_name: user_info.group_name,
+        name: user_info.name
       },
     }
   );
@@ -55,7 +56,7 @@ const updateHospital = async () => {
       Esta será la foto que vean tu pacientes cuando encuentren tu perfil en
       Vitalink
     </p> -->
-    <form @submit.prevent="user.last_name ? updateDoctor($event) : updateHospital($event)">
+    <form @submit.prevent="user_info.last_name ? updateDoctor($event) : updateHospital($event)">
       <!-- <div>
         <input
           type="file"

@@ -42,7 +42,8 @@ export default {
       return (this.result = filter[0]);
     },
     openConfirmationModal() {
-      if (this.$pinia.state.value.store.authenticated) {
+      const authenticated = useCookie("authenticated");
+      if (authenticated.value) {
         this.open = true;
       } else {
         this.$router.push("/pacientes/login");
@@ -233,24 +234,24 @@ export default {
       <div v-if="result && result.schedule">
         <form @submit.prevent="openConfirmationModal">
           <span class="fw-semibold">Resultados de la Disponibilidad:</span>
-          <div class="my-2 d-flex align-items-center justify-content-between">
-            <div class="d-flex align-items-center">
-              <div class="btn rounded-5 btn-outline-success btn-sm me-1">
+          <div class="my-2 row align-items-center justify-content-between">
+            <div class="col-md-8 row gap-2 align-items-center">
+              <div class="col-auto btn rounded-5 btn-outline-success btn-sm me-1">
                 <small>
                   {{ this.appointment.specialty }}
                 </small>
               </div>
-              <div class="btn rounded-5 btn-outline-success btn-sm me-1">
+              <div class="col-auto btn rounded-5 btn-outline-success btn-sm me-1">
                 <small>
                   {{ this.appointment.service }}
                 </small>
               </div>
-              <div class="btn rounded-5 btn-outline-success btn-sm me-1">
+              <div class="col-auto btn rounded-5 btn-outline-success btn-sm me-1">
                 <small>
                   {{ this.appointment.location }}
                 </small>
               </div>
-              <div class="btn rounded-5 btn-outline-success btn-sm me-1">
+              <div class="col-auto btn rounded-5 btn-outline-success btn-sm me-1">
                 <small>
                   {{ this.appointment.type }}
                 </small>
@@ -315,8 +316,8 @@ export default {
     />
     <!-- Ubicacion -->
     <div v-if="tab === 3">
-      <div class="row">
-        <div class="col-3">
+      <div class="row gap-2">
+        <div class="col-md-3">
           <p class="fw-semibold">Encuentranos Facilmente</p>
           <p class="d-flex">
             <span class="fs-4 text-success me-2"
@@ -352,7 +353,7 @@ export default {
     </div>
     <!-- Galeria  -->
     <div v-if="tab === 4">
-      <div class="row row-cols-3">
+      <div class="row row-cols-md-3">
         <div class="col">
           <img
             src="@/src/assets/img-perfil-galeria-item.png"
@@ -396,8 +397,8 @@ export default {
     <div v-if="tab === 5">
       <div class="card mb-4 rounded-4">
         <div class="card-body">
-          <div class="row row-cols-sm-2">
-            <div class="col border-end">
+          <div class="row gap-2">
+            <div class="col-md-6 border-end">
               <p
                 class="fw-semibold d-flex align-items-center justify-content-between"
               >
@@ -440,7 +441,7 @@ export default {
                 /></span>
               </div>
             </div>
-            <div class="col">
+            <div class="col-md-6">
               <p class="fw-semibold">Servicios Destacados</p>
               <div>
                 <span class="btn btn-outline-info rounded-5 btn-sm mb-2 me-2"

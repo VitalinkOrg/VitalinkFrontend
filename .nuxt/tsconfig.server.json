@@ -54,9 +54,6 @@
       "public/*": [
         "../public/*"
       ],
-      "pinia": [
-        "../node_modules/pinia/dist/pinia"
-      ],
       "#icon-collections": [
         "./icon-collections"
       ]
@@ -64,7 +61,6 @@
   },
   "include": [
     "./types/nitro-nuxt.d.ts",
-    "../node_modules/@pinia/nuxt/runtime/server",
     "../node_modules/nuxt-icon/runtime/server",
     "../node_modules/@nuxt/devtools/runtime/server",
     "../node_modules/@nuxt/telemetry/runtime/server",

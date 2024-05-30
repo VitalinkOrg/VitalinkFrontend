@@ -1,5 +1,4 @@
 <script setup>
-import { useStore } from "~/store";
 definePageMeta({
   middleware: ["auth-pacientes"],
 });

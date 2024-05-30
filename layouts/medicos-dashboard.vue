@@ -1,41 +1,22 @@
 <script setup>
-import { useStore } from "~/store";
 import { ref } from "vue";
-import { useRefreshToken } from "#imports";
 definePageMeta({
   middleware: ["auth-doctors-hospitals"],
 });
 const sort = ref(false);
-const router = useRouter();
-const store = useStore();
-const config = useRuntimeConfig();
 const token = useCookie("token");
+const refreshToken = useCookie("refresh_token");
 const role = useCookie("role");
-
-let url;
-if (role.value == "R_HOS") {
-  url = "/hospitals/get_hospital_info";
-} else {
-  url = "/doctors/get_doctor_info";
-}
-
-const { data: res, pending } = await useFetch(
-  config.public.API_BASE_URL + url,
-  {
-    headers: { Authorization: token.value },
-    transform: (_res) => _res.data,
-  }
-);
-if (res) {
-  store.user = res;
-  useRefreshToken();
-}
+const authenticated = useCookie("authenticated");
+const user_info = useCookie("user_info");
+const router = useRouter();
 
 const logout = () => {
-  store.authenticated = false;
-  store.user = null;
-  store.role = "";
   token.value = null;
+  refreshToken.value = null;
+  role.value = null;
+  authenticated.value = null;
+  user_info.value = null;
   router.push("/pacientes/login");
 };
 </script>
@@ -45,7 +26,7 @@ const logout = () => {
   <div v-else class="dashboard bg-light">
     <div class="dashboard-sidebar bg-white shadow p-4">
       <nav class="nav d-flex flex-column align-items-start w-100">
-        <NuxtLink href="/" class="mb-5 ps-3">
+        <NuxtLink href="/medicos/inicio" class="mb-5 ps-3">
           <AtomsVitalinkLogo />
         </NuxtLink>
         <li class="nav-item w-100 mb-3">
@@ -175,10 +156,10 @@ const logout = () => {
                   data-bs-toggle="dropdown"
                   aria-expanded="false"
                 >
-                  {{ res.name || res.first_name + " " + res.last_name }}
+                  {{ user_info.name || user_info.first_name + " " + user_info.last_name }}
                 </button>
                 <ul
-                  class="dropdown-menu dropdown-menu-end"
+                  class="dropdown-menu"
                   :class="sort ? 'show' : ''"
                 >
                   <li>
@@ -231,9 +212,5 @@ const logout = () => {
     justify-content: space-between;
     align-items: flex-start;
   }
-}
-
-.dropdown-menu-end.show {
-  transform: translateX(-100px);
 }
 </style>

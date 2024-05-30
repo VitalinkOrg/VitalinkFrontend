@@ -14,7 +14,7 @@
     aria-labelledby="exampleModalLabel"
     aria-hidden="true"
   >
-    <div v-if="store.user" class="modal-dialog modal-lg modal-dialog-centered">
+    <div v-if="authenticated" class="modal-dialog modal-lg modal-dialog-centered">
       <div class="modal-content">
         <div class="modal-header border-bottom align-items-center d-flex">
           <h1
@@ -48,7 +48,7 @@
                       >Nombre</label
                     >
                     <input
-                      v-model="store.user.first_name"
+                      v-model="user_info.first_name"
                       type="text"
                       class="form-control"
                       placeholder="Escribe tu nombre"
@@ -62,7 +62,7 @@
                       >Apellido</label
                     >
                     <input
-                      v-model="store.user.last_name"
+                      v-model="user_info.last_name"
                       type="text"
                       class="form-control"
                       placeholder="Escribe tu apellido"
@@ -76,7 +76,7 @@
                       >Número de teléfono</label
                     >
                     <input
-                      v-model="store.user.phone_number"
+                      v-model="user_info.phone_number"
                       type="phone"
                       class="form-control"
                       placeholder="000-0000"
@@ -90,7 +90,7 @@
                       >Dirección</label
                     >
                     <input
-                      v-model="store.user.address"
+                      v-model="user_info.address"
                       type="text"
                       class="form-control"
                       placeholder="Dirección"
@@ -106,7 +106,7 @@
                       >Código Postal</label
                     >
                     <input
-                      v-model="store.user.postal_code"
+                      v-model="user_info.postal_code"
                       type="number"
                       class="form-control"
                       placeholder="000000"
@@ -120,7 +120,7 @@
                       >Ciudad</label
                     >
                     <input
-                      v-model="store.user.city"
+                      v-model="user_info.city"
                       type="text"
                       class="form-control"
                       placeholder="Ciudad"
@@ -134,7 +134,7 @@
                       >País</label
                     >
                     <input
-                      v-model="store.user.country_iso_code"
+                      v-model="user_info.country_iso_code"
                       type="text"
                       class="form-control"
                       placeholder="País"
@@ -332,7 +332,6 @@
 
 <script setup>
 import { ref } from "vue";
-import { useStore } from "~/store";
 import { useRefreshToken } from "#imports";
 definePageMeta({
   middleware: ["auth-pacientes"],
@@ -340,7 +339,8 @@ definePageMeta({
 const router = useRouter();
 const config = useRuntimeConfig();
 const token = useCookie("token");
-const store = useStore();
+const authenticated = useCookie("authenticated");
+const user_info = useCookie("user_info");
 const open = ref(false);
 const step = ref(1);
 const route = useRoute();
@@ -348,22 +348,8 @@ const date = ref("");
 const time = ref("");
 const errorText = ref(null);
 
-if (store.authenticated) {
-  const { data: user, pending: pendingUser } = await useFetch(
-    config.public.API_BASE_URL + "/patients/getByUser",
-    {
-      headers: { Authorization: token.value },
-      transform: (_user) => _user.data,
-    }
-  );
-  if (user) {
-    store.user = user;
-    useRefreshToken();
-  }
-}
-
 function openConfirmationModal() {
-  if (store.authenticated) {
+  if (authenticated.value) {
     open.value = true;
   } else {
     router.push("/pacientes/login");

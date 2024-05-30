@@ -29,7 +29,7 @@ const { data: hospital, pending } = await useLazyFetch(
               </li>
               <a href="javascript:history.back()" class="breadcrumb-item text-decoration-none">Resultados de búsqueda</a>
               <li class="breadcrumb-item active" aria-current="page">
-                Perfil medico
+                Perfil médico
               </li>
             </ol>
           </nav>
