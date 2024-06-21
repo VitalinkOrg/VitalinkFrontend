@@ -33,6 +33,15 @@ const props = defineProps(["appointments"]);
                 >{{ appointment.status }} <AtomsIconsNotificationsIcon
               /></span>
             </td>
+            <td>
+              <PacientesCancelarCitaModal
+                v-if="
+                  appointment.status !== 'COMPLETED' &&
+                  appointment.status !== 'CANCELED'
+                "
+                :appointment="appointment"
+              />
+            </td>
           </tr>
         </tbody>
       </table>

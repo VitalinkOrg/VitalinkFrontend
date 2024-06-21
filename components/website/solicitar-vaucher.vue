@@ -2,7 +2,7 @@
   <!-- Button trigger modal -->
   <div class="text-center">
     <p @click="openConfirmationModal" class="btn btn-link text-center">
-      Solicitar un Vaucher Request
+      Solicitar un Vaucher
     </p>
   </div>
   <!-- Modal -->
@@ -14,7 +14,10 @@
     aria-labelledby="exampleModalLabel"
     aria-hidden="true"
   >
-    <div v-if="authenticated" class="modal-dialog modal-lg modal-dialog-centered">
+    <div
+      v-if="authenticated"
+      class="modal-dialog modal-lg modal-dialog-centered"
+    >
       <div class="modal-content">
         <div class="modal-header border-bottom align-items-center d-flex">
           <h1
@@ -32,7 +35,7 @@
           ></button>
         </div>
         <!-- Step 1 -->
-        <form @submit.prevent="register" v-if="step === 1">
+        <form @submit.prevent="requestVoucher" v-if="step === 1">
           <div class="modal-body">
             <div
               class="bg-primary rounded-4 h-100 p-4"
@@ -152,17 +155,24 @@
                     <label for="nombre" class="form-label text-capitalize"
                       >Selecciona tu aseguradora</label
                     >
-                    <input
-                      v-model="name"
-                      type="text"
-                      class="form-control"
-                      placeholder="Escribe tu nombre"
-                      id="nombre"
-                      required
-                    />
-                    <!-- <div id="nombreHelp" class="form-text">We'll never share your email with anyone else.</div> -->
+                    <select
+                      id="insurances"
+                      class="form-select"
+                      v-model="insurance_id"
+                    >
+                      <option value="" disabled selected>
+                        Selecciona una aseguradora
+                      </option>
+                      <option
+                        v-for="insurance in insurances"
+                        :key="insurance.id"
+                        :value="insurance.id"
+                      >
+                        {{ insurance.name }}
+                      </option>
+                    </select>
                   </div>
-                  <div class="form-group mb-2">
+                  <!-- <div class="form-group mb-2">
                     <label for="nombre" class="form-label text-capitalize"
                       >Busca tu aseguradora</label
                     >
@@ -174,10 +184,9 @@
                       id="nombre"
                       required
                     />
-                    <!-- <div id="nombreHelp" class="form-text">We'll never share your email with anyone else.</div> -->
-                  </div>
+                  </div> -->
                 </div>
-                <div class="form-group my-2">
+                <!-- <div class="form-group my-2">
                   <label for="email" class="form-label text-capitalize"
                     >Número de asegurado</label
                   >
@@ -189,32 +198,30 @@
                     id="email"
                     required
                   />
-                  <!-- <div id="nombreHelp" class="form-text">We'll never share your email with anyone else.</div> -->
-                </div>
+                </div> -->
                 <div class="form-group my-2">
                   <label for="email" class="form-label text-capitalize"
                     >Motivo de la solicitud</label
                   >
                   <input
-                    v-model="medical_number"
-                    type="number"
+                    v-model="reason_for_request"
+                    type="text"
                     class="form-control"
-                    placeholder="Escribe tu número de asegurado"
-                    id="email"
+                    placeholder="Escribe los motivos"
+                    id="reason_for_request"
                     required
                   />
-                  <!-- <div id="nombreHelp" class="form-text">We'll never share your email with anyone else.</div> -->
                 </div>
                 <div class="form-group my-2">
                   <label for="email" class="form-label text-capitalize"
                     >Otros</label
                   >
                   <input
-                    v-model="medical_number"
+                    v-model="others"
                     type="text"
                     class="form-control"
-                    placeholder="Escribe los motivos"
-                    id="email"
+                    placeholder="Escribe datos adicionales"
+                    id="others"
                     required
                   />
                   <!-- <div id="nombreHelp" class="form-text">We'll never share your email with anyone else.</div> -->
@@ -224,11 +231,11 @@
                     >Descripción</label
                   >
                   <textarea
-                    v-model="medical_number"
+                    v-model="description"
                     type="text"
                     class="form-control"
                     placeholder="Escribe una descripción"
-                    id="email"
+                    id="description"
                     required
                   ></textarea>
                   <!-- <div id="nombreHelp" class="form-text">We'll never share your email with anyone else.</div> -->
@@ -249,24 +256,20 @@
                 type="button"
                 class="btn btn-white border w-100"
                 data-bs-dismiss="modal"
-                @click="step = 2"
+                @click="open = false"
               >
                 Cancelar
               </button>
             </div>
             <div class="col">
-              <button
-                type="button"
-                class="btn btn-primary w-100"
-                @click="step = 4"
-              >
+              <button type="submit" class="btn btn-primary w-100">
                 Enviar
               </button>
             </div>
           </div>
         </form>
         <!-- Step 5 -->
-        <span v-if="step === 5">
+        <span v-if="step === 2">
           <div class="modal-body">
             <div class="text-center">
               <img
@@ -274,7 +277,9 @@
                 alt="Felicidades"
                 style="height: 3rem"
               />
-              <div class="text-primary fs-5 fw-semibold">Felicidades!</div>
+              <div class="text-primary fs-2 fw-semibold">Solicitud enviada con éxito</div>
+              <p>La solicitud fue enviada exitosamente a tu aseguradora. </p>
+              <p class="mt-5">Un representante se pondrá en contacto contigo en la brevedad</p>
             </div>
 
             <div
@@ -319,9 +324,8 @@
               </button>
             </div>
             <div class="col">
-              <NuxtLink class="btn btn-primary w-100" href="/pacientes/citas">
-                Ver En Citas
-              </NuxtLink>
+              <NuxtLink class="btn btn-primary w-100" href="/pacientes/vauchers">
+                Ver En Vouchers</NuxtLink>
             </div>
           </div>
         </span>
@@ -332,7 +336,6 @@
 
 <script setup>
 import { ref } from "vue";
-import { useRefreshToken } from "#imports";
 definePageMeta({
   middleware: ["auth-pacientes"],
 });
@@ -343,42 +346,62 @@ const authenticated = useCookie("authenticated");
 const user_info = useCookie("user_info");
 const open = ref(false);
 const step = ref(1);
-const route = useRoute();
-const date = ref("");
-const time = ref("");
 const errorText = ref(null);
+const insurance_id = ref("");
+const reason_for_request = ref("");
+const others = ref("");
+const description = ref("");
+const appointmentSelected = ref();
 
 function openConfirmationModal() {
   if (authenticated.value) {
+    step.value = 1;
     open.value = true;
   } else {
     router.push("/pacientes/login");
   }
 }
 
-const createAppointment = async () => {
+const { data: insurances } = await useFetch(
+  config.public.API_BASE_URL + "/insurances/get_insurances",
+  {
+    transform: (_insurances) => _insurances.data,
+  }
+);
+/*
+const { data: appointments } = await useFetch(
+  config.public.API_BASE_URL + "/appointments",
+  {
+    headers: { Authorization: token.value },
+    transform: (_appointments) => _appointments.data,
+  }
+);
+const filteredArray = appointments.value.filter(
+  (item) => user_info.value.id === item.patient_id && (item.status === 'PENDING' || item.status === 'CREATED')
+);
+*/
+
+const requestVoucher = async () => {
+  console.log(appointmentSelected, 'appointment');
   const { data, error } = await useFetch(
-    config.public.API_BASE_URL + "/appointments",
+    config.public.API_BASE_URL + "/vouchers/request_voucher",
     {
       method: "POST",
       headers: { Authorization: token.value },
       body: {
-        date: date.value,
-        time_from: time.value,
-        time_to: "13:00",
-        status: "CREATED",
-        service_code: props.service.service_code,
-        specialty_code: props.service.specialty_code,
-        cpt_code: props.service.cpt_code,
-        hospital_id: props.service.hospital_id,
-        doctor_id: Number(route.params.doctor),
-        patient_id: user.id,
-        is_in_person: 1,
+        insurance_id,
+        // service_code: appointmentSelected.value.service_code,
+        // hospital_id: appointmentSelected.value.hospital_id,
+        // doctor_id: appointmentSelected.value.doctor_id,
+        // appointment_id: appointmentSelected.value.id,
+        reason_for_request,
+        others,
+        description,
       },
     }
   );
   if (data.value) {
-    step.value = 5;
+    step.value = 2;
   }
   if (error.value) {
     console.log(error.value, "data");
