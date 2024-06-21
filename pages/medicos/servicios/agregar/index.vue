@@ -12,7 +12,7 @@ const address = ref("");
 const city = ref("");
 const country_iso_code = ref("");
 const postal_code = ref("");
-const step = ref(2);
+const step = ref(1);
 
 const { data: hospitals } = await useFetch(
   config.public.API_BASE_URL + "/hospitals",

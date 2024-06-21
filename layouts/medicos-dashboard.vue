@@ -85,7 +85,7 @@ const logout = () => {
             Pacientes
           </NuxtLink>
         </li>
-        <li class="nav-item w-100 mb-3">
+        <li class="nav-item w-100 mb-3" v-if="role === 'R_DOC'">
           <NuxtLink
             href="/medicos/hospitales"
             class="nav-link rounded-3 py-3 text-dark d-flex align-items-center"

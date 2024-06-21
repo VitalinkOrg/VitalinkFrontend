@@ -292,12 +292,25 @@
                 </label>
               </div>
             </div>
-            <div class="form-group mb-3">
-              <label for="aseguradora" class="form-label"
-                >Selecciona o busca tu aseguradora</label
+            <div class="form-group mb-2">
+              <label for="nombre" class="form-label text-capitalize"
+                >Selecciona tu aseguradora</label
               >
-              <select name="aseguradora" id="aseguradora" class="form-select">
-                <option disabled selected>Selecciona una aseguradora</option>
+              <select
+                id="insurances"
+                class="form-select"
+                v-model="insurance_id"
+              >
+                <option value="" disabled selected>
+                  Selecciona una aseguradora
+                </option>
+                <option
+                  v-for="insurance in insurances"
+                  :key="insurance.id"
+                  :value="insurance.id"
+                >
+                  {{ insurance.name }}
+                </option>
               </select>
             </div>
 
@@ -327,9 +340,7 @@
                 >
               </div>
               <div class="form-group ms-5">
-                <button class="btn btn-light bg-white border">
-                  Solicitar un Vaucher
-                </button>
+                <WebsiteSolicitarVaucher />
               </div>
             </div>
           </div>
@@ -525,8 +536,12 @@
                 alt="Alerta"
                 style="height: 4rem"
               />
-              <div class="text-secondary fs-5 fw-semibold">Aún no has solicitado tu cita</div>
-              <h4 class="fs-3 fw-semibold">¿Quieres salir del proceso de reserva?</h4>
+              <div class="text-secondary fs-5 fw-semibold">
+                Aún no has solicitado tu cita
+              </div>
+              <h4 class="fs-3 fw-semibold">
+                ¿Quieres salir del proceso de reserva?
+              </h4>
             </div>
           </div>
           <div class="modal-footer">
@@ -572,6 +587,7 @@ const time = ref("");
 const errorText = ref(null);
 const errorSchedule = ref(null);
 const user_info = useCookie("user_info");
+const insurance_id = ref("");
 
 function openConfirmationModal() {
   if (authenticated.value) {
@@ -580,6 +596,14 @@ function openConfirmationModal() {
     router.push("/pacientes/login");
   }
 }
+
+
+const { data: insurances } = await useFetch(
+  config.public.API_BASE_URL + "/insurances/get_insurances",
+  {
+    transform: (_insurances) => _insurances.data,
+  }
+);
 
 function closeConfirmationModal() {
   open.value = false;
@@ -594,7 +618,6 @@ function exitButton() {
     step.value = 6;
   }
 }
-
 
 function nextStep() {
   if (!props.service.schedule) {

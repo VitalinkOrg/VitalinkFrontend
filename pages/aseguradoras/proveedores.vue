@@ -37,7 +37,7 @@ const { data: suppliers, pending: pendingSuppliers } = await useFetch(
       <div class="d-flex justify-content-between align-items-center mb-4">
         <span
           >Mostrando
-          <span class="fw-semibold"
+          <span class="fw-semibold" v-if="suppliers"
             >{{ suppliers.length }} proveedores</span
           ></span
         >
@@ -75,7 +75,7 @@ const { data: suppliers, pending: pendingSuppliers } = await useFetch(
         </div>
       </div>
 
-      <div class="row">
+      <div class="row" v-if="suppliers !== null">
         <div class="col">
           <div
             class="card shadow border-0 rounded-4 mb-4"

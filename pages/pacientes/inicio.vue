@@ -109,7 +109,13 @@ const { data: historial, pending: pendingHistorial } = await useFetch(
                         >
                       </td>
                       <td>
-                        <AtomsIconsTrashIcon />
+                        <PacientesCancelarCitaModal
+                          v-if="
+                            appointment.status !== 'COMPLETED' &&
+                            appointment.status !== 'CANCELED'
+                          "
+                          :appointment="appointment"
+                        />
                       </td>
                     </tr>
                   </tbody>
@@ -255,6 +261,11 @@ const { data: historial, pending: pendingHistorial } = await useFetch(
         </div>
       </main>
     </div>
+    <MedicosCitaCancelModal
+      :open="openDateCancelModal"
+      :appointment="modalData"
+      @close-modal="closeModal"
+    />
   </NuxtLayout>
 </template>
 
