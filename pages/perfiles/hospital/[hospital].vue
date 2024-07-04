@@ -112,7 +112,7 @@ const { data: hospital, pending } = await useLazyFetch(
                   </div>
                 </div>
 
-                <div
+                <!-- <div
                   class="card bg-primary rounded-4 border-0 mt-3"
                   style="--bs-bg-opacity: 0.05"
                 >
@@ -153,7 +153,7 @@ const { data: hospital, pending } = await useLazyFetch(
                       Ver más fotos
                     </button>
                   </div>
-                </div>
+                </div> -->
               </div>
             </div>
           </div>

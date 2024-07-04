@@ -1,7 +1,7 @@
 <script>
 export default {
   props: {
-    appointments: {
+    patients: {
       type: Object,
       default: [],
     },
@@ -38,7 +38,7 @@ export default {
 </script>
 <template>
   <div class="card shadow rouded-3 border-0 p-3">
-    <div class="table-responsive" v-if="appointments !== null">
+    <div class="table-responsive" v-if="patients !== null">
       <table class="table fw-light">
         <thead>
           <tr>
@@ -55,34 +55,34 @@ export default {
         </thead>
 
         <tbody>
-          <tr v-for="appointment in appointments" :key="appointment.id">
+          <tr v-for="patient in patients" :key="patient.patient_id">
             <td>
               <div class="form-check">
                 <input
                   class="form-check-input border-dark"
                   type="checkbox"
                   value=""
-                  :id="appointment.id"
+                  :id="patients.id"
                 />
                 <!-- <label class="form-check-label" for="flexCheckDefault"></label> -->
               </div>
             </td>
-            <td>{{ appointment.patient_name }}</td>
-            <td>{{ new Date(appointment.date).toLocaleDateString() }}</td>
-            <td>{{ appointment.time_from + " - " + appointment.time_to }}</td>
-            <td>{{ appointment.service_name }}</td>
+            <td>{{ patient.patient_name }}</td>
+            <td>{{ new Date(patient.date).toLocaleDateString() }}</td>
+            <td>{{ patient.time_from + " - " + patient.time_to }}</td>
+            <td>{{ patient.service_name }}</td>
             <td>
-              <small>{{ appointment.patient_address }}</small>
+              <small>{{ patient.patient_address }}</small>
             </td>
             <td>
               <span class="badge text-muted bg-white border rounded-5 w-100">{{
-                appointment.code
+                patient.code
               }}</span>
             </td>
             <td>
               <span
                 class="badge bg-success-subtle rounded-5 text-dark text-uppercase w-100"
-                >{{ appointment.status }}
+                >{{ patient.status }}
                 <AtomsIconsChevronDown />
               </span>
             </td>
@@ -110,7 +110,7 @@ export default {
                       Ver Cita
                     </button>
                   </li>
-                  <li v-if="appointment.status !== 'COMPLETED' && appointment.status !== 'CANCELED'">
+                  <li>
                     <button
                       class="dropdown-item"
                       @click="showDateCancel(appointment)"
