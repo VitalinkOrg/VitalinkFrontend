@@ -1,7 +1,7 @@
 <template>
   <NuxtLayout name="pacientes-login">
-    <h1 class="text-center fw-semibold fs-2">Registrarse</h1>
-    <p class="text-center text-muted fw-light fs-56">Es gratis y fácil</p>
+    <h1 class="fw-semibold fs-2">Registrarse</h1>
+    <p class="text-muted fw-light fs-56">Es gratis y fácil</p>
 
     <form @submit.prevent="register">
       <div class="form-group mb-4">
@@ -75,21 +75,10 @@
       <button type="submit" class="btn btn-primary w-100 mt-4">
         Registrarme
       </button>
-      <div class="text-center py-3">
-        <NuxtLink class="btn-link" href="/pacientes/login"
-          >Ya tienes una cuenta?</NuxtLink
-        >
-      </div>
-      <div class="text-center">
-        Quieres registrarte como hospital o médico?
-        <NuxtLink class="btn-link" href="/medicos/registro"
-          >Entra aquí</NuxtLink
-        >
-      </div>
     </form>
-    <hr />
+
     <p class="text-center">
-      <small class="text-muted">O hacerlo con estas cuentas</small>
+      <small class="text-muted">O hacerlo con </small>
     </p>
     <div class="text-center">
       <button class="btn btn-light border-dark-subtle">
@@ -98,9 +87,13 @@
       <button class="btn btn-light border-dark-subtle mx-4">
         <AtomsIconsAppleIcon />
       </button>
-      <button class="btn btn-light border-dark-subtle">
-        <AtomsIconsFacebookIcon />
-      </button>
+    </div>
+
+    <div class="text-center py-3">
+      Ya tienes una cuenta?
+      <NuxtLink class="btn-link" href="/pacientes/login"
+        >Iniciar sesión</NuxtLink
+      >
     </div>
   </NuxtLayout>
 </template>
@@ -125,7 +118,7 @@ const register = async () => {
         email,
         password,
       },
-    }
+    },
   );
   if (data.value) {
     router.push("/");
