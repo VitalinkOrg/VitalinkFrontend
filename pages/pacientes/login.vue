@@ -15,7 +15,6 @@
           name="email"
           required
         />
-        <!-- <div id="nombreHelp" class="form-text">We'll never share your email with anyone else.</div> -->
       </div>
       <div class="form-group mb-4">
         <label for="password" class="form-label text-capitalize"
@@ -31,29 +30,31 @@
           required
           name="password"
         />
-        <!-- <div id="passwordHelp" class="form-text">Deben ser 8 caracteres como mínimo</div> -->
       </div>
       <div v-if="errorText">
         <p>{{ errorText }}</p>
       </div>
-      <button type="submit" class="btn btn-primary w-100 mt-4">Ingresar</button>
     </form>
-    <hr />
     <p class="text-center"><small class="text-muted">O Ingresa Con</small></p>
     <div class="text-center d-flex flex-column">
-      <button class="btn btn-light border-dark-subtle mb-3">
-        Ingresar con Facebook
-      </button>
       <button class="btn btn-light border-dark-subtle mb-3">
         Ingresar con Google
       </button>
     </div>
-    <p class="text-center">
-      <span class="text-muted">No tienes Cuenta? </span>
-      <NuxtLink href="/pacientes/registro" class="btn-link text-dark fw-medium"
-        >Registrate</NuxtLink
-      >
-    </p>
+
+    <div class="bottom-element">
+      <button type="submit" class="btn btn-primary w-100 mt-4">Ingresar</button>
+
+      <p class="text-center pt-2">
+        <span class="text-muted">No tienes Cuenta? </span>
+        <NuxtLink
+          href="/pacientes/registro"
+          class="btn-link text-dark fw-medium"
+        >
+          Registrate
+        </NuxtLink>
+      </p>
+    </div>
   </NuxtLayout>
 </template>
 
@@ -81,7 +82,7 @@ const login = async () => {
         email,
         password,
       },
-    }
+    },
   );
   if (data.value) {
     authenticated.value = true;
@@ -109,7 +110,7 @@ const getUserInfo = async () => {
     {
       headers: { Authorization: token.value },
       transform: (_user) => _user.data,
-    }
+    },
   );
   if (user) {
     user_info.value = user.value;
@@ -123,7 +124,7 @@ const getInsuranceInfo = async () => {
     {
       headers: { Authorization: token.value },
       transform: (_user) => _user.data,
-    }
+    },
   );
   if (user) {
     user_info.value = user.value;
@@ -137,7 +138,7 @@ const getHospitalInfo = async () => {
     {
       headers: { Authorization: token.value },
       transform: (_user) => _user.data,
-    }
+    },
   );
   if (user) {
     user_info.value = user.value;
@@ -151,7 +152,7 @@ const getDoctorInfo = async () => {
     {
       headers: { Authorization: token.value },
       transform: (_user) => _user.data,
-    }
+    },
   );
   if (user) {
     user_info.value = user.value;
@@ -194,5 +195,16 @@ main {
   justify-content: center;
   align-items: center;
   overflow-y: auto;
+}
+
+NuxtLayout {
+  position: relative;
+  min-height: 100vh;
+}
+
+.bottom-element {
+  position: absolute;
+  bottom: 0;
+  width: 87%;
 }
 </style>
