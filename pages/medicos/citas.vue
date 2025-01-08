@@ -18,7 +18,7 @@ if (role.value == "R_HOS") {
 }
 
 const { data: appointments, loading } = await useFetch(
-  config.public.API_BASE_URL + url,
+  "https://stg.vitalink.cr" + url,
   {
     headers: { Authorization: token.value },
     transform: (_appointments) => _appointments.data,

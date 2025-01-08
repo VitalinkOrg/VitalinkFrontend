@@ -262,7 +262,7 @@ const register = async () => {
   }
 
   const { data, error } = await useFetch(
-    config.public.API_BASE_URL + "/users/register_insurance",
+    "https://stg.vitalink.cr" + "/users/register_insurance",
     {
       method: "POST",
       body: {

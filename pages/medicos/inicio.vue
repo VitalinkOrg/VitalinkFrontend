@@ -15,7 +15,7 @@ if (role.value == "R_HOS") {
 }
 
 const { data: procedures, pending: pendingProcedures } = await useFetch(
-  config.public.API_BASE_URL + url + "count_procedures",
+  "https://stg.vitalink.cr" + url + "count_procedures",
   {
     headers: { Authorization: token.value },
     transform: (_procedures) => _procedures.data[0],
@@ -23,7 +23,7 @@ const { data: procedures, pending: pendingProcedures } = await useFetch(
 );
 
 const { data: appointments, loading } = await useFetch(
-  config.public.API_BASE_URL + url + "history_appointments",
+  "https://stg.vitalink.cr" + url + "history_appointments",
   {
     headers: { Authorization: token.value },
     transform: (_appointments) => _appointments.data,

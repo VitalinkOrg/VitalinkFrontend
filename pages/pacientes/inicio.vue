@@ -7,7 +7,7 @@ const token = useCookie("token");
 const user_info = useCookie("user_info");
 
 const { data: appointments, pending: pendingAppointments } = await useFetch(
-  config.public.API_BASE_URL + "/internal_patient_dashboard/appointments",
+  "https://stg.vitalink.cr" + "/internal_patient_dashboard/appointments",
   {
     headers: { Authorization: token.value },
     transform: (_appointments) => _appointments.data,
@@ -15,7 +15,7 @@ const { data: appointments, pending: pendingAppointments } = await useFetch(
 );
 
 const { data: vouchers, pending: pendingVouchers } = await useFetch(
-  config.public.API_BASE_URL + "/internal_patient_dashboard/vouchers",
+  "https://stg.vitalink.cr" + "/internal_patient_dashboard/vouchers",
   {
     headers: { Authorization: token.value },
     transform: (_vouchers) => _vouchers.data,
@@ -23,7 +23,7 @@ const { data: vouchers, pending: pendingVouchers } = await useFetch(
 );
 
 const { data: historial, pending: pendingHistorial } = await useFetch(
-  config.public.API_BASE_URL +
+  "https://stg.vitalink.cr" +
     "/internal_patient_dashboard/doctors_and_hospitals",
   {
     headers: { Authorization: token.value },

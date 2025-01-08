@@ -12,7 +12,7 @@ const medicalNumber = ref(
 
 const updateDoctor = async () => {
   const { data: user, error } = await useFetch(
-    config.public.API_BASE_URL + "/doctors/update_doctor",
+    "https://stg.vitalink.cr" + "/doctors/update_doctor",
     {
       method: "PUT",
       headers: { Authorization: token.value },
@@ -33,7 +33,7 @@ const updateDoctor = async () => {
 
 const updateHospital = async () => {
   const { data, error } = await useFetch(
-    config.public.API_BASE_URL + "/hospitals/update_hospital",
+    "https://stg.vitalink.cr" + "/hospitals/update_hospital",
     {
       method: "PUT",
       headers: { Authorization: token.value },

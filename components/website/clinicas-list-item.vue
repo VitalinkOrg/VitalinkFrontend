@@ -24,11 +24,11 @@ const getOffers = async (type, id) => {
 
   if (type === "doctor") {
     url =
-      config.public.API_BASE_URL +
+      "https://stg.vitalink.cr" +
       `/patient_dashboard/offers_by_doctor?doctor_id=${id}`;
   } else {
     url =
-      config.public.API_BASE_URL +
+      "https://stg.vitalink.cr" +
       `/patient_dashboard/offers_by_hospital?hospital_id=${id}`;
   }
 

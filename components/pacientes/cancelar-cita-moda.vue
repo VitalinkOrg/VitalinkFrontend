@@ -68,7 +68,7 @@ const open = ref(false);
 const errorText = ref(null);
 const cancelAppointment = async () => {
   const { data, error } = await useFetch(
-    config.public.API_BASE_URL + "/appointments/" + props.appointment.id,
+    "https://stg.vitalink.cr" + "/appointments/" + props.appointment.id,
     {
       method: "PUT",
       headers: { Authorization: token.value },

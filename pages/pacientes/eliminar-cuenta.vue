@@ -12,7 +12,7 @@ const router = useRouter();
 
 const deleteAccount = async () => {
   const { data, error } = await useFetch(
-    config.public.API_BASE_URL + "/patients/" + user_info.value.id,
+    "https://stg.vitalink.cr" + "/patients/" + user_info.value.id,
     {
       method: "DELETE",
       headers: { Authorization: token.value },

@@ -5,7 +5,7 @@ definePageMeta({
 const config = useRuntimeConfig();
 const user_info = useCookie("user_info");
 const { data: hospitals, pending: pendingHospitals } = await useFetch(
-  config.public.API_BASE_URL + "/hospitals",
+  "https://stg.vitalink.cr" + "/hospitals",
   {
     transform: (_hospitals) => _hospitals.data,
   }

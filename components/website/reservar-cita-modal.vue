@@ -624,7 +624,7 @@ function exitButton() {
 }
 
 const { data: insurances } = await useFetch(
-  config.public.API_BASE_URL + "/insurances/get_insurances",
+  "https://stg.vitalink.cr" + "/insurances/get_insurances",
   {
     transform: (_insurances) => _insurances.data,
   },
@@ -640,7 +640,7 @@ function nextStep() {
 
 const createAppointment = async () => {
   const { data, error } = await useFetch(
-    config.public.API_BASE_URL + "/appointments",
+    "https://stg.vitalink.cr" + "/appointments",
     {
       method: "POST",
       headers: { Authorization: token.value },

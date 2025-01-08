@@ -11,7 +11,7 @@ const errorText = ref(null);
 
 const createAppointment = async () => {
   const { data, error } = await useFetch(
-    config.public.API_BASE_URL + "/appointments",
+    "https://stg.vitalink.cr" + "/appointments",
     {
       method: "POST",
       headers: { Authorization: token.value },

@@ -1,4 +1,5 @@
 <template>
+  <WebsiteNav />
   <main class="d-flex" style="background-color: #f8f8f8">
     <section class="left text-center d-sm-flex d-none">
       <!-- <NuxtLink class="logo" href="/"><img src="@/src/assets/img-vitalink-logo.svg" alt="Vitalink Logo"></NuxtLink> -->
@@ -278,7 +279,7 @@ const errorPassword = ref("");
 const errorText = ref(null);
 
 const { data: specialties } = await useFetch(
-  config.public.API_BASE_URL + "/specialties",
+  "https://stg.vitalink.cr" + "/specialties",
   {
     transform: (_specialties) => _specialties.data,
   },
@@ -312,7 +313,7 @@ const nextStep = () => {
 
 const register = async () => {
   const { data, error } = await useFetch(
-    config.public.API_BASE_URL + "/users/register_doctor",
+    "https://stg.vitalink.cr" + "/users/register_doctor",
     {
       method: "POST",
       body: {

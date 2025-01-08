@@ -11,7 +11,7 @@ const sort = ref(false);
 const allVouchers = ref();
 
 const { data: vouchers, loading } = await useFetch(
-  config.public.API_BASE_URL + "/internal_patient_dashboard/vouchers",
+  "https://stg.vitalink.cr" + "/internal_patient_dashboard/vouchers",
   {
     headers: { Authorization: token.value },
     transform: (_vouchers) => _vouchers.data,

@@ -6,7 +6,7 @@ const config = useRuntimeConfig();
 const token = useCookie("token");
 
 const { data: vouchers, pending: pendingVouchers } = await useFetch(
-  config.public.API_BASE_URL + "/insurance_dashboard/list_vouchers",
+  "https://stg.vitalink.cr" + "/insurance_dashboard/list_vouchers",
   {
     headers: { Authorization: token.value },
     transform: (_vouchers) => _vouchers.data,
