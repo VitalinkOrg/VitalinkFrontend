@@ -54,10 +54,7 @@ const { data: vouchers, pending: pendingVouchers } = await useFetch(
                 >
               </div>
             </div>
-            <div
-              class="card-body d-flex align-items-center p-5"
-              v-else
-            >
+            <div class="card-body d-flex align-items-center p-5" v-else>
               <AtomsIconsChartVacio />
               <p class="d-flex flex-column align-items-start ms-3">
                 <span class="fw-medium text-muted fs-5"
@@ -121,10 +118,7 @@ const { data: vouchers, pending: pendingVouchers } = await useFetch(
                   </div>
                 </div>
               </div>
-              <div
-                class="card-body d-flex align-items-center p-5"
-                v-else
-              >
+              <div class="card-body d-flex align-items-center p-5" v-else>
                 <AtomsIconsChartVacio />
                 <p class="d-flex flex-column align-items-start ms-3">
                   <span class="fw-medium text-muted fs-5"
@@ -151,7 +145,10 @@ const { data: vouchers, pending: pendingVouchers } = await useFetch(
             <AtomsIconsArrowRightIcon />
           </NuxtLink>
         </p>
-        <div class="table-responsive card border-0 py-4 rounded-3 shadow" v-if="vouchers !== null">
+        <div
+          class="table-responsive card border-0 py-4 rounded-3 shadow"
+          v-if="vouchers !== null"
+        >
           <table class="table fw-light">
             <thead>
               <tr>

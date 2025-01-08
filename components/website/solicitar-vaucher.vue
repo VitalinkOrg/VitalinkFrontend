@@ -277,9 +277,13 @@
                 alt="Felicidades"
                 style="height: 3rem"
               />
-              <div class="text-primary fs-2 fw-semibold">Solicitud enviada con éxito</div>
-              <p>La solicitud fue enviada exitosamente a tu aseguradora. </p>
-              <p class="mt-5">Un representante se pondrá en contacto contigo en la brevedad</p>
+              <div class="text-primary fs-2 fw-semibold">
+                Solicitud enviada con éxito
+              </div>
+              <p>La solicitud fue enviada exitosamente a tu aseguradora.</p>
+              <p class="mt-5">
+                Un representante se pondrá en contacto contigo en la brevedad
+              </p>
             </div>
 
             <div
@@ -324,8 +328,12 @@
               </button>
             </div>
             <div class="col">
-              <NuxtLink class="btn btn-primary w-100" href="/pacientes/vauchers">
-                Ver En Vouchers</NuxtLink>
+              <NuxtLink
+                class="btn btn-primary w-100"
+                href="/pacientes/vauchers"
+              >
+                Ver En Vouchers</NuxtLink
+              >
             </div>
           </div>
         </span>
@@ -382,7 +390,7 @@ const filteredArray = appointments.value.filter(
 */
 
 const requestVoucher = async () => {
-  console.log(appointmentSelected, 'appointment');
+  console.log(appointmentSelected, "appointment");
   const { data, error } = await useFetch(
     config.public.API_BASE_URL + "/vouchers/request_voucher",
     {

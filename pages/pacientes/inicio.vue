@@ -11,7 +11,7 @@ const { data: appointments, pending: pendingAppointments } = await useFetch(
   {
     headers: { Authorization: token.value },
     transform: (_appointments) => _appointments.data,
-  }
+  },
 );
 
 const { data: vouchers, pending: pendingVouchers } = await useFetch(
@@ -19,7 +19,7 @@ const { data: vouchers, pending: pendingVouchers } = await useFetch(
   {
     headers: { Authorization: token.value },
     transform: (_vouchers) => _vouchers.data,
-  }
+  },
 );
 
 const { data: historial, pending: pendingHistorial } = await useFetch(
@@ -28,7 +28,7 @@ const { data: historial, pending: pendingHistorial } = await useFetch(
   {
     headers: { Authorization: token.value },
     transform: (_historial) => _historial.data,
-  }
+  },
 );
 </script>
 <template>

@@ -243,7 +243,7 @@ const register = async () => {
   const { value: cityValue } = city;
   const { value: postalCodeValue } = postal_code;
   const { value: countryValue } = country;
- 
+
   if (
     nameValue &&
     phoneNumberValue &&
@@ -257,7 +257,7 @@ const register = async () => {
     countryValue
   ) {
     if (passwordValue !== passwordConfirmationValue) {
-      return errorPassword.value = "Passwords do not match";
+      return (errorPassword.value = "Passwords do not match");
     }
   }
 

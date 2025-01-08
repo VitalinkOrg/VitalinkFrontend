@@ -82,7 +82,10 @@ const applyFilter = (statusFilter, tabNumber) => {
               </button>
             </li>
           </ul>
-          <NuxtLink href="/buscar" class="col-12 col-md-auto btn btn-primary text-nowrap px-4">
+          <NuxtLink
+            href="/buscar"
+            class="col-12 col-md-auto btn btn-primary text-nowrap px-4"
+          >
             <AtomsIconsPlusIcon /> Nueva Cita
           </NuxtLink>
         </div>

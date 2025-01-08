@@ -20,14 +20,17 @@ const { data: hospital, pending } = await useLazyFetch(
         <div class="d-flex align-items-center mb-2">
           <nav aria-label="breadcrumb">
             <ol class="breadcrumb m-0">
-              <li class="breadcrumb-item">
-              </li>
+              <li class="breadcrumb-item"></li>
               <li class="breadcrumb-item">
                 <NuxtLink href="/" class="text-decoration-none"
                   >Inicio</NuxtLink
                 >
               </li>
-              <a href="javascript:history.back()" class="breadcrumb-item text-decoration-none">Resultados de búsqueda</a>
+              <a
+                href="javascript:history.back()"
+                class="breadcrumb-item text-decoration-none"
+                >Resultados de búsqueda</a
+              >
               <li class="breadcrumb-item active" aria-current="page">
                 Perfil médico
               </li>
@@ -66,16 +69,22 @@ const { data: hospital, pending } = await useLazyFetch(
                   >{{ service.specialty }}</span
                 >
                 <div class="my-2">
-                  <a :href="`tel:${hospital.hospital_information.phone_number_1}`" class="badge bg-success rounded-4 mx-1 p-2">
+                  <a
+                    :href="`tel:${hospital.hospital_information.phone_number_1}`"
+                    class="badge bg-success rounded-4 mx-1 p-2"
+                  >
                     <AtomsIconsPhoneIcon />
                   </a>
-                  <a :href="`mailto:${hospital.hospital_information.email}`" class="badge bg-success rounded-4 mx-1 p-2">
+                  <a
+                    :href="`mailto:${hospital.hospital_information.email}`"
+                    class="badge bg-success rounded-4 mx-1 p-2"
+                  >
                     <AtomsIconsMailIcon />
                   </a>
                 </div>
                 <p class="card-text py-2 text-muted fw-light">
                   <small v-if="hospital"
-                    ><AtomsIconsMapPointerIcon/>
+                    ><AtomsIconsMapPointerIcon />
                     {{
                       hospital.hospital_information.address +
                       ", " +

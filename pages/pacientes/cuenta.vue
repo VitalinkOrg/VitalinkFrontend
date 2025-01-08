@@ -12,14 +12,13 @@ const updateUser = async () => {
     {
       method: "PUT",
       headers: { Authorization: token.value },
-      body: user_info
+      body: user_info,
     }
   );
   if (error.value) {
     console.log(error.value, "data");
   }
 };
-
 </script>
 
 <template>

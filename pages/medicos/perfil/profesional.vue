@@ -6,7 +6,9 @@ const config = useRuntimeConfig();
 const token = useCookie("token");
 const user_info = useCookie("user_info");
 const description = ref(user_info.value.description);
-const medicalNumber = ref(user_info.value.medical_license_number || user_info.value.medical_number);
+const medicalNumber = ref(
+  user_info.value.medical_license_number || user_info.value.medical_number
+);
 
 const updateDoctor = async () => {
   const { data: user, error } = await useFetch(
@@ -21,7 +23,7 @@ const updateDoctor = async () => {
       },
     }
   );
-  if(user) {
+  if (user) {
     user_info.value = user.value;
   }
   if (error.value) {
@@ -39,7 +41,7 @@ const updateHospital = async () => {
         description,
         medical_number: medicalNumber,
         group_name: user_info.group_name,
-        name: user_info.name
+        name: user_info.name,
       },
     }
   );
@@ -56,7 +58,11 @@ const updateHospital = async () => {
       Esta será la foto que vean tu pacientes cuando encuentren tu perfil en
       Vitalink
     </p> -->
-    <form @submit.prevent="user_info.last_name ? updateDoctor($event) : updateHospital($event)">
+    <form
+      @submit.prevent="
+        user_info.last_name ? updateDoctor($event) : updateHospital($event)
+      "
+    >
       <!-- <div>
         <input
           type="file"

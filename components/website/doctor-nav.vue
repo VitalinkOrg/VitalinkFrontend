@@ -1,5 +1,5 @@
 <script>
-import { useCookie } from 'nuxt/app';
+import { useCookie } from "nuxt/app";
 export default {
   props: {
     doctor: {
@@ -52,7 +52,7 @@ export default {
     },
     closeModal() {
       this.open = false;
-    }
+    },
   },
 };
 </script>
@@ -65,7 +65,7 @@ export default {
         :class="tab === 1 ? 'active' : ''"
         @click="tab = 1"
       >
-        Disponibilidad {{ user }}
+        Servicios
       </button>
     </li>
     <li class="nav-item">
@@ -74,7 +74,7 @@ export default {
         :class="tab === 2 ? 'active' : ''"
         @click="tab = 2"
       >
-        Servicios
+        Disponibilidad {{ user }}
       </button>
     </li>
     <li class="nav-item">
@@ -138,7 +138,7 @@ export default {
                   :key="service.doctor_service_id"
                   :value="service.specialty"
                 >
-                  {{service.doctor_service_id + ' ' + service.specialty }}
+                  {{ service.doctor_service_id + " " + service.specialty }}
                 </option>
               </select>
             </div>
@@ -158,7 +158,7 @@ export default {
                   :key="service.doctor_service_id"
                   :value="service.service"
                 >
-                {{service.doctor_service_id + ' ' + service.service }}
+                  {{ service.doctor_service_id + " " + service.service }}
                 </option>
               </select>
             </div>
@@ -175,7 +175,7 @@ export default {
                   :key="service.doctor_service_id"
                   :value="service.hospital_name"
                 >
-                {{service.doctor_service_id + ' ' + service.hospital_name }}
+                  {{ service.doctor_service_id + " " + service.hospital_name }}
                 </option>
               </select>
             </div>
@@ -192,7 +192,7 @@ export default {
                   :key="service.doctor_service_id"
                   :value="service.cpt"
                 >
-                {{service.doctor_service_id + ' ' + service.cpt }}
+                  {{ service.doctor_service_id + " " + service.cpt }}
                 </option>
               </select>
             </div>
@@ -235,24 +235,36 @@ export default {
       <div v-if="result && result.schedule">
         <form @submit.prevent="openConfirmationModal">
           <div class="mb-2 row align-items-center justify-content-between">
-            <span class="col-md-4 fw-semibold">Resultados de la Disponibilidad:</span>
-            <div class="col-md-8 row gap-2 align-items-center justify-content-center justify-content-md-end">
-              <div class="col-auto btn rounded-5 btn-outline-success btn-sm me-1">
+            <span class="col-md-4 fw-semibold"
+              >Resultados de la Disponibilidad:</span
+            >
+            <div
+              class="col-md-8 row gap-2 align-items-center justify-content-center justify-content-md-end"
+            >
+              <div
+                class="col-auto btn rounded-5 btn-outline-success btn-sm me-1"
+              >
                 <small>
                   {{ this.appointment.specialty }}
                 </small>
               </div>
-              <div class="col-auto btn rounded-5 btn-outline-success btn-sm me-1">
+              <div
+                class="col-auto btn rounded-5 btn-outline-success btn-sm me-1"
+              >
                 <small>
                   {{ this.appointment.service }}
                 </small>
               </div>
-              <div class="col-auto btn rounded-5 btn-outline-success btn-sm me-1">
+              <div
+                class="col-auto btn rounded-5 btn-outline-success btn-sm me-1"
+              >
                 <small>
                   {{ this.appointment.location }}
                 </small>
               </div>
-              <div class="col-auto btn rounded-5 btn-outline-success btn-sm me-1">
+              <div
+                class="col-auto btn rounded-5 btn-outline-success btn-sm me-1"
+              >
                 <small>
                   {{ this.appointment.type }}
                 </small>

@@ -27,11 +27,11 @@ const updateDoctor = async () => {
         phone_number: phoneNumber,
         address,
         city,
-        country_iso_code
+        country_iso_code,
       },
     }
   );
-  if(user) {
+  if (user) {
     user_info.value = user.value;
   }
   if (error.value) {
@@ -53,7 +53,7 @@ const updateHospital = async () => {
         address,
         city,
         country_iso_code,
-        postal_code
+        postal_code,
       },
     }
   );
@@ -66,7 +66,12 @@ const updateHospital = async () => {
 <template>
   <NuxtLayout name="medicos-dashboard-perfil">
     <h4 class="fw-normal">Datos Personales</h4>
-    <form class="mt-4" @submit.prevent="user.last_name ? updateDoctor($event) : updateHospital($event)">
+    <form
+      class="mt-4"
+      @submit.prevent="
+        user.last_name ? updateDoctor($event) : updateHospital($event)
+      "
+    >
       <div class="row row-cols-2">
         <div class="form-group mb-3">
           <label for="nombre" class="form-label text-capitalize"

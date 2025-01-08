@@ -26,7 +26,9 @@
             >
           </li>
           <li class="nav-item">
-            <NuxtLink href="/pacientes/registro" class="nav-link">¿Eres paciente?</NuxtLink>
+            <NuxtLink href="/pacientes/registro" class="nav-link"
+              >¿Eres paciente?</NuxtLink
+            >
           </li>
           <li class="nav-item">
             <NuxtLink href="/medicos/registro" class="nav-link"
@@ -34,7 +36,9 @@
             >
           </li>
           <li class="nav-item">
-            <NuxtLink href="/aseguradoras/registro" class="nav-link">¿Eres aseguradora?</NuxtLink>
+            <NuxtLink href="/aseguradoras/registro" class="nav-link"
+              >¿Eres aseguradora?</NuxtLink
+            >
           </li>
           <li class="nav-item">
             <NuxtLink href="" class="nav-link">Nosotros</NuxtLink>
@@ -49,9 +53,7 @@
           >
         </div>
         <div class="d-flex" v-if="authenticated">
-          <button @click="logout" class="btn btn-primary"
-            >Cerrar sesión</button
-          >
+          <button @click="logout" class="btn btn-primary">Cerrar sesión</button>
         </div>
       </div>
     </div>

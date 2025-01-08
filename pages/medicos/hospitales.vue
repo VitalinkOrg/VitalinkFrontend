@@ -19,7 +19,10 @@ const filteredArray = hospitals.value.filter((item) =>
   <NuxtLayout name="medicos-dashboard">
     <div v-if="pendingHospitals"></div>
     <div v-else>
-      <nav style="--bs-breadcrumb-divider: '/'" aria-label="breadcrumb">
+      <nav
+        style="--bs-breadcrumb-divider: &quot;/&quot;"
+        aria-label="breadcrumb"
+      >
         <ol class="breadcrumb">
           <li class="breadcrumb-item">
             <NuxtLink href="/aseguradoras/inicio" class="text-muted"

@@ -118,7 +118,7 @@ const register = async () => {
         email,
         password,
       },
-    },
+    }
   );
   if (data.value) {
     router.push("/");

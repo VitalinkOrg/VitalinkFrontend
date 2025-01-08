@@ -281,7 +281,7 @@ const { data: specialties } = await useFetch(
   config.public.API_BASE_URL + "/specialties",
   {
     transform: (_specialties) => _specialties.data,
-  }
+  },
 );
 
 const nextStep = () => {
@@ -325,7 +325,7 @@ const register = async () => {
         medical_number,
         specialties: specialtiesSelected,
       },
-    }
+    },
   );
   if (data.value) {
     router.push("/");
@@ -387,7 +387,9 @@ main {
 
   &-active {
     background-color: #3541b4;
-    box-shadow: 13px 9px 51.3px 0px rgba(0, 0, 0, 0.15), 0 0 0 9px #c2ebee;
+    box-shadow:
+      13px 9px 51.3px 0px rgba(0, 0, 0, 0.15),
+      0 0 0 9px #c2ebee;
     background-image: url("@/src/assets/img-icon-medico-active.svg");
 
     &-text {
