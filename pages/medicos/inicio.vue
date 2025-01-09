@@ -1,4 +1,16 @@
 <script setup>
+import { Bar } from "vue-chartjs";
+import {
+  Chart as ChartJS,
+  Title,
+  Tooltip,
+  Legend,
+  BarElement,
+  CategoryScale,
+  LinearScale,
+  Colors,
+} from "chart.js";
+
 definePageMeta({
   middleware: ["auth-doctors-hospitals"],
 });
@@ -75,6 +87,65 @@ const appointments = [
 if (appointments) {
   useRefreshToken();
 }
+
+ChartJS.register(
+  Title,
+  Tooltip,
+  Legend,
+  BarElement,
+  CategoryScale,
+  LinearScale,
+  Colors,
+);
+const chartData = {
+  labels: [
+    "Enero",
+    "Febrero",
+    "Marzo",
+    "Abril",
+    "Mayo",
+    "Junio",
+    "Julio",
+    "Agosto",
+    "Septiembre",
+    "Octubre",
+    "Noviembre",
+    "Diciembre",
+  ],
+  datasets: [
+    {
+      label: "Citas por Mes",
+      data: Array.from({ length: 12 }, () => Math.floor(Math.random() * 100)),
+      backgroundColor: [
+        "#FF6384",
+        "#36A2EB",
+        "#FFCE56",
+        "#4BC0C0",
+        "#9966FF",
+        "#FF9F40",
+        "#FF6384",
+        "#36A2EB",
+        "#FFCE56",
+        "#4BC0C0",
+        "#9966FF",
+        "#FF9F40",
+      ],
+    },
+  ],
+};
+
+const chartOptions = {
+  responsive: true,
+  plugins: {
+    legend: {
+      position: "top",
+    },
+    title: {
+      display: true,
+      text: "Citas por Mes",
+    },
+  },
+};
 </script>
 <template>
   <NuxtLayout name="medicos-dashboard">
@@ -221,18 +292,19 @@ if (appointments) {
         </p>
         <div class="card border-0 shadow rounded-3 py-5 h-100">
           <div class="card-body d-flex align-items-center p-5">
-            <AtomsIconsChartVacio />
-            <p class="d-flex flex-column align-items-start ms-3">
-              <span class="fw-medium text-muted fs-5"
-                >Aún no tienes actividad en tu tablero</span
-              >
-              <span class="fw-light text-muted"
-                >Muy pronto podrás administrar y verificar tu actividad.</span
-              >
-              <button class="btn btn-primary btn-sm mt-2 rounded-3">
-                Empezar
-              </button>
-            </p>
+            <!-- <AtomsIconsChartVacio /> -->
+            <!-- <p class="d-flex flex-column align-items-start ms-3"> -->
+            <!--   <span class="fw-medium text-muted fs-5" -->
+            <!--     >Aún no tienes actividad en tu tablero</span -->
+            <!--   > -->
+            <!--   <span class="fw-light text-muted" -->
+            <!--     >Muy pronto podrás administrar y verificar tu actividad.</span -->
+            <!--   > -->
+            <!--   <button class="btn btn-primary btn-sm mt-2 rounded-3"> -->
+            <!--     Empezar -->
+            <!--   </button> -->
+            <!-- </p> -->
+            <Bar :data="chartData" :options="chartOptions" />
           </div>
         </div>
       </div>
