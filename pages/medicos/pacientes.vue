@@ -15,13 +15,48 @@ if (role.value == "R_HOS") {
 } else {
   url = "/doctor_dashboard/get_patients";
 }
-const { data: patients, loading } = await useFetch(
-  "https://stg.vitalink.cr" + url,
+// const { data: patients, loading } = await useFetch(
+//   "https://stg.vitalink.cr" + url,
+//   {
+//     headers: { Authorization: token.value },
+//     transform: (_patients) => _patients.data,
+//   },
+// );
+const patients = [
   {
-    headers: { Authorization: token.value },
-    transform: (_patients) => _patients.data,
-  }
-);
+    patient_id: 1,
+    patient_name: "Juan Pérez",
+    date: "2023-10-01",
+    time_from: "10:00",
+    time_to: "11:00",
+    service_name: "Consulta General",
+    patient_address: "Calle Falsa 123",
+    code: "ABC123",
+    status: "Confirmado",
+  },
+  {
+    patient_id: 2,
+    patient_name: "María López",
+    date: "2023-10-02",
+    time_from: "12:00",
+    time_to: "13:00",
+    service_name: "Odontología",
+    patient_address: "Avenida Siempre Viva 742",
+    code: "DEF456",
+    status: "Pendiente",
+  },
+  {
+    patient_id: 3,
+    patient_name: "Carlos García",
+    date: "2023-10-03",
+    time_from: "14:00",
+    time_to: "15:00",
+    service_name: "Cardiología",
+    patient_address: "Calle Luna 456",
+    code: "GHI789",
+    status: "Cancelado",
+  },
+];
 </script>
 
 <template>
