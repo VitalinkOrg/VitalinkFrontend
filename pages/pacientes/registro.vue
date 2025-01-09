@@ -110,7 +110,7 @@ const password = ref("");
 
 const register = async () => {
   const { data, error }: any = await useFetch(
-    "https://stg.vitalink.cr" + "/users/register_patient",
+    config.public.API_BASE_URL + "/users/register_patient",
     {
       method: "POST",
       body: {

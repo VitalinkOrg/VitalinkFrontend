@@ -30,7 +30,7 @@ export default {
     async getSpecialties() {
       try {
         await axios
-          .get("https://stg.vitalink.cr" + "/specialties")
+          .get(config.public.API_BASE_URL + "/specialties")
           .then((r) => {
             this.specialties = r.data.data;
           });

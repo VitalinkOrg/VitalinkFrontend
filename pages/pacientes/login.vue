@@ -74,7 +74,7 @@ const errorText = ref(null);
 
 const login = async () => {
   const { data, error } = await useFetch(
-    "https://stg.vitalink.cr" + "/users/login",
+    config.public.API_BASE_URL + "/users/login",
     {
       method: "POST",
       body: {
@@ -105,7 +105,7 @@ const login = async () => {
 
 const getUserInfo = async () => {
   const { data: user } = await useFetch(
-    "https://stg.vitalink.cr" + "/patients/getByUser",
+    config.public.API_BASE_URL + "/patients/getByUser",
     {
       headers: { Authorization: token.value },
       transform: (_user) => _user.data,
@@ -119,7 +119,7 @@ const getUserInfo = async () => {
 
 const getInsuranceInfo = async () => {
   const { data: user } = await useFetch(
-    "https://stg.vitalink.cr" + "/insurances/get_insurance_info",
+    config.public.API_BASE_URL + "/insurances/get_insurance_info",
     {
       headers: { Authorization: token.value },
       transform: (_user) => _user.data,
@@ -133,7 +133,7 @@ const getInsuranceInfo = async () => {
 
 const getHospitalInfo = async () => {
   const { data: user } = await useFetch(
-    "https://stg.vitalink.cr" + "/hospitals/get_hospital_info",
+    config.public.API_BASE_URL + "/hospitals/get_hospital_info",
     {
       headers: { Authorization: token.value },
       transform: (_user) => _user.data,
@@ -147,7 +147,7 @@ const getHospitalInfo = async () => {
 
 const getDoctorInfo = async () => {
   const { data: user } = await useFetch(
-    "https://stg.vitalink.cr" + "/doctors/get_doctor_info",
+    config.public.API_BASE_URL + "/doctors/get_doctor_info",
     {
       headers: { Authorization: token.value },
       transform: (_user) => _user.data,

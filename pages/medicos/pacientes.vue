@@ -16,7 +16,7 @@ if (role.value == "R_HOS") {
   url = "/doctor_dashboard/get_patients";
 }
 // const { data: patients, loading } = await useFetch(
-//   "https://stg.vitalink.cr" + url,
+//   config.public.API_BASE_URL + url,
 //   {
 //     headers: { Authorization: token.value },
 //     transform: (_patients) => _patients.data,

@@ -3,7 +3,7 @@ const config = useRuntimeConfig();
 const route = useRoute();
 
 const { data: hospital, pending } = await useLazyFetch(
-  "https://stg.vitalink.cr" + "/patient_dashboard/hospital_profile",
+  config.public.API_BASE_URL + "/patient_dashboard/hospital_profile",
   {
     params: {
       hospital_id: route.params.hospital,

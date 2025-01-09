@@ -29,7 +29,7 @@ if (role.value == "R_HOS") {
 
 // real function
 // const { data: procedures, pending: pendingProcedures } = await useFetch(
-//   "https://stg.vitalink.cr" + url + "count_procedures",
+//   config.public.API_BASE_URL + url + "count_procedures",
 //   {
 //     headers: { Authorization: token.value },
 //     transform: (_procedures) => _procedures.data[0],
@@ -44,7 +44,7 @@ const procedures = {
 
 // original function
 // const { data: appointments, loading } = await useFetch(
-//   "https://stg.vitalink.cr" + url + "history_appointments",
+//   config.public.API_BASE_URL + url + "history_appointments",
 //   {
 //     headers: { Authorization: token.value },
 //     transform: (_appointments) => _appointments.data,

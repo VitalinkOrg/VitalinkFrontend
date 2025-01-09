@@ -21,21 +21,21 @@ const medicalNumber = ref(user.medical_license_number || user.medical_number);
 
 if (!props.data.description) {
   const { data: specialties } = await useFetch(
-    "https://stg.vitalink.cr" + "/specialties",
+    config.public.API_BASE_URL + "/specialties",
     {
       transform: (_specialties) => _specialties.data,
     }
   );
 
   const { data: hospitals } = await useFetch(
-    "https://stg.vitalink.cr" + "/hospitals",
+    config.public.API_BASE_URL + "/hospitals",
     {
       transform: (_hospitals) => _hospitals.data,
     }
   );
 
   const { data: services } = await useFetch(
-    "https://stg.vitalink.cr" + "/services",
+    config.public.API_BASE_URL + "/services",
     {
       transform: (_services) => _services.data,
     }
@@ -44,7 +44,7 @@ if (!props.data.description) {
 
 const updateDoctor = async () => {
   const { data, error } = await useFetch(
-    "https://stg.vitalink.cr" + "/doctors/update_doctor",
+    config.public.API_BASE_URL + "/doctors/update_doctor",
     {
       method: "PUT",
       headers: { Authorization: token.value },
@@ -73,7 +73,7 @@ const updateDoctor = async () => {
 
 const updateHospital = async () => {
   const { data, error } = await useFetch(
-    "https://stg.vitalink.cr" + "/hospitals/update_hospital",
+    config.public.API_BASE_URL + "/hospitals/update_hospital",
     {
       method: "PUT",
       headers: { Authorization: token.value },

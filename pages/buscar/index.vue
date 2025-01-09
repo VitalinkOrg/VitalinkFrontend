@@ -64,7 +64,7 @@ export default {
       try {
         await axios
           .get(
-            "https://stg.vitalink.cr" +
+            config.public.API_BASE_URL +
               "/patient_dashboard/search_doctors_hospitals",
             setup,
           )

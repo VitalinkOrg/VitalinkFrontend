@@ -300,14 +300,14 @@ const errorPassword = ref("");
 const errorText = ref(null);
 
 const { data: specialties } = await useFetch(
-  "https://stg.vitalink.cr" + "/specialties",
+  config.public.API_BASE_URL + "/specialties",
   {
     transform: (_specialties) => _specialties.data,
   }
 );
 
 const { data: services } = await useFetch(
-  "https://stg.vitalink.cr" + "/services",
+  config.public.API_BASE_URL + "/services",
   {
     transform: (_services) => _services.data,
   }
@@ -340,7 +340,7 @@ const nextStep = () => {
 const register = async (e) => {
   e.preventDefault();
   const { data, error } = await useFetch(
-    "https://stg.vitalink.cr" + "/users/register_hospital",
+    config.public.API_BASE_URL + "/users/register_hospital",
     {
       method: "POST",
       body: {

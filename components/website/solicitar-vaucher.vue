@@ -371,14 +371,14 @@ function openConfirmationModal() {
 }
 
 const { data: insurances } = await useFetch(
-  "https://stg.vitalink.cr" + "/insurances/get_insurances",
+  config.public.API_BASE_URL + "/insurances/get_insurances",
   {
     transform: (_insurances) => _insurances.data,
   }
 );
 /*
 const { data: appointments } = await useFetch(
-  "https://stg.vitalink.cr" + "/appointments",
+  config.public.API_BASE_URL + "/appointments",
   {
     headers: { Authorization: token.value },
     transform: (_appointments) => _appointments.data,
@@ -392,7 +392,7 @@ const filteredArray = appointments.value.filter(
 const requestVoucher = async () => {
   console.log(appointmentSelected, "appointment");
   const { data, error } = await useFetch(
-    "https://stg.vitalink.cr" + "/vouchers/request_voucher",
+    config.public.API_BASE_URL + "/vouchers/request_voucher",
     {
       method: "POST",
       headers: { Authorization: token.value },

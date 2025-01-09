@@ -11,7 +11,7 @@ const sort = ref(false);
 const allAppointments = ref();
 
 const { data: appointments, loading } = await useFetch(
-  "https://stg.vitalink.cr" + "/internal_patient_dashboard/appointments",
+  config.public.API_BASE_URL + "/internal_patient_dashboard/appointments",
   {
     headers: { Authorization: token.value },
     transform: (_appointments) => _appointments.data,

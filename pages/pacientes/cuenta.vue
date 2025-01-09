@@ -8,7 +8,7 @@ const user_info = useCookie("user_info");
 
 const updateUser = async () => {
   const { data, error } = await useFetch(
-    "https://stg.vitalink.cr" + "/patients/" + user_info.value.id,
+    config.public.API_BASE_URL + "/patients/" + user_info.value.id,
     {
       method: "PUT",
       headers: { Authorization: token.value },
