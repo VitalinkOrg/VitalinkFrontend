@@ -10,13 +10,55 @@ const tab = ref(1);
 const sort = ref(false);
 const allVouchers = ref();
 
-const { data: vouchers, loading } = await useFetch(
-  "https://stg.vitalink.cr" + "/internal_patient_dashboard/vouchers",
+// const { data: vouchers, loading } = await useFetch(
+//   "https://stg.vitalink.cr" + "/internal_patient_dashboard/vouchers",
+//   {
+//     headers: { Authorization: token.value },
+//     transform: (_vouchers) => _vouchers.data,
+//   }
+// );
+const vouchers = ref([
   {
-    headers: { Authorization: token.value },
-    transform: (_vouchers) => _vouchers.data,
-  }
-);
+    id: 1,
+    code: "ABC123",
+    service_name: "Consulta General",
+    status: "APPROVED",
+    date: "2023-10-01",
+    patient_name: "Juan Pérez",
+    doctor_name: "Dr. Smith",
+    location: "Clínica Central",
+  },
+  {
+    id: 2,
+    code: "DEF456",
+    service_name: "Examen de Sangre",
+    status: "APPROVED",
+    date: "2023-09-15",
+    patient_name: "María López",
+    doctor_name: "Dra. Johnson",
+    location: "Laboratorio Norte",
+  },
+  {
+    id: 3,
+    code: "GHI789",
+    service_name: "Radiografía",
+    status: "PENDING",
+    date: "2023-10-10",
+    patient_name: "Carlos García",
+    doctor_name: "Dr. Brown",
+    location: "Hospital Sur",
+  },
+  {
+    id: 4,
+    code: "JKL012",
+    service_name: "Consulta Dental",
+    status: "REJECTED",
+    date: "2023-10-05",
+    patient_name: "Ana Martínez",
+    doctor_name: "Dra. Wilson",
+    location: "Clínica Dental",
+  },
+]);
 if (vouchers) {
   allVouchers.value = vouchers.value;
   useRefreshToken();
@@ -26,7 +68,7 @@ const applyFilter = (statusFilter, tabNumber) => {
   let filteredVouchers = allVouchers.value;
   if (statusFilter !== "ALL") {
     filteredVouchers = filteredVouchers.filter(
-      (voucher) => voucher.status === statusFilter
+      (voucher) => voucher.status === statusFilter,
     );
   }
   vouchers.value = filteredVouchers;

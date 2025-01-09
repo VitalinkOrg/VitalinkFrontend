@@ -14,22 +14,65 @@ const { data: appointments, pending: pendingAppointments } = await useFetch(
   },
 );
 
-const { data: vouchers, pending: pendingVouchers } = await useFetch(
-  "https://stg.vitalink.cr" + "/internal_patient_dashboard/vouchers",
+// const { data: vouchers, pending: pendingVouchers } = await useFetch(
+//   "https://stg.vitalink.cr" + "/internal_patient_dashboard/vouchers",
+//   {
+//     headers: { Authorization: token.value },
+//     transform: (_vouchers) => _vouchers.data,
+//   },
+// );
+const vouchers = [
   {
-    headers: { Authorization: token.value },
-    transform: (_vouchers) => _vouchers.data,
+    id: 1,
+    code: "ABC123",
+    service_name: "Consulta General",
+    status: "Activo",
   },
-);
+  {
+    id: 2,
+    code: "DEF456",
+    service_name: "Examen de Sangre",
+    status: "Completado",
+  },
+  {
+    id: 3,
+    code: "GHI789",
+    service_name: "Radiografía",
+    status: "Pendiente",
+  },
+];
 
-const { data: historial, pending: pendingHistorial } = await useFetch(
-  "https://stg.vitalink.cr" +
-    "/internal_patient_dashboard/doctors_and_hospitals",
+// const { data: historial, pending: pendingHistorial } = await useFetch(
+//   "https://stg.vitalink.cr" +
+//     "/internal_patient_dashboard/doctors_and_hospitals",
+//   {
+//     headers: { Authorization: token.value },
+//     transform: (_historial) => _historial.data,
+//   },
+// );
+const historial = [
   {
-    headers: { Authorization: token.value },
-    transform: (_historial) => _historial.data,
+    id: 1,
+    review_score: 4.5,
+    review_count: 20,
+    name: "Dr. Juan Pérez",
+    servicios: ["Cardiología", "Medicina Interna"],
   },
-);
+  {
+    id: 2,
+    review_score: 4.8,
+    review_count: 35,
+    name: "Dra. María López",
+    servicios: ["Pediatría", "Neonatología"],
+  },
+  {
+    id: 3,
+    review_score: 4.2,
+    review_count: 15,
+    name: "Dr. Carlos García",
+    servicios: ["Dermatología", "Cirugía Plástica"],
+  },
+];
 </script>
 <template>
   <NuxtLayout name="pacientes-dashboard">
