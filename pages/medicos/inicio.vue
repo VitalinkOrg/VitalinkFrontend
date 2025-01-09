@@ -14,21 +14,64 @@ if (role.value == "R_HOS") {
   url = "/doctor_dashboard/";
 }
 
-const { data: procedures, pending: pendingProcedures } = await useFetch(
-  "https://stg.vitalink.cr" + url + "count_procedures",
-  {
-    headers: { Authorization: token.value },
-    transform: (_procedures) => _procedures.data[0],
-  }
-);
+// real function
+// const { data: procedures, pending: pendingProcedures } = await useFetch(
+//   "https://stg.vitalink.cr" + url + "count_procedures",
+//   {
+//     headers: { Authorization: token.value },
+//     transform: (_procedures) => _procedures.data[0],
+//   }
+// );
+const procedures = {
+  pending_appointments: 10,
+  completed_appointments: 2,
+  reviews_count: 8,
+  unique_service_codes_count: 4,
+};
 
-const { data: appointments, loading } = await useFetch(
-  "https://stg.vitalink.cr" + url + "history_appointments",
+// original function
+// const { data: appointments, loading } = await useFetch(
+//   "https://stg.vitalink.cr" + url + "history_appointments",
+//   {
+//     headers: { Authorization: token.value },
+//     transform: (_appointments) => _appointments.data,
+//   },
+// );
+const appointments = [
   {
-    headers: { Authorization: token.value },
-    transform: (_appointments) => _appointments.data,
-  }
-);
+    id: 1,
+    patient_name: "Juan Perez",
+    date: "2023-10-01",
+    time_from: "10:00",
+    time_to: "11:00",
+    service_name: "Consulta General",
+    patient_address: "Calle Falsa 123",
+    code: "ABC123",
+    status: "PENDING",
+  },
+  {
+    id: 2,
+    patient_name: "Maria Lopez",
+    date: "2023-10-02",
+    time_from: "12:00",
+    time_to: "13:00",
+    service_name: "Odontología",
+    patient_address: "Avenida Siempre Viva 742",
+    code: "DEF456",
+    status: "COMPLETED",
+  },
+  {
+    id: 3,
+    patient_name: "Carlos Sanchez",
+    date: "2023-10-03",
+    time_from: "14:00",
+    time_to: "15:00",
+    service_name: "Cardiología",
+    patient_address: "Calle Luna 456",
+    code: "GHI789",
+    status: "CANCELED",
+  },
+];
 if (appointments) {
   useRefreshToken();
 }

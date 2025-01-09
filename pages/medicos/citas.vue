@@ -17,13 +17,48 @@ if (role.value == "R_HOS") {
   url = "/doctor_dashboard/history_appointments";
 }
 
-const { data: appointments, loading } = await useFetch(
-  "https://stg.vitalink.cr" + url,
+// const { data: appointments, loading } = await useFetch(
+//   "https://stg.vitalink.cr" + url,
+//   {
+//     headers: { Authorization: token.value },
+//     transform: (_appointments) => _appointments.data,
+//   }
+// );
+const appointments = ref([
   {
-    headers: { Authorization: token.value },
-    transform: (_appointments) => _appointments.data,
-  }
-);
+    id: 1,
+    patient_name: "Juan Perez",
+    date: "2023-10-01",
+    time_from: "10:00",
+    time_to: "11:00",
+    service_name: "Consulta General",
+    patient_address: "Calle Falsa 123",
+    code: "ABC123",
+    status: "PENDING",
+  },
+  {
+    id: 2,
+    patient_name: "Maria Lopez",
+    date: "2023-10-02",
+    time_from: "12:00",
+    time_to: "13:00",
+    service_name: "Odontología",
+    patient_address: "Avenida Siempre Viva 742",
+    code: "DEF456",
+    status: "COMPLETED",
+  },
+  {
+    id: 3,
+    patient_name: "Carlos Sanchez",
+    date: "2023-10-03",
+    time_from: "14:00",
+    time_to: "15:00",
+    service_name: "Cardiología",
+    patient_address: "Calle Luna 456",
+    code: "GHI789",
+    status: "CANCELED",
+  },
+]);
 if (appointments) {
   allAppointments.value = appointments.value;
   useRefreshToken();
@@ -33,7 +68,7 @@ const applyFilter = (statusFilter, tabNumber) => {
   let filteredAppointments = allAppointments.value;
   if (statusFilter !== "ALL") {
     filteredAppointments = filteredAppointments.filter(
-      (appointment) => appointment.status === statusFilter
+      (appointment) => appointment.status === statusFilter,
     );
   }
   appointments.value = filteredAppointments;

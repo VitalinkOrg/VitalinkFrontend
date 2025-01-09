@@ -110,7 +110,12 @@ export default {
                       Ver Cita
                     </button>
                   </li>
-                  <li v-if="appointment.status !== 'COMPLETED' && appointment.status !== 'CANCELED'">
+                  <li
+                    v-if="
+                      appointment.status !== 'COMPLETED' &&
+                      appointment.status !== 'CANCELED'
+                    "
+                  >
                     <button
                       class="dropdown-item"
                       @click="showDateCancel(appointment)"
