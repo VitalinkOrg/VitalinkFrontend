@@ -1,10 +1,11 @@
 <script setup>
-import { Bar } from "vue-chartjs";
+import { Bar, Doughnut } from "vue-chartjs";
 import {
   Chart as ChartJS,
   Title,
   Tooltip,
   Legend,
+  ArcElement,
   BarElement,
   CategoryScale,
   LinearScale,
@@ -92,6 +93,7 @@ ChartJS.register(
   Title,
   Tooltip,
   Legend,
+  ArcElement,
   BarElement,
   CategoryScale,
   LinearScale,
@@ -143,6 +145,30 @@ const chartOptions = {
     title: {
       display: true,
       text: "Citas por Mes",
+    },
+  },
+};
+
+const doughnutData = {
+  labels: ["Valor Único"],
+  datasets: [
+    {
+      label: "Doughnut Chart",
+      data: [100],
+      backgroundColor: ["#FF6384"],
+    },
+  ],
+};
+
+const singleValueOptions = {
+  responsive: true,
+  plugins: {
+    legend: {
+      position: "top",
+    },
+    title: {
+      display: true,
+      text: "Valor Único",
     },
   },
 };
@@ -318,20 +344,21 @@ const chartOptions = {
         </p>
         <div class="card border-0 shadow rounded-3 h-100">
           <div class="card-body d-flex flex-column text-center p-5">
-            <span class="w-75 mx-auto">
-              <AtomsIconsChartVacio />
-            </span>
-            <p class="d-flex flex-column align-items-start ms-3">
-              <span class="fw-medium text-muted fs-6"
-                >Aún no tienes actividad en tu tablero</span
-              >
-              <span class="fw-light text-muted fs-6"
-                >Muy pronto podrás administrar y verificar tu actividad.</span
-              >
-              <button class="btn btn-primary btn-sm mt-2 rounded-3 mx-auto">
-                Empezar
-              </button>
-            </p>
+            <!-- <span class="w-75 mx-auto"> -->
+            <!--   <AtomsIconsChartVacio /> -->
+            <!-- </span> -->
+            <!-- <p class="d-flex flex-column align-items-start ms-3"> -->
+            <!--   <span class="fw-medium text-muted fs-6" -->
+            <!--     >Aún no tienes actividad en tu tablero</span -->
+            <!--   > -->
+            <!--   <span class="fw-light text-muted fs-6" -->
+            <!--     >Muy pronto podrás administrar y verificar tu actividad.</span -->
+            <!--   > -->
+            <!--   <button class="btn btn-primary btn-sm mt-2 rounded-3 mx-auto"> -->
+            <!--     Empezar -->
+            <!--   </button> -->
+            <!-- </p> -->
+            <Doughnut :data="doughnutData" :options="singleValueOptions" />
           </div>
         </div>
       </div>
