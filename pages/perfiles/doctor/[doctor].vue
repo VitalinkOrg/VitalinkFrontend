@@ -1,7 +1,6 @@
 <script setup>
 const config = useRuntimeConfig();
 const route = useRoute();
-
 const { data: doctor, pending } = await useLazyFetch(
   config.public.API_BASE_URL + "/patient_dashboard/doctor_profile",
   {
@@ -169,7 +168,7 @@ const { data: doctor, pending } = await useLazyFetch(
             </div>
           </div>
           <div class="col">
-            <div class="card shadow border-0">
+            <div class="card shadow border-0" style="height: 100%">
               <div class="card-body">
                 <h3 class="fw-semibold fs-6">Detalles y Agenda</h3>
                 <p class="fw-light text-muted">

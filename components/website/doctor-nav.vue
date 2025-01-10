@@ -1,5 +1,6 @@
 <script>
 import { useCookie } from "nuxt/app";
+import { doc } from "prettier";
 export default {
   props: {
     doctor: {
@@ -8,6 +9,32 @@ export default {
     },
   },
   data() {
+    const doctorReviews = [
+      {
+        first_name: "John",
+        last_name: "Doe",
+        message: "Great doctor! Very attentive and professional.",
+        reply: "Thank you for your kind words!",
+      },
+      {
+        first_name: "Jane",
+        last_name: "Smith",
+        message: "Had a wonderful experience. Highly recommend.",
+        reply: "We appreciate your feedback!",
+      },
+      {
+        first_name: "Alice",
+        last_name: "Johnson",
+        message: "The doctor was very knowledgeable and helpful.",
+        reply: "Glad to hear that you had a good experience!",
+      },
+    ];
+    const doctorHistory =
+      "Desde su fundación en 1985, la Clínica Oftalmológica Santa Lucía ha sido un faro de excelencia en la atención visual. Inspirados por la misión de proporcionar cuidado ocular de calidad, comenzamos como una pequeña clínica con un compromiso inquebrantable con la salud visual. Con el tiempo, hemos crecido y evolucionado, incorporando las últimas tecnologías y atrayendo a un equipo de oftalmólogos altamente especializados. La historia de Santa Lucía es la narrativa de décadas dedicadas a mejorar la visión y transformar vidas a través de un enfoque centrado en el paciente.";
+    const doctorVision =
+      "En la Clínica Oftalmológica Santa Lucía, visualizamos un futuro donde cada individuo experimente una visión óptima y una calidad de vida mejorada. Nos esforzamos por ser líderes en innovación oftalmológica, introduciendo tecnologías avanzadas y prácticas médicas progresistas. Aspiramos a expandir nuestro alcance, brindando atención oftalmológica accesible y de calidad a comunidades en todo el país. Nuestra visión es ser reconocidos como el referente en excelencia oftalmológica, marcando el camino hacia un mundo donde la visión es valorada, protegida y optimizada.";
+    const doctorMision =
+      "La misión de la Clínica Oftalmológica Santa Lucía es simple pero profunda: brindar atención oftalmológica compasiva y de vanguardia para preservar y mejorar la salud visual de nuestros pacientes. Nos comprometemos a ofrecer diagnósticos precisos, tratamientos efectivos y cirugías oftalmológicas de alta calidad. Buscamos educar y empoderar a nuestros pacientes, fomentando un viaje hacia la claridad visual y el bienestar ocular. Nuestra misión se extiende más allá de la consulta, aspirando a ser un faro de ";
     return {
       tab: 1,
       appointment: {
@@ -21,6 +48,10 @@ export default {
       result: null,
       open: false,
       errorText: "",
+      doctorReviews,
+      doctorHistory,
+      doctorVision,
+      doctorMision,
     };
   },
   methods: {
@@ -488,7 +519,7 @@ export default {
         </div>
       </div>
       <div class="row row-cols-md-3">
-        <div class="col" v-for="review in doctor.reviews" :key="review.length">
+        <div class="col" v-for="review in doctorReviews" :key="review.length">
           <div class="card rounded-4 shadow-sm border-none">
             <div class="card-body">
               <div class="text-warning">
@@ -508,8 +539,26 @@ export default {
     </div>
     <!-- Perfil  -->
     <div v-if="tab === 6">
-      <h5>Nuestra historia</h5>
-      <p>{{ doctor.doctor_information.personal.description }}</p>
+      <div class="row">
+        <div class="col-12">
+          <h5>Nuestra historia</h5>
+          <p>{{ doctorHistory }}</p>
+        </div>
+      </div>
+
+      <div class="row">
+        <div class="col-12">
+          <h5>Visión</h5>
+          <p>{{ doctorVision }}</p>
+        </div>
+      </div>
+
+      <div class="row">
+        <div class="col-12">
+          <h5>Misión</h5>
+          <p>{{ doctorMision }}</p>
+        </div>
+      </div>
     </div>
   </section>
 </template>
