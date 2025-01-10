@@ -118,118 +118,18 @@ export default {
   <section class="py-4 px-1">
     <!-- Dsiponibilidad  -->
     <div v-if="tab === 1">
-      <p class="fw-semibold">Reserva una cita</p>
+      <p class="fw-semibold">Servicios disponibles</p>
 
-      <div
-        class="bg-primary rounded-4 h-100 p-4 mb-3"
-        style="--bs-bg-opacity: 0.04"
-      >
-        <form @submit.prevent="search">
-          <div class="row row-cols-sm-2 mb-3">
-            <div class="form-group">
-              <label for="especialidad" class="form-label">Especialidad</label>
-              <select
-                class="form-select"
-                v-model="appointment.specialty"
-                required
-              >
-                <option
-                  v-for="service in doctor.servicesResult"
-                  :key="service.doctor_service_id"
-                  :value="service.specialty"
-                >
-                  {{ service.doctor_service_id + " " + service.specialty }}
-                </option>
-              </select>
-            </div>
-            <div class="form-group">
-              <label for="procedimiento" class="form-label"
-                >Procedimiento</label
-              >
-              <select
-                name="procedimiento"
-                id="procedimiento"
-                class="form-select"
-                v-model="appointment.service"
-                required
-              >
-                <option
-                  v-for="service in doctor.servicesResult"
-                  :key="service.doctor_service_id"
-                  :value="service.service"
-                >
-                  {{ service.doctor_service_id + " " + service.service }}
-                </option>
-              </select>
-            </div>
-            <div class="form-group">
-              <label for="lugar" class="form-label">Lugar</label>
-              <select
-                name="lugar"
-                id="lugar"
-                class="form-select"
-                v-model="appointment.location"
-              >
-                <option
-                  v-for="service in doctor.servicesResult"
-                  :key="service.doctor_service_id"
-                  :value="service.hospital_name"
-                >
-                  {{ service.doctor_service_id + " " + service.hospital_name }}
-                </option>
-              </select>
-            </div>
-            <div class="form-group">
-              <label for="tipodecita" class="form-label">Tipo de cita</label>
-              <select
-                name="tipodecita"
-                id="tipodecita"
-                class="form-select"
-                v-model="appointment.type"
-              >
-                <option
-                  v-for="service in doctor.servicesResult"
-                  :key="service.doctor_service_id"
-                  :value="service.cpt"
-                >
-                  {{ service.doctor_service_id + " " + service.cpt }}
-                </option>
-              </select>
-            </div>
-          </div>
-
-          <div class="d-flex justify-content-end">
-            <button type="submit" class="btn btn-outline-primary rounded-4">
-              <AtomsIconsActualizarIcon /> Actualizar Búsqueda
-            </button>
-          </div>
-        </form>
-        <hr />
-
-        <div
-          v-if="result"
-          class="d-flex align-items-center justify-content-between"
+      <!-- doctor specialities -->
+      <div>
+        <button
+          v-for="service in doctor.servicesResult"
+          :key="service.doctor_service_id"
+          @click="appointment.specialty = service.specialty"
+          class="btn btn-primary m-2"
         >
-          <div>
-            <div class="btn btn-outline-primary rounded-5">
-              Váucher: <strong>Ninguno</strong>
-            </div>
-            <button class="btn text-primary"><AtomsIconsPlusIcon /></button>
-          </div>
-          <div class="d-flex flex-column">
-            <span class="fs-6">Precio final del servicio:</span>
-            <span class="fs-5 fw-semibold"
-              >{{ parseFloat(result.price).toLocaleString() }}
-              {{ result.currency }}</span
-            >
-            <!-- <small class="text-muted"
-              >Precio original
-              <span class="text-decoration-line-through"
-                >₡33000 CRC</span
-              ></small
-            > -->
-          </div>
-        </div>
+          {{ service.specialty }}
+        </button>
       </div>
 
       <div v-if="result && result.schedule">
@@ -320,6 +220,113 @@ export default {
       </div>
       <div v-else>
         <p>{{ errorText }}</p>
+      </div>
+
+      <p>Procedimientos avanzados para el tratamiento de cataratas</p>
+      <p>Packs:</p>
+
+      <!-- plans -->
+      <div class="container">
+        <div class="row">
+          <!-- standard -->
+          <div class="col-4">
+            <div class="card">
+              <div class="card-header text-center">Standard</div>
+              <div class="card-body">
+                <h5 class="card-title">23.000 USD</h5>
+                <p class="card-text">Precio original 28.000 USD</p>
+                <p class="card-text">
+                  <i class="bi bi-star-fill"></i>
+                  <i class="bi bi-star-fill"></i>
+                  <i class="bi bi-star-fill"></i>
+                  <i class="bi bi-star-fill"></i>
+                  <i class="bi bi-star-fill"></i>
+                  (15 Reseñas)
+                </p>
+                <ul class="list-group list-group-flush">
+                  <li class="list-group-item">Cita de valoración</li>
+                  <li class="list-group-item">Medicamentos</li>
+                  <li class="list-group-item">
+                    Cita de seguimiento <br />
+                    1 mes después.
+                  </li>
+                </ul>
+                <p class="card-text">
+                  Próxima Disponibilidad: 19/10/2024 11:00 am
+                </p>
+                <a href="#" class="btn btn-outline-primary"
+                  >Solicitar cita de valoración</a
+                >
+              </div>
+            </div>
+          </div>
+
+          <!-- premium -->
+          <div class="col-4">
+            <div class="card">
+              <div class="card-header text-center">Premium</div>
+              <div class="card-body">
+                <h5 class="card-title">23.000 USD</h5>
+                <p class="card-text">Precio original 28.000 USD</p>
+                <p class="card-text">
+                  <i class="bi bi-star-fill"></i>
+                  <i class="bi bi-star-fill"></i>
+                  <i class="bi bi-star-fill"></i>
+                  <i class="bi bi-star-fill"></i>
+                  <i class="bi bi-star-fill"></i>
+                  (15 Reseñas)
+                </p>
+                <ul class="list-group list-group-flush">
+                  <li class="list-group-item">Cita de valoración</li>
+                  <li class="list-group-item">Medicamentos</li>
+                  <li class="list-group-item">
+                    Cita de seguimiento <br />
+                    1 mes después.
+                  </li>
+                </ul>
+                <p class="card-text">
+                  Próxima Disponibilidad: 19/10/2024 11:00 am
+                </p>
+                <a href="#" class="btn btn-outline-primary"
+                  >Solicitar cita de valoración</a
+                >
+              </div>
+            </div>
+          </div>
+
+          <!-- basic -->
+          <div class="col-4">
+            <div class="card">
+              <div class="card-header text-center">Pack basic</div>
+              <div class="card-body">
+                <h5 class="card-title">23.000 USD</h5>
+                <p class="card-text">Precio original 28.000 USD</p>
+                <p class="card-text">
+                  <i class="bi bi-star-fill"></i>
+                  <i class="bi bi-star-fill"></i>
+                  <i class="bi bi-star-fill"></i>
+                  <i class="bi bi-star-fill"></i>
+                  <i class="bi bi-star-fill"></i>
+                  (15 Reseñas)
+                </p>
+                <ul class="list-group list-group-flush">
+                  <li class="list-group-item">Cita de valoración</li>
+                  <li class="list-group-item">Medicamentos</li>
+                  <li class="list-group-item">
+                    Cita de seguimiento <br />
+                    1 mes después.
+                  </li>
+                </ul>
+                <p class="card-text">
+                  Próxima Disponibilidad: 19/10/2024 11:00 am
+                </p>
+                <a href="#" class="btn btn-outline-primary"
+                  >Solicitar cita de valoración</a
+                >
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
     <!-- Servicios  -->
