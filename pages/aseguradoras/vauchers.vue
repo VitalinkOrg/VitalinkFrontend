@@ -5,13 +5,85 @@ definePageMeta({
 const config = useRuntimeConfig();
 const token = useCookie("token");
 
-const { data: vouchers, pending: pendingVouchers } = await useFetch(
-  config.public.API_BASE_URL + "/insurance_dashboard/list_vouchers",
+// const { data: vouchers, pending: pendingVouchers } = await useFetch(
+//   config.public.API_BASE_URL + "/insurance_dashboard/list_vouchers",
+//   {
+//     headers: { Authorization: token.value },
+//     transform: (_vouchers) => _vouchers.data,
+//   },
+// );
+const vouchers = [
   {
-    headers: { Authorization: token.value },
-    transform: (_vouchers) => _vouchers.data,
-  }
-);
+    voucher_id: 1,
+    code: "001",
+    patient_name: "Juan Pérez",
+    insurance_number: "123456",
+    reason_for_request: "Consulta General",
+    due_date: "2023-12-31",
+    status: "Activo",
+    address: "Calle Falsa 123",
+    phone_number: "+506 1234-5678",
+    city: "San José",
+    postal_code: "1000",
+    comment_by_insurance: "Aprobado",
+  },
+  {
+    voucher_id: 2,
+    code: "002",
+    patient_name: "María Gómez",
+    insurance_number: "654321",
+    reason_for_request: "Examen de Sangre",
+    due_date: "2023-11-30",
+    status: "Vencido",
+    address: "Avenida Siempre Viva 742",
+    phone_number: "+506 8765-4321",
+    city: "Cartago",
+    postal_code: "2000",
+    comment_by_insurance: "Rechazado",
+  },
+  {
+    voucher_id: 3,
+    code: "003",
+    patient_name: "Carlos Rodríguez",
+    insurance_number: "789012",
+    reason_for_request: "Radiografía",
+    due_date: "2023-10-15",
+    status: "Pendiente",
+    address: "Boulevard de los Sueños Rotos 456",
+    phone_number: "+506 2345-6789",
+    city: "Alajuela",
+    postal_code: "3000",
+    comment_by_insurance: "En revisión",
+  },
+  {
+    voucher_id: 4,
+    code: "004",
+    patient_name: "Ana Fernández",
+    insurance_number: "345678",
+    reason_for_request: "Cirugía",
+    due_date: "2023-09-20",
+    status: "Aprobado",
+    address: "Calle de la Amargura 789",
+    phone_number: "+506 3456-7890",
+    city: "Heredia",
+    postal_code: "4000",
+    comment_by_insurance: "Aprobado con condiciones",
+  },
+  {
+    voucher_id: 5,
+    code: "005",
+    patient_name: "Luis Martínez",
+    insurance_number: "901234",
+    reason_for_request: "Terapia Física",
+    due_date: "2023-08-25",
+    status: "Rechazado",
+    address: "Avenida Central 101",
+    phone_number: "+506 4567-8901",
+    city: "Puntarenas",
+    postal_code: "5000",
+    comment_by_insurance: "Falta documentación",
+  },
+];
 </script>
 
 <template>
