@@ -35,6 +35,7 @@ export default {
       "En la Clínica Oftalmológica Santa Lucía, visualizamos un futuro donde cada individuo experimente una visión óptima y una calidad de vida mejorada. Nos esforzamos por ser líderes en innovación oftalmológica, introduciendo tecnologías avanzadas y prácticas médicas progresistas. Aspiramos a expandir nuestro alcance, brindando atención oftalmológica accesible y de calidad a comunidades en todo el país. Nuestra visión es ser reconocidos como el referente en excelencia oftalmológica, marcando el camino hacia un mundo donde la visión es valorada, protegida y optimizada.";
     const doctorMision =
       "La misión de la Clínica Oftalmológica Santa Lucía es simple pero profunda: brindar atención oftalmológica compasiva y de vanguardia para preservar y mejorar la salud visual de nuestros pacientes. Nos comprometemos a ofrecer diagnósticos precisos, tratamientos efectivos y cirugías oftalmológicas de alta calidad. Buscamos educar y empoderar a nuestros pacientes, fomentando un viaje hacia la claridad visual y el bienestar ocular. Nuestra misión se extiende más allá de la consulta, aspirando a ser un faro de ";
+    const breadcumCitaValoracion = 1;
     return {
       tab: 1,
       appointment: {
@@ -52,6 +53,7 @@ export default {
       doctorHistory,
       doctorVision,
       doctorMision,
+      breadcumCitaValoracion,
     };
   },
   methods: {
@@ -285,9 +287,12 @@ export default {
                 <p class="card-text">
                   Próxima Disponibilidad: 19/10/2024 11:00 am
                 </p>
-                <a href="#" class="btn btn-outline-primary"
-                  >Solicitar cita de valoración</a
+                <button
+                  class="btn btn-outline-primary"
+                  @click="openConfirmationModal()"
                 >
+                  Solicitar cita de valoración
+                </button>
               </div>
             </div>
           </div>
@@ -318,9 +323,14 @@ export default {
                 <p class="card-text">
                   Próxima Disponibilidad: 19/10/2024 11:00 am
                 </p>
-                <a href="#" class="btn btn-outline-primary"
-                  >Solicitar cita de valoración</a
+                <button
+                  class="btn btn-outline-primary"
+                  @click="openConfirmationModal()"
+                  data-bs-toggle="modal"
+                  data-bs-target="#modalCitaValoracion"
                 >
+                  Solicitar cita de valoración
+                </button>
               </div>
             </div>
           </div>
@@ -351,15 +361,21 @@ export default {
                 <p class="card-text">
                   Próxima Disponibilidad: 19/10/2024 11:00 am
                 </p>
-                <a href="#" class="btn btn-outline-primary"
-                  >Solicitar cita de valoración</a
+                <button
+                  class="btn btn-outline-primary"
+                  @click="openConfirmationModal()"
+                  data-bs-toggle="modal"
+                  data-bs-target="#modalCitaValoracion"
                 >
+                  Solicitar cita de valoración
+                </button>
               </div>
             </div>
           </div>
         </div>
       </div>
     </div>
+
     <!-- Servicios  -->
     <WebsiteClinicaServiciosTab
       :services="doctor.servicesResult"
@@ -397,6 +413,55 @@ export default {
             </a>
           </div>
         </div>
+
+        <!-- calendar -->
+        <div class="col-12">
+          <div class="row mb-5">
+            <div class="col-12"><p>Seleccionar fecha</p></div>
+            <div class="col-12">
+              <div class="row">
+                <div class="col-12">
+                  <div class="day-container">
+                    <div class="day day-active">5</div>
+                    <div class="day">6</div>
+                    <div class="day">7</div>
+                    <div class="day">8</div>
+                    <div class="day">9</div>
+                    <div class="day">10</div>
+                    <div class="day">11</div>
+                    <div class="day">12</div>
+                    <div class="day">13</div>
+                    <div class="day">14</div>
+                    <div class="day">15</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="row">
+            <div class="col-12"><p>Seleccionar fecha</p></div>
+            <div class="col-12">
+              <div class="row">
+                <div class="col-12">
+                  <div class="day-container">
+                    <div class="hour"><span> 11:00 AM </span></div>
+                    <div class="hour"><span>12:00 AM</span></div>
+                    <div class="hour"><span> 01:00 AM </span></div>
+                    <div class="hour"><span> 02:00 AM </span></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="row">
+            <div class="col-12 d-flex justify-content-end">
+              <button class="btn btn-primary">Reservar cita</button>
+            </div>
+          </div>
+        </div>
+
         <div class="col">
           <AtomsMapaInteractivo />
         </div>
@@ -561,4 +626,113 @@ export default {
       </div>
     </div>
   </section>
+
+  <!-- modals -->
+  <div>
+    <div
+      class="modal fade"
+      id="modalCitaValoracion"
+      tabindex="-1"
+      aria-labelledby="exampleModalLabel"
+      aria-hidden="true"
+    >
+      <div class="modal-dialog">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title" id="exampleModalLabel">Título del Modal</h5>
+            <button
+              type="button"
+              class="btn-close"
+              data-bs-dismiss="modal"
+              aria-label="Close"
+            ></button>
+          </div>
+
+          <!-- modal content -->
+          <div class="modal-body">
+            <nav aria-label="breadcrumb">
+              <ol class="breadcrumb">
+                <li
+                  :class="{ active: breadcumCitaValoracion == 1 }"
+                  class="breadcrumb-item"
+                  aria-current="page"
+                >
+                  1
+                </li>
+                <li
+                  :class="{ active: breadcumCitaValoracion == 2 }"
+                  class="breadcrumb-item active"
+                  aria-current="page"
+                >
+                  2
+                </li>
+                <li
+                  :class="{ active: breadcumCitaValoracion == 3 }"
+                  class="breadcrumb-item active"
+                  aria-current="page"
+                >
+                  3
+                </li>
+              </ol>
+            </nav>
+          </div>
+          <div class="modal-footer">
+            <button
+              type="button"
+              class="btn btn-secondary"
+              data-bs-dismiss="modal"
+            >
+              Cerrar
+            </button>
+            <button type="button" class="btn btn-primary">
+              Guardar cambios
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <WebsiteConfirmationCitaModal
+    :open="open"
+    :appointment="appointment"
+    :result="result"
+    @close-modal="closeModal"
+  />
 </template>
+
+<style scoped>
+.day-container {
+  display: flex;
+  /* margin-top: 20px; */
+}
+
+.day {
+  width: 41px;
+  height: 40px;
+  text-align: center;
+  line-height: 40px;
+  background-color: #f0f0f0;
+  border-radius: 5px;
+  margin: 10px;
+}
+
+.day-active {
+  background-color: #007bff;
+  color: white;
+}
+
+.hour {
+  width: auto;
+  height: 40px;
+  text-align: center;
+  line-height: 40px;
+  background-color: #f0f0f0;
+  border-radius: 5px;
+  margin: 10px;
+}
+
+.hour > span {
+  padding: 16px;
+}
+</style>

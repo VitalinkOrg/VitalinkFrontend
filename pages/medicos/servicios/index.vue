@@ -8,10 +8,10 @@ const { data: services } = await useFetch(
   config.public.API_BASE_URL + "/services",
   {
     transform: (_services) => _services.data,
-  }
+  },
 );
 const filteredArray = services.value.filter((item) =>
-  user_info.value.services.includes(item.code)
+  user_info.value.services.includes(item.code),
 );
 </script>
 
