@@ -3,15 +3,48 @@ definePageMeta({
   middleware: ["auth-doctors-hospitals"],
 });
 const config = useRuntimeConfig();
-const user_info = useCookie("user_info");
-const { data: hospitals, pending: pendingHospitals } = await useFetch(
-  config.public.API_BASE_URL + "/hospitals",
-  {
-    transform: (_hospitals) => _hospitals.data,
-  }
-);
+// const user_info = useCookie("user_info");
+const user_info = {
+  value: {
+    hospitals: [1, 3],
+  },
+};
+// const { data: hospitals, pending: pendingHospitals } = await useFetch(
+//   config.public.API_BASE_URL + "/hospitals",
+//   {
+//     transform: (_hospitals) => _hospitals.data,
+//   }
+// );
+const hospitals = {
+  value: [
+    {
+      id: 1,
+      name: "Hospital A",
+      address: "123 Main St",
+      city: "City A",
+      country_iso_code: "CR",
+      phone_number_1: "123456789",
+    },
+    {
+      id: 2,
+      name: "Hospital B",
+      address: "456 Elm St",
+      city: "City B",
+      country_iso_code: "CR",
+      phone_number_1: "987654321",
+    },
+    {
+      id: 3,
+      name: "Hospital C",
+      address: "789 Oak St",
+      city: "City C",
+      country_iso_code: "CR",
+      phone_number_1: "555555555",
+    },
+  ],
+};
 const filteredArray = hospitals.value.filter((item) =>
-  user_info.value.hospitals.includes(item.id)
+  user_info.value.hospitals.includes(item.id),
 );
 </script>
 
