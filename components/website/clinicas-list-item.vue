@@ -23,6 +23,26 @@ const getOffers = async (type, id) => {
     return (panel.value = false);
   }
 
+  /*
+  let url;
+
+  if (type === "doctor") {
+    url =
+      config.public.API_BASE_URL +
+      `/patient_dashboard/offers_by_doctor?doctor_id=${id}`;
+  } else {
+    url =
+      config.public.API_BASE_URL +
+      `/patient_dashboard/offers_by_hospital?hospital_id=${id}`;
+  }
+
+  const { data, pending } = await useFetch(url);
+  if (data.value) {
+    panel.value = true;
+    offers.value = data.value.data;
+  }
+  */
+
   // Mock data for offers
   offers.value = [
     {
