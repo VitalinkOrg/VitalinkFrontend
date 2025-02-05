@@ -17,108 +17,79 @@
       <NuxtLink class="navbar-brand" href="/pacientes/inicio"
         ><img src="@/src/assets/img-vitalink-logo.svg" alt="Vitalink"
       /></NuxtLink>
-      <div class="collapse navbar-collapse" id="navbarTogglerDemo03">
-        <ul class="navbar-nav mx-auto mb-2 mb-lg-0">
-          <li class="nav-item">
-            <!-- <a class="nav-link fw-light active" aria-current="page" href="#">Home</a> -->
-            <NuxtLink
-              href="/pacientes/inicio"
-              class="nav-link fw-light"
-              active-class="active bg-primary-subtle rounded-3  px-3"
-              >Home
-            </NuxtLink>
+      <div class="d-flex">
+        <div class="collapse navbar-collapse" id="navbarTogglerDemo03">
+          <ul class="navbar-nav mx-auto mb-2 mb-lg-0">
+            <li class="nav-item">
+              <!-- <a class="nav-link fw-light active" aria-current="page" href="#">Home</a> -->
+              <NuxtLink
+                href="/pacientes/inicio"
+                class="nav-link fw-light"
+                active-class="active bg-primary-subtle rounded-3  px-3"
+                >Home
+              </NuxtLink>
+            </li>
+            <li class="nav-item">
+              <NuxtLink
+                href="/pacientes/citas"
+                class="nav-link fw-light"
+                active-class="active bg-primary-subtle rounded-3  px-3"
+                >Mis Citas</NuxtLink
+              >
+            </li>
+          </ul>
+        </div>
+        <ul class="navbar-nav align-items-center">
+          <li class="d-none d-md-flex nav-item">
+           
+              <NuxtLink href="/buscar" class="nav-link">
+                <Icon name="fa6-solid:magnifying-glass" />
+              </NuxtLink>
+          
+          </li>
+          <li class="nav-item d-none d-md-flex">
+            <button class="nav-link">
+              <AtomsIconsNotificationsIcon />
+            </button>
           </li>
           <li class="nav-item">
-            <NuxtLink
-              href="/pacientes/citas"
-              class="nav-link fw-light"
-              active-class="active bg-primary-subtle rounded-3  px-3"
-              >Mis Citas</NuxtLink
-            >
-          </li>
-          <li class="nav-item">
-            <NuxtLink
-              href="/pacientes/vauchers"
-              class="nav-link fw-light"
-              active-class="active bg-primary-subtle rounded-3  px-3"
-              >Váuchers
-            </NuxtLink>
-          </li>
-          <li class="nav-item">
-            <NuxtLink
-              href="/pacientes/documentos"
-              class="nav-link fw-light"
-              active-class="active bg-primary-subtle rounded-3  px-3"
-              >Documentos
-            </NuxtLink>
-          </li>
-          <li class="nav-item">
-            <NuxtLink
-              href="/pacientes/facturas"
-              class="nav-link fw-light"
-              active-class="active bg-primary-subtle rounded-3  px-3"
-            >
-              Facturación</NuxtLink
-            >
+            <div class="dropdown">
+              <button
+                class="nav-link"
+                type="button"
+                data-bs-toggle="dropdown"
+                aria-expanded="false"
+              >
+                <img src="@/src/assets/img-avatar-sm.png" alt="avatar" />
+                <AtomsIconsChevronDown />
+              </button>
+              <ul class="dropdown-menu dropdown-menu-end">
+                <li>
+                  <a class="dropdown-item" href="/pacientes/cuenta"
+                    ><Icon name="fa6-solid:user" class="text-info" /> Mi
+                    Cuenta</a
+                  >
+                </li>
+                <li>
+                  <a class="dropdown-item" href="/pacientes/ayuda"
+                    ><Icon name="fa6-solid:circle-info" class="text-info" />
+                    Ayuda y Soporte</a
+                  >
+                </li>
+                <li>
+                  <button class="dropdown-item a" @click="logout">
+                    <Icon
+                      name="fa6-solid:right-from-bracket"
+                      class="text-info"
+                    />
+                    Cerrar Sesión
+                  </button>
+                </li>
+              </ul>
+            </div>
           </li>
         </ul>
       </div>
-      <ul class="navbar-nav align-items-center">
-        <li class="d-none d-md-flex nav-item">
-          <button class="nav-link">
-            <AtomsIconsStarOutline />
-          </button>
-        </li>
-        <li class="nav-item d-none d-md-flex">
-          <button class="nav-link">
-            <AtomsIconsNotificationsIcon />
-          </button>
-        </li>
-        <li class="nav-item">
-          <div class="dropdown">
-            <button
-              class="nav-link"
-              type="button"
-              data-bs-toggle="dropdown"
-              aria-expanded="false"
-            >
-              <img src="@/src/assets/img-avatar-sm.png" alt="avatar" />
-              <AtomsIconsChevronDown />
-            </button>
-            <ul class="dropdown-menu dropdown-menu-end">
-              <li>
-                <a class="dropdown-item" href="/pacientes/cuenta"
-                  ><Icon name="fa6-solid:user" class="text-info" /> Mi Cuenta</a
-                >
-              </li>
-              <li>
-                <a class="dropdown-item" href="#"
-                  ><Icon name="fa6-solid:magnifying-glass" class="text-info" />
-                  Mis Reseñas</a
-                >
-              </li>
-              <li>
-                <a class="dropdown-item" href="#">
-                  <AtomsIconsNotificationsIcon class="text-info" />
-                  Notificaciones
-                </a>
-              </li>
-              <li>
-                <a class="dropdown-item" href="/pacientes/ayuda"
-                  ><Icon name="fa6-solid:circle-info" class="text-info" /> Ayuda
-                  y Soporte</a
-                >
-              </li>
-              <li>
-                <button class="dropdown-item a" @click="logout">
-                  <Icon name="fa6-solid:right-from-bracket" class="text-info" />
-                  Cerrar Sesión
-                </button>
-              </li>
-            </ul>
-          </div>
-        </li>
-      </ul>
     </div>
   </nav>
 </template>

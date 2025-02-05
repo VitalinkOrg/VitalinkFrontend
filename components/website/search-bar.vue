@@ -5,13 +5,28 @@ export default {
       filtersData: {
         procedimiento: "",
         lugar: "",
-        vaucher: "",
+        valoracion: "",
+        disponibilidad: "",
         entity: "",
         min: "",
         max: "",
         specialties: null,
       },
+      selectedSpecialty: "", // New data property for selected specialty
     };
+  },
+  mounted() {
+    this.filtersData.specialties = [
+      { code: "cardiology", name: "Cardiología" },
+      { code: "neurology", name: "Neurología" },
+      { code: "orthopedics", name: "Ortopedia" },
+    ];
+    this.filtersData.disponibilidad = [
+      { code: "cardiology", name: "Todos" },
+      { code: "neurology", name: "Proximas semanas" },
+      { code: "orthopedics", name: "Proximos meses" },
+      { code: "orthopedics", name: "Proximos dias" },
+    ];
   },
   methods: {
     searchResults() {
@@ -24,9 +39,12 @@ export default {
           ...(this.filtersData.lugar !== ""
             ? { lugar: this.filtersData.lugar }
             : {}),
-          ...(this.filtersData.vaucher !== ""
-            ? { insurance: this.filtersData.vaucher }
-            : {}),
+          ...(this.filtersData.valoracion !== ""
+          ? { lugar: this.filtersData.valoracion }
+          : {}),
+          ...(this.filtersData.disponibilidad !== ""
+          ? { lugar: this.filtersData.disponibilidad }
+          : {}),
           ...(this.filtersData.min !== ""
             ? { min_price: this.filtersData.min }
             : {}),
@@ -36,8 +54,8 @@ export default {
           ...(this.filtersData.entity !== ""
             ? { entity_type: this.filtersData.entity }
             : {}),
-          ...(this.filtersData.specialties
-            ? { specialty: this.filtersData.specialties.code }
+          ...(this.selectedSpecialty
+            ? { specialty: this.selectedSpecialty }
             : {}),
         },
       });
@@ -54,11 +72,26 @@ export default {
           class="row align-items-end justify-content-between"
           @submit.prevent="searchResults"
         >
-          <!-- <form class="d-flex align-items-end" action="/buscar/wovnworv"> -->
-          <div class="col-md-3 form-group">
-            <label for="procedimiento" class="form-label text-uppercase"
-              >Procedimiento</label
+          <div class="col-md-5 form-group">
+            <label for="especialidad" class="form-label text-uppercase">Especialidades</label>
+            <select
+              id="especialidad"
+              class="form-select"
+              v-model="selectedSpecialty"
+              aria-describedby="especialidad-help"
             >
+              <option value="" disabled>Buscar por especialidad</option>
+              <option
+                v-for="specialty in filtersData.specialties"
+                :key="specialty.code"
+                :value="specialty.code"
+              >
+                {{ specialty.name }}
+              </option>
+            </select>
+          </div>
+          <div class="col-md-5 form-group">
+            <label for="procedimiento" class="form-label text-uppercase">Procedimiento</label>
             <input
               type="text"
               class="form-control"
@@ -67,35 +100,10 @@ export default {
               placeholder="Operacion de cataratas"
               aria-describedby="procedimiento-help"
             />
-            <!-- <div id="procedimiento-help" class="form-text ">We'll never share your email with anyone else.</div> -->
-          </div>
-          <div class="col-md-3 form-group">
-            <label for="lugar" class="form-label">Lugar</label>
-            <input
-              type="text"
-              class="form-control"
-              v-model="lugar"
-              id="lugar"
-              aria-describedby="lugar-help"
-              placeholder="Costa Rica"
-            />
-            <!-- <div id="lugar-help" class="form-text ">We'll never share your email with anyone else.</div> -->
-          </div>
-          <div class="col-md-3 form-group">
-            <label for="vaucher" class="form-label">Código de Vaucher</label>
-            <input
-              type="text"
-              class="form-control"
-              v-model="vaucher"
-              id="vaucher"
-              aria-describedby="vaucher-help"
-              placeholder="Código de Vaucher"
-            />
-            <!-- <div id="vaucher-help" class="form-text ">We'll never share your email with anyone else.</div> -->
           </div>
           <div class="form-group col-md-2">
-            <button type="submit" class="btn btn-warning px-4 w-100">
-              Buscar
+            <button type="submit" class="btn btn-info px-4 w-100">
+              <Icon name="fa6-solid:magnifying-glass" class="text-light" />
             </button>
           </div>
         </form>
@@ -120,17 +128,7 @@ export default {
       >
         Precio máximo: {{ filtersData.max }}
       </button>
-      <button
-        v-if="filtersData.specialties"
-        class="btn rounded-5 bg-white border-secondary-subtle shadow-sm mx-1 fw-light"
-      >
-        Especialidades: {{ filtersData.specialties.name }}
-        <!-- <span v-for="specialty in filtersData.specialties" :key="specialty.id">
-          {{ specialty.name + " " }}</span
-        > -->
-      </button>
       <WebsiteMasFiltrosModal :filters="filtersData" />
     </div>
-    <WebsiteSolicitarVaucher />
   </div>
 </template>

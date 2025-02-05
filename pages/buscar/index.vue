@@ -4,7 +4,41 @@ import axios from "axios";
 export default {
   data() {
     return {
-      clinicas: [],
+      clinicas: [
+        {
+          id: 2000,
+          entity_type: "doctor",
+          name: "Clinica Santa Fe",
+          review_score: 4.5,
+          review_count: 23,
+          specialty_name: ["Cardiology", "Pediatrics"],
+          service_name: ["Consultation"],
+          hospital_count: 3,
+          min_price: 150.0,
+        },
+        {
+          id: 2001,
+          entity_type: "hospital",
+          name: "Hospital General",
+          review_score: 4.0,
+          review_count: 45,
+          specialty_name: ["Orthopedics", "Neurology"],
+          service_name: ["Surgery"],
+          hospital_count: 5,
+          min_price: 200.0,
+        },
+        {
+          id: 2002,
+          entity_type: "doctor",
+          name: "Dr. Ana Perez",
+          review_score: 4.7,
+          review_count: 30,
+          specialty_name: ["Dermatology"],
+          service_name: ["Skin Treatment"],
+          hospital_count: 1,
+          min_price: 100.0,
+        },
+      ],
       isLoading: true,
       filter_query: this.$route.query.filter_name,
       insurance: this.$route.query.insurance,
@@ -48,7 +82,7 @@ export default {
   methods: {
     async search() {
       this.isLoading = true;
-      this.clinicas = [];
+      // this.clinicas = [];
       const setup = {
         params: {
           ...(this.filter_query !== ""
@@ -66,10 +100,10 @@ export default {
           .get(
             config.public.API_BASE_URL +
               "/patient_dashboard/search_doctors_hospitals",
-            setup,
+            setup
           )
           .then((r) => {
-            this.clinicas = r.data.data;
+            // this.clinicas = r.data.data;
             this.isLoading = false;
           });
       } catch (e) {
@@ -103,14 +137,38 @@ export default {
               <div
                 class="d-flex align-items-center justify-content-between mb-3"
               >
-                <span class="fw-medium ms-2" v-if="clinicas"
-                  >{{ clinicas.length }} Médicos y Hospitales disponibles</span
+              <div class="d-flex flex-column gap-2">
+                <span class="fw-semibold fs-5">{{ filter_query }}</span>
+                <span class="fw-medium text-muted" v-if="clinicas"
+                  >{{ clinicas.length }} resultados</span
                 >
+              </div>
+              
                 <span class="d-flex align-items-center">
                   <div style="display: flex" class="px-5">
-                    <div class="form-check form-switch">
+                    <div
+                      style="display: flex"
+                      class="btn rounded-5 bg-white border-secondary-subtle shadow-sm mx-1 fw-light"
+                    >
+                      <span class="text-nowrap">Ordenar por:</span>
+                      <select
+                        name="medicos-sort"
+                        id="medicos-sort"
+                        class="form-select form-select-sm border-0"
+                      >
+                        <option value="relevantes">Más Relevantes</option>
+                        <option value="disponibilidad" selected>
+                          Disponibilidad
+                        </option>
+                        <option value="precio-min">Precio más bajo</option>
+                        <option value="precio-max">Precio más alto</option>
+                      </select>
+                    </div>
+                    <div
+                      class="form-check d-flex align-items-center justify-content-between gap-2 form-switch btn rounded-5 bg-white border-secondary-subtle shadow-sm mx-1 fw-light"
+                    >
                       <input
-                        class="form-check-input"
+                        class="form-check-reverse form-check-input m-0"
                         type="checkbox"
                         role="switch"
                         id="flexSwitchCheckDefault"
@@ -123,38 +181,26 @@ export default {
                       >
                     </div>
                   </div>
-
-                  <div style="display: flex">
-                    <span class="text-nowrap">Ordenar por:</span>
-                    <select
-                      name="medicos-sort"
-                      id="medicos-sort"
-                      class="form-select form-select-sm border-0"
-                    >
-                      <option value="recomendados">Recomendados</option>
-                      <option value="valoraciones">Valoraciones</option>
-                      <option value="disponibilidad" selected>
-                        Disponibilidad inmediata
-                      </option>
-                      <option value="cercania">Mayor cercanía</option>
-                    </select>
-                  </div>
                 </span>
               </div>
             </div>
           </div>
 
-          <div class="row">
+          <div class="row ">
             <div
-              :class="{ 'col-sm-12': !isMapVisible, 'col-sm-6': isMapVisible }"
+              :class="{ 'col-sm-12': !isMapVisible, 'col-sm-8': isMapVisible }"
             >
-              <WebsiteClinicasListItem
-                v-for="clinica in clinicas"
-                :key="clinica.id"
-                :clinica="clinica"
-              />
+              <div class="row">
+                <div
+                  class="col-md-4"
+                  v-for="clinica in clinicas"
+                  :key="clinica.id"
+                >
+                  <WebsiteClinicasListItem :clinica="clinica" />
+                </div>
+              </div>
             </div>
-            <div class="col-md-6" v-show="isMapVisible">
+            <div class="col-md-4" v-show="isMapVisible">
               <AtomsMapaInteractivo />
             </div>
           </div>

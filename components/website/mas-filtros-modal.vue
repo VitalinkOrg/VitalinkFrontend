@@ -1,5 +1,7 @@
 <script>
 import axios from "axios";
+import { ref, onMounted, watch } from "vue";
+
 export default {
   props: {
     filters: {
@@ -15,10 +17,22 @@ export default {
     return {
       open: false,
       specialties: [],
+      rating: ref(0), // Reactive rating value
+      place: ref(""), // Reactive place value
+      autocomplete: null, // Google Maps Autocomplete instance
     };
   },
   mounted() {
     this.getSpecialties();
+    this.initAutocomplete(); // Initialize autocomplete
+  },
+  watch: {
+    place(newVal) {
+      this.filters.lugar = newVal; // Update the prop when place changes
+    },
+    rating(newVal) {
+      this.filters.valoracion = newVal; // Update the prop when rating changes
+    },
   },
   methods: {
     openConfirmationModal() {
@@ -29,27 +43,44 @@ export default {
     },
     async getSpecialties() {
       try {
-        await axios
-          .get(config.public.API_BASE_URL + "/specialties")
-          .then((r) => {
-            this.specialties = r.data.data;
-          });
+        const r = await axios.get(config.public.API_BASE_URL + "/specialties");
+        this.specialties = r.data.data;
       } catch (e) {
-        this.isLoading = false;
+        console.error("Error fetching specialties:", e);
       }
+    },
+    initAutocomplete() {
+      onMounted(() => {
+        const input = document.getElementById("placeInput");
+        this.autocomplete = new google.maps.places.Autocomplete(input, {
+          fields: ["address_components", "geometry"], // Request specific fields
+        });
+
+        this.autocomplete.addListener("place_changed", () => {
+          const place = this.autocomplete.getPlace();
+          if (place.geometry) {
+            this.place = place.formatted_address || input.value; // Update place with formatted address or input value
+          } else {
+            this.place = input.value; // Use entered text if no place found
+          }
+        });
+      });
+    },
+    setRating(value) {
+      this.rating = value;
     },
   },
 };
 </script>
+
 <template>
-  <!-- Button trigger modal -->
   <button
     @click="openConfirmationModal"
     class="btn rounded-5 bg-white border-secondary-subtle shadow-sm mx-1 fw-light"
   >
     Más Filtros
   </button>
-  <!-- Modal -->
+
   <div
     class="modal fade"
     :class="open ? 'show' : ''"
@@ -77,16 +108,64 @@ export default {
         </div>
         <form @submit.prevent="searchFilters">
           <div class="modal-body">
-            <div
-              class="bg-primary rounded-4 h-100 p-4"
-              style="--bs-bg-opacity: 0.04"
-            >
+            <div class="rounded-4 h-100 p-4" style="--bs-bg-opacity: 0.04">
+              <div class="d-flex flex-column gap-2 mb-3">  <div class="d-flex gap-2 align-items-center">
+                  <label class="form-label m-0 w-25">Valoraciones</label> <div  class="w-100">
+                    <span
+                      v-for="n in 5"
+                      :key="n"
+                      @click="setRating(n)"
+                      style="cursor: pointer"
+                     
+                    >
+                      <Icon
+                        :name="
+                          n <= rating ? 'fa6-solid:star' : 'fa6-regular:star'
+                        "
+                        class="text-warning"
+                      />
+                    </span>
+                  </div>
+                </div>
+                <div class="d-flex gap-2 align-items-center">
+                  <label for="placeInput" class="form-label m-0 w-25">Lugar</label> <input
+                    type="text"
+                    class="form-control"
+                    id="placeInput"
+                    v-model="place"
+                    placeholder="Ciudad o provincia"
+                  />
+                </div>
+                <div class="d-flex gap-2 align-items-center">
+                  <label for="disponibilidad" class="form-label m-0 w-25"
+                    >Disponibilidad de citas</label
+                  >  <select
+                    id="disponibilidad"
+                    class="form-select"
+                    v-model="selectedSpecialty"
+                    aria-describedby="especialidad-help"
+                  >
+                    <option value="" disabled selected>
+                      Buscar por especialidad
+                    </option>
+                    <option
+                      v-for="specialty in filters.disponibilidad"
+                      :key="specialty.code"
+                      :value="specialty.code"
+                    >
+                      {{ specialty.name }}
+                    </option>
+                  </select>
+                </div>
+              </div>
+              <hr />
+
               <div>
-                <label class="fw-light fs-6">Rango de precios</label>
-                <label class="text-secondary"
-                  >Agregue un precio mínimo y un precio máximo por el que esté
-                  dispuesto a pagar el servicio</label
-                >
+                <label class="form-label fs-6">Rango de precios</label>
+                <label class="text-secondary">
+                  Agregue un precio mínimo y un precio máximo por el que esté
+                  dispuesto a pagar el servicio
+                </label>
                 <div class="row my-2">
                   <div class="form-group mb-2 col">
                     <input
@@ -96,7 +175,6 @@ export default {
                       id="min"
                       v-model="filters.min"
                     />
-                    <!-- <div id="nombreHelp" class="form-text">We'll never share your email with anyone else.</div> -->
                   </div>
                   <div class="col-1 text-center">-</div>
                   <div class="form-group mb-2 col">
@@ -107,7 +185,6 @@ export default {
                       id="max"
                       v-model="filters.max"
                     />
-                    <!-- <div id="nombreHelp" class="form-text">We'll never share your email with anyone else.</div> -->
                   </div>
                 </div>
                 <hr />
@@ -153,229 +230,6 @@ export default {
                   </label>
                 </div>
                 <hr />
-                <label class="fw-light fs-6">Especialidades</label>
-                <div class="form-group mb-4">
-                  <select
-                    id="servicios"
-                    class="form-select"
-                    v-model="filters.specialties"
-                  >
-                    <option
-                      v-for="specialty in specialties"
-                      :key="specialty.id"
-                      :value="specialty"
-                    >
-                      {{ specialty.name }}
-                    </option>
-                  </select>
-                </div>
-                <!-- Not ready yet -->
-                <!-- <div>
-                  <label class="text-secondary"
-                    >Configure el tipo de hospitalización que desee recibir al
-                    momento de ser ingresado por alguna operación o
-                    procedimiento que requiera ser ingresado en el hospital.
-                  </label>
-                  <div>
-                    <p class="fw-light fs-6 mb-0">
-                      Comodidades en las Habitaciones
-                    </p>
-                    <p class="text-secondary mb-1">Habitaciones</p>
-                  </div>
-                  <div class="form-check form-check-inline">
-                    <input
-                      class="form-check-input"
-                      type="radio"
-                      name="inlineRadioOptions"
-                      id="inlineRadio1"
-                      value="option1"
-                    />
-                    <label class="form-check-label" for="inlineRadio1"
-                      >Habitación Privada</label
-                    >
-                  </div>
-                  <div class="form-check form-check-inline">
-                    <input
-                      class="form-check-input"
-                      type="radio"
-                      name="inlineRadioOptions"
-                      id="inlineRadio2"
-                      value="option2"
-                    />
-                    <label class="form-check-label" for="inlineRadio2"
-                      >Habitación Compartida</label
-                    >
-                  </div>
-                  <div class="form-check form-check-inline">
-                    <input
-                      class="form-check-input"
-                      type="radio"
-                      name="inlineRadioOptions"
-                      id="inlineRadio3"
-                      value="option3"
-                    />
-                    <label class="form-check-label" for="inlineRadio3"
-                      >Baño privado</label
-                    >
-                  </div>
-                  <hr />
-                  <div>
-                    <p class="fs-7 mb-1">Televisión y entretenimiento</p>
-                    <div class="form-check form-check-inline">
-                      <input
-                        class="form-check-input"
-                        type="checkbox"
-                        id="inlineCheckbox1"
-                        value="option1"
-                      />
-                      <label class="form-check-label" for="inlineCheckbox1"
-                        >Televisión por cable</label
-                      >
-                    </div>
-                    <div class="form-check form-check-inline">
-                      <input
-                        class="form-check-input"
-                        type="checkbox"
-                        id="inlineCheckbox2"
-                        value="option2"
-                      />
-                      <label class="form-check-label" for="inlineCheckbox2"
-                        >Televisión con Smart Tv</label
-                      >
-                    </div>
-                    <div class="form-check form-check-inline">
-                      <input
-                        class="form-check-input"
-                        type="checkbox"
-                        id="inlineCheckbox3"
-                        value="option3"
-                      />
-                      <label class="form-check-label" for="inlineCheckbox3"
-                        >Wifi</label
-                      >
-                    </div>
-                  </div>
-                  <hr />
-                  <div>
-                    <p class="text-secondary mb-1">Más Servicios</p>
-                    <div class="form-check">
-                      <input
-                        class="form-check-input"
-                        type="checkbox"
-                        value=""
-                        id="flexCheckDefault"
-                      />
-                      <label class="form-check-label" for="flexCheckDefault">
-                        Servicio de Comida personalizada a la habitación
-                      </label>
-                    </div>
-                    <div class="form-check">
-                      <input
-                        class="form-check-input"
-                        type="checkbox"
-                        value=""
-                        id="flexCheckChecked"
-                        checked
-                      />
-                      <label class="form-check-label" for="flexCheckChecked">
-                        Accesibilidad: Ascensores
-                      </label>
-                    </div>
-                    <div class="form-check">
-                      <input
-                        class="form-check-input"
-                        type="checkbox"
-                        value=""
-                        id="flexCheckChecked"
-                      />
-                      <label class="form-check-label" for="flexCheckChecked">
-                        Programas de bienestar
-                      </label>
-                    </div>
-                    <div class="form-check">
-                      <input
-                        class="form-check-input"
-                        type="checkbox"
-                        value=""
-                        id="flexCheckChecked"
-                      />
-                      <label class="form-check-label" for="flexCheckChecked">
-                        Sala de entretenimiento
-                      </label>
-                    </div>
-                    <div class="form-check">
-                      <input
-                        class="form-check-input"
-                        type="checkbox"
-                        value=""
-                        id="flexCheckChecked"
-                      />
-                      <label class="form-check-label" for="flexCheckChecked">
-                        Sala de juegos para niños
-                      </label>
-                    </div>
-                    <div class="form-check">
-                      <input
-                        class="form-check-input"
-                        type="checkbox"
-                        value=""
-                        id="flexCheckChecked"
-                      />
-                      <label class="form-check-label" for="flexCheckChecked">
-                        Aire Acondicionado
-                      </label>
-                    </div>
-                    <div class="form-check">
-                      <input
-                        class="form-check-input"
-                        type="checkbox"
-                        value=""
-                        id="flexCheckChecked"
-                      />
-                      <label class="form-check-label" for="flexCheckChecked">
-                        Calefacción
-                      </label>
-                    </div>
-                    <div class="form-check">
-                      <input
-                        class="form-check-input"
-                        type="checkbox"
-                        value=""
-                        id="flexCheckChecked"
-                      />
-                      <label class="form-check-label" for="flexCheckChecked">
-                        Aparcamiento gratuito
-                      </label>
-                    </div>
-                  </div>
-                  <div>
-                    <p class="fw-light fs-6 mb-0">
-                      Comodidades en las Áreas de espera
-                    </p>
-                    <div class="form-check form-check-inline">
-                      <input
-                        class="form-check-input"
-                        type="checkbox"
-                        id="inlineCheckbox1"
-                        value="option1"
-                      />
-                      <label class="form-check-label" for="inlineCheckbox1"
-                        >Wifi</label
-                      >
-                    </div>
-                    <div class="form-check form-check-inline">
-                      <input
-                        class="form-check-input"
-                        type="checkbox"
-                        id="inlineCheckbox1"
-                        value="option1"
-                      />
-                      <label class="form-check-label" for="inlineCheckbox1"
-                        >Opciones de refrigerios</label
-                      >
-                    </div>
-                  </div>
-                </div> -->
               </div>
             </div>
           </div>

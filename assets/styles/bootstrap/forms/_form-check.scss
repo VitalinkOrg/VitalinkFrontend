@@ -26,7 +26,7 @@
   }
 }
 
-.form-check-input {
+.form-check-input, .form-check-reverse {
   --#{$prefix}form-check-bg: #{$form-check-input-bg};
 
   flex-shrink: 0;

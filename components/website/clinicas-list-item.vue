@@ -5,6 +5,7 @@ const props = defineProps(["clinica"]);
 const offers = ref([]);
 const config = useRuntimeConfig();
 const router = useRouter();
+
 function goTo(type, id) {
   if (type == "doctor") {
     router.push({
@@ -16,27 +17,33 @@ function goTo(type, id) {
     });
   }
 }
+
 const getOffers = async (type, id) => {
   if (panel.value === true) {
     return (panel.value = false);
   }
-  let url;
 
-  if (type === "doctor") {
-    url =
-      config.public.API_BASE_URL +
-      `/patient_dashboard/offers_by_doctor?doctor_id=${id}`;
-  } else {
-    url =
-      config.public.API_BASE_URL +
-      `/patient_dashboard/offers_by_hospital?hospital_id=${id}`;
-  }
+  // Mock data for offers
+  offers.value = [
+    {
+      doctor_id: 1,
+      hospital_name: "Clínica San José",
+      review_score: 4.5,
+      service: "Consulta General",
+      price: 50,
+      currency: "USD",
+    },
+    {
+      doctor_id: 2,
+      hospital_name: "Clínica San José",
+      review_score: 4.7,
+      service: "Ecografía",
+      price: 70,
+      currency: "USD",
+    },
+  ];
 
-  const { data, pending } = await useFetch(url);
-  if (data.value) {
-    panel.value = true;
-    offers.value = data.value.data;
-  }
+  panel.value = true;
 };
 </script>
 
@@ -53,110 +60,90 @@ const getOffers = async (type, id) => {
       <div class="card-body" style="cursor: pointer">
         <div class="row gap-2">
           <div class="col-md-3 d-flex justify-content-center d-md-block">
-            <!-- <img
-            v-if="clinica.picture"
-            :src="clinica.picture"
-            class="img-fluid rounded-4"
-            alt="clinica"
-          /> -->
             <img
-              src="@/src/assets/img-clinica-thumbnail.png"
-              class="img-fluid rounded-4"
+              src="@/src/assets/img-medico-thumbnail.png"
+              class="img-fluid rounded-circle"
               alt="clinica"
+              width="67.088px"
+              height="66.975px"
             />
+            <div class="bg-primary d-flex p-2 score justify-content-between gap-2">
+              <p class="text-white mb-0">{{ parseFloat(clinica.review_score).toFixed(1) || "" }}</p>
+              <img
+                src="@/src/assets/star.svg"
+                alt="Busca centro medico"
+                class="img-fluid"
+              />
+            </div>
           </div>
           <div class="col">
-            <small>
-              <span class="fw-semibold me-2" v-if="clinica.review_score">
-                <!-- {{ clinica.price || "" }} -->
-                {{ parseFloat(clinica.review_score).toFixed(1) || "" }}
-                <AtomsIconsStar />
-              </span>
-              <!-- <span class="text-muted">({{ clinica.rating.reviews || 0 }} Reseñas)</span> -->
-              <span class="text-muted me-2"
-                >({{ clinica.review_count || 0 }} Reseñas)</span
-              >
-              <span v-if="[2000].includes(clinica.id)" class="badge bg-warning">
-                <p class="fw-light text-muted mb-0 p-1">
-                  Preferido por aseguradora ABC
-                </p>
-              </span>
-              <span v-if="[2001].includes(clinica.id)" class="badge bg-warning">
-                <p class="fw-light text-muted mb-0 p-1">
-                  Preferido por aseguradora CBA
-                </p>
-              </span>
-              <span v-if="[2002].includes(clinica.id)" class="badge bg-warning">
-                <p class="fw-light text-muted mb-0 p-1">
-                  Preferido por aseguradora TAT
-                </p>
-              </span>
-            </small>
             <h2 class="h5 fw-semibold my-2">{{ clinica.name }}</h2>
-            <span
-              class="badge bg-primary text-primary me-2 rounded-5 text-capitalize p-2"
-              style="--bs-bg-opacity: 0.07"
-              v-for="specialty in clinica.specialty_name"
-              :key="specialty.length"
-              >{{ specialty }}</span
-            >
-            <div class="d-flex my-3" v-if="clinica.service_name">
-              <span
-                class="badge rounded-circle bg-primary text-primary me-2"
-                style="--bs-bg-opacity: 0.05"
-                ><Icon name="ph:virus"
-              /></span>
-              <p class="fw-light text-muted mb-0">
-                {{ clinica.service_name[0] }}
+            <div class="d-flex align-items-center mt-3 mb-0 gap-2">
+              <img
+                src="@/src/assets/doctor-element.svg"
+                alt="Busca centro medico"
+                class="img-fluid"
+              />
+              <p class="text-muted mb-0">
+                {{ clinica.specialty_name[0] || "Servicio no disponible" }}
               </p>
-              <!-- <p
-              class="fw-light text-muted mb-0"
-              v-for="service in clinica.service_name"
-              :key="service.length"
-            >
-              {{ service }}
-            </p> -->
             </div>
-            <p
-              v-if="clinica.hospital_count && clinica.hospital_count !== '0'"
-              class="fw-light text-muted"
-            >
-              <span
-                class="badge rounded-circle bg-primary text-primary me-2"
-                style="--bs-bg-opacity: 0.05"
-                ><AtomsIconsMapPointerIcon /></span
-              >+{{ clinica.hospital_count }} Hospitales diferentes
-            </p>
-            <div class="d-flex justify-content-between align-items-center">
-              <div class="card bg-light rounded-4 border-0">
-                <div class="card-body py-2">
-                  <span class="text-muted">Disponibilidad:</span><br />
-                  <span class="fw-normal"
-                    ><Icon name="ph:calendar" /> 5 de Octubre de 2023
-                    <Icon name="ph:clock" /> 11:00 am</span
-                  >
-                </div>
+            <div class="d-flex align-items-center gap-2">
+              <img
+                src="@/src/assets/marker.svg"
+                alt="Busca centro medico"
+                class="img-fluid"
+              />
+              <p class="text-muted mb-0">
+                +{{ clinica.hospital_count || 0 }} Hospitales diferentes
+              </p>
+            </div>
+            <div class="mt-3 availability p-2">
+              <p class="text-muted">Disponibilidad</p>
+              <div class="d-flex align-items-center gap-2">
+                <img
+                  src="@/src/assets/calendar.svg"
+                  alt="Busca centro medico"
+                  class="img-fluid"
+                />
+                <p class="m-0">5 de Octubre, 2025</p>
               </div>
-              <button
-                v-if="clinica.min_price"
-                class="d-flex flex-column align-items-end btn btn-light bg-white"
-                @click.prevent="getOffers(clinica.entity_type, clinica.id)"
+              <div class="d-flex align-items-center gap-2">
+                <img
+                  src="@/src/assets/clock.svg"
+                  alt="Busca centro medico"
+                  class="img-fluid"
+                />
+                <p class="m-0">11:00 am</p>
+              </div>
+            </div>
+            <div class="mt-3">
+              <span
+                class="badge me-2 text-primary p-2"
+                v-for="specialty in clinica.specialty_name"
+                :key="specialty"
               >
-                <span class="text-muted">A partir de</span>
-                <div class="d-flex gap-1 align-items-center">
-                  <span class="fw-bold text-nowrap"
-                    >{{
-                      parseFloat(clinica.min_price).toLocaleString()
-                    }}
-                    USD</span
-                  >
-                  <Icon name="material-symbols:expand-more" />
-                </div>
-              </button>
+                {{ specialty }}
+              </span>
+            </div>
+            <div class="mt-3 d-flex justify-content-between align-items-center">
+              <div>
+                <p class="fw-bold mb-0">
+                  {{ parseFloat(clinica.min_price).toLocaleString() }} USD
+                </p>
+                <p class="text-muted mb-0">Precio de referencia</p>
+              </div>
+              <a href="#" class="text-decoration-none" @click.prevent="getOffers(clinica.entity_type, clinica.id)">
+                Ver paquetes
+                <img
+                  src="@/src/assets/arrow-next.svg"
+                  alt="Busca centro medico"
+                  class="img-fluid"
+                />
+              </a>
             </div>
           </div>
         </div>
-        <div v-if="pending">Loading offers...</div>
         <div v-if="panel" class="my-4">
           <p class="text-center text-primary h6 fw-medium fs-4">
             Compara las ofertas
@@ -184,8 +171,6 @@ const getOffers = async (type, id) => {
                     <li>
                       <small><Icon name="ph:virus" />{{ offer.service }}</small>
                     </li>
-                    <!-- <li><small>[I]Sala de cirugía</small></li>
-                  <li><small>[I]Habitación privada</small></li> -->
                   </ul>
                   <hr />
                   <p class="card-text text-center text-muted mb-0">
@@ -226,3 +211,26 @@ const getOffers = async (type, id) => {
     </div>
   </NuxtLink>
 </template>
+<style lang="scss" scoped>
+  .card {
+    background-color: #fff;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  }
+
+  .badge {
+    font-size: 0.9rem;
+    background-color: #ebecf7;
+    border-radius: 105.022px;
+  }
+
+  .score {
+    width: 62px;
+    border-radius: 23px;
+  }
+
+  .availability {
+    background-color: #f9f8f8;
+    border-radius: 9px;
+  }
+</style>
