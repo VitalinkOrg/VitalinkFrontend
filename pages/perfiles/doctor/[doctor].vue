@@ -1,15 +1,46 @@
 <script setup>
-const config = useRuntimeConfig();
-const route = useRoute();
-const { data: doctor, pending } = await useLazyFetch(
-  config.public.API_BASE_URL + "/patient_dashboard/doctor_profile",
-  {
-    params: {
-      doctor_id: route.params.doctor,
+// const config = useRuntimeConfig();
+// const route = useRoute();
+// const { data: doctor, pending } = await useLazyFetch(
+//   config.public.API_BASE_URL + "/patient_dashboard/doctor_profile",
+//   {
+//     params: {
+//       doctor_id: route.params.doctor,
+//     },
+//     transform: (_doctor) => _doctor.data,
+//   },
+// );
+
+const isModalOpen = ref(false);
+
+const openModal = () => {
+  isModalOpen.value = true;
+};
+
+const closeModal = () => {
+  isModalOpen.value = false;
+};
+
+const doctor = ref({
+  doctor_information: {
+    personal: {
+      first_name: "John",
+      last_name: "Doe",
+      phone_number: "+15551234567",
+      email: "john.doe@example.com",
+      address: "123 Main St",
+      city: "Anytown",
+      country_iso_code: "US",
+      code: "4646225732",
     },
-    transform: (_doctor) => _doctor.data,
   },
-);
+  servicesResult: [
+    { doctor_service_id: 1, specialty: "Cardiology" },
+    { doctor_service_id: 2, specialty: "Internal Medicine" },
+  ],
+});
+
+const pending = ref(false); // Mock pending state
 </script>
 
 <template>
@@ -40,7 +71,7 @@ const { data: doctor, pending } = await useLazyFetch(
         <div v-else class="row">
           <div class="col-sm-4">
             <div class="card shadow border-0">
-              <div class="card-body text-center">
+              <div class="card-body text-left">
                 <img
                   src="@/src/assets/img-clinica-thumbnail-md.png"
                   alt=""
@@ -50,7 +81,6 @@ const { data: doctor, pending } = await useLazyFetch(
                   <small>
                     <span class="fw-semibold me-2">
                       5.0
-
                       <AtomsIconsStarFilled />
                     </span>
                     <span class="text-muted">13 Reseñas</span>
@@ -63,7 +93,9 @@ const { data: doctor, pending } = await useLazyFetch(
                     doctor.doctor_information.personal.last_name
                   }}
                 </h2>
-
+                <h2 class="h5 fw-semibold my-2 text-muted">
+                  Nº de Colegiado: {{ doctor.doctor_information.personal.code }}
+                </h2>
                 <span
                   class="badge bg-primary text-primary me-2 rounded-5 text-capitalize"
                   style="--bs-bg-opacity: 0.07"
@@ -71,21 +103,27 @@ const { data: doctor, pending } = await useLazyFetch(
                   :key="service.doctor_service_id"
                   >{{ service.specialty }}</span
                 >
+
                 <div class="my-2">
                   <a
                     :href="`tel:${doctor.doctor_information.personal.phone_number}`"
-                    class="badge bg-success rounded-4 mx-1 p-2"
+                    class="badge bg-info rounded-2 mx-1 p-2"
                     ><AtomsIconsPhoneIcon
                   /></a>
                   <a
                     :href="`mailto:${doctor.doctor_information.personal.email}`"
-                    class="badge bg-success rounded-4 mx-1 p-2"
+                    class="badge bg-info rounded-2 mx-1 p-2"
                     ><AtomsIconsMailIcon
+                  /></a>
+                  <a
+                    :href="`mailto:${doctor.doctor_information.personal.email}`"
+                    class="badge bg-info rounded-2 mx-1 p-2"
+                    ><AtomsIconsMapPointerIcon
                   /></a>
                 </div>
                 <p class="card-text py-2 text-muted fw-light">
-                  <small v-if="doctor"
-                    ><AtomsIconsMapPointerIcon />
+                  <small v-if="doctor">
+                    <AtomsIconsMapPointerIcon />
                     {{
                       doctor.doctor_information.personal.address +
                       ", " +
@@ -102,10 +140,12 @@ const { data: doctor, pending } = await useLazyFetch(
                       style="--bs-bg-opacity: 0.05"
                     >
                       <div class="card-body py-2">
-                        <span class="text-muted">Experiencia</span><br />
-                        <span class="fw-semibold text-primary fs-5"
-                          >+10 años</span
+                        <p class="text-muted m-0 text-center">Experiencia</p>
+                        <p
+                          class="fw-semibold text-primary text-center m-0 fs-5"
                         >
+                          +10 años
+                        </p>
                       </div>
                     </div>
                   </div>
@@ -115,59 +155,56 @@ const { data: doctor, pending } = await useLazyFetch(
                       style="--bs-bg-opacity: 0.05"
                     >
                       <div class="card-body py-2">
-                        <span class="text-muted">Pacientes</span><br />
-                        <span class="fw-semibold text-primary fs-5">+1000</span>
+                        <p class="text-muted m-0 text-center">Pacientes</p>
+                        <p
+                          class="fw-semibold text-primary text-center m-0 fs-5"
+                        >
+                          +1000
+                        </p>
                       </div>
                     </div>
                   </div>
                 </div>
-
-                <!-- <div
-                  class="card bg-primary rounded-4 border-0 mt-3"
-                  style="--bs-bg-opacity: 0.05"
-                >
-                  <div class="card-body">
-                    <div class="row row-cols-4 gx-2 mb-2">
-                      <div class="col">
-                        <img
-                          src="@/src/assets/img-clinica-thumbnail-xs.png"
-                          class="img-fluid"
-                          alt=""
-                        />
-                      </div>
-                      <div class="col">
-                        <img
-                          src="@/src/assets/img-clinica-thumbnail-xs.png"
-                          class="img-fluid"
-                          alt=""
-                        />
-                      </div>
-                      <div class="col">
-                        <img
-                          src="@/src/assets/img-clinica-thumbnail-xs.png"
-                          class="img-fluid"
-                          alt=""
-                        />
-                      </div>
-                      <div class="col">
-                        <img
-                          src="@/src/assets/img-clinica-thumbnail-xs.png"
-                          class="img-fluid"
-                          alt=""
-                        />
-                      </div>
+                <!-- More Photos Section -->
+                <div class="mt-3">
+                  <h3 class="h6 fw-semibold">Más Fotos</h3>
+                  <div class="row">
+                    <div class="col-4 mb-2">
+                      <img
+                        src="@/src/assets/img-clinica-thumbnail-md.png"
+                        alt=""
+                        class="img-fluid rounded"
+                        @click="openModal"
+                      />
                     </div>
-                    <button
-                      class="btn btn-light border-dark-subtle w-100 bg-white"
-                    >
-                      Ver más fotos
-                    </button>
+                    <div class="col-4 mb-2">
+                      <img
+                        src="@/src/assets/img-clinica-thumbnail-md.png"
+                        alt=""
+                        class="img-fluid rounded"
+                        @click="openModal"
+                      />
+                    </div>
+                    <div class="col-4 mb-2">
+                      <img
+                        src="@/src/assets/img-clinica-thumbnail-md.png"
+                        alt=""
+                        class="img-fluid rounded"
+                        @click="openModal"
+                      />
+                    </div>
                   </div>
-                </div> -->
+                  <a
+                    href="#"
+                    class="text-decoration-none btn btn-outline-dark me-2 w-100"
+                    @click="openModal"
+                    >Ver más Fotos</a
+                  >
+                </div>
               </div>
             </div>
           </div>
-          <div class="col">
+          <div class="col-sm-8">
             <div class="card shadow border-0" style="height: 100%">
               <div class="card-body">
                 <h3 class="fw-semibold fs-6">Detalles y Agenda</h3>
@@ -183,6 +220,82 @@ const { data: doctor, pending } = await useLazyFetch(
           </div>
         </div>
       </div>
+
+      <!-- Modal for Additional Photos -->
+      <div
+        class="modal fade"
+        :class="{ show: isModalOpen }"
+        tabindex="-1"
+        aria-labelledby="photoModalLabel"
+        aria-hidden="true"
+        v-if="isModalOpen"
+      >
+        <div class="modal-dialog modal-lg">
+          <div class="modal-content">
+            <div class="modal-header">
+              <h5 class="modal-title" id="photoModalLabel">Más Fotos</h5>
+              <button
+                type="button"
+                class="btn-close"
+                @click="closeModal"
+              ></button>
+            </div>
+            <div class="modal-body">
+              <div class="row">
+                <div class="col-4 mb-2">
+                  <img
+                    src="@/src/assets/img-clinica-thumbnail-md.png"
+                    alt=""
+                    class="img-fluid rounded"
+                  />
+                </div>
+                <div class="col-4 mb-2">
+                  <img
+                    src="@/src/assets/img-clinica-thumbnail-md.png"
+                    alt=""
+                    class="img-fluid rounded"
+                  />
+                </div>
+                <div class="col-4 mb-2">
+                  <img
+                    src="@/src/assets/img-clinica-thumbnail-md.png"
+                    alt=""
+                    class="img-fluid rounded"
+                  />
+                </div>
+                <!-- Add more images as needed -->
+              </div>
+            </div>
+            <div class="modal-footer">
+              <button
+                type="button"
+                class="btn btn-secondary"
+                @click="closeModal"
+              >
+                Cerrar
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div
+        class="modal-backdrop fade"
+        :class="{ show: isModalOpen }"
+        v-if="isModalOpen"
+      ></div>
     </main>
   </NuxtLayout>
 </template>
+
+<style scoped>
+.modal {
+  display: block;
+  background-color: rgba(0, 0, 0, 0.5);
+}
+.modal.show {
+  display: block;
+}
+.modal-backdrop.show {
+  opacity: 0.5;
+}
+</style>

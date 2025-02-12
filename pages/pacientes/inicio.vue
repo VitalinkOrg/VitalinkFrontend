@@ -221,7 +221,7 @@ const historial = [
                             <p class="text-muted mb-0">Precio de referencia</p>
                           </div>
                          
-                          <a href="#" class="text-decoration-none"
+                          <a :href="'/perfiles/doctor/' + medico.id"  class="text-decoration-none"
                             >Ver paquetes<img
                                 src="@/src/assets/arrow-next.svg"
                                 alt="Busca centro medico"

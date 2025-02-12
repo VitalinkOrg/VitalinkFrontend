@@ -153,7 +153,7 @@ const getOffers = async (type, id) => {
                 </p>
                 <p class="text-muted mb-0">Precio de referencia</p>
               </div>
-              <a href="#" class="text-decoration-none" @click.prevent="getOffers(clinica.entity_type, clinica.id)">
+              <a href="#" class="text-decoration-none"  @click="goTo(clinica.entity_type, clinica.id)">
                 Ver paquetes
                 <img
                   src="@/src/assets/arrow-next.svg"
