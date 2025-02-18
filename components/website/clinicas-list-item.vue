@@ -23,26 +23,6 @@ const getOffers = async (type, id) => {
     return (panel.value = false);
   }
 
-  /*
-  let url;
-
-  if (type === "doctor") {
-    url =
-      config.public.API_BASE_URL +
-      `/patient_dashboard/offers_by_doctor?doctor_id=${id}`;
-  } else {
-    url =
-      config.public.API_BASE_URL +
-      `/patient_dashboard/offers_by_hospital?hospital_id=${id}`;
-  }
-
-  const { data, pending } = await useFetch(url);
-  if (data.value) {
-    panel.value = true;
-    offers.value = data.value.data;
-  }
-  */
-
   // Mock data for offers
   offers.value = [
     {
@@ -153,7 +133,7 @@ const getOffers = async (type, id) => {
                 </p>
                 <p class="text-muted mb-0">Precio de referencia</p>
               </div>
-              <a href="#" class="text-decoration-none"  @click="goTo(clinica.entity_type, clinica.id)">
+              <a href="#" class="text-decoration-none"  @click.prevent="getOffers(clinica.entity_type, clinica.id)">
                 Ver paquetes
                 <img
                   src="@/src/assets/arrow-next.svg"
@@ -230,6 +210,7 @@ const getOffers = async (type, id) => {
       </div>
     </div>
   </NuxtLink>
+  <WebsiteReservarModal :isOpen="panel" :offers="offers" @close="panel = false" />
 </template>
 <style lang="scss" scoped>
   .card {
