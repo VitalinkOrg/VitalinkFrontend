@@ -210,7 +210,7 @@ const getOffers = async (type, id) => {
       </div>
     </div>
   </NuxtLink>
-  <WebsiteReservarModal :isOpen="panel" :offers="offers" @close="panel = false" />
+  <WebsiteReservarModal :isOpen="panel" :currentStep=0 :offers="offers" @close="panel = false" />
 </template>
 <style lang="scss" scoped>
   .card {

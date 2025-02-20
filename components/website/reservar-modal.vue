@@ -1,24 +1,24 @@
 <template>
   <div v-if="isOpen" class="modal-overlay z-3">
-    <div class="modal-content packs z-3">
+    <div class="modal-content packs z-3"  :class="{ confirmation: internalCurrentStep===4 }">
       <div class="modal-header">
         <h2>
           {{
-            step === 1
+            internalCurrentStep === 1
               ? "Packs de tratamientos"
               : "Solicitar cita de valoración"
           }}
         </h2>
-        <button @click="closeModal">×</button>
+        <button @click="openConfirmationModal">×</button>
       </div>
       <div class="modal-body">
         <WebsiteStepper
-          v-if="currentStep !== 0 && currentStep !== 4"
+          v-if="internalCurrentStep !== 0 && internalCurrentStep !== 4"
           :steps="steps"
-          :currentStep="currentStep"
+          :currentStep="internalCurrentStep"
         />
         <!-- Step 1: Display Plans -->
-        <div v-if="currentStep === 0">
+        <div v-if="internalCurrentStep === 0">
           <div class="container">
             <div class="row">
               <!-- Option 1 -->
@@ -282,7 +282,7 @@
         </div>
 
         <!-- Step 2: Availability Section -->
-        <div v-if="currentStep === 1">
+        <div v-if="internalCurrentStep === 1">
           <div class="card mb-4 rounded-4">
             <div class="card-body">
               <!-- Date Selection -->
@@ -400,7 +400,7 @@
             </div>
           </div>
         </div>
-        <div v-if="currentStep === 2">
+        <div v-if="internalCurrentStep === 2">
           <div class="card mb-4 rounded-4">
             <div class="card-body">
               <h4 class="h6 fw-semibold">
@@ -489,7 +489,7 @@
             </div>
           </div>
         </div>
-        <div v-if="currentStep === 3">
+        <div v-if="internalCurrentStep === 3">
           <div class="card mb-4 rounded-4">
             <div class="card-body">
               <h4 class="h6 fw-semibold">
@@ -551,7 +551,7 @@
             </div>
           </div>
         </div>
-        <div v-if="currentStep === 4">
+        <div v-if="internalCurrentStep === 4">
           <div class="card mb-4 rounded-4">
             <div class="card-body">
               <div class="confirmation-container">
@@ -629,10 +629,10 @@
       </div>
     </div>
   </div>
-  <MedicosCitaCancelModal
-    :open="openDateCancelModal"
-    :appointment="modalData"
-    @close-modal="closeModal"
+  <WebsiteReservarCancelModal
+    :isOpen="isConfirmationModalOpen"
+    @close="closeConfirmationModal"
+    @confirm-exit="closeMainModal"
   />
 </template>
 
@@ -640,10 +640,14 @@
 export default {
   props: {
     isOpen: Boolean,
+    currentStep: {
+      type: Number,
+      default: 1, // Default value if no prop is passed
+    },
   },
   data() {
     return {
-      currentStep: 0,
+      isConfirmationModalOpen: false,
       selectedMonth: null,
       selectedDay: null,
       selectedHour: null,
@@ -669,14 +673,29 @@ export default {
         "2025-02-11": ["10:30", "12:00", "15:00"],
         "2025-02-12": ["08:00", "09:30", "11:00", "13:00", "16:00"],
       },
+      internalCurrentStep: this.currentStep, // Initialize with the prop value
     };
   },
+  watch: {
+    // Watch for changes in the prop and update the internal state
+    currentStep(newVal) {
+      this.internalCurrentStep = newVal;
+    },
+  },
   methods: {
-    closeModal() {
+    openConfirmationModal() {
+      this.isConfirmationModalOpen = true;
+    },
+    closeConfirmationModal() {
+      this.isConfirmationModalOpen = false;
+    },
+    closeMainModal() {
+      this.isConfirmationModalOpen = false;
       this.$emit("close");
     },
     goToStep(step) {
-      this.currentStep = step;
+      this.internalCurrentStep = step; // Update the internal state
+      this.$emit("update:currentStep", step); // Emit an event to update the prop
     },
     handleMonthChange() {
       this.selectedDay = null;
@@ -720,7 +739,7 @@ export default {
           this.selectedDay,
           this.selectedHour
         );
-        this.goToStep(2);
+        this.goToStep(2); // Use goToStep to update the step
       }
     },
     formatDate(dateString) {
@@ -734,12 +753,11 @@ export default {
     },
     confirmReservation() {
       console.log("hello");
-      this.goToStep(4);
+      this.goToStep(4); // Use goToStep to update the step
     },
   },
 };
 </script>
-
 <style scoped>
 .modal-overlay {
   position: fixed;
@@ -759,6 +777,10 @@ export default {
   border-radius: 8px;
   max-width: 900px;
   width: 100%;
+}
+
+.modal-content.confirmation{
+  max-width: 500px;
 }
 
 .modal-header {
@@ -977,7 +999,6 @@ select {
   background-color: white;
   border-radius: 8px;
   padding: 30px;
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
   text-align: left; /* Align text to the left */
 }
 

@@ -1,6 +1,6 @@
 <script>
 import { useCookie } from "nuxt/app";
-import { doc } from "prettier";
+import { ref } from "vue";
 
 export default {
   props: {
@@ -11,6 +11,7 @@ export default {
   },
   data() {
     return {
+      panel: false,
       tab: 1,
       appointment: {
         specialty: "",
@@ -101,7 +102,7 @@ export default {
       return this.selectedMonth !== null ? this.selectedMonth + 1 : null;
     },
   },
-  methods: {
+  methods : {
     search() {
       let filter = this.doctor.servicesResult;
 
@@ -168,14 +169,18 @@ export default {
       this.open = false;
     },
     reserveAppointment() {
-      if (this.selectedHour) {
-        // Logic to reserve the appointment
-        console.log(
+      if (this.panel) { // Simplificado
+        this.panel = false;
+        return; // Salir de la función
+      }
+  
+      console.log(
           "Reserving appointment at",
           this.selectedDate,
           this.selectedHour
         );
-      }
+  
+      this.panel = true;
     },
   },
 };
@@ -719,7 +724,7 @@ export default {
               <button
                 class="btn btn-primary"
                 :disabled="!selectedHour"
-                @click="reserveAppointment"
+                @click="reserveAppointment()"
               >
                 Reservar Cita de valoración
               </button>
@@ -925,6 +930,7 @@ export default {
     :result="result"
     @close-modal="closeModal"
   />
+  <WebsiteReservarModal :isOpen="panel" :currentStep=2 :offers="offers" @close="panel = false" />
 </template>
 
 <style scoped>
