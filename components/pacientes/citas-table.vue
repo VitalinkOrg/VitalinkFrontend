@@ -1,44 +1,37 @@
-<script setup>
-const props = defineProps(["appointments"]);
-</script>
 <template>
   <div class="card">
     <div class="table-responsive" v-if="appointments !== null">
       <table class="table fw-light">
         <thead>
           <tr>
-            <th scope="col" class="text-muted">Doctor / Hospital</th>
-            <th scope="col" class="text-muted">Fecha</th>
+            <th scope="col" class="text-muted">Doctor</th>
+            <th scope="col" class="text-muted">Fecha de cita</th>
             <th scope="col" class="text-muted">Hora</th>
             <th scope="col" class="text-muted">Procedimiento</th>
-            <th scope="col" class="text-muted">Lugar</th>
-            <th scope="col" class="text-muted">Estado</th>
+            <th scope="col" class="text-muted">Código de reserva</th>
+            <th scope="col" class="text-muted">Tipo de reserva</th>
+            <th scope="col" class="text-muted">Estado de cita</th>
             <th scope="col" class="text-muted"></th>
           </tr>
         </thead>
-
         <tbody>
           <tr v-for="appointment in appointments" :key="appointment.id">
             <td>
               {{ appointment.professional_name || appointment.hospital_name }}
             </td>
             <td>{{ new Date(appointment.date).toLocaleDateString() }}</td>
-            <td>{{ appointment.time_from + " - " + appointment.time_to }}</td>
-            <td>{{ appointment.service_name }}</td>
+            <td>{{ appointment.hour }}</td>
+            <td>{{ appointment.notes }}</td>
+            <td>{{ appointment.id }}</td>
+            <td>{{ appointment.type }}</td>
             <td>
-              <small>{{ appointment.hospital_address }}</small>
-            </td>
-            <td>
-              <span class="badge bg-success-subtle rounded-5 text-dark"
-                >{{ appointment.status }} <AtomsIconsNotificationsIcon
-              /></span>
+              <span class="badge rounded-5 text-dark" :class="statusClass(appointment.status)">
+                {{ appointment.status }}
+              </span>
             </td>
             <td>
               <PacientesCancelarCitaModal
-                v-if="
-                  appointment.status !== 'COMPLETED' &&
-                  appointment.status !== 'CANCELED'
-                "
+                v-if="appointment.status !== 'CANCELED'"
                 :appointment="appointment"
               />
             </td>
@@ -65,44 +58,27 @@ const props = defineProps(["appointments"]);
       <nav>
         <ul class="pagination m-0">
           <li class="page-item">
-            <button
-              class="page-link border-0 text-nowrap"
-              @click="getCitas()"
-              aria-label="Previous"
-            >
+            <button class="page-link border-0 text-nowrap" @click="getCitas()" aria-label="Previous">
               <span aria-hidden="true">&laquo; Anterior</span>
             </button>
           </li>
           <li class="page-item">
-            <button
-              class="page-link border-0 shadow-sm mx-1 bg-light"
-              @click="getCitas()"
-            >
+            <button class="page-link border-0 shadow-sm mx-1 bg-light" @click="getCitas()">
               1
             </button>
           </li>
           <li class="page-item">
-            <button
-              class="page-link border-0 shadow-sm mx-1 bg-light"
-              @click="getCitas()"
-            >
+            <button class="page-link border-0 shadow-sm mx-1 bg-light" @click="getCitas()">
               2
             </button>
           </li>
           <li class="page-item">
-            <button
-              class="page-link border-0 shadow-sm mx-1 bg-light"
-              @click="getCitas()"
-            >
+            <button class="page-link border-0 shadow-sm mx-1 bg-light" @click="getCitas()">
               3
             </button>
           </li>
           <li class="page-item">
-            <button
-              class="page-link border-0 text-nowrap"
-              @click="getCitas()"
-              aria-label="Next"
-            >
+            <button class="page-link border-0 text-nowrap" @click="getCitas()" aria-label="Next">
               <span aria-hidden="true">Siguiente &raquo;</span>
             </button>
           </li>
@@ -111,3 +87,26 @@ const props = defineProps(["appointments"]);
     </div>
   </div>
 </template>
+
+<script setup> // Import your component
+
+const props = defineProps(["appointments"]);
+
+const statusClass = (status) => {  // statusClass as a function
+  switch (status) {
+    case "CANCELED":
+      return "bg-danger-subtle";
+    case "PENDING":
+      return "bg-warning-subtle";
+    case "CONFIRMED":
+      return "bg-primary-subtle";
+    default:
+      return "";
+  }
+};
+
+const getCitas = () => {
+  // Your logic to get citas (appointments)
+  console.log("Getting citas...");
+};
+</script>

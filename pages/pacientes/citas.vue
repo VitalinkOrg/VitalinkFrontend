@@ -1,10 +1,13 @@
 <script setup>
 import { ref } from "vue";
 import { useRefreshToken } from "#imports";
+
+// Define page meta with middleware
 definePageMeta({
   middleware: "auth-pacientes",
 });
-const config = useRuntimeConfig();
+
+/*const config = useRuntimeConfig();
 const token = useCookie("token");
 const tab = ref(1);
 const sort = ref(false);
@@ -20,8 +23,72 @@ const { data: appointments, loading } = await useFetch(
 if (appointments) {
   allAppointments.value = appointments.value;
   useRefreshToken();
-}
+} */
 
+// Mocked data for appointments
+const mockedAppointments = {
+  data: [
+    {
+      id: 1,
+      date: "2023-10-15T10:00:00Z",
+      hour: "10:00",
+      professional_name: "Dr. John Doe",
+      specialty: "Cardiology",
+      type: "Procedimiento",
+      status: "CONFIRMED",
+      notes: "Routine checkup"
+    },
+    {
+      id: 2,
+      date: "2023-10-16T11:00:00Z",
+      hour: "10:00",
+      type: "Valoración",
+      professional_name: "Dr. Jane Smith",
+      specialty: "Dermatology",
+      status: "PENDING",
+      notes: "Skin allergy consultation"
+    },
+    {
+      id: 3,
+      date: "2023-10-17T09:00:00Z",
+      hour: "10:00",
+      type: "Valoración",
+      professional_name: "Dr. Emily Davis",
+      specialty: "Orthopedics",
+      status: "CANCELED",
+      notes: "Knee pain evaluation"
+    },
+    {
+      id: 4,
+      date: "2023-10-18T14:00:00Z",
+      hour: "10:00",
+      professional_name: "Dr. Michael Brown",
+      specialty: "Neurology",
+      status: "CONFIRMED",
+      type: "Valoración",
+      notes: "Migraine follow-up"
+    },
+    {
+      id: 5,
+      date: "2023-10-19T16:00:00Z",
+      professional_name: "Dr. Sarah Wilson",
+      hour: "10:00",
+      specialty: "Pediatrics",
+      status: "PENDING",
+      type: "Procedimiento",
+      notes: "Child vaccination"
+    }
+  ]
+};
+
+// Refs for state management
+const tab = ref(1); // Active tab
+const sort = ref(false); // Sort dropdown state
+const allAppointments = ref(mockedAppointments.data); // All appointments
+const appointments = ref(mockedAppointments.data); // Filtered appointments
+const loading = ref(false); // Loading state (not used here since we're using mocked data)
+
+// Function to apply filters based on status and tab number
 const applyFilter = (statusFilter, tabNumber) => {
   let filteredAppointments = allAppointments.value;
   if (statusFilter !== "ALL") {
