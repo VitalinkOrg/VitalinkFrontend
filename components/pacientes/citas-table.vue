@@ -4,14 +4,14 @@
       <table class="table fw-light">
         <thead>
           <tr>
-            <th scope="col" class="text-muted">Doctor</th>
-            <th scope="col" class="text-muted">Fecha de cita</th>
-            <th scope="col" class="text-muted">Hora</th>
-            <th scope="col" class="text-muted">Procedimiento</th>
-            <th scope="col" class="text-muted">Código de reserva</th>
-            <th scope="col" class="text-muted">Tipo de reserva</th>
-            <th scope="col" class="text-muted">Estado de cita</th>
-            <th scope="col" class="text-muted"></th>
+            <th scope="col" class="text-muted fw-normal">Doctor</th>
+            <th scope="col" class="text-muted fw-normal">Fecha de cita</th>
+            <th scope="col" class="text-muted fw-normal">Hora</th>
+            <th scope="col" class="text-muted fw-normal">Procedimiento</th>
+            <th scope="col" class="text-muted fw-normal">Código de reserva</th>
+            <th scope="col" class="text-muted fw-normal">Tipo de reserva</th>
+            <th scope="col" class="text-muted fw-normal">Estado de cita</th>
+            <th scope="col" class="text-muted fw-normal"></th>
           </tr>
         </thead>
         <tbody>
@@ -31,7 +31,7 @@
             </td>
             <td>
               <PacientesCancelarCitaModal
-                v-if="appointment.status !== 'CANCELED'"
+                v-if="appointment.status !== 'Cancelada'"
                 :appointment="appointment"
               />
             </td>
@@ -58,27 +58,27 @@
       <nav>
         <ul class="pagination m-0">
           <li class="page-item">
-            <button class="page-link border-0 text-nowrap" @click="getCitas()" aria-label="Previous">
+            <button class="page-link border-0 text-nowrap text-muted" @click="getCitas()" aria-label="Previous">
               <span aria-hidden="true">&laquo; Anterior</span>
             </button>
           </li>
           <li class="page-item">
-            <button class="page-link border-0 shadow-sm mx-1 bg-light" @click="getCitas()">
+            <button class="border-0  mx-1 btn btn-primary" @click="getCitas()">
               1
             </button>
           </li>
           <li class="page-item">
-            <button class="page-link border-0 shadow-sm mx-1 bg-light" @click="getCitas()">
+            <button class="page-link border-0  mx-1 text-muted" @click="getCitas()">
               2
             </button>
           </li>
           <li class="page-item">
-            <button class="page-link border-0 shadow-sm mx-1 bg-light" @click="getCitas()">
+            <button class="page-link border-0  mx-1 text-muted" @click="getCitas()">
               3
             </button>
           </li>
           <li class="page-item">
-            <button class="page-link border-0 text-nowrap" @click="getCitas()" aria-label="Next">
+            <button class="page-link border-0 text-nowrap text-muted" @click="getCitas()" aria-label="Next">
               <span aria-hidden="true">Siguiente &raquo;</span>
             </button>
           </li>
@@ -94,11 +94,11 @@ const props = defineProps(["appointments"]);
 
 const statusClass = (status) => {  // statusClass as a function
   switch (status) {
-    case "CANCELED":
+    case "Cancelada":
       return "bg-danger-subtle";
-    case "PENDING":
+    case "Pendiente":
       return "bg-warning-subtle";
-    case "CONFIRMED":
+    case "Confirmada":
       return "bg-primary-subtle";
     default:
       return "";

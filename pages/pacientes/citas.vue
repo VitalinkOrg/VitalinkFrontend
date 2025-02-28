@@ -35,7 +35,7 @@ const mockedAppointments = {
       professional_name: "Dr. John Doe",
       specialty: "Cardiology",
       type: "Procedimiento",
-      status: "CONFIRMED",
+      status: "Confirmada",
       notes: "Routine checkup"
     },
     {
@@ -45,7 +45,7 @@ const mockedAppointments = {
       type: "Valoración",
       professional_name: "Dr. Jane Smith",
       specialty: "Dermatology",
-      status: "PENDING",
+      status: "Pendiente",
       notes: "Skin allergy consultation"
     },
     {
@@ -55,7 +55,7 @@ const mockedAppointments = {
       type: "Valoración",
       professional_name: "Dr. Emily Davis",
       specialty: "Orthopedics",
-      status: "CANCELED",
+      status: "Cancelada",
       notes: "Knee pain evaluation"
     },
     {
@@ -64,7 +64,7 @@ const mockedAppointments = {
       hour: "10:00",
       professional_name: "Dr. Michael Brown",
       specialty: "Neurology",
-      status: "CONFIRMED",
+      status: "Confirmada",
       type: "Valoración",
       notes: "Migraine follow-up"
     },
@@ -74,7 +74,7 @@ const mockedAppointments = {
       professional_name: "Dr. Sarah Wilson",
       hour: "10:00",
       specialty: "Pediatrics",
-      status: "PENDING",
+      status: "Pendiente",
       type: "Procedimiento",
       notes: "Child vaccination"
     }
@@ -89,11 +89,11 @@ const appointments = ref(mockedAppointments.data); // Filtered appointments
 const loading = ref(false); // Loading state (not used here since we're using mocked data)
 
 // Function to apply filters based on status and tab number
-const applyFilter = (statusFilter, tabNumber) => {
+const applyFilter = (typeFilter, tabNumber) => {
   let filteredAppointments = allAppointments.value;
-  if (statusFilter !== "ALL") {
+  if (typeFilter !== "ALL") {
     filteredAppointments = filteredAppointments.filter(
-      (appointment) => appointment.status === statusFilter
+      (appointment) => appointment.type === typeFilter
     );
   }
   appointments.value = filteredAppointments;
@@ -115,7 +115,7 @@ const applyFilter = (statusFilter, tabNumber) => {
             <li class="col-auto nav-item">
               <button
                 class="nav-link"
-                :class="tab === 1 ? 'active' : ''"
+                :class="tab === 1 ? 'active text-primary' : 'text-muted'"
                 @click="applyFilter('ALL', 1)"
               >
                 Todas las citas
@@ -124,28 +124,19 @@ const applyFilter = (statusFilter, tabNumber) => {
             <li class="col-auto nav-item">
               <button
                 class="nav-link"
-                :class="tab === 2 ? 'active' : ''"
-                @click="applyFilter('COMPLETED', 2)"
+                :class="tab === 2 ? 'active text-primary' : 'text-muted'"
+                @click="applyFilter('Procedimiento', 2)"
               >
-                Concretadas
+                Procedimientos
               </button>
             </li>
             <li class="col-auto nav-item">
               <button
                 class="nav-link"
-                :class="tab === 3 ? 'active' : ''"
-                @click="applyFilter('CREATED', 3)"
+                :class="tab === 3 ? 'active text-primary' : 'text-muted'"
+                @click="applyFilter('Valoración', 3)"
               >
-                Pendientes
-              </button>
-            </li>
-            <li class="col-auto nav-item">
-              <button
-                class="nav-link"
-                :class="tab === 4 ? 'active' : ''"
-                @click="applyFilter('CANCELED', 4)"
-              >
-                Canceladas
+                Valoraciones
               </button>
             </li>
           </ul>
