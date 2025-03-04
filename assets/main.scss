@@ -1,0 +1,21 @@
+@import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@300;500;600;800;900&display=swap');
+// set theme colors
+$primary: #3541B4;
+$dark: #212121;
+$info: #0CADBB;
+
+.cursor-pointer:hover {
+    cursor: pointer;
+}
+
+@import "node_modules/bootstrap/scss/_functions";
+@import "node_modules/bootstrap/scss/_variables";
+@import "node_modules/bootstrap/scss/_mixins";
+
+$font-family-base: 'Montserrat', sans-serif;
+
+// Finally load bootstrap
+@import "node_modules/bootstrap/scss/bootstrap";
+
+// Load a custom font
+@import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@300;500;600;800;900&display=swap');
