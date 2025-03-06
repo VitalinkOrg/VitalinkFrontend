@@ -103,82 +103,10 @@
             4
           </div>
         </div>
-        <!-- Step 1 -->
-        <div class="modal-body" v-if="step === 1">
-          <div
-            class="bg-primary rounded-4 h-100 p-4"
-            style="--bs-bg-opacity: 0.04"
-          >
-            <div class="row row-cols-sm-2 mb-3">
-              <div class="form-group">
-                <label for="especialidad" class="form-label"
-                  >Especialidad</label
-                >
-                <select
-                  name="especialidad"
-                  id="especialidad"
-                  class="form-select"
-                >
-                  <option disabled selected>{{ service.specialty }}</option>
-                </select>
-              </div>
-              <div class="form-group">
-                <label for="procedimiento" class="form-label"
-                  >Procedimiento</label
-                >
-                <select
-                  name="procedimiento"
-                  id="procedimiento"
-                  class="form-select"
-                >
-                  <option disabled selected>{{ service.service }}</option>
-                </select>
-              </div>
-              <div class="form-group">
-                <label for="lugar" class="form-label">Lugar</label>
-                <select name="lugar" id="lugar" class="form-select">
-                  <option disabled selected>{{ service.hospital_name }}</option>
-                </select>
-              </div>
-              <div class="form-group">
-                <label for="tipodecita" class="form-label">Tipo de cita</label>
-                <select name="tipodecita" id="tipodecita" class="form-select">
-                  <option disabled selected>{{ service.cpt }}</option>
-                </select>
-              </div>
-            </div>
-          </div>
-        </div>
-        <div v-if="step === 1">
-          <div class="modal-footer">
-            <div class="col">
-              <button
-                type="button"
-                class="btn btn-white border w-100 btn-lg"
-                data-bs-dismiss="modal"
-                @click="step = 6"
-              >
-                Cancelar
-              </button>
-            </div>
-            <div class="col">
-              <button
-                type="button"
-                class="btn btn-primary w-100 btn-lg"
-                @click="nextStep"
-              >
-                Continuar
-              </button>
-            </div>
-          </div>
-          <div class="modal-footer justify-content-center" v-if="errorSchedule">
-            <p>{{ errorSchedule }}</p>
-          </div>
-        </div>
 
-        <!-- Step 2 -->
-        <div v-if="step === 2">
-          <form @submit.prevent="step = 3">
+        <!-- Step 1 -->
+        <div v-if="step === 1">
+          <form @submit.prevent="step = 2">
             <div class="modal-body">
               <div class="container">
                 <div
@@ -202,8 +130,8 @@
                       type="time"
                       id="hora"
                       name="hora"
-                      :min="service.schedule[0].open + ':00'"
-                      :max="service.schedule[0].close + ':00'"
+                      :min="props.service.schedule[0].open + ':00'"
+                      :max="props.service.schedule[0].close + ':00'"
                       v-model="time"
                       required
                       class="form-control"
@@ -218,9 +146,9 @@
                   type="button"
                   class="btn btn-white border w-100 btn-lg"
                   data-bs-dismiss="modal"
-                  @click="step = 1"
+                  @click="step = 6"
                 >
-                  Volver
+                  Cancelar
                 </button>
               </div>
               <div class="col">
@@ -231,9 +159,10 @@
             </div>
           </form>
         </div>
+        <!-- end step 1 -->
 
-        <!-- Step 3 -->
-        <div class="modal-body" v-if="step === 3">
+        <!-- Step 2 -->
+        <div class="modal-body" v-if="step === 2">
           <div
             class="bg-primary rounded-4 h-100 p-4"
             style="--bs-bg-opacity: 0.04"
@@ -352,29 +281,14 @@
               </div>
             </div>
           </div>
-
-          <div class="text-center py-3">
-            <p class="fs-5 mb-1">
-              <span class="text-muted">Precio final del servicio</span>
-              <span class="fw-semibold text-primary ms-2"
-                >{{ parseFloat(service.price).toLocaleString() }}
-                {{ service.currency }}</span
-              >
-            </p>
-            <!-- <p>
-              <small class="text-primary text-decoration-line-through"
-                >Antes ₡44000.00</small
-              >
-            </p> -->
-          </div>
         </div>
-        <div class="modal-footer" v-if="step === 3">
+        <div class="modal-footer" v-if="step === 2">
           <div class="col">
             <button
               type="button"
               class="btn btn-white border w-100 btn-lg"
               data-bs-dismiss="modal"
-              @click="step = 2"
+              @click="step = 1"
             >
               Volver
             </button>
@@ -383,10 +297,103 @@
             <button
               type="button"
               class="btn btn-primary w-100 btn-lg"
-              @click="step = 4"
+              @click="step = 3"
             >
               Continuar
             </button>
+          </div>
+        </div>
+        <!-- end step 2 -->
+
+        <!-- Step 3 -->
+        <div class="modal-body" v-if="step === 3">
+          <div
+            class="bg-primary rounded-4 h-100 p-4"
+            style="--bs-bg-opacity: 0.04"
+          >
+            <div class="row row-cols-sm-2 mb-3">
+              <div class="form-group">
+                <label for="especialidad" class="form-label"
+                  >Especialidad</label
+                >
+                <select
+                  name="especialidad"
+                  id="especialidad"
+                  class="form-select"
+                >
+                  <option disabled selected>
+                    {{ props.service.specialty }}
+                  </option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label for="procedimiento" class="form-label"
+                  >Procedimiento</label
+                >
+                <select
+                  name="procedimiento"
+                  id="procedimiento"
+                  class="form-select"
+                >
+                  <option disabled selected>{{ props.service.service }}</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label for="lugar" class="form-label">Lugar</label>
+                <select name="lugar" id="lugar" class="form-select">
+                  <option disabled selected>
+                    {{ props.service.hospital_name }}
+                  </option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label for="tipodecita" class="form-label">Tipo de cita</label>
+                <select name="tipodecita" id="tipodecita" class="form-select">
+                  <option disabled selected>{{ props.service.cpt }}</option>
+                </select>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div v-if="step === 3">
+          <div class="modal-footer">
+            <div class="col">
+              <button
+                type="button"
+                class="btn btn-white border w-100 btn-lg"
+                data-bs-dismiss="modal"
+                @click="step = 2"
+              >
+                Volver
+              </button>
+            </div>
+            <div class="col">
+              <button
+                type="button"
+                class="btn btn-primary w-100 btn-lg"
+                @click="nextStep"
+              >
+                Continuar
+              </button>
+            </div>
+          </div>
+          <div class="modal-footer justify-content-center" v-if="errorSchedule">
+            <p>{{ errorSchedule }}</p>
+          </div>
+
+          <div class="text-center py-3">
+            <p class="fs-5 mb-1">
+              <span class="text-muted">Precio final del servicio</span>
+              <span class="fw-semibold text-primary ms-2"
+                >{{ parseFloat(props.service.price).toLocaleString() }}
+                {{ props.service.currency }}</span
+              >
+            </p>
+            <!-- <p>
+              <small class="text-primary text-decoration-line-through"
+                >Antes ₡44000.00</small
+              >
+            </p> -->
           </div>
         </div>
 
@@ -402,15 +409,15 @@
             </dl>
             <dl>
               <dt>Hospital o centro</dt>
-              <dd>{{ service.hospital_name }}</dd>
+              <dd>{{ props.service.hospital_name }}</dd>
             </dl>
             <dl>
               <dt>Especialidad / motivo</dt>
-              <dd>{{ service.service }}</dd>
+              <dd>{{ props.service.service }}</dd>
             </dl>
-            <dl v-if="service.doctor_name">
+            <dl v-if="props.service.doctor_name">
               <dt>Médico / Especialista</dt>
-              <dd>{{ service.doctor_name }}</dd>
+              <dd>{{ props.service.doctor_name }}</dd>
             </dl>
             <dl v-if="user_info">
               <dt>Paciente titular</dt>
@@ -423,12 +430,13 @@
             <dl>
               <dt>Precio Final del servicio</dt>
               <dd>
-                {{ parseFloat(service.price).toLocaleString() }}
-                {{ service.currency }}
+                {{ parseFloat(props.service.price).toLocaleString() }}
+                {{ props.service.currency }}
               </dd>
             </dl>
           </div>
         </div>
+
         <div v-if="step === 4">
           <div class="modal-footer">
             <div class="col">
@@ -481,19 +489,19 @@
               <dl>
                 <dt class="text-white">Hospital o centro</dt>
                 <dd class="text-primary fw-semibold">
-                  {{ service.hospital_name }}
+                  {{ props.service.hospital_name }}
                 </dd>
               </dl>
               <dl>
                 <dt class="text-white">Especialidad / motivo</dt>
                 <dd class="text-primary fw-semibold">
-                  {{ service.service }}
+                  {{ props.service.service }}
                 </dd>
               </dl>
-              <dl v-if="service.doctor_name">
+              <dl v-if="props.service.doctor_name">
                 <dt class="text-white">Médico / Especialista</dt>
                 <dd class="text-primary fw-semibold">
-                  {{ service.doctor_name }}
+                  {{ props.service.doctor_name }}
                 </dd>
               </dl>
               <dl>
@@ -509,8 +517,8 @@
               <dl>
                 <dt class="text-white">Precio Final del servicio</dt>
                 <dd class="text-primary fw-semibold">
-                  {{ parseFloat(service.price).toLocaleString() }}
-                  {{ service.currency }}
+                  {{ parseFloat(props.service.price).toLocaleString() }}
+                  {{ props.service.currency }}
                 </dd>
               </dl>
             </div>
@@ -580,7 +588,7 @@
   </div>
 </template>
 
-<script setup>
+<script lang="ts" setup>
 import { ref, defineProps } from "vue";
 const router = useRouter();
 const config = useRuntimeConfig();
@@ -623,14 +631,14 @@ const { data: insurances } = await useFetch(
   config.public.API_BASE_URL + "/insurances/get_insurances",
   {
     transform: (_insurances) => _insurances.data,
-  }
+  },
 );
 
 function nextStep() {
-  if (!props.service.schedule) {
+  if (!props.props.service.schedule) {
     errorSchedule.value = "No hay disponibilidad para este servicio.";
   } else {
-    step.value = 2;
+    step.value = 4;
   }
 }
 
@@ -645,15 +653,15 @@ const createAppointment = async () => {
         time_from: time.value,
         time_to: "13:00",
         status: "CREATED",
-        service_code: props.service.service_code,
-        specialty_code: props.service.specialty_code,
-        cpt_code: props.service.cpt_code,
-        hospital_id: props.service.hospital_id,
+        service_code: props.props.service.service_code,
+        specialty_code: props.props.service.specialty_code,
+        cpt_code: props.props.service.cpt_code,
+        hospital_id: props.props.service.hospital_id,
         doctor_id: Number(route.params.doctor),
         patient_id: user_info.value.id,
         is_in_person: 1,
       },
-    }
+    },
   );
   if (data.value) {
     step.value = 5;

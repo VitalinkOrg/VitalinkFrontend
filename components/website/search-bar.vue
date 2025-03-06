@@ -36,7 +36,7 @@ export default {
           ...(this.filtersData.entity !== ""
             ? { entity_type: this.filtersData.entity }
             : {}),
-            ...(this.filtersData.specialties
+          ...(this.filtersData.specialties
             ? { specialty: this.filtersData.specialties.code }
             : {}),
         },
@@ -50,48 +50,53 @@ export default {
   <div>
     <div class="card shadow border-0 rounded-4">
       <div class="card-body">
-        <form class="row align-items-end justify-content-between" @submit.prevent="searchResults">
+        <form
+          class="row align-items-end justify-content-between"
+          @submit.prevent="searchResults"
+        >
           <!-- <form class="d-flex align-items-end" action="/buscar/wovnworv"> -->
-            <div class="col-md-3 form-group">
-              <label for="procedimiento" class="form-label text-uppercase"
-                >Procedimiento</label
-              >
-              <input
-                type="text"
-                class="form-control"
-                v-model="filtersData.procedimiento"
-                id="procedimiento"
-                placeholder="Operacion de cataratas"
-                aria-describedby="procedimiento-help"
-              />
-              <!-- <div id="procedimiento-help" class="form-text ">We'll never share your email with anyone else.</div> -->
-            </div>
-            <div class="col-md-3 form-group">
-              <label for="lugar" class="form-label">Lugar</label>
-              <input
-                type="text"
-                class="form-control"
-                v-model="lugar"
-                id="lugar"
-                aria-describedby="lugar-help"
-                placeholder="Costa Rica"
-              />
-              <!-- <div id="lugar-help" class="form-text ">We'll never share your email with anyone else.</div> -->
-            </div>
-            <div class="col-md-3 form-group">
-              <label for="vaucher" class="form-label">Código de Vaucher</label>
-              <input
-                type="text"
-                class="form-control"
-                v-model="vaucher"
-                id="vaucher"
-                aria-describedby="vaucher-help"
-                placeholder="Código de Vaucher"
-              />
-              <!-- <div id="vaucher-help" class="form-text ">We'll never share your email with anyone else.</div> -->
-            </div>
+          <div class="col-md-3 form-group">
+            <label for="procedimiento" class="form-label text-uppercase"
+              >Procedimiento</label
+            >
+            <input
+              type="text"
+              class="form-control"
+              v-model="filtersData.procedimiento"
+              id="procedimiento"
+              placeholder="Operacion de cataratas"
+              aria-describedby="procedimiento-help"
+            />
+            <!-- <div id="procedimiento-help" class="form-text ">We'll never share your email with anyone else.</div> -->
+          </div>
+          <div class="col-md-3 form-group">
+            <label for="lugar" class="form-label">Lugar</label>
+            <input
+              type="text"
+              class="form-control"
+              v-model="lugar"
+              id="lugar"
+              aria-describedby="lugar-help"
+              placeholder="Costa Rica"
+            />
+            <!-- <div id="lugar-help" class="form-text ">We'll never share your email with anyone else.</div> -->
+          </div>
+          <div class="col-md-3 form-group">
+            <label for="vaucher" class="form-label">Código de Vaucher</label>
+            <input
+              type="text"
+              class="form-control"
+              v-model="vaucher"
+              id="vaucher"
+              aria-describedby="vaucher-help"
+              placeholder="Código de Vaucher"
+            />
+            <!-- <div id="vaucher-help" class="form-text ">We'll never share your email with anyone else.</div> -->
+          </div>
           <div class="form-group col-md-2">
-            <button type="submit" class="btn btn-warning px-4 w-100">Buscar</button>
+            <button type="submit" class="btn btn-warning px-4 w-100">
+              Buscar
+            </button>
           </div>
         </form>
       </div>

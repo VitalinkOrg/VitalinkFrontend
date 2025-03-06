@@ -1,5 +1,6 @@
 <script>
-import { useCookie } from 'nuxt/app';
+import { useCookie } from "nuxt/app";
+import { doc } from "prettier";
 export default {
   props: {
     doctor: {
@@ -8,6 +9,33 @@ export default {
     },
   },
   data() {
+    const doctorReviews = [
+      {
+        first_name: "John",
+        last_name: "Doe",
+        message: "Great doctor! Very attentive and professional.",
+        reply: "Thank you for your kind words!",
+      },
+      {
+        first_name: "Jane",
+        last_name: "Smith",
+        message: "Had a wonderful experience. Highly recommend.",
+        reply: "We appreciate your feedback!",
+      },
+      {
+        first_name: "Alice",
+        last_name: "Johnson",
+        message: "The doctor was very knowledgeable and helpful.",
+        reply: "Glad to hear that you had a good experience!",
+      },
+    ];
+    const doctorHistory =
+      "Desde su fundación en 1985, la Clínica Oftalmológica Santa Lucía ha sido un faro de excelencia en la atención visual. Inspirados por la misión de proporcionar cuidado ocular de calidad, comenzamos como una pequeña clínica con un compromiso inquebrantable con la salud visual. Con el tiempo, hemos crecido y evolucionado, incorporando las últimas tecnologías y atrayendo a un equipo de oftalmólogos altamente especializados. La historia de Santa Lucía es la narrativa de décadas dedicadas a mejorar la visión y transformar vidas a través de un enfoque centrado en el paciente.";
+    const doctorVision =
+      "En la Clínica Oftalmológica Santa Lucía, visualizamos un futuro donde cada individuo experimente una visión óptima y una calidad de vida mejorada. Nos esforzamos por ser líderes en innovación oftalmológica, introduciendo tecnologías avanzadas y prácticas médicas progresistas. Aspiramos a expandir nuestro alcance, brindando atención oftalmológica accesible y de calidad a comunidades en todo el país. Nuestra visión es ser reconocidos como el referente en excelencia oftalmológica, marcando el camino hacia un mundo donde la visión es valorada, protegida y optimizada.";
+    const doctorMision =
+      "La misión de la Clínica Oftalmológica Santa Lucía es simple pero profunda: brindar atención oftalmológica compasiva y de vanguardia para preservar y mejorar la salud visual de nuestros pacientes. Nos comprometemos a ofrecer diagnósticos precisos, tratamientos efectivos y cirugías oftalmológicas de alta calidad. Buscamos educar y empoderar a nuestros pacientes, fomentando un viaje hacia la claridad visual y el bienestar ocular. Nuestra misión se extiende más allá de la consulta, aspirando a ser un faro de ";
+    const breadcumCitaValoracion = 1;
     return {
       tab: 1,
       appointment: {
@@ -21,6 +49,11 @@ export default {
       result: null,
       open: false,
       errorText: "",
+      doctorReviews,
+      doctorHistory,
+      doctorVision,
+      doctorMision,
+      breadcumCitaValoracion,
     };
   },
   methods: {
@@ -52,7 +85,7 @@ export default {
     },
     closeModal() {
       this.open = false;
-    }
+    },
   },
 };
 </script>
@@ -65,7 +98,7 @@ export default {
         :class="tab === 1 ? 'active' : ''"
         @click="tab = 1"
       >
-        Disponibilidad {{ user }}
+        Servicios
       </button>
     </li>
     <li class="nav-item">
@@ -74,7 +107,7 @@ export default {
         :class="tab === 2 ? 'active' : ''"
         @click="tab = 2"
       >
-        Servicios
+        Disponibilidad {{ user }}
       </button>
     </li>
     <li class="nav-item">
@@ -118,141 +151,53 @@ export default {
   <section class="py-4 px-1">
     <!-- Dsiponibilidad  -->
     <div v-if="tab === 1">
-      <p class="fw-semibold">Reserva una cita</p>
+      <p class="fw-semibold">Servicios disponibles</p>
 
-      <div
-        class="bg-primary rounded-4 h-100 p-4 mb-3"
-        style="--bs-bg-opacity: 0.04"
-      >
-        <form @submit.prevent="search">
-          <div class="row row-cols-sm-2 mb-3">
-            <div class="form-group">
-              <label for="especialidad" class="form-label">Especialidad</label>
-              <select
-                class="form-select"
-                v-model="appointment.specialty"
-                required
-              >
-                <option
-                  v-for="service in doctor.servicesResult"
-                  :key="service.doctor_service_id"
-                  :value="service.specialty"
-                >
-                  {{service.doctor_service_id + ' ' + service.specialty }}
-                </option>
-              </select>
-            </div>
-            <div class="form-group">
-              <label for="procedimiento" class="form-label"
-                >Procedimiento</label
-              >
-              <select
-                name="procedimiento"
-                id="procedimiento"
-                class="form-select"
-                v-model="appointment.service"
-                required
-              >
-                <option
-                  v-for="service in doctor.servicesResult"
-                  :key="service.doctor_service_id"
-                  :value="service.service"
-                >
-                {{service.doctor_service_id + ' ' + service.service }}
-                </option>
-              </select>
-            </div>
-            <div class="form-group">
-              <label for="lugar" class="form-label">Lugar</label>
-              <select
-                name="lugar"
-                id="lugar"
-                class="form-select"
-                v-model="appointment.location"
-              >
-                <option
-                  v-for="service in doctor.servicesResult"
-                  :key="service.doctor_service_id"
-                  :value="service.hospital_name"
-                >
-                {{service.doctor_service_id + ' ' + service.hospital_name }}
-                </option>
-              </select>
-            </div>
-            <div class="form-group">
-              <label for="tipodecita" class="form-label">Tipo de cita</label>
-              <select
-                name="tipodecita"
-                id="tipodecita"
-                class="form-select"
-                v-model="appointment.type"
-              >
-                <option
-                  v-for="service in doctor.servicesResult"
-                  :key="service.doctor_service_id"
-                  :value="service.cpt"
-                >
-                {{service.doctor_service_id + ' ' + service.cpt }}
-                </option>
-              </select>
-            </div>
-          </div>
-
-          <div class="d-flex justify-content-end">
-            <button type="submit" class="btn btn-outline-primary rounded-4">
-              <AtomsIconsActualizarIcon /> Actualizar Búsqueda
-            </button>
-          </div>
-        </form>
-        <hr />
-
-        <div
-          v-if="result"
-          class="d-flex align-items-center justify-content-between"
+      <!-- doctor specialities -->
+      <div>
+        <button
+          v-for="service in doctor.servicesResult"
+          :key="service.doctor_service_id"
+          @click="appointment.specialty = service.specialty"
+          class="btn btn-primary m-2"
         >
-          <div>
-            <div class="btn btn-outline-primary rounded-5">
-              Váucher: <strong>Ninguno</strong>
-            </div>
-            <button class="btn text-primary"><AtomsIconsPlusIcon /></button>
-          </div>
-          <div class="d-flex flex-column">
-            <span class="fs-6">Precio final del servicio:</span>
-            <span class="fs-5 fw-semibold"
-              >{{ parseFloat(result.price).toLocaleString() }}
-              {{ result.currency }}</span
-            >
-            <!-- <small class="text-muted"
-              >Precio original
-              <span class="text-decoration-line-through"
-                >₡33000 CRC</span
-              ></small
-            > -->
-          </div>
-        </div>
+          {{ service.specialty }}
+        </button>
       </div>
 
       <div v-if="result && result.schedule">
         <form @submit.prevent="openConfirmationModal">
           <div class="mb-2 row align-items-center justify-content-between">
-            <span class="col-md-4 fw-semibold">Resultados de la Disponibilidad:</span>
-            <div class="col-md-8 row gap-2 align-items-center justify-content-center justify-content-md-end">
-              <div class="col-auto btn rounded-5 btn-outline-success btn-sm me-1">
+            <span class="col-md-4 fw-semibold"
+              >Resultados de la Disponibilidad:</span
+            >
+            <div
+              class="col-md-8 row gap-2 align-items-center justify-content-center justify-content-md-end"
+            >
+              <div
+                class="col-auto btn rounded-5 btn-outline-success btn-sm me-1"
+              >
                 <small>
                   {{ this.appointment.specialty }}
                 </small>
               </div>
-              <div class="col-auto btn rounded-5 btn-outline-success btn-sm me-1">
+              <div
+                class="col-auto btn rounded-5 btn-outline-success btn-sm me-1"
+              >
                 <small>
                   {{ this.appointment.service }}
                 </small>
               </div>
-              <div class="col-auto btn rounded-5 btn-outline-success btn-sm me-1">
+              <div
+                class="col-auto btn rounded-5 btn-outline-success btn-sm me-1"
+              >
                 <small>
                   {{ this.appointment.location }}
                 </small>
               </div>
-              <div class="col-auto btn rounded-5 btn-outline-success btn-sm me-1">
+              <div
+                class="col-auto btn rounded-5 btn-outline-success btn-sm me-1"
+              >
                 <small>
                   {{ this.appointment.type }}
                 </small>
@@ -309,7 +254,128 @@ export default {
       <div v-else>
         <p>{{ errorText }}</p>
       </div>
+
+      <p>Procedimientos avanzados para el tratamiento de cataratas</p>
+      <p>Packs:</p>
+
+      <!-- plans -->
+      <div class="container">
+        <div class="row">
+          <!-- standard -->
+          <div class="col-4">
+            <div class="card">
+              <div class="card-header text-center">Standard</div>
+              <div class="card-body">
+                <h5 class="card-title">23.000 USD</h5>
+                <p class="card-text">Precio original 28.000 USD</p>
+                <p class="card-text">
+                  <i class="bi bi-star-fill"></i>
+                  <i class="bi bi-star-fill"></i>
+                  <i class="bi bi-star-fill"></i>
+                  <i class="bi bi-star-fill"></i>
+                  <i class="bi bi-star-fill"></i>
+                  (15 Reseñas)
+                </p>
+                <ul class="list-group list-group-flush">
+                  <li class="list-group-item">Cita de valoración</li>
+                  <li class="list-group-item">Medicamentos</li>
+                  <li class="list-group-item">
+                    Cita de seguimiento <br />
+                    1 mes después.
+                  </li>
+                </ul>
+                <p class="card-text">
+                  Próxima Disponibilidad: 19/10/2024 11:00 am
+                </p>
+                <button
+                  class="btn btn-outline-primary"
+                  @click="openConfirmationModal()"
+                >
+                  Solicitar cita de valoración
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- premium -->
+          <div class="col-4">
+            <div class="card">
+              <div class="card-header text-center">Premium</div>
+              <div class="card-body">
+                <h5 class="card-title">23.000 USD</h5>
+                <p class="card-text">Precio original 28.000 USD</p>
+                <p class="card-text">
+                  <i class="bi bi-star-fill"></i>
+                  <i class="bi bi-star-fill"></i>
+                  <i class="bi bi-star-fill"></i>
+                  <i class="bi bi-star-fill"></i>
+                  <i class="bi bi-star-fill"></i>
+                  (15 Reseñas)
+                </p>
+                <ul class="list-group list-group-flush">
+                  <li class="list-group-item">Cita de valoración</li>
+                  <li class="list-group-item">Medicamentos</li>
+                  <li class="list-group-item">
+                    Cita de seguimiento <br />
+                    1 mes después.
+                  </li>
+                </ul>
+                <p class="card-text">
+                  Próxima Disponibilidad: 19/10/2024 11:00 am
+                </p>
+                <button
+                  class="btn btn-outline-primary"
+                  @click="openConfirmationModal()"
+                  data-bs-toggle="modal"
+                  data-bs-target="#modalCitaValoracion"
+                >
+                  Solicitar cita de valoración
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- basic -->
+          <div class="col-4">
+            <div class="card">
+              <div class="card-header text-center">Pack basic</div>
+              <div class="card-body">
+                <h5 class="card-title">23.000 USD</h5>
+                <p class="card-text">Precio original 28.000 USD</p>
+                <p class="card-text">
+                  <i class="bi bi-star-fill"></i>
+                  <i class="bi bi-star-fill"></i>
+                  <i class="bi bi-star-fill"></i>
+                  <i class="bi bi-star-fill"></i>
+                  <i class="bi bi-star-fill"></i>
+                  (15 Reseñas)
+                </p>
+                <ul class="list-group list-group-flush">
+                  <li class="list-group-item">Cita de valoración</li>
+                  <li class="list-group-item">Medicamentos</li>
+                  <li class="list-group-item">
+                    Cita de seguimiento <br />
+                    1 mes después.
+                  </li>
+                </ul>
+                <p class="card-text">
+                  Próxima Disponibilidad: 19/10/2024 11:00 am
+                </p>
+                <button
+                  class="btn btn-outline-primary"
+                  @click="openConfirmationModal()"
+                  data-bs-toggle="modal"
+                  data-bs-target="#modalCitaValoracion"
+                >
+                  Solicitar cita de valoración
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
+
     <!-- Servicios  -->
     <WebsiteClinicaServiciosTab
       :services="doctor.servicesResult"
@@ -347,6 +413,55 @@ export default {
             </a>
           </div>
         </div>
+
+        <!-- calendar -->
+        <div class="col-12">
+          <div class="row mb-5">
+            <div class="col-12"><p>Seleccionar fecha</p></div>
+            <div class="col-12">
+              <div class="row">
+                <div class="col-12">
+                  <div class="day-container">
+                    <div class="day day-active">5</div>
+                    <div class="day">6</div>
+                    <div class="day">7</div>
+                    <div class="day">8</div>
+                    <div class="day">9</div>
+                    <div class="day">10</div>
+                    <div class="day">11</div>
+                    <div class="day">12</div>
+                    <div class="day">13</div>
+                    <div class="day">14</div>
+                    <div class="day">15</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="row">
+            <div class="col-12"><p>Seleccionar fecha</p></div>
+            <div class="col-12">
+              <div class="row">
+                <div class="col-12">
+                  <div class="day-container">
+                    <div class="hour"><span> 11:00 AM </span></div>
+                    <div class="hour"><span>12:00 AM</span></div>
+                    <div class="hour"><span> 01:00 AM </span></div>
+                    <div class="hour"><span> 02:00 AM </span></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="row">
+            <div class="col-12 d-flex justify-content-end">
+              <button class="btn btn-primary">Reservar cita</button>
+            </div>
+          </div>
+        </div>
+
         <div class="col">
           <AtomsMapaInteractivo />
         </div>
@@ -469,7 +584,7 @@ export default {
         </div>
       </div>
       <div class="row row-cols-md-3">
-        <div class="col" v-for="review in doctor.reviews" :key="review.length">
+        <div class="col" v-for="review in doctorReviews" :key="review.length">
           <div class="card rounded-4 shadow-sm border-none">
             <div class="card-body">
               <div class="text-warning">
@@ -489,8 +604,135 @@ export default {
     </div>
     <!-- Perfil  -->
     <div v-if="tab === 6">
-      <h5>Nuestra historia</h5>
-      <p>{{ doctor.doctor_information.personal.description }}</p>
+      <div class="row">
+        <div class="col-12">
+          <h5>Nuestra historia</h5>
+          <p>{{ doctorHistory }}</p>
+        </div>
+      </div>
+
+      <div class="row">
+        <div class="col-12">
+          <h5>Visión</h5>
+          <p>{{ doctorVision }}</p>
+        </div>
+      </div>
+
+      <div class="row">
+        <div class="col-12">
+          <h5>Misión</h5>
+          <p>{{ doctorMision }}</p>
+        </div>
+      </div>
     </div>
   </section>
+
+  <!-- modals -->
+  <div>
+    <div
+      class="modal fade"
+      id="modalCitaValoracion"
+      tabindex="-1"
+      aria-labelledby="exampleModalLabel"
+      aria-hidden="true"
+    >
+      <div class="modal-dialog">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title" id="exampleModalLabel">Título del Modal</h5>
+            <button
+              type="button"
+              class="btn-close"
+              data-bs-dismiss="modal"
+              aria-label="Close"
+            ></button>
+          </div>
+
+          <!-- modal content -->
+          <div class="modal-body">
+            <nav aria-label="breadcrumb">
+              <ol class="breadcrumb">
+                <li
+                  :class="{ active: breadcumCitaValoracion == 1 }"
+                  class="breadcrumb-item"
+                  aria-current="page"
+                >
+                  1
+                </li>
+                <li
+                  :class="{ active: breadcumCitaValoracion == 2 }"
+                  class="breadcrumb-item active"
+                  aria-current="page"
+                >
+                  2
+                </li>
+                <li
+                  :class="{ active: breadcumCitaValoracion == 3 }"
+                  class="breadcrumb-item active"
+                  aria-current="page"
+                >
+                  3
+                </li>
+              </ol>
+            </nav>
+          </div>
+          <div class="modal-footer">
+            <button
+              type="button"
+              class="btn btn-secondary"
+              data-bs-dismiss="modal"
+            >
+              Cerrar
+            </button>
+            <button type="button" class="btn btn-primary">
+              Guardar cambios
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <WebsiteConfirmationCitaModal
+    :open="open"
+    :appointment="appointment"
+    :result="result"
+    @close-modal="closeModal"
+  />
 </template>
+
+<style scoped>
+.day-container {
+  display: flex;
+  /* margin-top: 20px; */
+}
+
+.day {
+  width: 41px;
+  height: 40px;
+  text-align: center;
+  line-height: 40px;
+  background-color: #f0f0f0;
+  border-radius: 5px;
+  margin: 10px;
+}
+
+.day-active {
+  background-color: #007bff;
+  color: white;
+}
+
+.hour {
+  width: auto;
+  height: 40px;
+  text-align: center;
+  line-height: 40px;
+  background-color: #f0f0f0;
+  border-radius: 5px;
+  margin: 10px;
+}
+
+.hour > span {
+  padding: 16px;
+}
+</style>

@@ -1,1 +1,0 @@
-export { default } from "file:///Users/lisandrobigi/Desktop/pengyi-labs/VitalinkFrontend/node_modules/@nuxt/vite-builder/dist/runtime/vite-node.mjs"

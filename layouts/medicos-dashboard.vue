@@ -68,8 +68,16 @@ const logout = () => {
             Servicios
           </NuxtLink>
           <div class="ms-5">
-            <NuxtLink href="/medicos/servicios" class="nav-link rounded-3 text-secondary"><small>Mis Servicios</small></NuxtLink>
-            <NuxtLink href="/medicos/servicios/agregar" class="nav-link fs-6 rounded-3 text-secondary"><small>Agregar Servicio</small></NuxtLink>
+            <NuxtLink
+              href="/medicos/servicios"
+              class="nav-link rounded-3 text-secondary"
+              ><small>Mis Servicios</small></NuxtLink
+            >
+            <NuxtLink
+              href="/medicos/servicios/agregar"
+              class="nav-link fs-6 rounded-3 text-secondary"
+              ><small>Agregar Servicio</small></NuxtLink
+            >
           </div>
         </li>
         <li class="nav-item w-100 mb-3">
@@ -85,7 +93,8 @@ const logout = () => {
             Pacientes
           </NuxtLink>
         </li>
-        <li class="nav-item w-100 mb-3" v-if="role === 'R_DOC'">
+        <li class="nav-item w-100 mb-3">
+          <!-- <li class="nav-item w-100 mb-3" v-if="role === 'R_DOC'"> -->
           <NuxtLink
             href="/medicos/hospitales"
             class="nav-link rounded-3 py-3 text-dark d-flex align-items-center"
@@ -156,12 +165,12 @@ const logout = () => {
                   data-bs-toggle="dropdown"
                   aria-expanded="false"
                 >
-                  {{ user_info.name || user_info.first_name + " " + user_info.last_name }}
+                  {{
+                    user_info.name ||
+                    user_info.first_name + " " + user_info.last_name
+                  }}
                 </button>
-                <ul
-                  class="dropdown-menu"
-                  :class="sort ? 'show' : ''"
-                >
+                <ul class="dropdown-menu" :class="sort ? 'show' : ''">
                   <li>
                     <NuxtLink class="dropdown-item" href="/medicos/perfil"
                       >Perfil
@@ -183,9 +192,9 @@ const logout = () => {
                     >
                   </li>
                   <li>
-                    <button class="dropdown-item" @click="logout"
-                      >Cerrar Sesión</button
-                    >
+                    <button class="dropdown-item" @click="logout">
+                      Cerrar Sesión
+                    </button>
                   </li>
                 </ul>
               </div>

@@ -1,7 +1,6 @@
 <script setup>
 const config = useRuntimeConfig();
 const route = useRoute();
-
 const { data: doctor, pending } = await useLazyFetch(
   config.public.API_BASE_URL + "/patient_dashboard/doctor_profile",
   {
@@ -9,7 +8,7 @@ const { data: doctor, pending } = await useLazyFetch(
       doctor_id: route.params.doctor,
     },
     transform: (_doctor) => _doctor.data,
-  }
+  },
 );
 </script>
 
@@ -20,14 +19,17 @@ const { data: doctor, pending } = await useLazyFetch(
         <div class="d-flex align-items-center mb-2">
           <nav aria-label="breadcrumb">
             <ol class="breadcrumb m-0">
-              <li class="breadcrumb-item">
-              </li>
+              <li class="breadcrumb-item"></li>
               <li class="breadcrumb-item">
                 <NuxtLink href="/" class="text-decoration-none"
                   >Inicio</NuxtLink
                 >
               </li>
-              <a href="javascript:history.back()" class="breadcrumb-item text-decoration-none">Resultados de búsqueda</a>
+              <a
+                href="javascript:history.back()"
+                class="breadcrumb-item text-decoration-none"
+                >Resultados de búsqueda</a
+              >
               <li class="breadcrumb-item active" aria-current="page">
                 Perfil médico
               </li>
@@ -166,7 +168,7 @@ const { data: doctor, pending } = await useLazyFetch(
             </div>
           </div>
           <div class="col">
-            <div class="card shadow border-0">
+            <div class="card shadow border-0" style="height: 100%">
               <div class="card-body">
                 <h3 class="fw-semibold fs-6">Detalles y Agenda</h3>
                 <p class="fw-light text-muted">

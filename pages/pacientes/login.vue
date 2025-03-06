@@ -81,7 +81,7 @@ const login = async () => {
         email,
         password,
       },
-    }
+    },
   );
   if (data.value) {
     authenticated.value = true;
@@ -109,7 +109,7 @@ const getUserInfo = async () => {
     {
       headers: { Authorization: token.value },
       transform: (_user) => _user.data,
-    }
+    },
   );
   if (user) {
     user_info.value = user.value;
@@ -123,7 +123,7 @@ const getInsuranceInfo = async () => {
     {
       headers: { Authorization: token.value },
       transform: (_user) => _user.data,
-    }
+    },
   );
   if (user) {
     user_info.value = user.value;
@@ -137,7 +137,7 @@ const getHospitalInfo = async () => {
     {
       headers: { Authorization: token.value },
       transform: (_user) => _user.data,
-    }
+    },
   );
   if (user) {
     user_info.value = user.value;
@@ -151,7 +151,7 @@ const getDoctorInfo = async () => {
     {
       headers: { Authorization: token.value },
       transform: (_user) => _user.data,
-    }
+    },
   );
   if (user) {
     user_info.value = user.value;

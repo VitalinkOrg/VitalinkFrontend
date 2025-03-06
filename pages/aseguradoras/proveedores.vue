@@ -18,7 +18,10 @@ const { data: suppliers, pending: pendingSuppliers } = await useFetch(
   <NuxtLayout name="aseguradoras-dashboard">
     <div v-if="pendingSuppliers"></div>
     <div v-else>
-      <nav style="--bs-breadcrumb-divider: '/'" aria-label="breadcrumb">
+      <nav
+        style="--bs-breadcrumb-divider: &quot;/&quot;"
+        aria-label="breadcrumb"
+      >
         <ol class="breadcrumb">
           <li class="breadcrumb-item">
             <NuxtLink href="/aseguradoras/inicio" class="text-muted"

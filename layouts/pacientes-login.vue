@@ -1,4 +1,5 @@
 <template>
+	<WebsiteNav />
   <main class="d-flex" style="background-color: #F8F8F8">
     <section class="left text-center d-sm-flex d-none">
       <NuxtLink class="logo" href="/"><img src="@/src/assets/img-vitalink-logo.svg" alt="Vitalink Logo"></NuxtLink>
@@ -6,8 +7,8 @@
       <p class="fs-5 w-50 fw-normal text-muted">¡Comienza tu viaje hacia un mejor cuidado de la salud hoy mismo!</p>
     </section>
     <section class="right">
-      <div class="card border-0 w-100" style="background-color: #F8FAFF; max-width: 30rem">
-        <div class="card-body p-5 rounded-4">
+      <div class="card border-0 w-100 h-100" style="background-color: #F8FAFF; ">
+        <div class="card-body p-5 rounded-4 h-100">
           <slot />
         </div>
       </div>
@@ -48,10 +49,6 @@ main {
 
 .right {
   padding: 1rem;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  align-items: center;
   overflow-y: auto;
 }
 </style>

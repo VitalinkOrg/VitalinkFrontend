@@ -1,13 +1,29 @@
 <script setup>
-import { ref, defineProps } from "vue";
+import { ref, defineProps, watch } from "vue";
 const emit = defineEmits(["close-modal"]);
-const config = useRuntimeConfig();
 const token = useCookie("token");
 const user_info = useCookie("user_info");
 const props = defineProps(["open", "appointment", "result"]);
 const step = ref(4);
 const route = useRoute();
 const errorText = ref(null);
+
+const appointmentTest = {
+  date: "2023-12-01",
+  time: "10:00",
+  location: "Hospital Central",
+  service: "Consulta General",
+};
+
+const resulTest = {
+  service_code: "CONSULTA",
+  specialty_code: "GEN",
+  cpt_code: "99213",
+  hospital_id: 1,
+  doctor_name: "Dr. Juan Pérez",
+  price: "50.00",
+  currency: "USD",
+};
 
 const createAppointment = async () => {
   const { data, error } = await useFetch(
@@ -16,19 +32,19 @@ const createAppointment = async () => {
       method: "POST",
       headers: { Authorization: token.value },
       body: {
-        date: props.appointment.date,
-        time_from: props.appointment.time,
+        date: appointmentTest.date,
+        time_from: appointmentTest.time,
         time_to: "13:00",
         status: "CREATED",
-        service_code: props.result.service_code,
-        specialty_code: props.result.specialty_code,
-        cpt_code: props.result.cpt_code,
-        hospital_id: props.result.hospital_id,
+        service_code: resulTest.service_code,
+        specialty_code: resulTest.specialty_code,
+        cpt_code: resulTest.cpt_code,
+        hospital_id: resulTest.hospital_id,
         doctor_id: Number(route.params.doctor),
         patient_id: user_info.value.id,
         is_in_person: 1,
       },
-    }
+    },
   );
   if (data.value) {
     step.value = 5;
@@ -52,6 +68,17 @@ function closeConfirmationModal() {
   emit("close-modal");
   step.value = 4;
 }
+
+watch(
+  () => props.open,
+  (newVal) => {
+    alert(newVal);
+    if (newVal) {
+      // Execute modal logic here
+      console.log("Modal is open");
+    }
+  },
+);
 </script>
 <template>
   <div
@@ -92,23 +119,23 @@ function closeConfirmationModal() {
               <dt>Fecha</dt>
               <dd>
                 {{
-                  new Date(appointment.date).toDateString() +
+                  new Date(appointmentTest.date).toDateString() +
                   " a las " +
-                  appointment.time
+                  appointmentTest.time
                 }}
               </dd>
             </dl>
             <dl>
               <dt>Hospital o centro</dt>
-              <dd>{{ appointment.location }}</dd>
+              <dd>{{ appointmentTest.location }}</dd>
             </dl>
             <dl>
               <dt>Especialidad / motivo</dt>
-              <dd>{{ appointment.service }}</dd>
+              <dd>{{ appointmentTest.service }}</dd>
             </dl>
-            <dl v-if="result.doctor_name">
+            <dl v-if="resulTest.doctor_name">
               <dt>Médico / Especialista</dt>
-              <dd>{{ result.doctor_name }}</dd>
+              <dd>{{ resulTest.doctor_name }}</dd>
             </dl>
             <dl v-if="user_info">
               <dt>Paciente titular</dt>
@@ -121,8 +148,8 @@ function closeConfirmationModal() {
             <dl>
               <dt>Precio Final del servicio</dt>
               <dd>
-                {{ parseFloat(result.price).toLocaleString() }}
-                {{ result.currency }}
+                {{ parseFloat(resulTest.price).toLocaleString() }}
+                {{ resulTest.currency }}
               </dd>
             </dl>
           </div>
@@ -174,28 +201,28 @@ function closeConfirmationModal() {
                 <dt class="text-white">Fecha</dt>
                 <dd class="text-primary fw-semibold">
                   {{
-                    new Date(appointment.date).toDateString() +
+                    new Date(appointmentTest.date).toDateString() +
                     " a las " +
-                    appointment.time
+                    appointmentTest.time
                   }}
                 </dd>
               </dl>
               <dl>
                 <dt class="text-white">Hospital o centro</dt>
                 <dd class="text-primary fw-semibold">
-                  {{ appointment.location }}
+                  {{ appointmentTest.location }}
                 </dd>
               </dl>
               <dl>
                 <dt class="text-white">Especialidad / motivo</dt>
                 <dd class="text-primary fw-semibold">
-                  {{ appointment.service }}
+                  {{ appointmentTest.service }}
                 </dd>
               </dl>
-              <dl v-if="result.doctor_name">
+              <dl v-if="resulTest.doctor_name">
                 <dt class="text-white">Médico / Especialista</dt>
                 <dd class="text-primary fw-semibold">
-                  {{ result.doctor_name }}
+                  {{ resulTest.doctor_name }}
                 </dd>
               </dl>
               <dl>
@@ -211,8 +238,8 @@ function closeConfirmationModal() {
               <dl>
                 <dt class="text-white">Precio Final del servicio</dt>
                 <dd class="text-primary fw-semibold">
-                  {{ parseFloat(result.price).toLocaleString() }}
-                  {{ result.currency }}
+                  {{ parseFloat(resulTest.price).toLocaleString() }}
+                  {{ resulTest.currency }}
                 </dd>
               </dl>
             </div>

@@ -88,19 +88,31 @@
             <ul class="dropdown-menu dropdown-menu-end">
               <li>
                 <a class="dropdown-item" href="/pacientes/cuenta"
-                  ><Icon name="fa6-solid:user" class="text-info" />  Mi Cuenta</a
+                  ><Icon name="fa6-solid:user" class="text-info" /> Mi Cuenta</a
                 >
               </li>
-              <li><a class="dropdown-item" href="#"><Icon name="fa6-solid:magnifying-glass" class="text-info"/>  Mis Reseñas</a></li>
+              <li>
+                <a class="dropdown-item" href="#"
+                  ><Icon name="fa6-solid:magnifying-glass" class="text-info" />
+                  Mis Reseñas</a
+                >
+              </li>
               <li>
                 <a class="dropdown-item" href="#">
-                  <AtomsIconsNotificationsIcon class="text-info"  /> Notificaciones
+                  <AtomsIconsNotificationsIcon class="text-info" />
+                  Notificaciones
                 </a>
               </li>
-              <li><a class="dropdown-item" href="/pacientes/ayuda"><Icon name="fa6-solid:circle-info" class="text-info" /> Ayuda y Soporte</a></li>
+              <li>
+                <a class="dropdown-item" href="/pacientes/ayuda"
+                  ><Icon name="fa6-solid:circle-info" class="text-info" /> Ayuda
+                  y Soporte</a
+                >
+              </li>
               <li>
                 <button class="dropdown-item a" @click="logout">
-                  <Icon name="fa6-solid:right-from-bracket" class="text-info" />  Cerrar Sesión
+                  <Icon name="fa6-solid:right-from-bracket" class="text-info" />
+                  Cerrar Sesión
                 </button>
               </li>
             </ul>

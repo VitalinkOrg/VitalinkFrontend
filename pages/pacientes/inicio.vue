@@ -11,25 +11,96 @@ const { data: appointments, pending: pendingAppointments } = await useFetch(
   {
     headers: { Authorization: token.value },
     transform: (_appointments) => _appointments.data,
-  }
+  },
 );
 
-const { data: vouchers, pending: pendingVouchers } = await useFetch(
-  config.public.API_BASE_URL + "/internal_patient_dashboard/vouchers",
+// const { data: vouchers, pending: pendingVouchers } = await useFetch(
+//   config.public.API_BASE_URL + "/internal_patient_dashboard/vouchers",
+//   {
+//     headers: { Authorization: token.value },
+//     transform: (_vouchers) => _vouchers.data,
+//   },
+// );
+const vouchers = [
   {
-    headers: { Authorization: token.value },
-    transform: (_vouchers) => _vouchers.data,
-  }
-);
+    id: 1,
+    code: "ABC123",
+    service_name: "Consulta General",
+    status: "Activo",
+  },
+  {
+    id: 2,
+    code: "DEF456",
+    service_name: "Examen de Sangre",
+    status: "Completado",
+  },
+  {
+    id: 3,
+    code: "GHI789",
+    service_name: "Radiografía",
+    status: "Pendiente",
+  },
+];
 
-const { data: historial, pending: pendingHistorial } = await useFetch(
-  config.public.API_BASE_URL +
-    "/internal_patient_dashboard/doctors_and_hospitals",
+// const { data: historial, pending: pendingHistorial } = await useFetch(
+//   config.public.API_BASE_URL +
+//     "/internal_patient_dashboard/doctors_and_hospitals",
+//   {
+//     headers: { Authorization: token.value },
+//     transform: (_historial) => _historial.data,
+//   },
+// );
+const historial = [
   {
-    headers: { Authorization: token.value },
-    transform: (_historial) => _historial.data,
-  }
-);
+    id: 1,
+    review_score: 4.5,
+    review_count: 20,
+    name: "Dr. Juan Pérez",
+    servicios: ["Cardiología", "Medicina Interna"],
+  },
+  {
+    id: 2,
+    review_score: 4.8,
+    review_count: 35,
+    name: "Dra. María López",
+    servicios: ["Pediatría", "Neonatología"],
+  },
+  {
+    id: 3,
+    review_score: 4.2,
+    review_count: 15,
+    name: "Dr. Carlos García",
+    servicios: ["Dermatología", "Cirugía Plástica"],
+  },
+  {
+    id: 4,
+    review_score: 4.9,
+    review_count: 50,
+    name: "Dra. Ana Martínez",
+    servicios: ["Ginecología", "Obstetricia"],
+  },
+  {
+    id: 5,
+    review_score: 4.7,
+    review_count: 40,
+    name: "Dr. Luis Fernández",
+    servicios: ["Neurología", "Psiquiatría"],
+  },
+  {
+    id: 6,
+    review_score: 4.3,
+    review_count: 25,
+    name: "Dra. Laura Gómez",
+    servicios: ["Oftalmología", "Optometría"],
+  },
+  {
+    id: 7,
+    review_score: 4.6,
+    review_count: 30,
+    name: "Dr. Pedro Sánchez",
+    servicios: ["Ortopedia", "Traumatología"],
+  },
+];
 </script>
 <template>
   <NuxtLayout name="pacientes-dashboard">
@@ -52,123 +123,29 @@ const { data: historial, pending: pendingHistorial } = await useFetch(
 
       <main class="pt-3 pb-5 bg-light">
         <div class="container">
-          <section class="mb-4">
-            <p class="mx-2 d-flex align-items-center justify-content-between">
-              <span class="fw-semibold fs-5">Próximas Citas</span>
-              <NuxtLink class="btn btn-link text-dark" href="/pacientes/citas"
-                >Ver Todo
-                <AtomsIconsArrowRightIcon />
-              </NuxtLink>
-            </p>
-            <div v-if="pendingAppointments"></div>
-            <div
-              v-else
-              class="card p-3 shadow-sm border-0"
-              style="min-height: 15rem"
-            >
-              <div class="table-responsive" v-if="appointments !== null">
-                <table class="table table-hover">
-                  <thead>
-                    <tr>
-                      <th scope="col">Doctor / Hospital</th>
-                      <th scope="col">Fecha</th>
-                      <th scope="col">Hora</th>
-                      <th scope="col">Procedimiento</th>
-                      <th scope="col">Lugar</th>
-                      <th scope="col">Estado</th>
-                      <th scope="col"></th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    <tr
-                      v-for="appointment in appointments"
-                      :key="appointment.id"
-                    >
-                      <th scope="row" class="fw-light">
-                        {{
-                          appointment.professional_name ||
-                          appointment.hospital_name
-                        }}
-                      </th>
-                      <td class="fw-light">
-                        {{ new Date(appointment.date).toLocaleDateString() }}
-                      </td>
-                      <td class="fw-light">
-                        {{
-                          appointment.time_from + " - " + appointment.time_to
-                        }}
-                      </td>
-                      <td class="fw-light">{{ appointment.service_name }}</td>
-                      <td class="fw-light">
-                        {{ appointment.hospital_address }}
-                      </td>
-                      <td class="fw-light">
-                        <span
-                          class="badge bg-success-subtle text-dark rounded-5 w-100"
-                          >{{ appointment.status }}</span
-                        >
-                      </td>
-                      <td>
-                        <PacientesCancelarCitaModal
-                          v-if="
-                            appointment.status !== 'COMPLETED' &&
-                            appointment.status !== 'CANCELED'
-                          "
-                          :appointment="appointment"
-                        />
-                      </td>
-                    </tr>
-                  </tbody>
-                </table>
-              </div>
-              <div v-else class="card-body d-flex py-5">
-                <div class="col-sm-5 text-end">
-                  <AtomsIconsChartVacio />
-                </div>
-                <div class="col-sm-7">
-                  <p class="fs-5 text-muted fw-medium">
-                    Aún no tienes actividad en tu tablero
-                  </p>
-                  <p class="fw-light text-secondary">
-                    Muy pronto podrás administrar y verificar tu actividad.
-                  </p>
-                  <button class="btn btn-primary border-danger">Empezar</button>
-                </div>
-              </div>
-            </div>
-          </section>
           <section class="mb-5 pb-5">
             <div class="row">
               <div class="col">
                 <p
                   class="mx-2 d-flex align-items-center justify-content-between"
                 >
-                  <span class="fw-semibold fs-5"
-                    >Historial de Hospitales y Médicos</span
-                  >
-                  <NuxtLink
-                    class="btn btn-link text-dark"
-                    href="/pacientes/inicio"
-                    >Ver Todo
-                    <AtomsIconsArrowRightIcon />
-                  </NuxtLink>
+                  <span class="fw-semibold fs-5">Recomendados</span>
                 </p>
-                <div v-if="pendingHistorial"></div>
-                <div v-else class="card shadow-sm border-0 h-100">
-                  <div v-if="historial !== null" class="card-body">
+                <div v-if="historial !== null" class="card-body">
+                  <div class="row pb-3">
                     <div
+                      class="card col-2 p-2 m-2"
                       v-for="medico in historial"
                       :key="medico.id"
-                      class="row border-bottom pb-3"
                     >
-                      <div class="col-3">
+                      <div class="col-12">
                         <img
                           src="@/src/assets/img-medico-thumbnail.png"
                           alt=""
                           class="img-fluid"
                         />
                       </div>
-                      <div class="col-md-6">
+                      <div class="col-12">
                         <div class="fs-5">
                           {{ medico.review_score }}
                           <AtomsIconsStar />
@@ -188,71 +165,22 @@ const { data: historial, pending: pendingHistorial } = await useFetch(
                       </div>
                     </div>
                   </div>
-                  <div v-else class="card-body d-flex py-5">
-                    <div class="col-sm-5 text-end">
-                      <AtomsIconsChartVacio />
-                    </div>
-                    <div class="col-sm-7">
-                      <p class="fs-5 text-muted fw-medium">
-                        Aún no tienes actividad en tu tablero
-                      </p>
-                      <p class="fw-light text-secondary">
-                        Muy pronto podrás administrar y verificar estadísticas y
-                        actividades de los usuarios de Vitalink.
-                      </p>
-                      <button class="btn btn-primary border-danger">
-                        Empezar
-                      </button>
-                    </div>
-                  </div>
                 </div>
-              </div>
-              <div class="col-md-6">
-                <p
-                  class="mx-2 d-flex align-items-center justify-content-between"
-                >
-                  <span class="fw-semibold fs-5">Mis Váuchers</span>
-                  <NuxtLink
-                    class="btn btn-link text-dark"
-                    href="/pacientes/vauchers"
-                    >Ver Todo
-                    <AtomsIconsArrowRightIcon />
-                  </NuxtLink>
-                </p>
-                <div v-if="pendingVouchers"></div>
-                <div v-else class="card shadow-sm border-0 h-100">
-                  <div class="table-responsive" v-if="vouchers !== null">
-                    <table class="table table-hover">
-                      <tbody>
-                        <tr v-for="voucher in vouchers" :key="voucher.id">
-                          <td class="fw-semibold fs-5">#{{ voucher.code }}</td>
-                          <td class="fs-5">{{ voucher.service_name }}</td>
-                          <td>
-                            <span
-                              class="badge bg-success-subtle text-dark rounded-5 w-100 fs-5"
-                              >{{ voucher.status }}</span
-                            >
-                          </td>
-                        </tr>
-                      </tbody>
-                    </table>
+                <div v-else class="card-body d-flex py-5">
+                  <div class="col-sm-5 text-end">
+                    <AtomsIconsChartVacio />
                   </div>
-                  <div v-else class="card-body d-flex py-5">
-                    <div class="col-sm-5 text-end">
-                      <AtomsIconsChartVacio />
-                    </div>
-                    <div class="col-sm-7">
-                      <p class="fs-5 text-muted fw-medium">
-                        Aún no tienes actividad en tu tablero
-                      </p>
-                      <p class="fw-light text-secondary">
-                        Muy pronto podrás administrar y verificar estadísticas y
-                        actividades de los usuarios de Vitalink.
-                      </p>
-                      <button class="btn btn-primary border-danger">
-                        Empezar
-                      </button>
-                    </div>
+                  <div class="col-sm-7">
+                    <p class="fs-5 text-muted fw-medium">
+                      Aún no tienes actividad en tu tablero
+                    </p>
+                    <p class="fw-light text-secondary">
+                      Muy pronto podrás administrar y verificar estadísticas y
+                      actividades de los usuarios de Vitalink.
+                    </p>
+                    <button class="btn btn-primary border-danger">
+                      Empezar
+                    </button>
                   </div>
                 </div>
               </div>

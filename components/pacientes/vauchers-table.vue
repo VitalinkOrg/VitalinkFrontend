@@ -35,8 +35,10 @@ const props = defineProps(["vouchers"]);
             <td>{{ voucher.code }}</td>
             <!-- <td>{{ vaucher.fecha }} a las {{ vaucher.hora }}</td> -->
             <td>{{ voucher.service_name }}</td>
-            <td>{{ voucher.description }}</td>
-            <td>{{ voucher.insurance_name }}</td>
+            <!-- <td>{{ voucher.description }}</td> -->
+            <td>{{ voucher.location }}</td>
+            <!-- <td>{{ voucher.insurance_name }}</td> -->
+            <td>{{ voucher.service_name }}</td>
             <td>
               <span class="badge bg-success-subtle rounded-5 text-dark"
                 >{{ voucher.status }}

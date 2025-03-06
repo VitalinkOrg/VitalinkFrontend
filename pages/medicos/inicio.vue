@@ -1,4 +1,17 @@
 <script setup>
+import { Bar, Doughnut } from "vue-chartjs";
+import {
+  Chart as ChartJS,
+  Title,
+  Tooltip,
+  Legend,
+  ArcElement,
+  BarElement,
+  CategoryScale,
+  LinearScale,
+  Colors,
+} from "chart.js";
+
 definePageMeta({
   middleware: ["auth-doctors-hospitals"],
 });
@@ -14,24 +27,151 @@ if (role.value == "R_HOS") {
   url = "/doctor_dashboard/";
 }
 
-const { data: procedures, pending: pendingProcedures } = await useFetch(
-  config.public.API_BASE_URL + url + "count_procedures",
-  {
-    headers: { Authorization: token.value },
-    transform: (_procedures) => _procedures.data[0],
-  }
-);
+// real function
+// const { data: procedures, pending: pendingProcedures } = await useFetch(
+//   config.public.API_BASE_URL + url + "count_procedures",
+//   {
+//     headers: { Authorization: token.value },
+//     transform: (_procedures) => _procedures.data[0],
+//   }
+// );
+const procedures = {
+  pending_appointments: 10,
+  completed_appointments: 2,
+  reviews_count: 8,
+  unique_service_codes_count: 4,
+};
 
-const { data: appointments, loading } = await useFetch(
-  config.public.API_BASE_URL + url + "history_appointments",
+// original function
+// const { data: appointments, loading } = await useFetch(
+//   config.public.API_BASE_URL + url + "history_appointments",
+//   {
+//     headers: { Authorization: token.value },
+//     transform: (_appointments) => _appointments.data,
+//   },
+// );
+const appointments = [
   {
-    headers: { Authorization: token.value },
-    transform: (_appointments) => _appointments.data,
-  }
-);
+    id: 1,
+    patient_name: "Juan Perez",
+    date: "2023-10-01",
+    time_from: "10:00",
+    time_to: "11:00",
+    service_name: "Consulta General",
+    patient_address: "Calle Falsa 123",
+    code: "ABC123",
+    status: "PENDING",
+  },
+  {
+    id: 2,
+    patient_name: "Maria Lopez",
+    date: "2023-10-02",
+    time_from: "12:00",
+    time_to: "13:00",
+    service_name: "Odontología",
+    patient_address: "Avenida Siempre Viva 742",
+    code: "DEF456",
+    status: "COMPLETED",
+  },
+  {
+    id: 3,
+    patient_name: "Carlos Sanchez",
+    date: "2023-10-03",
+    time_from: "14:00",
+    time_to: "15:00",
+    service_name: "Cardiología",
+    patient_address: "Calle Luna 456",
+    code: "GHI789",
+    status: "CANCELED",
+  },
+];
 if (appointments) {
   useRefreshToken();
 }
+
+ChartJS.register(
+  Title,
+  Tooltip,
+  Legend,
+  ArcElement,
+  BarElement,
+  CategoryScale,
+  LinearScale,
+  Colors,
+);
+const chartData = {
+  labels: [
+    "Enero",
+    "Febrero",
+    "Marzo",
+    "Abril",
+    "Mayo",
+    "Junio",
+    "Julio",
+    "Agosto",
+    "Septiembre",
+    "Octubre",
+    "Noviembre",
+    "Diciembre",
+  ],
+  datasets: [
+    {
+      label: "Citas por Mes",
+      data: Array.from({ length: 12 }, () => Math.floor(Math.random() * 100)),
+      backgroundColor: [
+        "#FF6384",
+        "#36A2EB",
+        "#FFCE56",
+        "#4BC0C0",
+        "#9966FF",
+        "#FF9F40",
+        "#FF6384",
+        "#36A2EB",
+        "#FFCE56",
+        "#4BC0C0",
+        "#9966FF",
+        "#FF9F40",
+      ],
+    },
+  ],
+};
+
+const chartOptions = {
+  responsive: true,
+  plugins: {
+    legend: {
+      position: "top",
+    },
+    title: {
+      display: true,
+      text: "Citas por Mes",
+    },
+  },
+};
+
+const doughnutData = {
+  labels: ["Valor Único"],
+  datasets: [
+    {
+      label: "Doughnut Chart",
+      data: [100],
+      backgroundColor: ["#FF6384"],
+    },
+  ],
+};
+
+const singleValueOptions = {
+  responsive: true,
+  plugins: {
+    legend: {
+      position: "top",
+    },
+    title: {
+      display: true,
+      text: "Valor Único",
+    },
+  },
+};
 </script>
 <template>
   <NuxtLayout name="medicos-dashboard">
@@ -178,18 +318,19 @@ if (appointments) {
         </p>
         <div class="card border-0 shadow rounded-3 py-5 h-100">
           <div class="card-body d-flex align-items-center p-5">
-            <AtomsIconsChartVacio />
-            <p class="d-flex flex-column align-items-start ms-3">
-              <span class="fw-medium text-muted fs-5"
-                >Aún no tienes actividad en tu tablero</span
-              >
-              <span class="fw-light text-muted"
-                >Muy pronto podrás administrar y verificar tu actividad.</span
-              >
-              <button class="btn btn-primary btn-sm mt-2 rounded-3">
-                Empezar
-              </button>
-            </p>
+            <!-- <AtomsIconsChartVacio /> -->
+            <!-- <p class="d-flex flex-column align-items-start ms-3"> -->
+            <!--   <span class="fw-medium text-muted fs-5" -->
+            <!--     >Aún no tienes actividad en tu tablero</span -->
+            <!--   > -->
+            <!--   <span class="fw-light text-muted" -->
+            <!--     >Muy pronto podrás administrar y verificar tu actividad.</span -->
+            <!--   > -->
+            <!--   <button class="btn btn-primary btn-sm mt-2 rounded-3"> -->
+            <!--     Empezar -->
+            <!--   </button> -->
+            <!-- </p> -->
+            <Bar :data="chartData" :options="chartOptions" />
           </div>
         </div>
       </div>
@@ -203,20 +344,21 @@ if (appointments) {
         </p>
         <div class="card border-0 shadow rounded-3 h-100">
           <div class="card-body d-flex flex-column text-center p-5">
-            <span class="w-75 mx-auto">
-              <AtomsIconsChartVacio />
-            </span>
-            <p class="d-flex flex-column align-items-start ms-3">
-              <span class="fw-medium text-muted fs-6"
-                >Aún no tienes actividad en tu tablero</span
-              >
-              <span class="fw-light text-muted fs-6"
-                >Muy pronto podrás administrar y verificar tu actividad.</span
-              >
-              <button class="btn btn-primary btn-sm mt-2 rounded-3 mx-auto">
-                Empezar
-              </button>
-            </p>
+            <!-- <span class="w-75 mx-auto"> -->
+            <!--   <AtomsIconsChartVacio /> -->
+            <!-- </span> -->
+            <!-- <p class="d-flex flex-column align-items-start ms-3"> -->
+            <!--   <span class="fw-medium text-muted fs-6" -->
+            <!--     >Aún no tienes actividad en tu tablero</span -->
+            <!--   > -->
+            <!--   <span class="fw-light text-muted fs-6" -->
+            <!--     >Muy pronto podrás administrar y verificar tu actividad.</span -->
+            <!--   > -->
+            <!--   <button class="btn btn-primary btn-sm mt-2 rounded-3 mx-auto"> -->
+            <!--     Empezar -->
+            <!--   </button> -->
+            <!-- </p> -->
+            <Doughnut :data="doughnutData" :options="singleValueOptions" />
           </div>
         </div>
       </div>

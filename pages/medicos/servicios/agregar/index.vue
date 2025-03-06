@@ -21,7 +21,7 @@ const { data: hospitals } = await useFetch(
   }
 );
 const filteredArray = hospitals.value.filter((item) =>
-user_info.value.hospitals.includes(item.id)
+  user_info.value.hospitals.includes(item.id)
 );
 const updateDoctor = async () => {
   const { data, error } = await useFetch(
@@ -70,7 +70,7 @@ const updateHospital = async () => {
 
 <template>
   <NuxtLayout name="medicos-dashboard" v-slot="res">
-    <nav style="--bs-breadcrumb-divider: '/'" aria-label="breadcrumb">
+    <nav style="--bs-breadcrumb-divider: &quot;/&quot;" aria-label="breadcrumb">
       <ol class="breadcrumb">
         <li class="breadcrumb-item">
           <NuxtLink href="/medicos/inicio" class="text-muted">Inicio</NuxtLink>
