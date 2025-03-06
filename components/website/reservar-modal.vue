@@ -1,6 +1,9 @@
 <template>
   <div v-if="isOpen" class="modal-overlay z-3">
-    <div class="modal-content packs z-3"  :class="{ confirmation: internalCurrentStep===4 }">
+    <div
+      class="modal-content packs z-3"
+      :class="{ confirmation: internalCurrentStep === 4 }"
+    >
       <div class="modal-header">
         <h2>
           {{
@@ -557,7 +560,9 @@
               <div class="confirmation-container">
                 <div class="confirmation-content">
                   <div class="confirmation-header">
-                    <h4 class="confirmation-title text-primary">¡Felicitaciones!</h4>
+                    <h4 class="confirmation-title text-primary">
+                      ¡Felicitaciones!
+                    </h4>
                     <p class="confirmation-subtitle">
                       Te avisaremos cuando tu solicitud<br />de cita sea
                       aceptada
@@ -606,21 +611,21 @@
                     </div>
                   </div>
                   <div class="row mt-4">
-                <div class="col-12 d-flex justify-content-between">
-                  <button
-                    class="btn btn-outline-dark me-2 w-50"
-                    @click="goToStep(1)"
-                  >
-                    Descargar comprobante
-                  </button>
-                  <button
-                    class="btn btn-primary w-50"
-                    @click="confirmReservation"
-                  >
-                    Ver en Citas
-                  </button>
-                </div>
-              </div>
+                    <div class="col-12 d-flex justify-content-between">
+                      <button
+                        class="btn btn-outline-dark me-2 w-50"
+                        @click="goToStep(1)"
+                      >
+                        Descargar comprobante
+                      </button>
+                      <NuxtLink
+                        class="btn btn-primary w-50"
+                        href="/pacientes/citas"
+                      >
+                        Ver En Citas
+                      </NuxtLink>
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
@@ -779,7 +784,7 @@ export default {
   width: 100%;
 }
 
-.modal-content.confirmation{
+.modal-content.confirmation {
   max-width: 500px;
 }
 
