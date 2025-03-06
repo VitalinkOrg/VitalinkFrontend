@@ -25,13 +25,21 @@
             <td>{{ appointment.id }}</td>
             <td>{{ appointment.type }}</td>
             <td>
-              <span class="badge rounded-5 text-dark" :class="statusClass(appointment.status)">
+              <span
+                class="badge rounded-5 text-dark"
+                :class="statusClass(appointment.status)"
+                @click="openModal(appointment)"
+              >
                 {{ appointment.status }}
               </span>
             </td>
             <td>
-              <PacientesCancelarCitaModal
-                v-if="appointment.status !== 'Cancelada'"
+              <PacientesPagarCitaModal
+                v-if="appointment.status !== 'Valorado'"
+                :appointment="appointment"
+              />
+              <PacientesProcedimientoCitaModal
+                v-else
                 :appointment="appointment"
               />
             </td>
@@ -58,27 +66,41 @@
       <nav>
         <ul class="pagination m-0">
           <li class="page-item">
-            <button class="page-link border-0 text-nowrap text-muted" @click="getCitas()" aria-label="Previous">
+            <button
+              class="page-link border-0 text-nowrap text-muted"
+              @click="getCitas()"
+              aria-label="Previous"
+            >
               <span aria-hidden="true">&laquo; Anterior</span>
             </button>
           </li>
           <li class="page-item">
-            <button class="border-0  mx-1 btn btn-primary" @click="getCitas()">
+            <button class="border-0 mx-1 btn btn-primary" @click="getCitas()">
               1
             </button>
           </li>
           <li class="page-item">
-            <button class="page-link border-0  mx-1 text-muted" @click="getCitas()">
+            <button
+              class="page-link border-0 mx-1 text-muted"
+              @click="getCitas()"
+            >
               2
             </button>
           </li>
           <li class="page-item">
-            <button class="page-link border-0  mx-1 text-muted" @click="getCitas()">
+            <button
+              class="page-link border-0 mx-1 text-muted"
+              @click="getCitas()"
+            >
               3
             </button>
           </li>
           <li class="page-item">
-            <button class="page-link border-0 text-nowrap text-muted" @click="getCitas()" aria-label="Next">
+            <button
+              class="page-link border-0 text-nowrap text-muted"
+              @click="getCitas()"
+              aria-label="Next"
+            >
               <span aria-hidden="true">Siguiente &raquo;</span>
             </button>
           </li>
@@ -88,11 +110,13 @@
   </div>
 </template>
 
-<script setup> // Import your component
+<script setup>
+import { ref } from "vue";
 
 const props = defineProps(["appointments"]);
+const activeAppointment = ref(null);
 
-const statusClass = (status) => {  // statusClass as a function
+const statusClass = (status) => {
   switch (status) {
     case "Cancelada":
       return "bg-danger-subtle";
@@ -100,13 +124,20 @@ const statusClass = (status) => {  // statusClass as a function
       return "bg-warning-subtle";
     case "Confirmada":
       return "bg-primary-subtle";
+    case "Valorado":
+      return "bg-success-subtle";
     default:
       return "";
   }
 };
 
-const getCitas = () => {
-  // Your logic to get citas (appointments)
-  console.log("Getting citas...");
+const openModal = (appointment) => {
+  if (appointment.status === "Pendiente") {
+    activeAppointment.value = appointment; // Set the active appointment
+  }
+};
+
+const closeModal = () => {
+  activeAppointment.value = null; // Reset the active appointment
 };
 </script>

@@ -36,7 +36,8 @@ const mockedAppointments = {
       specialty: "Cardiology",
       type: "Procedimiento",
       status: "Confirmada",
-      notes: "Routine checkup"
+      payed: true,
+      notes: "Routine checkup",
     },
     {
       id: 2,
@@ -46,7 +47,8 @@ const mockedAppointments = {
       professional_name: "Dr. Jane Smith",
       specialty: "Dermatology",
       status: "Pendiente",
-      notes: "Skin allergy consultation"
+      payed: false,
+      notes: "Skin allergy consultation",
     },
     {
       id: 3,
@@ -56,7 +58,8 @@ const mockedAppointments = {
       professional_name: "Dr. Emily Davis",
       specialty: "Orthopedics",
       status: "Cancelada",
-      notes: "Knee pain evaluation"
+      payed: false,
+      notes: "Knee pain evaluation",
     },
     {
       id: 4,
@@ -65,8 +68,9 @@ const mockedAppointments = {
       professional_name: "Dr. Michael Brown",
       specialty: "Neurology",
       status: "Confirmada",
+      payed: true,
       type: "Valoración",
-      notes: "Migraine follow-up"
+      notes: "Migraine follow-up",
     },
     {
       id: 5,
@@ -75,10 +79,53 @@ const mockedAppointments = {
       hour: "10:00",
       specialty: "Pediatrics",
       status: "Pendiente",
+      payed: false,
       type: "Procedimiento",
-      notes: "Child vaccination"
-    }
-  ]
+      notes: "Child vaccination",
+    },
+    {
+      id: 6,
+      date: "2023-10-19T16:00:00Z",
+      professional_name: "Dr. Sarah Wilson",
+      hour: "10:00",
+      specialty: "Pediatrics",
+      status: "Valorado",
+      allowed_for_loan: true,
+      allowed_for_procedure: false,
+      valoration_description: "Paciente no apto para procedimiento",
+      payed: true,
+      type: "Procedimiento",
+      notes: "Child vaccination",
+    },
+    {
+      id: 6,
+      date: "2023-10-19T16:00:00Z",
+      professional_name: "Dr. Sarah Wilson",
+      hour: "10:00",
+      specialty: "Pediatrics",
+      status: "Valorado",
+      allowed_for_loan: false,
+      allowed_for_procedure: false,
+      valoration_description: "Paciente no apto para procedimiento",
+      payed: true,
+      type: "Procedimiento",
+      notes: "Child vaccination",
+    },
+    {
+      id: 6,
+      date: "2023-10-19T16:00:00Z",
+      professional_name: "Dr. Sarah Wilson",
+      hour: "10:00",
+      specialty: "Pediatrics",
+      status: "Valorado",
+      allowed_for_loan: false,
+      allowed_for_procedure: true,
+      valoration_description: "Paciente no apto para procedimiento",
+      payed: true,
+      type: "Procedimiento",
+      notes: "Child vaccination",
+    },
+  ],
 };
 
 // Refs for state management
