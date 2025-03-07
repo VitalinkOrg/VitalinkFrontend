@@ -34,7 +34,7 @@
         <!-- <div id="passwordHelp" class="form-text">Deben ser 8 caracteres como mínimo</div> -->
       </div>
       <div v-if="errorText">
-        <p>{{ errorText }}</p>
+        <p class="text-danger">{{ errorText }}</p>
       </div>
       <button type="submit" class="btn btn-primary w-100 mt-4">Ingresar</button>
     </form>
@@ -58,9 +58,11 @@
 </template>
 
 <script setup>
+import { jwtDecode } from "jwt-decode";
 definePageMeta({
   middleware: ["auth-login"],
 });
+
 const config = useRuntimeConfig();
 const router = useRouter();
 const token = useCookie("token");
@@ -68,28 +70,34 @@ const refreshToken = useCookie("refresh_token");
 const role = useCookie("role");
 const authenticated = useCookie("authenticated");
 const user_info = useCookie("user_info");
-const email = ref("patient@gmail.com");
-const password = ref("patient");
+const email = ref("vitalinkcr2@gmail.com");
+const password = ref("VitalinkCR2*");
 const errorText = ref(null);
+const username = ref(null);
 
 const login = async () => {
   const { data, error } = await useFetch(
-    config.public.API_BASE_URL + "/users/login",
+    config.public.API_BASE_URL + "/auth/login",
     {
       method: "POST",
       body: {
         email,
+        username,
         password,
       },
-    },
+    }
   );
   if (data.value) {
     authenticated.value = true;
     token.value = data?.value?.data?.access_token;
     refreshToken.value = data?.value?.data?.refresh_token;
-    role.value = data?.value?.data?.user_info.role;
+    role.value = "R_PAT"; // data?.value?.data?.user_info.role;
+
+    const decodedToken = jwtDecode(token.value);
+    const userId = decodedToken.id;
+
     if (role.value === "R_PAT") {
-      getUserInfo();
+      getUserInfo(userId);
     } else if (role.value === "R_INS") {
       getInsuranceInfo();
     } else if (role.value === "R_HOS") {
@@ -98,18 +106,18 @@ const login = async () => {
       getDoctorInfo();
     }
   }
-  if (error) {
+  if (error.value) {
     errorText.value = error.value.data.info;
   }
 };
 
-const getUserInfo = async () => {
+const getUserInfo = async (userId) => {
   const { data: user } = await useFetch(
-    config.public.API_BASE_URL + "/patients/getByUser",
+    config.public.API_BASE_URL + "/user/get?id=" + userId,
     {
       headers: { Authorization: token.value },
       transform: (_user) => _user.data,
-    },
+    }
   );
   if (user) {
     user_info.value = user.value;
@@ -123,7 +131,7 @@ const getInsuranceInfo = async () => {
     {
       headers: { Authorization: token.value },
       transform: (_user) => _user.data,
-    },
+    }
   );
   if (user) {
     user_info.value = user.value;
@@ -137,7 +145,7 @@ const getHospitalInfo = async () => {
     {
       headers: { Authorization: token.value },
       transform: (_user) => _user.data,
-    },
+    }
   );
   if (user) {
     user_info.value = user.value;
@@ -151,7 +159,7 @@ const getDoctorInfo = async () => {
     {
       headers: { Authorization: token.value },
       transform: (_user) => _user.data,
-    },
+    }
   );
   if (user) {
     user_info.value = user.value;
