@@ -32,7 +32,7 @@
           </li>
           <li class="nav-item">
             <NuxtLink href="/medicos/registro" class="nav-link"
-              >¿Eres Doctor o Clínica?</NuxtLink
+              >¿Eres profesional médico?</NuxtLink
             >
           </li>
           <li class="nav-item">

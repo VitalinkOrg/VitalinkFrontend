@@ -2,33 +2,13 @@
   <WebsiteNav />
   <main class="d-flex" style="background-color: #f8f8f8">
     <section class="left text-center d-sm-flex d-none">
-      <!-- <NuxtLink class="logo" href="/"><img src="@/src/assets/img-vitalink-logo.svg" alt="Vitalink Logo"></NuxtLink> -->
-      <!-- <img src="@/src/assets/img-login.png" alt=""> -->
-      <div>
-        <h1 class="text-primary">
-          Únete a la Comunidad<br />Médica de Vitalink
-        </h1>
-        <p class="fs-5 fw-light text-muted mx-auto my-4">
-          Selecciona tu Rol Médico y Comienza a Conectar con Pacientes
-        </p>
-        <div class="d-flex justify-content-center">
-          <span class="btn-custom btn-custom-active rounded-4">
-            <span class="btn-custom-check"></span>
-            <span class="btn-custom-text btn-custom-active-text fw-semibold"
-              >Médico</span
-            >
-          </span>
-          <NuxtLink
-            href="/clinicas/registro"
-            class="btn-custom btn-custom-inactive rounded-4"
-          >
-            <span class="btn-custom-check"></span>
-            <span class="btn-custom-text btn-custom-inactive-text fw-semibold"
-              >Hospital</span
-            >
-          </NuxtLink>
-        </div>
-      </div>
+      <NuxtLink class="logo" href="/"
+        ><img src="@/src/assets/img-vitalink-logo.svg" alt="Vitalink Logo"
+      /></NuxtLink>
+      <img src="@/src/assets/img-doctor-login.png" alt="" />
+      <p class="fs-5 w-50 fw-normal text-muted">
+        ¡Comienza tu viaje hacia un mejor cuidado de la salud hoy mismo!
+      </p>
     </section>
 
     <section class="right bg-light">
@@ -36,14 +16,10 @@
         <h2 class="h1 fw-bold fs-2 text-primary m-0">Registrarse</h2>
         <span class="text-primary">Es gratis y fácil</span>
       </div>
-      <div class="fw-semibold my-4">
-        <span class="text-success me-5">Datos Personales</span>
-        <span :class="tab === 2 ? 'text-success' : 'text-muted'"
-          >Información Profesional</span
-        >
+      <div class="fw-semibold my-4 d-flex">
+        <WebsiteStepper :steps="steps" :currentStep="tab" />
       </div>
       <form @submit.prevent="register">
-        <!-- TAB DATOS PERSONALES -->
         <div v-if="tab === 1">
           <label class="form-label mb-4 text-dark text-capitalize"
             >Completa los datos de registro</label
@@ -176,51 +152,87 @@
               v-model="medical_number"
               type="text"
               class="form-control"
-              placeholder="Escribe tu número de matricula"
+              placeholder="Escribe el nº de Matrícula Médica"
               id="matricula"
               required
             />
           </div>
           <div class="form-group mb-4">
-            <label for="servicios" class="form-label text-capitalize"
-              >Servicios que ofrecen</label
+            <label for="hospital" class="form-label text-capitalize"
+              >Nombre del Hospital Central</label
+            >
+            <input
+              v-model="hospital_name"
+              type="text"
+              class="form-control"
+              placeholder="Escribe el Nombre del Hospital Central"
+              id="hospital"
+              required
+            />
+          </div>
+          <div class="form-group mb-4">
+            <label for="specialties" class="form-label text-capitalize"
+              >Especialidades Médicas</label
             >
             <select
-              id="servicios"
+              id="specialties"
               class="form-select"
-              multiple
-              size="6"
-              v-model="specialtiesSelected"
+              v-model="selectedSpecialty"
             >
+              <option value="" disabled>Seleccione una especialidad</option>
               <option
                 v-for="specialty in specialties"
-                :key="specialty.id"
-                :value="specialty.code"
+                :key="specialty"
+                :value="specialty"
               >
                 {{ specialty.name }}
               </option>
             </select>
+            <div class="mt-2" v-if="specialtiesSelected.length > 0">
+              <span
+                v-for="specialtyCode in specialtiesSelected"
+                :key="specialtyCode"
+                class="badge bg-primary-subtle text-primary me-1 rounded-5"
+              >
+                {{ specialtyCode.name }}
+                <button
+                  type="button"
+                  class="btn-close btn-close-primary ms-1"
+                  aria-label="Remove"
+                  @click="removeSpecialty(specialtyCode)"
+                ></button>
+              </span>
+            </div>
           </div>
-          <div class="mb-3 form-check">
-            <input
-              type="checkbox"
-              class="form-check-input border-dark"
-              id="recordarme"
-            />
-            <label class="form-check-label border" for="recordarme"
-              >Recordarme</label
+          <div class="form-group mb-4">
+            <label for="services" class="form-label text-capitalize"
+              >Servicios que se practican</label
             >
-          </div>
-          <div class="mb-3 form-check">
-            <input
-              type="checkbox"
-              class="form-check-input border-dark"
-              id="politicas"
-            />
-            <label class="form-check-label" for="politicas"
-              >He leído y acepto la Política de Privacidad y condiciones de
-              uso</label
-            >
+            <select v-model="selectedService" class="form-select">
+              <option value="" disabled>Seleccione un servicio</option>
+              <option
+                v-for="service in availableServices"
+                :key="service"
+                :value="service"
+              >
+                {{ service.name }}
+              </option>
+            </select>
+            <div class="mt-2" v-if="selectedServices.length > 0">
+              <span
+                v-for="service in selectedServices"
+                :key="service"
+                class="badge bg-primary-subtle text-primary me-1 rounded-5"
+              >
+                {{ service.name }}
+                <button
+                  type="button"
+                  class="btn-close btn-close-primary ms-1"
+                  aria-label="Close"
+                  @click="removeService(service)"
+                ></button>
+              </span>
+            </div>
           </div>
           <button @click="tab = 1" class="btn btn-light border-dark w-100">
             <AtomsIconsArrowLeftIcon />
@@ -273,17 +285,66 @@ const last_name = ref("");
 const phone_number = ref("");
 const date_birth = ref("");
 const medical_number = ref("");
+const hospital_name = ref("");
+const selectedSpecialty = ref("");
 const specialtiesSelected = ref([]);
 const tab = ref(1);
 const errorPassword = ref("");
 const errorText = ref(null);
 
-const { data: specialties } = await useFetch(
+const specialties = ref([
+  { id: 1, code: "ophthalmology", name: "Oftalmología" },
+  { id: 2, code: "cardiology", name: "Cardiología" },
+  { id: 3, code: "dermatology", name: "Dermatología" },
+  // Add more specialties as needed
+]);
+
+// Mock Services API Response
+const availableServices = ref([
+  { id: 1, code: "surgery", name: "Cirugía" },
+  { id: 2, code: "consultation", name: "Consulta" },
+  { id: 3, code: "tests", name: "Pruebas Diagnósticas" },
+  // Add more services as needed
+]);
+
+const selectedService = ref("");
+const selectedServices = ref([]);
+
+watch(selectedService, (newService) => {
+  if (newService && !selectedServices.value.includes(newService)) {
+    selectedServices.value.push(newService);
+    selectedService.value = ""; // Reset the dropdown
+  }
+});
+
+watch(selectedSpecialty, (newSpecialty) => {
+  console.log(selectedSpecialty);
+  if (newSpecialty && !specialtiesSelected.value.includes(newSpecialty)) {
+    specialtiesSelected.value.push(newSpecialty);
+    selectedSpecialty.value = ""; // Reset selection
+  }
+});
+
+const removeService = (serviceToRemove) => {
+  selectedServices.value = selectedServices.value.filter(
+    (service) => service !== serviceToRemove
+  );
+};
+
+const removeSpecialty = (specialtyToRemove) => {
+  specialtiesSelected.value = specialtiesSelected.value.filter(
+    (specialty) => specialty !== specialtyToRemove
+  );
+};
+
+const steps = ["Datos Personales", "Información Profesional"];
+
+/*const { data: specialties } = await useFetch(
   config.public.API_BASE_URL + "/specialties",
   {
     transform: (_specialties) => _specialties.data,
-  },
-);
+  }
+);*/
 
 const nextStep = () => {
   const { value: firstNameValue } = first_name;
@@ -326,7 +387,7 @@ const register = async () => {
         medical_number,
         specialties: specialtiesSelected,
       },
-    },
+    }
   );
   if (data.value) {
     router.push("/");
@@ -353,7 +414,7 @@ main {
 
 .left {
   background-color: #ebecf7;
-  background-image: url("@/src/assets/bg-login-medicos-clinicas.svg");
+  background-image: url("@/src/assets/bg-login.svg");
   background-size: 100% auto;
   background-position: center center;
   display: flex;
