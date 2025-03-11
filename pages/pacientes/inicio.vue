@@ -4,12 +4,9 @@ definePageMeta({
 });
 const config = useRuntimeConfig();
 const token = useCookie("token");
-// const user_info = useCookie("user_info");
-const user_info = {
-  first_name: "Juan",
-  last_name: "Doe",
-  // Add other user information if needed
-};
+const user_info = useCookie("user_info");
+
+console.log(user_info);
 
 const { data: appointments, pending: pendingAppointments } = await useFetch(
   config.public.API_BASE_URL + "/internal_patient_dashboard/appointments",
@@ -18,34 +15,6 @@ const { data: appointments, pending: pendingAppointments } = await useFetch(
     transform: (_appointments) => _appointments.data,
   }
 );
-
-// const { data: vouchers, pending: pendingVouchers } = await useFetch(
-//   config.public.API_BASE_URL + "/internal_patient_dashboard/vouchers",
-//   {
-//     headers: { Authorization: token.value },
-//     transform: (_vouchers) => _vouchers.data,
-//   },
-// );
-const vouchers = [
-  {
-    id: 1,
-    code: "ABC123",
-    service_name: "Consulta General",
-    status: "Activo",
-  },
-  {
-    id: 2,
-    code: "DEF456",
-    service_name: "Examen de Sangre",
-    status: "Completado",
-  },
-  {
-    id: 3,
-    code: "GHI789",
-    service_name: "Radiografía",
-    status: "Pendiente",
-  },
-];
 
 // const { data: historial, pending: pendingHistorial } = await useFetch(
 //   config.public.API_BASE_URL +
@@ -114,9 +83,7 @@ const historial = [
       <header class="d-flex align-items-center">
         <div class="container">
           <h1 class="text-center fs-3 mb-4">
-            <span class="fw-semibold">
-              Bienvenida {{ user_info.first_name + " " + user_info.last_name }}
-            </span>
+            <span class="fw-semibold"> Bienvenida {{ user_info.name }} </span>
             <span class="fw-light ms-1">
               ¿Qué servicio médico estás buscando?
             </span>
@@ -152,8 +119,12 @@ const historial = [
                               width="67.088px"
                               height="66.975px"
                             />
-                            <div class="bg-primary d-flex p-2 score justify-content-between gap-2">
-                              <p class="text-white mb-0">{{ medico.review_score }}</p>
+                            <div
+                              class="bg-primary d-flex p-2 score justify-content-between gap-2"
+                            >
+                              <p class="text-white mb-0">
+                                {{ medico.review_score }}
+                              </p>
                               <img
                                 src="@/src/assets/star.svg"
                                 alt="Busca centro medico"
@@ -166,7 +137,9 @@ const historial = [
                             <p class="fs-5 fw-semibold mb-1">
                               {{ medico.name }}
                             </p>
-                            <div class="d-flex align-items-center mt-3 mb-0 gap-2">
+                            <div
+                              class="d-flex align-items-center mt-3 mb-0 gap-2"
+                            >
                               <img
                                 src="@/src/assets/doctor-element.svg"
                                 alt="Busca centro medico"
@@ -193,41 +166,46 @@ const historial = [
                           <p class="text-muted">Disponibilidad</p>
                           <div class="d-flex align-items-center gap-2">
                             <img
-                                src="@/src/assets/calendar.svg"
-                                alt="Busca centro medico"
-                                class="img-fluid"
+                              src="@/src/assets/calendar.svg"
+                              alt="Busca centro medico"
+                              class="img-fluid"
                             />
-                           <p class="m-0">5 de Octubre, 2025</p> 
+                            <p class="m-0">5 de Octubre, 2025</p>
                           </div>
                           <div class="d-flex align-items-center gap-2">
                             <img
-                                src="@/src/assets/clock.svg"
-                                alt="Busca centro medico"
-                                class="img-fluid"
+                              src="@/src/assets/clock.svg"
+                              alt="Busca centro medico"
+                              class="img-fluid"
                             />
-                           <p class="m-0">11:00 am</p> 
+                            <p class="m-0">11:00 am</p>
                           </div>
                         </div>
                         <div class="mt-3">
                           <span class="badge me-2 text-primary p-2"
                             >Oftalmología</span
                           >
-                          <span class="badge  me-2 text-primary p-2" >Cirugía</span>
-                          <span class="badge text-primary p-2" >Pediatría</span>
+                          <span class="badge me-2 text-primary p-2"
+                            >Cirugía</span
+                          >
+                          <span class="badge text-primary p-2">Pediatría</span>
                         </div>
-                        <div class="mt-3 d-flex justify-content-between align-items-center">
+                        <div
+                          class="mt-3 d-flex justify-content-between align-items-center"
+                        >
                           <div>
                             <p class="fw-bold mb-0">$23,200 USD</p>
                             <p class="text-muted mb-0">Precio de referencia</p>
                           </div>
-                         
-                          <a :href="'/perfiles/doctor/' + medico.id"  class="text-decoration-none"
+
+                          <a
+                            :href="'/perfiles/doctor/' + medico.id"
+                            class="text-decoration-none"
                             >Ver paquetes<img
-                                src="@/src/assets/arrow-next.svg"
-                                alt="Busca centro medico"
-                                class="img-fluid"
-                            /></a
-                          >
+                              src="@/src/assets/arrow-next.svg"
+                              alt="Busca centro medico"
+                              class="img-fluid"
+                          /></a>
                         </div>
                       </div>
                     </div>
@@ -276,11 +254,11 @@ header {
 }
 .badge {
   font-size: 0.9rem;
-  background-color: #EBECF7;
+  background-color: #ebecf7;
   border-radius: 105.022px;
 }
 
-.score{
+.score {
   width: 62px;
   border-radius: 23px;
 }

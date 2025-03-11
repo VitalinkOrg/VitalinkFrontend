@@ -13,7 +13,7 @@
               class="nav-link"
               active-class="active text-primary"
             >
-              Cuenta
+              Configuración de la cuenta
             </NuxtLink>
           </li>
           <li class="nav-item">
