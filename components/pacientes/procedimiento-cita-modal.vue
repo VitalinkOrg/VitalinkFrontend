@@ -1,8 +1,17 @@
 <template>
-  <div role="button" class="d-flex gap-2" @click="openModal">
+  <div v-if="!showStatus" role="button" class="d-flex gap-2" @click="openModal">
     <img src="@/src/assets/success.svg" class="mr-2" alt="Success" />
     <p class="text-success mb-0">Pagado</p>
   </div>
+  <span
+    v-else
+    @click="openModal"
+    role="button"
+    class="badge rounded-5 text-dark"
+    :class="statusClass(appointment.status)"
+  >
+    {{ appointment.status }}
+  </span>
   <div
     class="modal fade"
     :class="{ show: open }"
@@ -286,7 +295,8 @@
 </template>
 
 <script setup>
-import { ref } from "vue";
+import { ref, defineProps } from "vue";
+const props = defineProps(["appointment", "showStatus"]);
 
 const open = ref(false);
 const step = ref(1);
@@ -332,6 +342,21 @@ const confirmReservation = () => {
 const cancelAppointment = async () => {
   step.value = 1;
   open.value = false;
+};
+
+const statusClass = (status) => {
+  switch (status) {
+    case "Cancelada":
+      return "bg-danger-subtle";
+    case "Pendiente":
+      return "bg-warning-subtle";
+    case "Confirmada":
+      return "bg-primary-subtle";
+    case "Valorado":
+      return "bg-success-subtle";
+    default:
+      return "";
+  }
 };
 </script>
 

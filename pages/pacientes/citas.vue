@@ -68,7 +68,7 @@ const mockedAppointments = {
       professional_name: "Dr. Michael Brown",
       specialty: "Neurology",
       status: "Confirmada",
-      payed: true,
+      payed: false,
       type: "Valoración",
       notes: "Migraine follow-up",
     },

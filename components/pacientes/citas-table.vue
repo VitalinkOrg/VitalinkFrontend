@@ -25,22 +25,27 @@
             <td>{{ appointment.id }}</td>
             <td>{{ appointment.type }}</td>
             <td>
-              <span
-                class="badge rounded-5 text-dark"
-                :class="statusClass(appointment.status)"
-                @click="openModal(appointment)"
-              >
-                {{ appointment.status }}
-              </span>
+              <PacientesPagarCitaModal
+                v-if="appointment.status !== 'Valorado'"
+                :appointment="appointment"
+                :showStatus="true"
+              />
+              <PacientesProcedimientoCitaModal
+                v-else
+                :appointment="appointment"
+                :showStatus="true"
+              />
             </td>
             <td>
               <PacientesPagarCitaModal
                 v-if="appointment.status !== 'Valorado'"
                 :appointment="appointment"
+                :showStatus="false"
               />
               <PacientesProcedimientoCitaModal
                 v-else
                 :appointment="appointment"
+                :showStatus="false"
               />
             </td>
           </tr>

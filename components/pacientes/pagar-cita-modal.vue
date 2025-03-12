@@ -1,23 +1,74 @@
 <template>
-  <button
-    v-if="appointment.status == 'Confirmada' && !appointment.payed"
-    class="btn btn-outline-dark text-nowrap me-2"
-    @click="open = true"
-  >
-    Pagar ahora
-  </button>
+  <div>
+    <!-- Confirmed and not paid -->
+    <div v-if="appointment.status === 'Confirmada' && !appointment.payed">
+      <button
+        v-if="!showStatus"
+        role="button"
+        class="btn btn-outline-dark text-nowrap me-2"
+        @click="open = true"
+      >
+        Pagar ahora
+      </button>
+      <span
+        v-else
+        role="button"
+        @click="open = true"
+        class="badge rounded-5 text-dark"
+        :class="statusClass(appointment.status)"
+      >
+        {{ appointment.status }}
+      </span>
+    </div>
 
-  <div class="d-flex gap-2" v-else-if="appointment.payed">
-    <img src="@/src/assets/success.svg" class="mr-2" alt="Success" />
-    <p class="text-success mb-0">Pagado</p>
+    <!-- Paid -->
+    <div v-else-if="appointment.payed" role="button">
+      <div v-if="!showStatus" class="d-flex gap-2">
+        <img src="@/src/assets/success.svg" class="mr-2" alt="Success" />
+        <p class="text-success mb-0">Pagado</p>
+      </div>
+      <span
+        v-else
+        role="button"
+        class="badge rounded-5 text-dark"
+        :class="statusClass(appointment.status)"
+      >
+        {{ appointment.status }}
+      </span>
+    </div>
+
+    <!-- Pending -->
+    <div v-else-if="appointment.status === 'Pendiente'">
+      <button
+        v-if="!showStatus"
+        role="button"
+        class="btn btn-outline-dark text-nowrap me-2"
+        @click="open = true"
+      >
+        Cancelar cita
+      </button>
+      <span
+        v-else
+        role="button"
+        @click="open = true"
+        class="badge rounded-5 text-dark"
+        :class="statusClass(appointment.status)"
+      >
+        {{ appointment.status }}
+      </span>
+    </div>
+    <!-- Cancelled -->
+    <div v-else-if="appointment.status === 'Cancelada'">
+      <span
+        v-if="showStatus"
+        role="button"
+        class="badge rounded-5 text-dark"
+        :class="statusClass(appointment.status)"
+      >
+        {{ appointment.status }}
+      </span>
+    </div>
   </div>
-  <button
-    v-else-if="appointment.status == 'Pendiente'"
-    class="btn btn-outline-dark text-nowrap me-2"
-    @click="open = true"
-  >
-    Cancelar cita
-  </button>
   <div
     class="modal fade"
     :class="{ show: open }"
@@ -98,21 +149,20 @@
               <p class="mb-1 fw-bold">
                 <strong>Información de métodos de Pago:</strong>
               </p>
-              <p class="fw-bold mb-0">
+              <div class="d-flex gap-2">
                 <img
                   src="@/src/assets/check.svg"
+                  width="20px"
                   class="mr-2"
                   alt="Vitalink"
-                />Pagar en línea con tarjeta.
-              </p>
+                />
+                <p class="ml-2 fw-bold mb-0">Pagar en línea con tarjeta.</p>
+              </div>
               <p>Paga ahora de forma segura con tu tarjeta.</p>
-              <p class="fw-bold mb-0">
-                <img
-                  src="@/src/assets/check.svg"
-                  class="mr-2"
-                  alt="Vitalink"
-                />Pagar en consulta.
-              </p>
+              <div class="d-flex gap-2">
+                <img src="@/src/assets/check.svg" class="mr-2" alt="Vitalink" />
+                <p class="ml-2 fw-bold mb-0">Pagar en consulta.</p>
+              </div>
               <p>Pagaras directamente el día de tu cita.</p>
             </div>
             <div class="d-flex justify-content-between gap-2">
@@ -283,6 +333,56 @@
             </div>
           </div>
 
+          <div v-if="step === 5">
+            <h5 class="fw-bold">Detalles de la cita</h5>
+            <table class="table table-borderless">
+              <tbody>
+                <tr>
+                  <td><strong>Tipo de servicio:</strong></td>
+                  <td>Cita de valoración</td>
+                </tr>
+                <tr>
+                  <td><strong>Fecha de la cita:</strong></td>
+                  <td>{{ formatDate(appointment.date) }}</td>
+                </tr>
+                <tr>
+                  <td><strong>Hora de la cita:</strong></td>
+                  <td>{{ appointment.hour }}</td>
+                </tr>
+                <tr>
+                  <td><strong>Paciente titular:</strong></td>
+                  <td>{{ appointment.patient_name }}</td>
+                </tr>
+                <tr>
+                  <td><strong>Teléfono de Contacto:</strong></td>
+                  <td>{{ appointment.phone }}</td>
+                </tr>
+                <tr>
+                  <td><strong>Profesional Médico:</strong></td>
+                  <td>{{ appointment.professional_name }}</td>
+                </tr>
+                <tr>
+                  <td><strong>Estado:</strong></td>
+                  <td>
+                    <span
+                      class="badge rounded-5 text-dark"
+                      :class="statusClass('Cancelada')"
+                    >
+                      Cancelada
+                    </span>
+                  </td>
+                </tr>
+                <tr>
+                  <td><strong>Procedimiento:</strong></td>
+                  <td>{{ appointment.notes }}</td>
+                </tr>
+                <tr>
+                  <td><strong>Costo del servicio:</strong></td>
+                  <td>{{ appointment.cost }}</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
           <div class="modal-footer justify-content-center" v-if="errorText">
             <p class="text-danger">{{ errorText }}</p>
           </div>
@@ -294,7 +394,9 @@
 
 <script setup>
 import { ref, defineProps } from "vue";
-const props = defineProps(["appointment", "step"]);
+const props = defineProps(["appointment", "step", "showStatus"]);
+
+console.log(props);
 
 const open = ref(false);
 const step = ref(1);
@@ -342,8 +444,7 @@ const statusClass = (status) => {
 
 const cancelAppointment = async () => {
   // Simulate cancellation
-  step.value = 1;
-  open.value = false;
+  step.value = 5;
 };
 </script>
 
