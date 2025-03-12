@@ -88,7 +88,9 @@
             <form>
               <div class="row mb-3">
                 <div class="col-8 d-flex w-100 mb-2">
-                  <label for="procedureAmount" class="form-label"
+                  <label
+                    for="procedureAmount"
+                    class="form-label col-4 text-muted"
                     >Monto total del procedimiento:</label
                   >
                   <input
@@ -99,7 +101,7 @@
                   />
                 </div>
                 <div class="col-8 d-flex w-100">
-                  <label for="loanAmount" class="form-label"
+                  <label for="loanAmount" class="form-label col-4 text-muted"
                     >Monto del crédito al solicitar:</label
                   >
                   <input
