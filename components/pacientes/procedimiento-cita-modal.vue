@@ -1,8 +1,17 @@
 <template>
-  <div role="button" class="d-flex gap-2" @click="openModal">
+  <div v-if="!showStatus" role="button" class="d-flex gap-2" @click="openModal">
     <img src="@/src/assets/success.svg" class="mr-2" alt="Success" />
     <p class="text-success mb-0">Pagado</p>
   </div>
+  <span
+    v-else
+    @click="openModal"
+    role="button"
+    class="badge rounded-5 text-dark"
+    :class="statusClass(appointment.status)"
+  >
+    {{ appointment.status }}
+  </span>
   <div
     class="modal fade"
     :class="{ show: open }"
@@ -79,7 +88,9 @@
             <form>
               <div class="row mb-3">
                 <div class="col-8 d-flex w-100 mb-2">
-                  <label for="procedureAmount" class="form-label"
+                  <label
+                    for="procedureAmount"
+                    class="form-label col-4 text-muted"
                     >Monto total del procedimiento:</label
                   >
                   <input
@@ -90,7 +101,7 @@
                   />
                 </div>
                 <div class="col-8 d-flex w-100">
-                  <label for="loanAmount" class="form-label"
+                  <label for="loanAmount" class="form-label col-4 text-muted"
                     >Monto del crédito al solicitar:</label
                   >
                   <input
@@ -286,7 +297,8 @@
 </template>
 
 <script setup>
-import { ref } from "vue";
+import { ref, defineProps } from "vue";
+const props = defineProps(["appointment", "showStatus"]);
 
 const open = ref(false);
 const step = ref(1);
@@ -332,6 +344,21 @@ const confirmReservation = () => {
 const cancelAppointment = async () => {
   step.value = 1;
   open.value = false;
+};
+
+const statusClass = (status) => {
+  switch (status) {
+    case "Cancelada":
+      return "bg-danger-subtle";
+    case "Pendiente":
+      return "bg-warning-subtle";
+    case "Confirmada":
+      return "bg-primary-subtle";
+    case "Valorado":
+      return "bg-success-subtle";
+    default:
+      return "";
+  }
 };
 </script>
 

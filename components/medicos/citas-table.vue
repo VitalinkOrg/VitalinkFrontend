@@ -5,13 +5,19 @@ export default {
       type: Object,
       default: [],
     },
+    useDropdown: {
+      type: Boolean,
+      default: false,
+    },
   },
   data() {
     return {
       openUserModal: false,
       openDateModal: false,
+      openContactModal: false,
       openDateCancelModal: false,
       modalData: null,
+      currentStep: 1,
     };
   },
   methods: {
@@ -19,9 +25,28 @@ export default {
       this.modalData = appointment;
       this.openUserModal = true;
     },
-    showDateDetails(appointment) {
+    showContactDetails(appointment) {
+      this.modalData = appointment;
+      this.openContactModal = true;
+    },
+    showDateDetails(appointment, step) {
       this.modalData = appointment;
       this.openDateModal = true;
+      this.currentStep = step;
+    },
+    statusClass(status) {
+      switch (status) {
+        case "Cancelada":
+          return "bg-danger-subtle";
+        case "Pendiente":
+          return "bg-warning-subtle";
+        case "Confirmada":
+          return "bg-primary-subtle";
+        case "Valorado":
+          return "bg-success-subtle";
+        default:
+          return "";
+      }
     },
     showDateCancel(appointment) {
       this.modalData = appointment;
@@ -37,56 +62,51 @@ export default {
 };
 </script>
 <template>
-  <div class="card shadow rouded-3 border-0 p-3">
+  <div class="card shadow rounded-3 border-0 p-3">
     <div class="table-responsive" v-if="appointments !== null">
       <table class="table fw-light">
         <thead>
           <tr>
-            <th scope="col"></th>
             <th scope="col" class="text-muted">Nombre del paciente</th>
-            <th scope="col" class="text-muted">Fecha</th>
-            <th scope="col" class="text-muted">Hora</th>
+            <th scope="col" class="text-muted">Fecha y hora</th>
             <th scope="col" class="text-muted">Procedimiento</th>
-            <th scope="col" class="text-muted">Lugar</th>
-            <th scope="col" class="text-muted">Váucher</th>
-            <th scope="col" class="text-muted">Estado</th>
+            <th scope="col" class="text-muted">Tipo de reserva</th>
+            <th scope="col" class="text-muted">Estado de cita</th>
             <th scope="col" class="text-muted"></th>
+            <th scope="col" class="text-muted"></th>
+            <th scope="col" class="text-muted" v-if="!useDropdown"></th>
           </tr>
         </thead>
 
         <tbody>
           <tr v-for="appointment in appointments" :key="appointment.id">
-            <td>
-              <div class="form-check">
-                <input
-                  class="form-check-input border-dark"
-                  type="checkbox"
-                  value=""
-                  :id="appointment.id"
-                />
-                <!-- <label class="form-check-label" for="flexCheckDefault"></label> -->
-              </div>
-            </td>
             <td>{{ appointment.patient_name }}</td>
-            <td>{{ new Date(appointment.date).toLocaleDateString() }}</td>
-            <td>{{ appointment.time_from + " - " + appointment.time_to }}</td>
+            <td>
+              {{ new Date(appointment.date).toLocaleDateString() }} a las
+              {{ appointment.time_from }}
+            </td>
             <td>{{ appointment.service_name }}</td>
             <td>
-              <small>{{ appointment.patient_address }}</small>
-            </td>
-            <td>
-              <span class="badge text-muted bg-white border rounded-5 w-100">{{
-                appointment.code
-              }}</span>
+              <small class="text-capitalize">{{
+                appointment.appointment_type
+              }}</small>
             </td>
             <td>
               <span
-                class="badge bg-success-subtle rounded-5 text-dark text-uppercase w-100"
+                class="badge bg-success-subtle rounded-5 text-dark w-100"
+                :class="statusClass(appointment.status)"
                 >{{ appointment.status }}
-                <AtomsIconsChevronDown />
               </span>
             </td>
-            <td>
+            <td v-if="useDropdown">
+              <button
+                class="btn btn-link p-0"
+                @click="showContactDetails(appointment)"
+              >
+                <img src="@/src/assets/call.svg" alt="Ver Usuario" />
+              </button>
+            </td>
+            <td v-if="useDropdown">
               <div class="dropdown">
                 <AtomsIconsThreeDotsHorizontalIcon
                   data-bs-toggle="dropdown"
@@ -97,19 +117,56 @@ export default {
                   <li>
                     <button
                       class="dropdown-item"
-                      @click="showUserDetails(appointment)"
+                      @click="showDateDetails(appointment, 1)"
                     >
-                      Ver Usuario
+                      <Icon name="fa6-regular:eye" class="text-primary" />
+                      Ver más detalles
                     </button>
                   </li>
-                  <li>
+                  <li
+                    v-if="
+                      appointment.status == 'Pendiente' &&
+                      appointment.appointment_type == 'pre-reserva'
+                    "
+                  >
                     <button
                       class="dropdown-item"
-                      @click="showDateDetails(appointment)"
+                      @click="showDateDetails(appointment, 2)"
                     >
-                      Ver Cita
+                      <Icon name="fa6-regular:calendar" class="text-primary" />
+                      Confirmar reserva
                     </button>
                   </li>
+                  <li v-if="appointment.status == 'Pendiente'">
+                    <button
+                      class="dropdown-item"
+                      @click="showDateDetails(appointment, 6)"
+                    >
+                      <Icon
+                        :name="
+                          appointment.appointment_type == 'pre-reserva'
+                            ? 'fa6-regular:calendar'
+                            : 'fa6-regular:circle-left'
+                        "
+                        class="text-primary"
+                      />
+                      {{
+                        appointment.appointment_type == "pre-reserva"
+                          ? "Editar fecha y hora"
+                          : "Reprogramar cita"
+                      }}
+                    </button>
+                  </li>
+                  <li class="d-flex gap-2 align-items-center">
+                    <button
+                      class="dropdown-item"
+                      @click="showUserDetails(appointment)"
+                    >
+                      <Icon name="fa6-solid:user" class="text-primary" />
+                      Perfil del Paciente
+                    </button>
+                  </li>
+
                   <li
                     v-if="
                       appointment.status !== 'COMPLETED' &&
@@ -117,10 +174,23 @@ export default {
                     "
                   >
                     <button
-                      class="dropdown-item"
+                      class="dropdown-item w-100"
                       @click="showDateCancel(appointment)"
                     >
-                      Cancelar Cita
+                      <Icon
+                        name="fa6-regular:circle-xmark"
+                        class="text-primary"
+                      />
+                      Anular cita
+                    </button>
+                  </li>
+                  <li class="d-flex gap-2 align-items-center">
+                    <button
+                      class="dropdown-item"
+                      @click="showUserDetails(appointment)"
+                    >
+                      <Icon name="fa6-solid:download" class="text-primary" />
+                      Descargar Resumen
                     </button>
                   </li>
                   <!-- <li>
@@ -128,6 +198,35 @@ export default {
                 </li> -->
                 </ul>
               </div>
+            </td>
+
+            <td v-if="!useDropdown">
+              <button
+                class="btn btn-link p-0"
+                @click="showUserDetails(appointment)"
+              >
+                <img src="@/src/assets/search.svg" alt="Ver Usuario" />
+              </button>
+            </td>
+            <td v-if="!useDropdown">
+              <button
+                class="btn btn-link p-0"
+                @click="showDateDetails(appointment)"
+              >
+                <img src="@/src/assets/edit.svg" alt="Ver Cita" />
+              </button>
+            </td>
+            <td v-if="!useDropdown">
+              <button
+                v-if="
+                  appointment.status !== 'COMPLETED' &&
+                  appointment.status !== 'CANCELED'
+                "
+                class="btn btn-link p-0"
+                @click="showDateCancel(appointment)"
+              >
+                <img src="@/src/assets/remove.svg" alt="Cancelar Cita" />
+              </button>
             </td>
           </tr>
         </tbody>
@@ -206,6 +305,7 @@ export default {
     <MedicosCitaModal
       :open="openDateModal"
       :appointment="modalData"
+      v-model:step="currentStep"
       @close-modal="closeModal"
     />
     <MedicosCitaCancelModal
@@ -213,8 +313,18 @@ export default {
       :appointment="modalData"
       @close-modal="closeModal"
     />
+    <MedicosCitaContactModal
+      :open="openContactModal"
+      :appointment="modalData"
+      @close-modal="closeModal"
+    />
   </div>
 </template>
+<style>
+.cursor-pointer:hover {
+  cursor: pointer;
+}
+</style>
 <style>
 .cursor-pointer:hover {
   cursor: pointer;

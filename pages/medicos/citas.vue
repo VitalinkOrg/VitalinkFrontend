@@ -1,9 +1,9 @@
 <script setup>
 import { ref } from "vue";
 import { useRefreshToken } from "#imports";
-definePageMeta({
+/*definePageMeta({
   middleware: ["auth-doctors-hospitals"],
-});
+});*/
 const config = useRuntimeConfig();
 const token = useCookie("token");
 const role = useCookie("role");
@@ -33,8 +33,9 @@ const appointments = ref([
     time_to: "11:00",
     service_name: "Consulta General",
     patient_address: "Calle Falsa 123",
+    appointment_type: "reserva",
     code: "ABC123",
-    status: "PENDING",
+    status: "Pendiente",
   },
   {
     id: 2,
@@ -44,8 +45,9 @@ const appointments = ref([
     time_to: "13:00",
     service_name: "Odontología",
     patient_address: "Avenida Siempre Viva 742",
+    appointment_type: "pre-reserva",
     code: "DEF456",
-    status: "COMPLETED",
+    status: "Completada",
   },
   {
     id: 3,
@@ -55,8 +57,33 @@ const appointments = ref([
     time_to: "15:00",
     service_name: "Cardiología",
     patient_address: "Calle Luna 456",
+    appointment_type: "pre-reserva",
     code: "GHI789",
-    status: "CANCELED",
+    status: "Cancelada",
+  },
+  {
+    id: 4,
+    patient_name: "Carlos Sanchez",
+    date: "2023-10-03",
+    time_from: "14:00",
+    time_to: "15:00",
+    service_name: "Cardiología",
+    patient_address: "Calle Luna 456",
+    appointment_type: "pre-reserva",
+    code: "GHI789",
+    status: "Pendiente",
+  },
+  {
+    id: 4,
+    patient_name: "Carlos Sanchez",
+    date: "2023-10-03",
+    time_from: "14:00",
+    time_to: "15:00",
+    service_name: "Cardiología",
+    patient_address: "Calle Luna 456",
+    appointment_type: "reserva",
+    code: "GHI789",
+    status: "Valorado",
   },
 ]);
 if (appointments) {
@@ -68,7 +95,7 @@ const applyFilter = (statusFilter, tabNumber) => {
   let filteredAppointments = allAppointments.value;
   if (statusFilter !== "ALL") {
     filteredAppointments = filteredAppointments.filter(
-      (appointment) => appointment.status === statusFilter,
+      (appointment) => appointment.status === statusFilter
     );
   }
   appointments.value = filteredAppointments;
@@ -78,7 +105,7 @@ const applyFilter = (statusFilter, tabNumber) => {
 
 <template>
   <NuxtLayout name="medicos-dashboard">
-    <nav style="--bs-breadcrumb-divider: &quot;/&quot" aria-label="breadcrumb">
+    <nav style='--bs-breadcrumb-divider: "/&quot' aria-label="breadcrumb">
       <ol class="breadcrumb">
         <li class="breadcrumb-item">
           <NuxtLink href="/medicos/inicio" class="text-muted">Inicio</NuxtLink>
@@ -174,7 +201,7 @@ const applyFilter = (statusFilter, tabNumber) => {
     </div>
 
     <div class="card">
-      <MedicosCitasTable :appointments="appointments" />
+      <MedicosCitasTable :appointments="appointments" :useDropdown="true" />
     </div>
   </NuxtLayout>
 </template>
