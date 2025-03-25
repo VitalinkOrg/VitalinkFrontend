@@ -1,4 +1,6 @@
 <script setup>
+import { jsPDF } from "jspdf";
+import "jspdf-autotable";
 import { ref } from "vue";
 import { useRefreshToken } from "#imports";
 /*definePageMeta({
@@ -16,6 +18,100 @@ if (role.value == "R_HOS") {
 } else {
   url = "/doctor_dashboard/history_appointments";
 }
+
+const downloadAllAppointments = () => {
+  if (!allAppointments.value || allAppointments.value.length === 0) return;
+
+  const doc = new jsPDF();
+  const pageWidth = doc.internal.pageSize.getWidth();
+  const margin = 15;
+  let yPosition = 20;
+
+  // Add title
+  doc.setFontSize(18);
+  doc.setFont("helvetica", "bold");
+  doc.text("Reporte de Citas Médicas", pageWidth / 2, yPosition, {
+    align: "center",
+  });
+  yPosition += 10;
+
+  // Add date
+  doc.setFontSize(10);
+  doc.setFont("helvetica", "normal");
+  doc.text(
+    `Generado el: ${new Date().toLocaleDateString("es-ES")}`,
+    pageWidth / 2,
+    yPosition,
+    { align: "center" }
+  );
+  yPosition += 15;
+
+  // Table headers
+  doc.setFontSize(12);
+  doc.setFont("helvetica", "bold");
+  const headers = ["Paciente", "Fecha", "Hora", "Servicio", "Tipo", "Estado"];
+  const columnWidths = [40, 30, 25, 45, 25, 25];
+  let xPosition = margin;
+
+  // Draw headers
+  headers.forEach((header, i) => {
+    doc.text(header, xPosition, yPosition);
+    xPosition += columnWidths[i];
+  });
+  yPosition += 8;
+
+  // Draw line under headers
+  doc.line(margin, yPosition, pageWidth - margin, yPosition);
+  yPosition += 10;
+
+  // Table content
+  doc.setFontSize(10);
+  doc.setFont("helvetica", "normal");
+
+  allAppointments.value.forEach((appointment, index) => {
+    // Check if we need a new page
+    if (yPosition > 270) {
+      doc.addPage();
+      yPosition = 20;
+    }
+
+    const row = [
+      appointment.patient_name,
+      appointment.date,
+      `${appointment.time_from} - ${appointment.time_to}`,
+      appointment.service_name,
+      appointment.appointment_type,
+      appointment.status,
+    ];
+
+    xPosition = margin;
+    row.forEach((cell, i) => {
+      doc.text(cell, xPosition, yPosition);
+      xPosition += columnWidths[i];
+    });
+
+    yPosition += 8;
+
+    // Add light gray line between rows
+    if (index < allAppointments.value.length - 1) {
+      doc.setDrawColor(220, 220, 220);
+      doc.line(margin, yPosition - 2, pageWidth - margin, yPosition - 2);
+      doc.setDrawColor(0, 0, 0); // Reset to black
+      yPosition += 4;
+    }
+  });
+
+  // Footer
+  doc.setFontSize(8);
+  doc.setTextColor(100);
+  doc.text(`Total citas: ${allAppointments.value.length}`, margin, 280);
+  doc.text("Sistema de Gestión Médica - Vitalink", pageWidth / 2, 280, {
+    align: "center",
+  });
+
+  // Save the PDF
+  doc.save(`Reporte_Citas_${new Date().toISOString().slice(0, 10)}.pdf`);
+};
 
 // const { data: appointments, loading } = await useFetch(
 //   config.public.API_BASE_URL + url,
@@ -179,7 +275,10 @@ const applyFilter = (statusFilter, tabNumber) => {
         </div>
       </div>
       <div class="col-auto ms-auto d-flex">
-        <button class="btn btn-outline-dark text-nowrap me-2">
+        <button
+          class="btn btn-outline-dark text-nowrap me-2"
+          @click="downloadAllAppointments"
+        >
           <AtomsIconsDownloadIcon /> Descargar
         </button>
         <div class="dropdown">

@@ -1,4 +1,5 @@
 <script>
+import { jsPDF } from "jspdf";
 export default {
   props: {
     appointments: {
@@ -51,6 +52,66 @@ export default {
     showDateCancel(appointment) {
       this.modalData = appointment;
       this.openDateCancelModal = true;
+    },
+    downloadSummary(appointment) {
+      const doc = new jsPDF();
+
+      // Add logo or header
+      // doc.addImage(logo, 'JPEG', 10, 10, 50, 20);
+
+      // Title
+      doc.setFontSize(18);
+      doc.text("Detalles de la Cita Médica", 105, 20, { align: "center" });
+
+      // Line separator
+      doc.setDrawColor(200, 200, 200);
+      doc.line(20, 25, 190, 25);
+
+      // Reset font for content
+      doc.setFontSize(12);
+      doc.setFont("helvetica", "normal");
+
+      // Patient information section
+      doc.setFontSize(14);
+      doc.text("Información del Paciente", 20, 35);
+      doc.setFontSize(12);
+
+      let yPosition = 45;
+
+      // Function to add field to PDF
+      const addField = (label, value) => {
+        doc.setFont("helvetica", "bold");
+        doc.text(`${label}:`, 20, yPosition);
+        doc.setFont("helvetica", "normal");
+        doc.text(value, 60, yPosition);
+        yPosition += 7;
+      };
+
+      // Add all appointment details
+      addField("Paciente", appointment.patient_name);
+      addField("Tipo de Reserva", appointment.appointment_type);
+      addField(
+        "Fecha de la cita",
+        new Date(appointment.date).toLocaleDateString()
+      );
+      addField("Hora de la cita", appointment.time_from);
+      addField("Procedimiento", appointment.service_name);
+      addField("Estado", appointment.status);
+
+      // Footer
+      doc.setFontSize(10);
+      doc.setTextColor(100, 100, 100);
+      doc.text(
+        "Documento generado el: " + new Date().toLocaleDateString(),
+        20,
+        280
+      );
+      doc.text("Vitalink - Sistema de Gestión Médica", 105, 280, {
+        align: "center",
+      });
+
+      // Save the PDF
+      doc.save(`Cita_${appointment.patient_name}_${appointment.date}.pdf`);
     },
     closeModal() {
       this.modalData = null;
@@ -187,7 +248,7 @@ export default {
                   <li class="d-flex gap-2 align-items-center">
                     <button
                       class="dropdown-item"
-                      @click="showUserDetails(appointment)"
+                      @click="downloadSummary(appointment)"
                     >
                       <Icon name="fa6-solid:download" class="text-primary" />
                       Descargar Resumen
