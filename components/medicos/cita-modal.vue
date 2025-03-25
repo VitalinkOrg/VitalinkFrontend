@@ -83,18 +83,33 @@
                 <tr v-if="appointment.status == 'Valorado'">
                   <td class="text-muted">Proforma:</td>
                   <td>
-                    <button
-                      class="btn btn-outline-dark d-flex gap-2"
-                      @click="localStep = 6"
-                    >
-                      <img
-                        src="@/src/assets/cloud-upload.svg"
-                        width="20"
-                        class="mr-2"
-                        alt="Vitalink"
+                    <div>
+                      <input
+                        type="file"
+                        ref="proformaFile"
+                        style="display: none"
+                        @change="handleProformaUpload"
+                        accept=".pdf,.doc,.docx"
                       />
-                      Adjuntar Proforma
-                    </button>
+                      <button
+                        class="btn btn-outline-dark d-flex gap-2"
+                        @click="$refs.proformaFile.click()"
+                      >
+                        <img
+                          src="@/src/assets/cloud-upload.svg"
+                          width="20"
+                          class="mr-2"
+                          alt="Vitalink"
+                        />
+                        Adjuntar Proforma
+                      </button>
+                      <div
+                        v-if="proformaFileName"
+                        class="mt-2 text-primary fw-bold"
+                      >
+                        {{ proformaFileName }}
+                      </div>
+                    </div>
                   </td>
                 </tr>
                 <tr v-if="appointment.status == 'Valorado'">
@@ -120,14 +135,16 @@
                 </tr>
               </tbody>
             </table>
-            <span
-              class="d-flex gap-2 badge align-items-center bg-primary-subtle text-primary my-2 rounded-5"
+            <div
+              class="d-flex p-2 badge align-items-center bg-primary-subtle text-primary my-2 rounded-5"
             >
-              <p class="m-0">
+              <img src="@/src/assets/info.svg" class="mr-2" alt="Vitalink" />
+              <p class="m-0 text-wrap">
+                <!-- Added text-wrap class -->
                 Asegúrate de coordinar con el paciente antes de confirmar con la
                 cita
               </p>
-            </span>
+            </div>
             <div
               v-if="appointment.appointment_type == 'pre-reserva'"
               class="d-flex justify-content-between gap-2"
@@ -166,15 +183,15 @@
                 v-if="appointment.status == 'Valorado'"
                 class="btn btn-outline-dark w-50"
                 @click="localStep = 6"
-                disabled
+                :disabled="!proformaFileName"
               >
                 Cancelar
               </button>
               <button
                 v-if="appointment.status == 'Valorado'"
                 class="btn btn-primary w-50"
-                @click="localStep = 2"
-                disabled
+                @click="saveRecommendations"
+                :disabled="!proformaFileName"
               >
                 Guardar
               </button>
@@ -183,12 +200,24 @@
 
           <!-- Step 2: Payment Details -->
           <div v-if="localStep === 2">
+            <span
+              v-if="appointment.appointment_type == 'reserva'"
+              style="max-width: max-content"
+              class="d-flex justify-content-between gap-2 rounded-circle bg-warning-subtle text-warning p-3 my-3"
+            >
+              <img
+                src="@/src/assets/warning.svg"
+                width="20"
+                class="mr-2"
+                alt="Vitalink"
+              />
+            </span>
             <h5 class="fw-bold">¿Confirmar reserva?</h5>
             <p class="fw-bold">
               {{
                 appointment.appointment_type == "pre-reserva"
-                  ? "Con estos cambios el estado de la solicitud de reserva pasará de: pendiente a Confirmada"
-                  : "Con estos cambios el estado de la solicitud de reserva pasará de: pendiente a Valorada"
+                  ? "Con estos cambios el estado de la solicitud de reserva pasará de: Pendiente a Confirmada"
+                  : "Con estos cambios el estado de la solicitud de reserva pasará de: Pendiente a Valorada"
               }}
             </p>
             <p
@@ -224,14 +253,39 @@
 
           <!-- Step 3: Confirmation -->
           <div v-if="localStep === 3">
-            <h4 class="confirmation-title text-primary text-center">
+            <span
+              v-if="appointment.appointment_type == 'reserva'"
+              class="d-flex justify-content-start"
+            >
+              <img
+                src="@/src/assets/check.svg"
+                width="48"
+                class="mb-3"
+                alt="Vitalink"
+              />
+            </span>
+            <h4
+              class="confirmation-title text-primary"
+              :class="
+                appointment.appointment_type == 'reserva'
+                  ? 'text-success text-left fw-bold'
+                  : 'text-primary text-center'
+              "
+            >
               {{
                 appointment.appointment_type == "pre-reserva"
                   ? "¡Felicitaciones!"
                   : "¡Bien hecho!"
               }}
             </h4>
-            <p class="mb-4 text-muted text-center">
+            <p
+              class="mb-4 text-muted"
+              :class="
+                appointment.appointment_type == 'pre-reserva'
+                  ? 'text-center'
+                  : 'text-left'
+              "
+            >
               {{
                 appointment.appointment_type == "pre-reserva"
                   ? "Acabas de confirmar la cita de valoración para tu paciente."
@@ -301,9 +355,9 @@
             >
               <button
                 class="btn btn-outline-dark me-2 text-sm w-50"
-                @click="goToStep(1)"
+                @click="localStep = 1"
               >
-                Descargar comprobante
+                Ir al inicio
               </button>
               <button class="btn btn-primary w-50" @click="open = false">
                 Ver en Citas
@@ -312,7 +366,7 @@
             <div v-else class="col-12 d-flex justify-content-between gap-2">
               <button
                 class="btn btn-outline-dark me-2 text-sm w-50"
-                @click="goToStep(1)"
+                @click="localStep = 1"
               >
                 No apto para procedimiento
               </button>
@@ -546,6 +600,7 @@ import { ref, watch, toRef } from "vue";
 
 const selectedDate = ref("");
 const selectedTime = ref("");
+const proformaFileName = ref("");
 
 // Mock data for available dates and times
 const availableDates = ref(["2023-10-19", "2023-10-20", "2023-10-21"]);
@@ -588,6 +643,35 @@ const formatDate = (dateString) => {
     month: "long",
     day: "numeric",
   });
+};
+
+const handleProformaUpload = (event) => {
+  const file = event.target.files[0];
+  if (file) {
+    // Here you would typically upload the file to your server
+    // For now, we'll just store the filename
+    proformaFileName.value = file.name;
+
+    // Example of how you might handle the actual upload:
+    // const formData = new FormData();
+    // formData.append('proforma', file);
+    // axios.post('/api/upload-proforma', formData)
+    //     .then(response => {
+    //         this.proformaFileName = file.name;
+    //     })
+    //     .catch(error => {
+    //         console.error('Upload failed:', error);
+    //     });
+  }
+};
+
+const saveRecommendations = () => {
+  // Save the recommendations and any other data
+  // This would typically be an API call
+  // After successful save, you might want to:
+  // - Show a success message
+  // - Redirect or update the appointment status
+  localStep = 2;
 };
 
 const selectTime = (time) => {
