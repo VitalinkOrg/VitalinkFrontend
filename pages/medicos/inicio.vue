@@ -12,13 +12,39 @@ import {
   Colors,
 } from "chart.js";
 
-definePageMeta({
+/*definePageMeta({
   middleware: ["auth-doctors-hospitals"],
-});
+});*/
 const config = useRuntimeConfig();
 const token = useCookie("token");
 const role = useCookie("role");
-const user_info = useCookie("user_info");
+// const user_info = useCookie("user_info");
+const user_info = {
+  services: [
+    { id: 101, name: "Mock Service A" },
+    { id: 102, name: "Mock Service B" },
+  ],
+  specialties: [
+    { id: 201, name: "Mock Specialty X" },
+    { id: 202, name: "Mock Specialty Y" },
+  ],
+  hospitals: [
+    { id: 301, name: "Mock Hospital 1" },
+    { id: 302, name: "Mock Hospital 2" },
+  ],
+  first_name: "MockFirstName",
+  name: "FallbackMockFirstName", // If first_name is undefined
+  last_name: "MockLastName",
+  phone_number: "123-456-7890",
+  phone_number_1: "987-654-3210", // If phone_number is undefined
+  address: "Mock Address 123",
+  city: "Mock City",
+  country_iso_code: "MCK",
+  postal_code: "12345",
+  description: "Mock Description of User",
+  medical_license_number: "MLN-123",
+  medical_number: "MN-456", // If medical_license_number is undefined
+};
 
 let url;
 if (role.value == "R_HOS") {
@@ -60,7 +86,7 @@ const appointments = [
     service_name: "Consulta General",
     patient_address: "Calle Falsa 123",
     code: "ABC123",
-    status: "PENDING",
+    status: "Pendiente",
   },
   {
     id: 2,
@@ -71,7 +97,7 @@ const appointments = [
     service_name: "Odontología",
     patient_address: "Avenida Siempre Viva 742",
     code: "DEF456",
-    status: "COMPLETED",
+    status: "Completada",
   },
   {
     id: 3,
@@ -82,23 +108,13 @@ const appointments = [
     service_name: "Cardiología",
     patient_address: "Calle Luna 456",
     code: "GHI789",
-    status: "CANCELED",
+    status: "Cancelada",
   },
 ];
 if (appointments) {
   useRefreshToken();
 }
 
-ChartJS.register(
-  Title,
-  Tooltip,
-  Legend,
-  ArcElement,
-  BarElement,
-  CategoryScale,
-  LinearScale,
-  Colors,
-);
 const chartData = {
   labels: [
     "Enero",
@@ -118,20 +134,20 @@ const chartData = {
     {
       label: "Citas por Mes",
       data: Array.from({ length: 12 }, () => Math.floor(Math.random() * 100)),
-      backgroundColor: [
-        "#FF6384",
-        "#36A2EB",
-        "#FFCE56",
-        "#4BC0C0",
-        "#9966FF",
-        "#FF9F40",
-        "#FF6384",
-        "#36A2EB",
-        "#FFCE56",
-        "#4BC0C0",
-        "#9966FF",
-        "#FF9F40",
-      ],
+      backgroundColor: "#3541B4", // Single color for all bars
+      borderColor: "#3541B4", // Border color
+      borderWidth: 1,
+      borderRadius: 10, // Rounded borders
+      barPercentage: 0.2, // Adjust the width of the bars
+    },
+    {
+      label: "Citas Completadas", // Second set of bars
+      data: Array.from({ length: 12 }, () => Math.floor(Math.random() * 100)), // Random data for the second set
+      backgroundColor: "#0CADBB", // Color for the second set of bars
+      borderColor: "#0CADBB", // Border color for the second set
+      borderWidth: 1,
+      borderRadius: 10, // Rounded borders
+      barPercentage: 0.2, // Adjust the width of the bars
     },
   ],
 };
@@ -141,21 +157,81 @@ const chartOptions = {
   plugins: {
     legend: {
       position: "top",
+      align: "start", // Align the legend to the left
+      labels: {
+        usePointStyle: true, // Use circles instead of squares for the legend
+        pointStyle: "circle", // Set the point style to circle
+        padding: 20, // Add padding to the legend labels
+      },
     },
-    title: {
-      display: true,
-      text: "Citas por Mes",
+  },
+  scales: {
+    x: {
+      grid: {
+        display: false, // Hide grid lines on the x-axis
+      },
     },
   },
 };
+
+ChartJS.register(
+  Title,
+  Tooltip,
+  Legend,
+  ArcElement,
+  BarElement,
+  CategoryScale,
+  LinearScale,
+  Colors
+);
+
+// Custom plugin to render percentage in the center of the Doughnut chart
+// Custom plugin to render percentage in the center of the Doughnut chart
+const doughnutCenterTextPlugin = {
+  id: "doughnutCenterText",
+  afterDraw: (chart) => {
+    if (chart.config.type !== "doughnut") {
+      return;
+    }
+    const { ctx } = chart;
+    const { width, height } = chart;
+    ctx.restore();
+
+    // Get the first dataset's value (assuming only one dataset)
+    const value = chart.data.datasets[0].data[0];
+    const total = chart.data.datasets[0].data.reduce((a, b) => a + b, 0);
+    const percentage = ((value / total) * 100).toFixed(2) + "%";
+
+    // Set font styles for the percentage
+    ctx.font = "700 33.877px Arial"; // Font size and weight
+    ctx.fillStyle = "#0CADBB"; // Color
+    ctx.textAlign = "center"; // Text alignment
+    ctx.textBaseline = "middle"; // Vertical alignment
+    ctx.fontFeatureSettings = "'liga' off, 'clig' off"; // Font features
+
+    // Draw the percentage text in the center
+    ctx.fillText(percentage, width / 2, height - 120); // Adjusted y-position for percentage
+
+    // Set font styles for the "Incremento" label
+    ctx.font = "16px Arial"; // Smaller font size for the label
+    ctx.fillStyle = "#000000"; // Color for the label (black in this case)
+
+    // Draw the "Incremento" label below the percentage
+    ctx.fillText("Incremento", width / 2, height - 90); // Adjusted y-position for label
+
+    ctx.save();
+  },
+};
+
+ChartJS.register(doughnutCenterTextPlugin);
 
 const doughnutData = {
   labels: ["Valor Único"],
   datasets: [
     {
       label: "Doughnut Chart",
-      data: [100],
-      backgroundColor: ["#FF6384"],
+      data: [75, 25], // Example data: 75% and 25%
+      backgroundColor: ["#0CADBB", "#C2C6E9"],
     },
   ],
 };
@@ -164,13 +240,19 @@ const singleValueOptions = {
   responsive: true,
   plugins: {
     legend: {
+      display: false,
       position: "top",
     },
     title: {
-      display: true,
+      display: false,
       text: "Valor Único",
     },
+    doughnutCenterText: {
+      display: true, // Enable the custom plugin
+    },
   },
+  circumference: 180, // 180 degrees for a semi-circle
+  rotation: -90, // Start from the top
 };
 </script>
 <template>
@@ -316,8 +398,8 @@ const singleValueOptions = {
             <AtomsIconsArrowRightIcon />
           </NuxtLink>
         </p>
-        <div class="card border-0 shadow rounded-3 py-5 h-100">
-          <div class="card-body d-flex align-items-center p-5">
+        <div class="card border-0 shadow rounded-3 h-100">
+          <div class="card-body d-flex align-items-center p-2">
             <!-- <AtomsIconsChartVacio /> -->
             <!-- <p class="d-flex flex-column align-items-start ms-3"> -->
             <!--   <span class="fw-medium text-muted fs-5" -->
@@ -359,6 +441,8 @@ const singleValueOptions = {
             <!--   </button> -->
             <!-- </p> -->
             <Doughnut :data="doughnutData" :options="singleValueOptions" />
+            <span class="fw-medium fs-5">Nuevos Pacientes</span>
+            <span class="text-muted">Lorem Ipsum</span>
           </div>
         </div>
       </div>
@@ -373,10 +457,9 @@ const singleValueOptions = {
         </NuxtLink>
       </p>
       <div>
-        <MedicosCitasTable :appointments="appointments" />
+        <MedicosCitasTable :appointments="appointments" :useDropdown="false" />
       </div>
     </div>
-    <MedicosOnboardingModal :data="user_info" />
   </NuxtLayout>
 </template>
 
