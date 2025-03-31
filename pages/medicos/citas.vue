@@ -1,7 +1,7 @@
 <script setup>
 import { jsPDF } from "jspdf";
 import "jspdf-autotable";
-import { ref } from "vue";
+import { ref, computed } from "vue";
 import { useRefreshToken } from "#imports";
 /*definePageMeta({
   middleware: ["auth-doctors-hospitals"],
@@ -11,6 +11,9 @@ const token = useCookie("token");
 const role = useCookie("role");
 const tab = ref(1);
 const allAppointments = ref();
+const searchQuery = ref("");
+const sortOption = ref("date");
+const activeStatus = ref("Todos");
 
 let url;
 if (role.value == "R_HOS") {
@@ -187,15 +190,72 @@ if (appointments) {
   useRefreshToken();
 }
 
-const applyFilter = (statusFilter, tabNumber) => {
-  let filteredAppointments = allAppointments.value;
-  if (statusFilter !== "ALL") {
-    filteredAppointments = filteredAppointments.filter(
-      (appointment) => appointment.status === statusFilter
+// Computed property for filtered appointments
+const filteredAppointments = computed(() => {
+  let filtered = allAppointments.value;
+
+  // Apply status filter
+  if (activeStatus.value !== "Todos") {
+    filtered = filtered.filter(
+      (appointment) => appointment.status === activeStatus.value
     );
   }
-  appointments.value = filteredAppointments;
+
+  // Apply search filter
+  if (searchQuery.value) {
+    const query = searchQuery.value.toLowerCase();
+    filtered = filtered.filter(
+      (appointment) =>
+        appointment.patient_name.toLowerCase().includes(query) ||
+        appointment.service_name.toLowerCase().includes(query) ||
+        appointment.code.toLowerCase().includes(query)
+    );
+  }
+
+  // Apply sorting
+  filtered = [...filtered].sort((a, b) => {
+    if (sortOption.value === "date") {
+      return new Date(a.date) - new Date(b.date);
+    } else if (sortOption.value === "name") {
+      return a.patient_name.localeCompare(b.patient_name);
+    }
+    return 0;
+  });
+
+  return filtered;
+});
+
+const applyFilter = (statusFilter, tabNumber) => {
+  if (statusFilter === "ALL") {
+    activeStatus.value = "Todos";
+  } else if (statusFilter === "COMPLETED") {
+    activeStatus.value = "Completada";
+  } else if (statusFilter === "PENDING") {
+    activeStatus.value = "Pendiente";
+  } else if (statusFilter === "CANCELED") {
+    activeStatus.value = "Cancelada";
+  } else if (statusFilter === "VALORADO") {
+    activeStatus.value = "Valorado";
+  }
   tab.value = tabNumber;
+};
+
+const setStatusFilter = (status) => {
+  activeStatus.value = status;
+
+  // Update the tab to match the status
+  if (status === "Todos") {
+    tab.value = 1;
+  } else if (status === "Completada") {
+    tab.value = 2;
+  } else if (status === "Pendiente") {
+    tab.value = 3;
+  } else if (status === "Cancelada") {
+    tab.value = 4;
+  } else if (status === "Valorado") {
+    // You might want to add a 5th tab for "Valorado" if needed
+    tab.value = 1;
+  }
 };
 </script>
 
@@ -220,7 +280,7 @@ const applyFilter = (statusFilter, tabNumber) => {
         <li class="nav-item">
           <button
             class="nav-link"
-            :class="tab === 1 ? 'active' : ''"
+            :class="tab === 1 ? 'active text-primary' : 'text-muted'"
             @click="applyFilter('ALL', 1)"
           >
             Todas las citas
@@ -229,7 +289,7 @@ const applyFilter = (statusFilter, tabNumber) => {
         <li class="nav-item">
           <button
             class="nav-link"
-            :class="tab === 2 ? 'active' : ''"
+            :class="tab === 2 ? 'active text-primary' : 'text-muted'"
             @click="applyFilter('COMPLETED', 2)"
           >
             Citas Concretadas
@@ -238,7 +298,7 @@ const applyFilter = (statusFilter, tabNumber) => {
         <li class="nav-item">
           <button
             class="nav-link"
-            :class="tab === 3 ? 'active' : ''"
+            :class="tab === 3 ? 'active text-primary' : 'text-muted'"
             @click="applyFilter('PENDING', 3)"
           >
             Citas Pendientes
@@ -247,7 +307,7 @@ const applyFilter = (statusFilter, tabNumber) => {
         <li class="nav-item">
           <button
             class="nav-link"
-            :class="tab === 4 ? 'active' : ''"
+            :class="tab === 4 ? 'active text-primary' : 'text-muted'"
             @click="applyFilter('CANCELED', 4)"
           >
             Citas Canceladas
@@ -281,7 +341,7 @@ const applyFilter = (statusFilter, tabNumber) => {
         >
           <AtomsIconsDownloadIcon /> Descargar
         </button>
-        <div class="dropdown">
+        <div class="dropdown me-2">
           <button
             class="btn btn-outline-dark dropdown-toggle"
             type="button"
@@ -296,11 +356,67 @@ const applyFilter = (statusFilter, tabNumber) => {
             <li><a class="dropdown-item" href="#">Something else here</a></li>
           </ul>
         </div>
+        <div class="dropdown">
+          <button
+            class="btn btn-outline-dark dropdown-toggle"
+            type="button"
+            data-bs-toggle="dropdown"
+            aria-expanded="false"
+          >
+            Estado de solicitud:
+            <span class="badge text-muted">{{ activeStatus }}</span>
+          </button>
+          <ul class="dropdown-menu">
+            <li>
+              <a
+                class="dropdown-item"
+                href="#"
+                @click="setStatusFilter('Todos')"
+                >Todos</a
+              >
+            </li>
+            <li>
+              <a
+                class="dropdown-item"
+                href="#"
+                @click="setStatusFilter('Pendiente')"
+                >Pendiente</a
+              >
+            </li>
+            <li>
+              <a
+                class="dropdown-item"
+                href="#"
+                @click="setStatusFilter('Valorado')"
+                >Valorado</a
+              >
+            </li>
+            <li>
+              <a
+                class="dropdown-item"
+                href="#"
+                @click="setStatusFilter('Completada')"
+                >Confirmado</a
+              >
+            </li>
+            <li>
+              <a
+                class="dropdown-item"
+                href="#"
+                @click="setStatusFilter('Cancelada')"
+                >Cancelada</a
+              >
+            </li>
+          </ul>
+        </div>
       </div>
     </div>
 
     <div class="card">
-      <MedicosCitasTable :appointments="appointments" :useDropdown="true" />
+      <MedicosCitasTable
+        :appointments="filteredAppointments"
+        :useDropdown="true"
+      />
     </div>
   </NuxtLayout>
 </template>

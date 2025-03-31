@@ -12,12 +12,17 @@
       <div class="modal-content">
         <!-- Modal Header -->
         <div class="modal-header border-0 align-items-center d-flex">
-          <img
-            src="@/src/assets/call.svg"
-            alt="Alerta"
-            height="40px"
-            width="40px"
-          />
+          <span
+            class="d-flex justify-content-between gap-2 rounded-circle bg-primary-subtle text-primary p-3 my-3"
+          >
+            <img
+              src="@/src/assets/call.svg"
+              alt="Alerta"
+              height="20px"
+              width="20px"
+            />
+          </span>
+
           <button
             type="button"
             class="btn-close btn btn-light me-2"

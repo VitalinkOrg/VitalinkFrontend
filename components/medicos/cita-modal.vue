@@ -94,6 +94,7 @@
                       <button
                         class="btn btn-outline-dark d-flex gap-2"
                         @click="$refs.proformaFile.click()"
+                        :disabled="proformaGuardado"
                       >
                         <img
                           src="@/src/assets/cloud-upload.svg"
@@ -130,6 +131,7 @@
                       class="form-control mb-4"
                       rows="3"
                       placeholder="Escribe las recomendaciones médicas..."
+                      :disabled="proformaGuardado"
                     ></textarea>
                   </td>
                 </tr>
@@ -157,44 +159,55 @@
                 Confirmar reserva
               </button>
             </div>
-            <div v-else class="d-flex justify-content-between gap-2">
-              <button
+            <div
+              v-else
+              class="d-flex justify-content-between align-items-center gap-2"
+            >
+              <div
+                class="d-flex justify-content-between align-items-center w-100"
                 v-if="appointment.status !== 'Valorado'"
-                class="btn text-danger"
-                @click="localStep = 4"
               >
-                Anular cita
-              </button>
-              <button
-                v-if="appointment.status !== 'Valorado'"
-                class="btn btn-outline-dark"
-                @click="localStep = 6"
-              >
-                Reprogramar
-              </button>
-              <button
-                v-if="appointment.status !== 'Valorado'"
-                class="btn btn-primary"
-                @click="localStep = 2"
-              >
-                Marcar concretada
-              </button>
-              <button
+                <button class="btn text-danger" @click="localStep = 4">
+                  Anular cita
+                </button>
+                <button class="btn btn-outline-dark" @click="localStep = 6">
+                  Reprogramar
+                </button>
+                <button class="btn btn-primary" @click="localStep = 2">
+                  Marcar concretada
+                </button>
+              </div>
+              <div
+                class="d-flex justify-content-between align-items-center w-100"
                 v-if="appointment.status == 'Valorado'"
-                class="btn btn-outline-dark w-50"
-                @click="localStep = 6"
-                :disabled="!proformaFileName"
               >
-                Cancelar
-              </button>
-              <button
-                v-if="appointment.status == 'Valorado'"
-                class="btn btn-primary w-50"
-                @click="saveRecommendations"
-                :disabled="!proformaFileName"
-              >
-                Guardar
-              </button>
+                <span
+                  class="d-flex align-items-center gap-2"
+                  :style="{
+                    visibility: proformaGuardado ? 'visible' : 'hidden',
+                  }"
+                >
+                  <img src="@/src/assets/check.svg" width="20" alt="Vitalink" />
+                  <p class="text-success fw-bold m-0">Cambios guardados</p>
+                </span>
+                <div class="d-flex justify-content-between gap-2">
+                  <button
+                    class="btn btn-outline-dark"
+                    @click="editRecommendations"
+                    :disabled="!proformaFileName"
+                  >
+                    <AtomsIconsEditPencilIcon v-if="proformaGuardado" />
+                    {{ proformaGuardado ? "Editar" : "Cancelar" }}
+                  </button>
+                  <button
+                    class="btn btn-primary"
+                    @click="saveRecommendations"
+                    :disabled="!proformaFileName"
+                  >
+                    Guardar
+                  </button>
+                </div>
+              </div>
             </div>
           </div>
 
@@ -370,7 +383,10 @@
               >
                 No apto para procedimiento
               </button>
-              <button class="btn btn-primary w-50" @click="open = false">
+              <button
+                class="btn btn-primary w-50"
+                @click="updateAppointmentStatus()"
+              >
                 Subir proforma
               </button>
             </div>
@@ -459,36 +475,35 @@
                 <tr>
                   <td class="text-muted">Fecha de la cita:</td>
                   <td>
-                    <div class="dropdown">
-                      <button
-                        class="btn btn-outline-secondary dropdown-toggle gap-2 d-flex align-items-center"
-                        type="button"
-                        id="dateDropdown"
-                        data-bs-toggle="dropdown"
-                        aria-expanded="false"
-                      >
-                        <div class="d-flex align-items-center gap-2">
+                    <VDatePicker
+                      v-model="selectedDate"
+                      :attributes="attrs"
+                      :min-date="new Date()"
+                      is-required
+                      trim-weeks
+                      locale="es"
+                    >
+                      <template #default="{ inputValue, inputEvents }">
+                        <div
+                          class="d-flex align-items-center gap-2 btn btn-outline-secondary"
+                        >
                           <img
                             src="@/src/assets/calendar.svg"
                             alt="Busca centro medico"
                             class="img-fluid"
                           />
-                          <p class="m-0">
-                            {{ selectedDate || "Seleccionar fecha" }}
-                          </p>
+                          <input
+                            :value="
+                              formatDisplayDate(selectedDate) ||
+                              'Seleccionar fecha'
+                            "
+                            class="text-muted border-0 bg-transparent w-100"
+                            v-on="inputEvents"
+                            readonly
+                          />
                         </div>
-                      </button>
-                      <ul class="dropdown-menu" aria-labelledby="dateDropdown">
-                        <li v-for="date in availableDates" :key="date">
-                          <a
-                            class="dropdown-item"
-                            href="#"
-                            @click="selectDate(date)"
-                            >{{ date }}</a
-                          >
-                        </li>
-                      </ul>
-                    </div>
+                      </template>
+                    </VDatePicker>
                   </td>
                 </tr>
                 <tr>
@@ -496,14 +511,14 @@
                   <td>
                     <div class="dropdown">
                       <button
-                        class="btn btn-outline-secondary dropdown-toggle gap-2 d-flex align-items-center"
+                        class="btn btn-outline-secondary dropdown-toggle gap-2 d-flex align-items-center w-100"
                         type="button"
                         id="timeDropdown"
                         data-bs-toggle="dropdown"
                         aria-expanded="false"
                         :disabled="!selectedDate"
                       >
-                        <div class="d-flex align-items-center gap-2">
+                        <div class="d-flex align-items-center gap-2 w-100">
                           <img
                             src="@/src/assets/clock.svg"
                             alt="Busca centro medico"
@@ -601,10 +616,19 @@ import { ref, watch, toRef } from "vue";
 const selectedDate = ref("");
 const selectedTime = ref("");
 const proformaFileName = ref("");
+const proformaGuardado = ref(false);
 
 // Mock data for available dates and times
 const availableDates = ref(["2023-10-19", "2023-10-20", "2023-10-21"]);
 const availableTimes = ref([]);
+
+const attrs = ref([
+  {
+    key: "today",
+    dot: true,
+    dates: new Date(),
+  },
+]);
 
 const props = defineProps({
   appointment: Object,
@@ -634,6 +658,50 @@ watch(
 
 // Create a reactive reference to the prop
 const step = toRef(props, "step");
+
+const availableTimesByDate = {
+  "2025-04-01": ["09:00", "10:00", "11:00", "15:30"],
+  "2023-10-20": ["10:30", "14:00", "16:00"],
+  "2023-10-21": ["09:30", "11:30", "15:00"],
+  // Add more dates as needed
+};
+
+watch(selectedDate, (newDate) => {
+  if (newDate) {
+    // Format the date as YYYY-MM-DD for the mock data lookup
+    const formattedDate = formatDateForLookup(newDate);
+
+    // Get available times for this date (or empty array if none)
+    availableTimes.value = availableTimesByDate[formattedDate] || [];
+
+    // Reset selected time when date changes
+    selectedTime.value = "";
+  }
+});
+
+// Helper function to format date for lookup
+const formatDateForLookup = (date) => {
+  const d = new Date(date);
+  let month = "" + (d.getMonth() + 1);
+  let day = "" + d.getDate();
+  const year = d.getFullYear();
+
+  if (month.length < 2) month = "0" + month;
+  if (day.length < 2) day = "0" + day;
+
+  return [year, month, day].join("-");
+};
+
+const formatDisplayDate = (date) => {
+  if (!date) return "Seleccionar fecha";
+
+  return date.toLocaleDateString("es-ES", {
+    weekday: "long",
+    year: "numeric",
+    month: "long",
+    day: "numeric",
+  });
+};
 
 const formatDate = (dateString) => {
   const date = new Date(dateString);
@@ -665,13 +733,64 @@ const handleProformaUpload = (event) => {
   }
 };
 
-const saveRecommendations = () => {
-  // Save the recommendations and any other data
-  // This would typically be an API call
-  // After successful save, you might want to:
-  // - Show a success message
-  // - Redirect or update the appointment status
-  localStep = 2;
+const editRecommendations = async () => {
+  try {
+    // Here you would typically make an API call to save the recommendations
+    // For example:
+    // await axios.post('/api/save-recommendations', {
+    //   appointmentId: props.appointment.id,
+    //   description: description.value,
+    //   proforma: proformaFileName.value
+    // });
+
+    if (proformaGuardado.value) {
+      proformaGuardado.value = false;
+    } else {
+      proformaFileName.value = "";
+    }
+
+    // For now, we'll just update the local state
+  } catch (error) {
+    console.error("Error saving recommendations:", error);
+    errorText.value = "Error al guardar los cambios";
+  }
+};
+
+const saveRecommendations = async () => {
+  try {
+    // Here you would typically make an API call to save the recommendations
+    // For example:
+    // await axios.post('/api/save-recommendations', {
+    //   appointmentId: props.appointment.id,
+    //   description: description.value,
+    //   proforma: proformaFileName.value
+    // });
+
+    // For now, we'll just update the local state
+    proformaGuardado.value = true;
+  } catch (error) {
+    console.error("Error saving recommendations:", error);
+    errorText.value = "Error al guardar los cambios";
+  }
+};
+
+const updateAppointmentStatus = async () => {
+  try {
+    // Here you would typically make an API call to update the status
+    // For example:
+    // const response = await axios.put(`/api/appointments/${props.appointment.id}`, {
+    //   status: 'Valorado'
+    // });
+
+    // For now, we'll just update the local appointment object
+    props.appointment.status = "Valorado";
+
+    // Go back to step 1 to show the updated status
+    localStep.value = 1;
+  } catch (error) {
+    console.error("Error updating appointment status:", error);
+    errorText.value = "Error al actualizar el estado de la cita";
+  }
 };
 
 const selectTime = (time) => {

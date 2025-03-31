@@ -154,7 +154,7 @@ export default {
             </td>
             <td>
               <span
-                class="badge bg-success-subtle rounded-5 text-dark w-100"
+                class="badge bg-success-subtle rounded-5 text-dark text-center"
                 :class="statusClass(appointment.status)"
                 >{{ appointment.status }}
               </span>
@@ -315,7 +315,7 @@ export default {
         <ul class="pagination m-0">
           <li class="page-item">
             <button
-              class="page-link border-0 text-nowrap"
+              class="page-link border-0 text-nowrap text-muted"
               @click="getCitas()"
               aria-label="Previous"
             >
@@ -323,16 +323,13 @@ export default {
             </button>
           </li>
           <li class="page-item">
-            <button
-              class="page-link border-0 shadow-sm mx-1 bg-light"
-              @click="getCitas()"
-            >
+            <button class="border-0 mx-1 btn btn-primary" @click="getCitas()">
               1
             </button>
           </li>
           <li class="page-item">
             <button
-              class="page-link border-0 shadow-sm mx-1 bg-light"
+              class="page-link border-0 mx-1 text-muted"
               @click="getCitas()"
             >
               2
@@ -340,7 +337,7 @@ export default {
           </li>
           <li class="page-item">
             <button
-              class="page-link border-0 shadow-sm mx-1 bg-light"
+              class="page-link border-0 mx-1 text-muted"
               @click="getCitas()"
             >
               3
@@ -348,7 +345,7 @@ export default {
           </li>
           <li class="page-item">
             <button
-              class="page-link border-0 text-nowrap"
+              class="page-link border-0 text-nowrap text-muted"
               @click="getCitas()"
               aria-label="Next"
             >
