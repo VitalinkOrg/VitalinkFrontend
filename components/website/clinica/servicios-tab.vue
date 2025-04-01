@@ -123,53 +123,83 @@ export default {
   <!--   <p>No hay servicios disponibles.</p> -->
   <!-- </div> -->
   <div class="accordion" id="accordionExample">
-    <div class="accordion-item">
-      <h2 class="accordion-header" id="headingOne">
-        <button
-          class="accordion-button"
-          type="button"
-          data-bs-toggle="collapse"
-          data-bs-target="#collapseOne"
-          aria-expanded="true"
-          aria-controls="collapseOne"
-        >
-          Cirugía de cataratas
-        </button>
-      </h2>
+    <div class="accordion" id="accordionExample">
+      <div class="accordion-item">
+        <div class="d-flex justify-content-between align-items-center p-3">
+          <div class="accordion-header gap-2 mb-0" id="headingOne">
+            <span class="fw-bold">Cirugía de cataratas</span>
+            <small class="text-muted d-block mb-0">Oftalmología</small>
+          </div>
+          <div>
+            <button class="btn text-muted btn-sm me-2">
+              <span class="me-1">
+                <img src="@/src/assets/edit.svg" alt="Ver Cita" />
+              </span>
+              Editar
+            </button>
+            <button class="btn text-muted btn-sm me-2">
+              <span class="me-1">
+                <img src="@/src/assets/remove.svg" alt="Cancelar Cita" />
+              </span>
+
+              Eliminar
+            </button>
+            <button
+              class="btn btn-outline-secondary btn-sm fw-bold text-dark p-2 dropdown-toggle"
+              type="button"
+              data-bs-toggle="collapse"
+              data-bs-target="#collapseOne"
+              aria-expanded="false"
+              aria-controls="collapseOne"
+            >
+              Ver detalles
+            </button>
+          </div>
+        </div>
+      </div>
       <div
         id="collapseOne"
         class="accordion-collapse collapse show"
         aria-labelledby="headingOne"
         data-bs-parent="#accordionExample"
       >
-        <div class="accordion-body">
+        <div class="accordion-body bg-info-subtle">
           <!-- buttons actions -->
-          <div style="display: flex; justify-content: end">
-            <div class="m-2">
-              <button class="btn btn-primary">Editar</button>
-            </div>
-            <div class="m-2">
-              <button class="btn btn-primary">Eliminar</button>
-            </div>
-          </div>
 
           <ul class="nav nav-tabs">
-            <li class="nav-item">
+            <li
+              class="nav-item border-bottom"
+              :class="{
+                'border-info': serviceSegmentOption === 'info',
+              }"
+              @click="serviceSegmentOption = 'info'"
+            >
               <a
+                :class="{
+                  'text-info': serviceSegmentOption === 'info',
+                  'text-muted': serviceSegmentOption !== 'info',
+                }"
                 class="nav-link"
-                aria-current="page"
                 href="#"
-                :class="{ active: serviceSegmentOption === 'info' }"
-                @click="serviceSegmentOption = 'info'"
                 >Información general</a
               >
             </li>
             <li
-              class="nav-item"
-              :class="{ active: serviceSegmentOption === 'packs' }"
+              class="nav-item border-bottom"
               @click="serviceSegmentOption = 'packs'"
+              :class="{
+                'border-info': serviceSegmentOption === 'packs',
+              }"
             >
-              <a class="nav-link" href="#">Precios y packs</a>
+              <a
+                class="nav-link"
+                :class="{
+                  'text-info': serviceSegmentOption === 'packs',
+                  'text-muted': serviceSegmentOption !== 'packs',
+                }"
+                href="#"
+                >Precios y packs</a
+              >
             </li>
           </ul>
 
@@ -177,48 +207,41 @@ export default {
           <section v-if="serviceSegmentOption == 'info'" class="p-2">
             <div class="list-group list-group-flush">
               <!-- speciality -->
-              <div
-                class="list-group-item d-flex justify-content-between align-items-center m-2"
-              >
-                <span>Especialidad medica</span>
-                <span>Oftalmología</span>
+              <div class="d-flex flex-column m-2">
+                <label>Especialidades Medicas:</label>
+                <input
+                  type="text"
+                  value="Oftalmologia"
+                  disabled
+                  class="form-control bg-white"
+                />
               </div>
 
-              <!-- description -->
-              <div
-                class="list-group-item d-flex justify-content-between align-items-center m-2"
-              >
-                <span>Descripción</span>
-              </div>
-              <div>
-                <p class="m-2">
-                  El procedimiento de cirugía de cataratas implica realizar una
-                  microincisión en el ojo para acceder al cristalino
-                  opacificado. Utilizando tecnología láser o instrumentos
-                  especializados, el cirujano fragmenta y extrae la lente
-                  afectada, para luego implantar una lente intraocular que
-                  restaura la claridad visual. Este proceso, llevado a cabo con
-                  precisión milimétrica, permite una recuperación rápida y una
-                  mejora significativa en la visión del paciente, contribuyendo
-                  a su calidad de vida.
-                </p>
+              <!-- speciality -->
+              <div class="d-flex flex-column m-2">
+                <label>Descripción</label>
+                <textarea
+                  type="text"
+                  rows="5"
+                  disabled
+                  class="form-control bg-white text-dark"
+                >
+El procedimiento de cirugía de cataratas implica realizar una microincisión en el ojo para acceder al cristalino opacificado. Utilizando tecnología láser o instrumentos especializados, el cirujano fragmenta y extrae la lente afectada, para luego implantar una lente intraocular que restaura la claridad visual. Este proceso, llevado a cabo con precisión milimétrica, permite una recuperación rápida y una mejora significativa en la visión del paciente, contribuyendo a su calidad de vida.</textarea
+                >
               </div>
 
-              <div
-                class="list-group-item list-group-item-action m-2"
-                aria-current="true"
-              >
+              <div class="m-2" aria-current="true">
                 <div class="d-flex w-100 justify-content-between">
-                  <h5 class="mb-1">Hospital de atención</h5>
+                  <p class="mb-1">Hospital de atención</p>
                 </div>
-                <p class="mb-1">
+                <p class="mb-1 text-muted">
                   Indica el/los lugares donde tendrá disponibilidad este
                   servicio
                 </p>
               </div>
 
-              <div class="card m-2">
-                <div class="card-body">
+              <div class="card m-2 rounded-4">
+                <div class="card-body p-0">
                   <div class="list-group list-group-flush">
                     <div
                       class="list-group-item list-group-item-action"
@@ -242,118 +265,231 @@ export default {
           <!-- packs -->
           <section v-if="serviceSegmentOption == 'packs'" class="p-2">
             <p>Packs:</p>
-
-            <!-- plans -->
             <div class="container">
               <div class="row">
-                <!-- standard -->
+                <!-- Option 1 -->
                 <div class="col-4">
-                  <div class="card">
-                    <div class="card-header text-center">Standard</div>
+                  <div class="custom-card">
+                    <div class="card-header text-center">OPCIÓN 1</div>
                     <div class="card-body">
-                      <h5 class="card-title">23.000 USD</h5>
+                      <h5 class="card-title">19.000 USD</h5>
                       <p class="card-text">Precio original 28.000 USD</p>
-                      <p class="card-text">
-                        <i class="bi bi-star-fill"></i>
-                        <i class="bi bi-star-fill"></i>
-                        <i class="bi bi-star-fill"></i>
-                        <i class="bi bi-star-fill"></i>
-                        <i class="bi bi-star-fill"></i>
-                        (15 Reseñas)
+                      <p class="card-text rating">
+                        <span class="icon"
+                          ><img
+                            src="@/src/assets/star.svg"
+                            alt="Busca centro medico"
+                            class="img-fluid"
+                        /></span>
+                        5.0 <span class="text-muted">(13 Reseñas)</span>
                       </p>
                       <ul class="list-group list-group-flush">
-                        <li class="list-group-item">Cita de valoración</li>
-                        <li class="list-group-item">Medicamentos</li>
                         <li class="list-group-item">
-                          Cita de seguimiento <br />
-                          1 mes después.
+                          <span class="icon"
+                            ><img
+                              src="@/src/assets/check.svg"
+                              alt="Busca centro medico"
+                              class="img-fluid"
+                          /></span>
+                          Cita de valoración
+                        </li>
+                        <li class="list-group-item">
+                          <span class="icon"
+                            ><img
+                              src="@/src/assets/check.svg"
+                              alt="Busca centro medico"
+                              class="img-fluid"
+                          /></span>
+                          Medicamentos
+                        </li>
+                        <li class="list-group-item">
+                          <span class="icon"
+                            ><img
+                              src="@/src/assets/check.svg"
+                              alt="Busca centro medico"
+                              class="img-fluid"
+                          /></span>
+                          Cita de seguimiento 1 mes después.
                         </li>
                       </ul>
-                      <p class="card-text">
-                        Próxima Disponibilidad: 19/10/2024 11:00 am
+                      <p class="text-muted">Próxima Disponibilidad:</p>
+                      <p class="card-text availability">
+                        <span class="availability-text">
+                          <span class="icon">
+                            <img
+                              src="@/src/assets/calendar.svg"
+                              alt="Busca centro medico"
+                              class="img-fluid"
+                            />
+                          </span>
+                          19/10/2024
+                        </span>
+                        <span class="time-text">
+                          <span class="icon">
+                            <img
+                              src="@/src/assets/clock.svg"
+                              alt="Busca centro medico"
+                              class="img-fluid"
+                            />
+                          </span>
+                          11:00 am
+                        </span>
                       </p>
-                      <button
-                        class="btn btn-outline-primary"
-                        @click="openConfirmationModal()"
-                      >
-                        Solicitar cita de valoración
-                      </button>
                     </div>
                   </div>
                 </div>
 
-                <!-- premium -->
+                <!-- Option 2 -->
                 <div class="col-4">
-                  <div class="card">
-                    <div class="card-header text-center">Premium</div>
+                  <div class="custom-card">
+                    <div
+                      class="card-header selected text-center d-flex gap-2 align-items-center justify-content-center"
+                    >
+                      <span
+                        ><img
+                          src="@/src/assets/crown.svg"
+                          alt="Busca centro medico"
+                          class="img-fluid"
+                      /></span>
+                      <p class="m-0">OPCIÓN 2</p>
+                    </div>
                     <div class="card-body">
                       <h5 class="card-title">23.000 USD</h5>
                       <p class="card-text">Precio original 28.000 USD</p>
-                      <p class="card-text">
-                        <i class="bi bi-star-fill"></i>
-                        <i class="bi bi-star-fill"></i>
-                        <i class="bi bi-star-fill"></i>
-                        <i class="bi bi-star-fill"></i>
-                        <i class="bi bi-star-fill"></i>
-                        (15 Reseñas)
+                      <p class="card-text rating">
+                        <span class="icon"
+                          ><img
+                            src="@/src/assets/star.svg"
+                            alt="Busca centro medico"
+                            class="img-fluid"
+                        /></span>
+                        5.0 <span class="text-muted">(13 Reseñas)</span>
                       </p>
                       <ul class="list-group list-group-flush">
-                        <li class="list-group-item">Cita de valoración</li>
-                        <li class="list-group-item">Medicamentos</li>
                         <li class="list-group-item">
-                          Cita de seguimiento <br />
-                          1 mes después.
+                          <span class="icon"
+                            ><img
+                              src="@/src/assets/check.svg"
+                              alt="Busca centro medico"
+                              class="img-fluid"
+                          /></span>
+                          Cita de valoración
+                        </li>
+                        <li class="list-group-item">
+                          <span class="icon"
+                            ><img
+                              src="@/src/assets/check.svg"
+                              alt="Busca centro medico"
+                              class="img-fluid"
+                          /></span>
+                          Medicamentos
+                        </li>
+                        <li class="list-group-item">
+                          <span class="icon"
+                            ><img
+                              src="@/src/assets/check.svg"
+                              alt="Busca centro medico"
+                              class="img-fluid"
+                          /></span>
+                          Cita de seguimiento 1 mes después.
                         </li>
                       </ul>
-                      <p class="card-text">
-                        Próxima Disponibilidad: 19/10/2024 11:00 am
+                      <p class="text-muted">Próxima Disponibilidad:</p>
+                      <p class="card-text availability">
+                        <span class="availability-text">
+                          <span class="icon">
+                            <img
+                              src="@/src/assets/calendar.svg"
+                              alt="Busca centro medico"
+                              class="img-fluid"
+                            />
+                          </span>
+                          19/10/2024
+                        </span>
+                        <span class="time-text">
+                          <span class="icon">
+                            <img
+                              src="@/src/assets/clock.svg"
+                              alt="Busca centro medico"
+                              class="img-fluid"
+                            />
+                          </span>
+                          11:00 am
+                        </span>
                       </p>
-                      <button
-                        class="btn btn-outline-primary"
-                        @click="openConfirmationModal()"
-                        data-bs-toggle="modal"
-                        data-bs-target="#modalCitaValoracion"
-                      >
-                        Solicitar cita de valoración
-                      </button>
                     </div>
                   </div>
                 </div>
 
-                <!-- basic -->
+                <!-- Option 3 -->
                 <div class="col-4">
-                  <div class="card">
-                    <div class="card-header text-center">Pack basic</div>
+                  <div class="custom-card">
+                    <div class="card-header text-center">OPCIÓN 3</div>
                     <div class="card-body">
-                      <h5 class="card-title">23.000 USD</h5>
+                      <h5 class="card-title">26.000 USD</h5>
                       <p class="card-text">Precio original 28.000 USD</p>
-                      <p class="card-text">
-                        <i class="bi bi-star-fill"></i>
-                        <i class="bi bi-star-fill"></i>
-                        <i class="bi bi-star-fill"></i>
-                        <i class="bi bi-star-fill"></i>
-                        <i class="bi bi-star-fill"></i>
-                        (15 Reseñas)
+                      <p class="card-text rating">
+                        <span class="icon"
+                          ><img
+                            src="@/src/assets/star.svg"
+                            alt="Busca centro medico"
+                            class="img-fluid"
+                        /></span>
+                        5.0 <span class="text-muted">(13 Reseñas)</span>
                       </p>
                       <ul class="list-group list-group-flush">
-                        <li class="list-group-item">Cita de valoración</li>
-                        <li class="list-group-item">Medicamentos</li>
                         <li class="list-group-item">
-                          Cita de seguimiento <br />
-                          1 mes después.
+                          <span class="icon"
+                            ><img
+                              src="@/src/assets/check.svg"
+                              alt="Busca centro medico"
+                              class="img-fluid"
+                          /></span>
+                          Cita con nutricionista
+                        </li>
+                        <li class="list-group-item">
+                          <span class="icon"
+                            ><img
+                              src="@/src/assets/check.svg"
+                              alt="Busca centro medico"
+                              class="img-fluid"
+                          /></span>
+                          Cita con alergólogo
+                        </li>
+                        <li class="list-group-item">
+                          <span class="icon"
+                            ><img
+                              src="@/src/assets/cross.svg"
+                              alt="Busca centro medico"
+                              class="img-fluid"
+                          /></span>
+                          Cita de seguimiento 1 mes después.
                         </li>
                       </ul>
-                      <p class="card-text">
-                        Próxima Disponibilidad: 19/10/2024 11:00 am
+                      <p class="text-muted">Próxima Disponibilidad:</p>
+                      <p class="card-text availability">
+                        <span class="availability-text">
+                          <span class="icon">
+                            <img
+                              src="@/src/assets/calendar.svg"
+                              alt="Busca centro medico"
+                              class="img-fluid"
+                            />
+                          </span>
+                          19/10/2024
+                        </span>
+
+                        <span class="time-text">
+                          <span class="icon">
+                            <img
+                              src="@/src/assets/clock.svg"
+                              alt="Busca centro medico"
+                              class="img-fluid"
+                            />
+                          </span>
+                          11:00 am
+                        </span>
                       </p>
-                      <button
-                        class="btn btn-outline-primary"
-                        @click="openConfirmationModal()"
-                        data-bs-toggle="modal"
-                        data-bs-target="#modalCitaValoracion"
-                      >
-                        Solicitar cita de valoración
-                      </button>
                     </div>
                   </div>
                 </div>
@@ -427,3 +563,61 @@ export default {
     </div>
   </div>
 </template>
+<style scoped>
+.custom-card {
+  border: 1px solid var(--Gray-Scale-300, #f1f3f7);
+  background: var(--Gray-Scale-White, #fff);
+  box-shadow: 0px 2px 8px 0px rgba(0, 0, 0, 0.08);
+}
+
+.custom-card .card-header {
+  font-weight: bold;
+  padding: 15px;
+  background: linear-gradient(
+    188deg,
+    #f8faff 65.03%,
+    rgba(248, 250, 255, 0.1) 112.13%
+  );
+  border: none;
+}
+
+.custom-card .card-header.selected {
+  background: linear-gradient(
+    180deg,
+    #fffcf5 70.16%,
+    rgba(255, 252, 245, 0.05) 100%
+  );
+}
+
+.custom-card .card-body {
+  padding: 20px;
+}
+
+.custom-card .card-title {
+  font-size: 1.5em;
+  margin-bottom: 10px;
+}
+
+.custom-card .card-text {
+  margin-bottom: 10px;
+}
+
+.custom-card .list-group-item {
+  border: none;
+  padding-left: 0;
+  padding-right: 0;
+}
+
+.custom-card .btn {
+  width: 100%;
+  margin-top: 15px;
+}
+
+.custom-card .rating .icon {
+  color: #ffc107;
+}
+
+.custom-card .icon {
+  margin-right: 5px;
+}
+</style>

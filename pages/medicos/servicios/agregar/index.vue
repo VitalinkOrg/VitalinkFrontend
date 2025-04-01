@@ -1,7 +1,7 @@
 <script setup>
-definePageMeta({
+/*definePageMeta({
   middleware: ["auth-doctors-hospitals"],
-});
+});*/
 const config = useRuntimeConfig();
 const token = useCookie("token");
 const user_info = useCookie("user_info");
@@ -20,9 +20,30 @@ const { data: hospitals } = await useFetch(
     transform: (_hospitals) => _hospitals.data,
   }
 );
-const filteredArray = hospitals.value.filter((item) =>
+/*const filteredArray = hospitals.value.filter((item) =>
   user_info.value.hospitals.includes(item.id)
-);
+);*/
+
+const filteredArray = [
+  {
+    id: 1,
+    name: "General Hospital",
+    address: "123 Medical Drive",
+    city: "New York",
+    country_iso_code: "US",
+    phone_number_1: "+1 555-123-4567",
+    postal_code: "10001",
+  },
+  {
+    id: 2,
+    name: "City Medical Center",
+    address: "456 Health Avenue",
+    city: "Los Angeles",
+    country_iso_code: "US",
+    phone_number_1: "+1 555-987-6543",
+    postal_code: "90001",
+  },
+];
 const updateDoctor = async () => {
   const { data, error } = await useFetch(
     config.public.API_BASE_URL + "/doctors/update_doctor",

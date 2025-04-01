@@ -11,11 +11,15 @@ export default defineNuxtConfig({
       ]
     }
   },
+
   css: ['@/assets/main.scss'],
   devtools: { enabled: true },
+
   modules: [
-    'nuxt-icon'
+    'nuxt-icon',
+    '@samk-dev/nuxt-vcalendar'
   ],
+
   runtimeConfig: {
     public: {
       API_BASE_URL: process.env.API_BASE_URL,
