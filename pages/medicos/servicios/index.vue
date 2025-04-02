@@ -1,4 +1,6 @@
 <script setup>
+import { ref, defineProps } from "vue";
+const open = ref(false);
 /*definePageMeta({
   middleware: ["auth-doctors-hospitals"],
 });*/
@@ -56,9 +58,9 @@ const filteredArray = [];
         <span class="fw-medium fs-4">Mis servicios</span>
       </p>
 
-      <NuxtLink href="/medicos/servicios/agregar" class="btn btn-primary"
-        ><small> + Añadir servicio</small></NuxtLink
-      >
+      <button class="btn btn-primary" @click="open = true">
+        <small> + Añadir servicio</small>
+      </button>
     </div>
 
     <div class="row mb-4">
@@ -98,5 +100,10 @@ const filteredArray = [];
       </div>
     </div>
     <WebsiteClinicaServiciosTab :services="filteredArray" />
+    <WebsiteAgregarServicioModal
+      :isOpen="open"
+      @close="open = false"
+      :specialties="user_info.specialties"
+    />
   </NuxtLayout>
 </template>

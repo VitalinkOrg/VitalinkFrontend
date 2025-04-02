@@ -1,9 +1,9 @@
 <script setup>
 import { ref } from "vue";
 import { useRefreshToken } from "#imports";
-definePageMeta({
+/*definePageMeta({
   middleware: ["auth-doctors-hospitals"],
-});
+});*/
 const config = useRuntimeConfig();
 const token = useCookie("token");
 const role = useCookie("role");
