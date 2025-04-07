@@ -1,7 +1,11 @@
 <script setup>
-definePageMeta({
+/*definePageMeta({
   middleware: ["auth-doctors-hospitals"],
-});
+});*/
+import { ref, defineProps } from "vue";
+const open = ref(false);
+const remove = ref(false);
+const selectedHospital = ref(null); // To track which hospital is being edited
 const config = useRuntimeConfig();
 // const user_info = useCookie("user_info");
 const user_info = {
@@ -9,43 +13,70 @@ const user_info = {
     hospitals: [1, 3],
   },
 };
-// const { data: hospitals, pending: pendingHospitals } = await useFetch(
-//   config.public.API_BASE_URL + "/hospitals",
-//   {
-//     transform: (_hospitals) => _hospitals.data,
-//   }
-// );
+
+// Mocked hospitals data matching your modal fields
 const hospitals = {
   value: [
     {
       id: 1,
-      name: "Hospital A",
-      address: "123 Main St",
-      city: "City A",
+      name: "Hospital General de San José",
+      address: "Avenida Central",
+      streetNumber: "100",
+      postalCode: "10101",
+      city: "San José",
+      country: "Costa Rica",
+      floor: "3",
+      doorNumber: "12",
       country_iso_code: "CR",
-      phone_number_1: "123456789",
+      phone_number_1: "2222-5555",
     },
     {
       id: 2,
-      name: "Hospital B",
-      address: "456 Elm St",
-      city: "City B",
+      name: "Clínica Bíblica",
+      address: "Calle Los Lagos",
+      streetNumber: "45",
+      postalCode: "10103",
+      city: "San José",
+      country: "Costa Rica",
+      floor: "2",
+      doorNumber: "5",
       country_iso_code: "CR",
-      phone_number_1: "987654321",
+      phone_number_1: "2522-1000",
     },
     {
       id: 3,
-      name: "Hospital C",
-      address: "789 Oak St",
-      city: "City C",
+      name: "Hospital México",
+      address: "Calle de la Salud",
+      streetNumber: "200",
+      postalCode: "10107",
+      city: "San José",
+      country: "Costa Rica",
+      floor: "1",
+      doorNumber: "1",
       country_iso_code: "CR",
-      phone_number_1: "555555555",
+      phone_number_1: "2233-4455",
     },
   ],
 };
+
 const filteredArray = hospitals.value.filter((item) =>
-  user_info.value.hospitals.includes(item.id),
+  user_info.value.hospitals.includes(item.id)
 );
+
+const openEditModal = (hospital) => {
+  selectedHospital.value = hospital;
+  open.value = true;
+};
+
+const openRemoveModal = (hospital) => {
+  selectedHospital.value = hospital;
+  remove.value = true;
+};
+
+const openAddModal = () => {
+  selectedHospital.value = null;
+  open.value = true;
+};
 </script>
 
 <template>
@@ -68,18 +99,12 @@ const filteredArray = hospitals.value.filter((item) =>
         </ol>
       </nav>
       <p>
-        <span class="fw-medium fs-4">Hospitales</span>
+        <span class="fw-medium fs-4">Mis Hospitales</span>
       </p>
 
-      <div class="d-flex justify-content-between align-items-center mb-4">
-        <span v-if="filteredArray"
-          >Mostrando
-          <span class="fw-semibold"
-            >{{ filteredArray.length }} hospitales</span
-          ></span
-        >
-        <div class="d-flex">
-          <div class="input-group shadow-sm me-3">
+      <div class="row mb-2">
+        <div class="col-10">
+          <div class="input-group shadow-sm">
             <span
               class="input-group-text bg-transparent border-end-0 rounded-start-3"
               id="basic-addon1"
@@ -94,9 +119,11 @@ const filteredArray = hospitals.value.filter((item) =>
               aria-describedby="basic-addon1"
             />
           </div>
-          <div class="dropdown">
+        </div>
+        <div class="col-2 ms-auto d-flex">
+          <div class="dropdown me-2 w-100">
             <button
-              class="btn btn-outline-dark dropdown-toggle fw-light bg-white"
+              class="btn btn-outline-dark dropdown-toggle w-100"
               type="button"
               data-bs-toggle="dropdown"
               aria-expanded="false"
@@ -104,14 +131,17 @@ const filteredArray = hospitals.value.filter((item) =>
               Ordenar por
             </button>
             <ul class="dropdown-menu">
-              <li><a class="dropdown-item" href="#">Action</a></li>
-              <li><a class="dropdown-item" href="#">Another action</a></li>
-              <li><a class="dropdown-item" href="#">Something else here</a></li>
+              <li><a class="dropdown-item" href="#">Nombre</a></li>
+              <li><a class="dropdown-item" href="#">Ciudad</a></li>
+              <li><a class="dropdown-item" href="#">Reciente</a></li>
             </ul>
           </div>
         </div>
       </div>
-
+      <div class="fw-light text-muted mb-4">
+        Listado de hospitales donde tendrás disponibilidad para atender a sus
+        pacientes
+      </div>
       <div class="row" v-if="filteredArray !== null">
         <div class="col">
           <div
@@ -119,68 +149,68 @@ const filteredArray = hospitals.value.filter((item) =>
             v-for="hospital in filteredArray"
             :key="hospital.id"
           >
-            <div class="card-body p-4">
-              <div class="row">
-                <div class="col-sm-4" style="cursor: pointer">
-                  <img
-                    src="@/src/assets/img-clinica-thumbnail.png"
-                    class="img-fluid rounded-4"
-                    alt="clinica"
-                  />
-                </div>
-                <div class="col d-flex flex-column justify-content-between">
+            <div
+              class="card-body py-2 px-4 d-flex justify-content-between align-items-center"
+            >
+              <div
+                class="w-100 d-flex justify-content-between align-items-center"
+              >
+                <div class="col">
                   <div>
                     <h2 class="h5 fw-semibold my-2">{{ hospital.name }}</h2>
-                    <!-- <span class="badge bg-primary text-primary me-2 rounded-5 text-capitalize p-2"
-                  style="--bs-bg-opacity: 0.07" v-for="specialty in clinica.specialty_name" :key="specialty.length">{{
-                    specialty }}</span> -->
-                    <!-- <div class="d-flex my-3" v-if="clinica.service_name">
-                    <span
-                      class="badge rounded-circle bg-success text-success me-2"
-                      v-for="service in clinica.service_name"
-                      style="--bs-bg-opacity: 0.1"
-                      >{{ service.name }}</span
-                    >
-                  </div> -->
                   </div>
-                  <p class="fw-light text-muted d-flex align-items-center">
-                    <span class="text-info me-2" style="--bs-bg-opacity: 0.05">
-                      <AtomsIconsMapPointerIcon /> </span
-                    >{{
+                  <p class="fw-light text-muted d-flex align-items-center mb-0">
+                    {{
                       hospital.address +
+                      " " +
+                      hospital.streetNumber +
                       ", " +
                       hospital.city +
                       ", " +
-                      hospital.country_iso_code
+                      hospital.country
                     }}
                   </p>
-                  <p class="fw-light text-muted d-flex align-items-center">
-                    <span class="text-info me-2" style="--bs-bg-opacity: 0.05">
-                      <AtomsIconsMapPointerIcon /> </span
-                    >+5 Hospitales diferentes
+                  <p class="fw-light text-muted d-flex align-items-center mb-0">
+                    Piso {{ hospital.floor }} - Puerta {{ hospital.doorNumber }}
                   </p>
-                  <div
-                    class="d-flex align-items-center justify-content-between"
+                </div>
+                <div class="d-flex align-items-center gap-2">
+                  <button
+                    class="btn btn-outline-secondary"
+                    @click="openEditModal(hospital)"
                   >
-                    <button class="btn btn-primary">Ir a la página web</button>
-                    <div>
-                      <a
-                        :href="`tel:${hospital.phone_number_1}`"
-                        class="btn btn-light border fw-light bg-white"
-                      >
-                        <span class="fs-5"><AtomsIconsPhoneIcon /></span>
-                      </a>
-                    </div>
-                  </div>
+                    <img src="@/src/assets/edit.svg" alt="Editar Hospital" />
+                  </button>
+                  <button
+                    class="btn btn-outline-secondary"
+                    @click="openRemoveModal(hospital)"
+                  >
+                    <img
+                      src="@/src/assets/remove.svg"
+                      alt="Eliminar Hospital"
+                    />
+                  </button>
                 </div>
               </div>
             </div>
           </div>
-        </div>
-        <div class="col">
-          <AtomsMapaInteractivo />
+          <button class="btn btn-info text-white" @click="openAddModal">
+            <small class="text-white"> + Agregar </small>
+          </button>
         </div>
       </div>
     </div>
+    <WebsiteAgregarHospitalModal
+      :isOpen="open"
+      @close="open = false"
+      :hospitalInfo="selectedHospital"
+      @add-hospital="handleAddHospital"
+      @edit-hospital="handleEditHospital"
+    />
+    <WebsiteRemoverHospitalModal
+      :isOpen="remove"
+      @close="remove = false"
+      @remove-hospital="handleRemoveHospital"
+    />
   </NuxtLayout>
 </template>

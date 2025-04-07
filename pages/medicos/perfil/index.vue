@@ -1,7 +1,7 @@
 <script setup>
-definePageMeta({
+/*definePageMeta({
   middleware: ["auth-doctors-hospitals"],
-});
+});*/
 const config = useRuntimeConfig();
 const token = useCookie("token");
 const user_info = useCookie("user_info");
@@ -29,7 +29,7 @@ const updateDoctor = async () => {
         city,
         country_iso_code,
       },
-    },
+    }
   );
   if (user) {
     user_info.value = user.value;
@@ -55,7 +55,7 @@ const updateHospital = async () => {
         country_iso_code,
         postal_code,
       },
-    },
+    }
   );
   if (error.value) {
     console.log(error.value, "data");
