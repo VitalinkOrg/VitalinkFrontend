@@ -3,7 +3,7 @@ const user_info = useCookie("user_info");
 </script>
 <template>
   <NuxtLayout name="medicos-dashboard">
-    <nav style="--bs-breadcrumb-divider: '/';" aria-label="breadcrumb">
+    <nav style="--bs-breadcrumb-divider: &quot;/&quot;" aria-label="breadcrumb">
       <ol class="breadcrumb">
         <li class="breadcrumb-item">
           <NuxtLink href="/medicos/inicio" class="text-muted">Inicio</NuxtLink>
@@ -17,17 +17,29 @@ const user_info = useCookie("user_info");
     <div class="d-flex align-items-end justify-content-between mb-4">
       <ul class="nav nav-underline d-flex flex-row w-100">
         <li class="nav-item">
-          <NuxtLink href="/medicos/perfil" class="nav-link" active-class="active text-primary">
+          <NuxtLink
+            href="/medicos/perfil"
+            class="nav-link"
+            active-class="active text-primary"
+          >
             Datos Personales
           </NuxtLink>
         </li>
         <li class="nav-item">
-          <NuxtLink href="/medicos/perfil/profesional" class="nav-link" active-class="active text-primary">
+          <NuxtLink
+            href="/medicos/perfil/profesional"
+            class="nav-link"
+            active-class="active text-primary"
+          >
             Datos Profesionales
           </NuxtLink>
         </li>
-        <li class="nav-item" v-if="user_info.last_name">
-          <NuxtLink href="/medicos/perfil/educacion-experiencia" class="nav-link" active-class="active text-primary">
+        <li class="nav-item">
+          <NuxtLink
+            href="/medicos/perfil/educacion-experiencia"
+            class="nav-link"
+            active-class="active text-primary"
+          >
             Educación y Experiencia
           </NuxtLink>
         </li>
@@ -37,7 +49,11 @@ const user_info = useCookie("user_info");
           </NuxtLink>
         </li> -->
         <li class="nav-item">
-          <NuxtLink href="/medicos/perfil/especialidades" class="nav-link" active-class="active text-primary">
+          <NuxtLink
+            href="/medicos/perfil/especialidades"
+            class="nav-link"
+            active-class="active text-primary"
+          >
             Especialidades
           </NuxtLink>
         </li>

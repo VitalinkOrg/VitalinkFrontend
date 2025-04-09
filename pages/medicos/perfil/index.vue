@@ -86,7 +86,7 @@ const updateHospital = async () => {
             id="nombre"
           />
         </div>
-        <div v-if="user.last_name" class="form-group mb-3">
+        <div class="form-group mb-3">
           <label for="apellido" class="form-label text-capitalize"
             >Apellido (s)</label
           >
@@ -130,7 +130,7 @@ const updateHospital = async () => {
         </div>
       </div>
       <div class="row row-cols-3">
-        <div v-if="user.postal_code" class="form-group mb-3">
+        <div class="form-group mb-3">
           <label class="form-label text-capitalize" for="postal"
             >Código Postal</label
           >
