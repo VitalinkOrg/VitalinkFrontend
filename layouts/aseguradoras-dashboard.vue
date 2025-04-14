@@ -21,12 +21,12 @@ const logout = () => {
   <div class="dashboard bg-light">
     <div class="dashboard-sidebar bg-white shadow py-4 px-2">
       <nav class="nav d-flex flex-column align-items-start w-100">
-        <NuxtLink href="/aseguradoras/inicio" class="mb-5 ps-3">
+        <NuxtLink href="/socio-financiero/inicio" class="mb-5 ps-3">
           <AtomsVitalinkLogo />
         </NuxtLink>
         <li class="nav-item w-100 mb-3">
           <NuxtLink
-            href="/aseguradoras/inicio"
+            href="/socio-financiero/inicio"
             class="nav-link rounded-3 py-3 text-dark d-flex align-items-center"
             active-class="bg-primary"
             style="--bs-bg-opacity: 0.05"
@@ -39,7 +39,7 @@ const logout = () => {
         </li>
         <li class="nav-item w-100 mb-3">
           <NuxtLink
-            href="/aseguradoras/vauchers"
+            href="/socio-financiero/creditos"
             class="nav-link rounded-3 py-3 text-dark d-flex align-items-center"
             active-class="bg-primary"
             style="--bs-bg-opacity: 0.05"
@@ -56,7 +56,7 @@ const logout = () => {
         <li class="nav-item">
           <NuxtLink
             class="nav-link text-dark d-flex align-items-center"
-            href="/aseguradoras/inicio"
+            href="/socio-financiero/inicio"
           >
             <span class="text-success me-3">
               <AtomsIconsInfoIcon />
@@ -115,13 +115,15 @@ const logout = () => {
                   <li>
                     <NuxtLink
                       class="dropdown-item"
-                      href="/aseguradoras/configuracion"
+                      href="/socio-financiero/configuracion"
                       >Configuración</NuxtLink
                     >
                   </li>
                   <li></li>
                   <li>
-                    <NuxtLink class="dropdown-item" href="/aseguradoras/inicio"
+                    <NuxtLink
+                      class="dropdown-item"
+                      href="/socio-financiero/inicio"
                       >Ayuda y Soporte</NuxtLink
                     >
                   </li>

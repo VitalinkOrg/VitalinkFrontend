@@ -285,7 +285,9 @@ const chartOptions = {
         <div class="col">
           <p class="mx-2 d-flex align-items-center justify-content-between">
             <span class="fw-medium fs-5">Solicitudes Activas</span>
-            <NuxtLink class="btn btn-link text-dark" href="/aseguradoras/inicio"
+            <NuxtLink
+              class="btn btn-link text-dark"
+              href="/socio-financiero/inicio"
               >Ver Todo
               <AtomsIconsArrowRightIcon />
             </NuxtLink>
@@ -348,7 +350,9 @@ const chartOptions = {
         <div class="col">
           <p class="mx-2 d-flex align-items-center justify-content-between">
             <span class="fw-medium fs-5">Resumen Anual de créditos</span>
-            <NuxtLink class="btn btn-link text-dark" href="/aseguradoras/inicio"
+            <NuxtLink
+              class="btn btn-link text-dark"
+              href="/socio-financiero/inicio"
               >Ver Todo
               <AtomsIconsArrowRightIcon />
             </NuxtLink>
@@ -427,7 +431,9 @@ const chartOptions = {
       <div class="row">
         <p class="mx-2 d-flex align-items-center justify-content-between">
           <span class="fw-medium fs-5">Historial</span>
-          <NuxtLink class="btn btn-link text-dark" href="/aseguradoras/inicio"
+          <NuxtLink
+            class="btn btn-link text-dark"
+            href="/socio-financiero/inicio"
             >Ver Todo
             <AtomsIconsArrowRightIcon />
           </NuxtLink>

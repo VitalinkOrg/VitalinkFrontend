@@ -36,7 +36,7 @@
             >
           </li>
           <li class="nav-item">
-            <NuxtLink href="/aseguradoras/registro" class="nav-link"
+            <NuxtLink href="/socio-financiero/registro" class="nav-link"
               >¿Eres aseguradora?</NuxtLink
             >
           </li>

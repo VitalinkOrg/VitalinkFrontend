@@ -265,7 +265,7 @@ const downloadAllCredits = () => {
     <nav style="--bs-breadcrumb-divider: &quot;/&quot;" aria-label="breadcrumb">
       <ol class="breadcrumb">
         <li class="breadcrumb-item">
-          <NuxtLink href="/aseguradoras/inicio" class="text-muted"
+          <NuxtLink href="/socio-financiero/inicio" class="text-muted"
             >Inicio</NuxtLink
           >
         </li>

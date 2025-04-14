@@ -89,7 +89,7 @@ const openAddModal = () => {
       >
         <ol class="breadcrumb">
           <li class="breadcrumb-item">
-            <NuxtLink href="/aseguradoras/inicio" class="text-muted"
+            <NuxtLink href="/socio-financiero/inicio" class="text-muted"
               >Inicio</NuxtLink
             >
           </li>
