@@ -47,20 +47,7 @@ const logout = () => {
             <span class="text-primary me-3">
               <AtomsIconsVaucherIcon />
             </span>
-            Gestor de Váuchers
-          </NuxtLink>
-        </li>
-        <li class="nav-item w-100 mb-3">
-          <NuxtLink
-            href="/aseguradoras/proveedores"
-            class="nav-link rounded-3 py-3 text-dark d-flex align-items-center"
-            active-class="bg-primary"
-            style="--bs-bg-opacity: 0.05"
-          >
-            <span class="text-primary me-3">
-              <AtomsIconsServiciosIcon />
-            </span>
-            Proveedores
+            Gestor de créditos
           </NuxtLink>
         </li>
       </nav>
@@ -124,10 +111,7 @@ const logout = () => {
                 >
                   {{ user_info.name }}
                 </button>
-                <ul
-                  class="dropdown-menu"
-                  :class="sort ? 'show' : ''"
-                >
+                <ul class="dropdown-menu" :class="sort ? 'show' : ''">
                   <li>
                     <NuxtLink
                       class="dropdown-item"

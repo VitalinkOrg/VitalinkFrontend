@@ -1,5 +1,5 @@
 <script setup>
-import { Bar } from "vue-chartjs";
+import { Bar, Doughnut } from "vue-chartjs";
 import {
   Chart as ChartJS,
   Title,
@@ -12,9 +12,9 @@ import {
   Colors,
 } from "chart.js";
 
-definePageMeta({
+/*definePageMeta({
   middleware: ["auth-insurances"],
-});
+});*/
 
 const config = useRuntimeConfig();
 const token = useCookie("token");
@@ -29,73 +29,96 @@ const token = useCookie("token");
 const vouchers = [
   {
     voucher_id: 1,
-    code: "001",
     patient_name: "Juan Pérez",
-    insurance_number: "123456",
-    reason_for_request: "Consulta General",
-    due_date: "2023-12-31",
-    status: "Activo",
+    reason_for_request: "Oftalmología - Cirugía de cataratas",
+    status: "Pendiente",
     address: "Calle Falsa 123",
     phone_number: "+506 1234-5678",
     city: "San José",
-    postal_code: "1000",
-    comment_by_insurance: "Aprobado",
+    postal_code: "10101",
+    comment_by_insurance:
+      "Se requiere evaluación adicional del especialista antes de aprobar el procedimiento.",
+    requested_amount: 1200,
+    service_provider: "Hospital CIMA",
+    service_cost: 2300,
+    provider_phone: "+506 2208-2000",
+    provider_address: "San José, Autop. Próspero Fernández, San Rafael",
+    patient_message:
+      "Solicito un voucher para cubrir la operación de cataratas en ambos ojos, recomendada por mi oftalmólogo para mejorar mi visión.",
   },
   {
     voucher_id: 2,
-    code: "002",
     patient_name: "María Gómez",
-    insurance_number: "654321",
-    reason_for_request: "Examen de Sangre",
-    due_date: "2023-11-30",
-    status: "Vencido",
+    reason_for_request: "Cardiología - Prueba de esfuerzo",
+    status: "Aprobada",
     address: "Avenida Siempre Viva 742",
     phone_number: "+506 8765-4321",
     city: "Cartago",
-    postal_code: "2000",
-    comment_by_insurance: "Rechazado",
+    postal_code: "20101",
+    comment_by_insurance: "Aprobado según cobertura del plan básico.",
+    requested_amount: 500,
+    service_provider: "Clínica Bíblica",
+    service_cost: 750,
+    provider_phone: "+506 2522-1000",
+    provider_address: "San José, Calle 1, Avenida 14",
+    patient_message:
+      "Necesito realizar una prueba de esfuerzo como seguimiento a mi condición cardíaca.",
   },
   {
     voucher_id: 3,
-    code: "003",
     patient_name: "Carlos Rodríguez",
-    insurance_number: "789012",
-    reason_for_request: "Radiografía",
-    due_date: "2023-10-15",
-    status: "Pendiente",
+    reason_for_request: "Ortopedia - Reemplazo de cadera",
+    status: "Confirmada",
     address: "Boulevard de los Sueños Rotos 456",
     phone_number: "+506 2345-6789",
     city: "Alajuela",
-    postal_code: "3000",
-    comment_by_insurance: "En revisión",
+    postal_code: "30101",
+    comment_by_insurance: "Procedimiento confirmado para el 15 de noviembre.",
+    requested_amount: 3000,
+    service_provider: "Hospital Metropolitano",
+    service_cost: 4500,
+    provider_phone: "+506 2436-1000",
+    provider_address: "San José, Lindora, Santa Ana",
+    patient_message:
+      "Requiero cirugía de reemplazo de cadera debido a artritis severa.",
   },
   {
     voucher_id: 4,
-    code: "004",
     patient_name: "Ana Fernández",
-    insurance_number: "345678",
-    reason_for_request: "Cirugía",
-    due_date: "2023-09-20",
-    status: "Aprobado",
+    reason_for_request: "Dermatología - Remoción de lunar",
+    status: "Rechazada",
     address: "Calle de la Amargura 789",
     phone_number: "+506 3456-7890",
     city: "Heredia",
-    postal_code: "4000",
-    comment_by_insurance: "Aprobado con condiciones",
+    postal_code: "40101",
+    comment_by_insurance:
+      "No cumple con los criterios de cobertura para procedimiento cosmético.",
+    requested_amount: 800,
+    service_provider: "Hospital La Católica",
+    service_cost: 1200,
+    provider_phone: "+506 2246-3000",
+    provider_address: "San José, Guadalupe",
+    patient_message:
+      "Necesito remover un lunar que ha cambiado de apariencia recientemente.",
   },
   {
     voucher_id: 5,
-    code: "005",
     patient_name: "Luis Martínez",
-    insurance_number: "901234",
-    reason_for_request: "Terapia Física",
-    due_date: "2023-08-25",
-    status: "Rechazado",
+    reason_for_request: "Neurología - Resonancia magnética",
+    status: "Activo",
     address: "Avenida Central 101",
     phone_number: "+506 4567-8901",
     city: "Puntarenas",
-    postal_code: "5000",
-    comment_by_insurance: "Falta documentación",
+    postal_code: "60101",
+    comment_by_insurance:
+      "Aprobado con prioridad debido a síntomas reportados.",
+    requested_amount: 1500,
+    service_provider: "Hospital San Juan de Dios",
+    service_cost: 1800,
+    provider_phone: "+506 2542-5000",
+    provider_address: "San José, Calle 14, Avenida 6",
+    patient_message:
+      "Presento dolores de cabeza persistentes y el médico recomienda una resonancia.",
   },
 ];
 
@@ -107,8 +130,71 @@ ChartJS.register(
   BarElement,
   CategoryScale,
   LinearScale,
-  Colors,
+  Colors
 );
+
+const doughnutCenterTextPlugin = {
+  id: "doughnutCenterText",
+  afterDraw: (chart) => {
+    if (chart.config.type !== "doughnut") {
+      return;
+    }
+    const { ctx } = chart;
+    const { width, height } = chart;
+    ctx.restore();
+
+    // Get the first dataset's value (assuming only one dataset)
+    const value = chart.data.datasets[0].data[0];
+    const total = chart.data.datasets[0].data.reduce((a, b) => a + b, 0);
+    const percentage = ((value / total) * 100).toFixed(2) + "%";
+
+    // Set font styles for the percentage
+    ctx.font = "700 33.877px Arial"; // Font size and weight
+    ctx.fillStyle = "#0CADBB"; // Color
+    ctx.textAlign = "center"; // Text alignment
+    ctx.textBaseline = "middle"; // Vertical alignment
+    ctx.fontFeatureSettings = "'liga' off, 'clig' off"; // Font features
+
+    // Draw the percentage text in the center
+    ctx.fillText(percentage, width / 2, height - 120); // Adjusted y-position for percentage
+
+    // Set font styles for the "Incremento" label
+    ctx.font = "16px Arial"; // Smaller font size for the label
+    ctx.fillStyle = "#000000"; // Color for the label (black in this case)
+
+    // Draw the "Incremento" label below the percentage
+    ctx.fillText("Incremento", width / 2, height - 90); // Adjusted y-position for label
+
+    ctx.save();
+  },
+};
+
+const semiDoughnutData = {
+  labels: ["Valor Único"],
+  datasets: [
+    {
+      label: "Doughnut Chart",
+      data: [75, 25], // Example data: 75% and 25%
+      backgroundColor: ["#0CADBB", "#C2C6E9"],
+    },
+  ],
+};
+
+const semiDoughnutOptions = {
+  responsive: true,
+  plugins: {
+    legend: {
+      display: false,
+      position: "top",
+    },
+    title: {
+      display: false,
+      text: "Valor Único",
+    },
+  },
+  circumference: 180, // 180 degrees for a semi-circle
+  rotation: -90, // Start from the top
+};
 const chartData = {
   labels: [
     "Enero",
@@ -126,22 +212,37 @@ const chartData = {
   ],
   datasets: [
     {
-      label: "Citas por Mes",
-      data: Array.from({ length: 12 }, () => Math.floor(Math.random() * 100)),
-      backgroundColor: [
-        "#FF6384",
-        "#36A2EB",
-        "#FFCE56",
-        "#4BC0C0",
-        "#9966FF",
-        "#FF9F40",
-        "#FF6384",
-        "#36A2EB",
-        "#FFCE56",
-        "#4BC0C0",
-        "#9966FF",
-        "#FF9F40",
-      ],
+      label: "Aprobados",
+      data: Array.from(
+        { length: 12 },
+        () => Math.floor(Math.random() * 50) + 20
+      ),
+      backgroundColor: "#36A2EB", // Blue for approved
+      // No stack → appears as a separate bar
+      borderWidth: 1,
+      borderRadius: 10, // Rounded borders
+      barPercentage: 0.6,
+    },
+    {
+      label: "Pendientes",
+      data: Array.from(
+        { length: 12 },
+        () => Math.floor(Math.random() * 30) + 10
+      ),
+      backgroundColor: "#FFCE56", // Yellow for pending
+      stack: "Stack 1", // Groups with "Cancelados"
+      borderWidth: 1,
+      borderRadius: 10, // Rounded borders
+      barPercentage: 0.6,
+    },
+    {
+      label: "Cancelados",
+      data: Array.from({ length: 12 }, () => Math.floor(Math.random() * 20)),
+      backgroundColor: "#FF6384", // Red for canceled
+      stack: "Stack 1", // Stacks on top of "Pendientes"
+      borderWidth: 1,
+      borderRadius: 10, // Rounded borders
+      barPercentage: 0.6,
     },
   ],
 };
@@ -151,10 +252,27 @@ const chartOptions = {
   plugins: {
     legend: {
       position: "top",
+      labels: {
+        usePointStyle: true,
+        pointStyle: "rect",
+      },
+      display: false,
     },
     title: {
-      display: true,
-      text: "Citas por Mes",
+      display: false,
+      text: "Váuchers por Mes",
+    },
+    tooltip: {
+      mode: "index",
+      intersect: false,
+    },
+  },
+  scales: {
+    x: {
+      stacked: true, // Only stacks datasets with the same 'stack' ID
+    },
+    y: {
+      stacked: true, // No vertical stacking (bars appear side by side)
     },
   },
 };
@@ -166,7 +284,7 @@ const chartOptions = {
       <div class="row mb-3">
         <div class="col">
           <p class="mx-2 d-flex align-items-center justify-content-between">
-            <span class="fw-medium fs-5">Váuchers Activos</span>
+            <span class="fw-medium fs-5">Solicitudes Activas</span>
             <NuxtLink class="btn btn-link text-dark" href="/aseguradoras/inicio"
               >Ver Todo
               <AtomsIconsArrowRightIcon />
@@ -177,25 +295,36 @@ const chartOptions = {
               <div
                 class="col text-center align-items-center d-flex justify-content-center"
               >
-                <div class="d-flex flex-column">
-                  <span class="fs-1 fw-bold text-primary">85%</span>
-                  <span class="fs-4 text-muted"
-                    >de váuchers <br />
-                    activos</span
+                <div class="position-relative">
+                  <!-- Semi-doughnut chart -->
+                  <Doughnut
+                    :data="semiDoughnutData"
+                    :options="semiDoughnutOptions"
+                    width="500"
+                    height="500"
+                  />
+
+                  <!-- Center text -->
+                  <div
+                    class="position-absolute start-50 translate-middle text-center"
+                    style="top: 70%"
                   >
+                    <span class="fs-1 fw-bold text-info">85%</span><br />
+                    <span class="text-muted">de solicitudes activas</span>
+                  </div>
                 </div>
               </div>
               <div
-                class="col-auto bg-light d-flex flex-column rounded-4 px-3 py-5"
+                class="col-auto bg-light d-flex flex-column justify-content-center rounded-4 px-3 py-5"
               >
-                <span class="fs-4">
+                <span class="fs-4 text-center">
                   <div>Total de</div>
                   <div class="display-4 fw-bold text-info">
                     {{ vouchers.length }}
                   </div>
                 </span>
-                <span class="fw-light text-muted fs-4 text-wrap"
-                  >Vauchers <br />generados y <br />
+                <span class="fw-light text-center text-muted fs-4 text-wrap"
+                  >Créditos <br />aprobados y <br />
                   confirmados</span
                 >
               </div>
@@ -218,7 +347,7 @@ const chartOptions = {
         </div>
         <div class="col">
           <p class="mx-2 d-flex align-items-center justify-content-between">
-            <span class="fw-medium fs-5">Resumen Anual de Váuchers</span>
+            <span class="fw-medium fs-5">Resumen Anual de créditos</span>
             <NuxtLink class="btn btn-link text-dark" href="/aseguradoras/inicio"
               >Ver Todo
               <AtomsIconsArrowRightIcon />
@@ -245,21 +374,32 @@ const chartOptions = {
                         <div class="fs-1 fw-bold">{{ vouchers.length }}</div>
                       </span>
                       <span class="fw-semibold text-muted"
-                        >Vauchers generados y confirmados</span
+                        >Créditos aprobados y confirmados</span
                       >
                     </div>
                   </div>
                   <div class="col-auto d-flex align-items-center">
                     <ul class="list-unstyled m-0">
                       <li class="d-flex align-items-center text-muted">
-                        <span class="square me-2 bg-primary"></span>Utilizados
+                        <span
+                          class="square me-2"
+                          style="background-color: #36a2eb"
+                        ></span
+                        >Aprobados
                       </li>
                       <li class="d-flex align-items-center text-muted">
-                        <span class="square me-2 bg-info"></span>Vauchers de
-                        aprobación
+                        <span
+                          class="square me-2"
+                          style="background-color: #ffce56"
+                        ></span
+                        >Pendientes
                       </li>
                       <li class="d-flex align-items-center text-muted">
-                        <span class="square me-2 bg-warning"></span>Cancelados
+                        <span
+                          class="square me-2"
+                          style="background-color: #ff6384"
+                        ></span
+                        >Cancelados
                       </li>
                     </ul>
                   </div>
@@ -292,32 +432,12 @@ const chartOptions = {
             <AtomsIconsArrowRightIcon />
           </NuxtLink>
         </p>
-        <div
-          class="table-responsive card border-0 py-4 rounded-3 shadow"
-          v-if="vouchers !== null"
-        >
-          <table class="table fw-light">
-            <thead>
-              <tr>
-                <th scope="col" class="text-muted">Código</th>
-                <th scope="col" class="text-muted">Nombre del asegurado</th>
-                <th scope="col" class="text-muted">Nº de Asegurado</th>
-                <th scope="col" class="text-muted">Procedimiento</th>
-                <th scope="col" class="text-muted">Vencimiento</th>
-                <th scope="col" class="text-muted">Estado</th>
-                <th scope="col" class="text-muted"></th>
-              </tr>
-            </thead>
 
-            <tbody>
-              <AseguradorasVaucherTableItem
-                v-for="voucher in vouchers"
-                :key="voucher.voucher_id"
-                :voucher="voucher"
-              />
-            </tbody>
-          </table>
-        </div>
+        <AseguradorasCreditoTable
+          v-if="vouchers !== null"
+          :vouchers="vouchers"
+        />
+
         <div class="card border-0 shadow rounded-3 py-4 h-100" v-else>
           <div class="card-body d-flex align-items-center p-5">
             <span class="w-50 text-center">
