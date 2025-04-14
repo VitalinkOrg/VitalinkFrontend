@@ -115,7 +115,7 @@ const logout = () => {
                   <li>
                     <NuxtLink
                       class="dropdown-item"
-                      href="/socio-financiero/configuracion"
+                      href="/socio-financiero/perfil"
                       >Configuración</NuxtLink
                     >
                   </li>
