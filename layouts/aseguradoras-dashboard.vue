@@ -5,8 +5,35 @@ const token = useCookie("token");
 const refreshToken = useCookie("refresh_token");
 const role = useCookie("role");
 const authenticated = useCookie("authenticated");
-const user_info = useCookie("user_info");
+//const user_info = useCookie("user_info");
 const router = useRouter();
+
+const user_info = {
+  services: [
+    { id: 101, name: "Mock Service A" },
+    { id: 102, name: "Mock Service B" },
+  ],
+  specialties: [
+    { id: 201, name: "Mock Specialty X" },
+    { id: 202, name: "Mock Specialty Y" },
+  ],
+  hospitals: [
+    { id: 301, name: "Mock Hospital 1" },
+    { id: 302, name: "Mock Hospital 2" },
+  ],
+  first_name: "MockFirstName",
+  name: "FallbackMockFirstName", // If first_name is undefined
+  last_name: "MockLastName",
+  phone_number: "123-456-7890",
+  phone_number_1: "987-654-3210", // If phone_number is undefined
+  address: "Mock Address 123",
+  city: "Mock City",
+  country_iso_code: "MCK",
+  postal_code: "12345",
+  description: "Mock Description of User",
+  medical_license_number: "MLN-123",
+  medical_number: "MN-456", // If medical_license_number is undefined
+};
 
 const logout = () => {
   token.value = null;
@@ -103,13 +130,14 @@ const logout = () => {
               <div class="dropdown">
                 <button
                   v-if="user_info"
-                  class="btn dropdown-toggle"
+                  class="btn rounded-circle border border-primary p-0 d-flex align-items-center justify-content-center"
+                  style="width: 32px; height: 32px"
                   @click="sort = !sort"
                   type="button"
                   data-bs-toggle="dropdown"
                   aria-expanded="false"
                 >
-                  {{ user_info.name }}
+                  {{ user_info.name.charAt(0).toUpperCase() }}
                 </button>
                 <ul class="dropdown-menu" :class="sort ? 'show' : ''">
                   <li>
