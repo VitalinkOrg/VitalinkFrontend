@@ -8,6 +8,12 @@ export default defineNuxtConfig({
           src: '/bootstrap.bundle.min.js',
           tagPosition: 'bodyClose'
         }
+      ],
+      meta: [
+        { 
+          'http-equiv': 'Content-Security-Policy', 
+          content: 'upgrade-insecure-requests' 
+        }
       ]
     }
   },
