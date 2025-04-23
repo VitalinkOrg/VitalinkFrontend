@@ -10,25 +10,90 @@ export default {
         entity: "",
         min: "",
         max: "",
-        specialties: null,
+        specialties: [],
+        procedures: [],
       },
-      selectedSpecialty: "", // New data property for selected specialty
+      selectedSpecialty: "",
+      loadingSpecialties: true,
+      errorLoadingSpecialties: false,
+      loadingProcedures: false,
+      errorLoadingProcedures: false,
     };
   },
-  mounted() {
-    this.filtersData.specialties = [
-      { code: "cardiology", name: "Cardiología" },
-      { code: "neurology", name: "Neurología" },
-      { code: "orthopedics", name: "Ortopedia" },
-    ];
+  async mounted() {
+    const token = useCookie("token");
+    const config = useRuntimeConfig();
+
+    try {
+      const { data, error } = await useFetch(
+        config.public.API_BASE_URL + "/udc/get_all?type=MEDICAL_SPECIALTY",
+        {
+          method: "GET",
+          headers: { Authorization: token.value },
+        }
+      );
+
+      if (data.value && data.value.data) {
+        this.filtersData.specialties = data.value.data.map((item) => ({
+          code: item.code,
+          name: item.name,
+        }));
+      }
+    } catch (err) {
+      console.error("Error loading specialties:", err);
+      this.errorLoadingSpecialties = true;
+    } finally {
+      this.loadingSpecialties = false;
+    }
+
     this.filtersData.disponibilidad = [
-      { code: "cardiology", name: "Todos" },
-      { code: "neurology", name: "Proximas semanas" },
-      { code: "orthopedics", name: "Proximos meses" },
-      { code: "orthopedics", name: "Proximos dias" },
+      { code: "all", name: "Todos" },
+      { code: "weeks", name: "Proximas semanas" },
+      { code: "months", name: "Proximos meses" },
+      { code: "days", name: "Proximos dias" },
     ];
   },
+  watch: {
+    async selectedSpecialty(newVal) {
+      if (newVal) {
+        await this.loadProcedures(newVal);
+      } else {
+        this.filtersData.procedures = [];
+        this.filtersData.procedimiento = "";
+      }
+    },
+  },
   methods: {
+    async loadProcedures(specialtyCode) {
+      const token = useCookie("token");
+      const config = useRuntimeConfig();
+
+      this.loadingProcedures = true;
+      this.errorLoadingProcedures = false;
+      this.filtersData.procedimiento = "";
+
+      try {
+        const { data, error } = await useFetch(
+          `${config.public.API_BASE_URL}/udc/get_all?father_code=${specialtyCode}&type=MEDICAL_PROCEDURE`,
+          {
+            method: "GET",
+            headers: { Authorization: token.value },
+          }
+        );
+
+        if (data.value && data.value.data) {
+          this.filtersData.procedures = data.value.data.map((item) => ({
+            code: item.code,
+            name: item.name,
+          }));
+        }
+      } catch (err) {
+        console.error("Error loading procedures:", err);
+        this.errorLoadingProcedures = true;
+      } finally {
+        this.loadingProcedures = false;
+      }
+    },
     searchResults() {
       this.$router.push({
         path: "/buscar",
@@ -40,11 +105,11 @@ export default {
             ? { lugar: this.filtersData.lugar }
             : {}),
           ...(this.filtersData.valoracion !== ""
-          ? { lugar: this.filtersData.valoracion }
-          : {}),
+            ? { lugar: this.filtersData.valoracion }
+            : {}),
           ...(this.filtersData.disponibilidad !== ""
-          ? { lugar: this.filtersData.disponibilidad }
-          : {}),
+            ? { lugar: this.filtersData.disponibilidad }
+            : {}),
           ...(this.filtersData.min !== ""
             ? { min_price: this.filtersData.min }
             : {}),
@@ -72,35 +137,82 @@ export default {
           class="row align-items-end justify-content-between"
           @submit.prevent="searchResults"
         >
-          <div class="col-md-5 form-group">
-            <label for="especialidad" class="form-label text-uppercase">Especialidades</label>
-            <select
-              id="especialidad"
-              class="form-select"
-              v-model="selectedSpecialty"
-              aria-describedby="especialidad-help"
+          <!-- Specialties Dropdown -->
+          <div class="col-md-5 form-group position-relative">
+            <label for="especialidad" class="form-label text-uppercase"
+              >Especialidades</label
             >
-              <option value="" disabled>Buscar por especialidad</option>
-              <option
-                v-for="specialty in filtersData.specialties"
-                :key="specialty.code"
-                :value="specialty.code"
+            <div class="input-wrapper">
+              <select
+                id="especialidad"
+                class="form-select"
+                v-model="selectedSpecialty"
+                :disabled="loadingSpecialties || errorLoadingSpecialties"
               >
-                {{ specialty.name }}
-              </option>
-            </select>
+                <option value="" disabled selected>
+                  Buscar por especialidad
+                </option>
+                <option
+                  v-for="specialty in filtersData.specialties"
+                  :key="specialty.code"
+                  :value="specialty.code"
+                >
+                  {{ specialty.name }}
+                </option>
+              </select>
+              <div
+                v-if="loadingSpecialties || errorLoadingSpecialties"
+                class="status-message"
+                :class="{ 'text-danger': errorLoadingSpecialties }"
+              >
+                <span v-if="loadingSpecialties">Cargando...</span>
+                <span v-else>Error al cargar</span>
+              </div>
+            </div>
           </div>
-          <div class="col-md-5 form-group">
-            <label for="procedimiento" class="form-label text-uppercase">Procedimiento</label>
-            <input
-              type="text"
-              class="form-control"
-              v-model="filtersData.procedimiento"
-              id="procedimiento"
-              placeholder="Operacion de cataratas"
-              aria-describedby="procedimiento-help"
-            />
+
+          <!-- Procedures Dropdown -->
+          <div class="col-md-5 form-group position-relative">
+            <label for="procedimiento" class="form-label text-uppercase"
+              >Procedimiento</label
+            >
+            <div class="input-wrapper">
+              <select
+                id="procedimiento"
+                class="form-select"
+                v-model="filtersData.procedimiento"
+                :disabled="
+                  loadingProcedures ||
+                  errorLoadingProcedures ||
+                  !selectedSpecialty
+                "
+              >
+                <option value="" disabled selected>
+                  {{
+                    selectedSpecialty
+                      ? "Seleccione un procedimiento"
+                      : "Primero seleccione una especialidad"
+                  }}
+                </option>
+                <option
+                  v-for="procedure in filtersData.procedures"
+                  :key="procedure.code"
+                  :value="procedure.code"
+                >
+                  {{ procedure.name }}
+                </option>
+              </select>
+              <div
+                v-if="loadingProcedures || errorLoadingProcedures"
+                class="status-message"
+                :class="{ 'text-danger': errorLoadingProcedures }"
+              >
+                <span v-if="loadingProcedures">Cargando...</span>
+                <span v-else>Error al cargar</span>
+              </div>
+            </div>
           </div>
+
           <div class="form-group col-md-2">
             <button type="submit" class="btn btn-info px-4 w-100">
               <Icon name="fa6-solid:magnifying-glass" class="text-light" />
@@ -109,26 +221,30 @@ export default {
         </form>
       </div>
     </div>
-    <div class="py-3 text-center">
-      <button
-        v-if="filtersData.entity"
-        class="btn rounded-5 bg-white border-secondary-subtle shadow-sm mx-1 fw-light"
-      >
-        Entidad: {{ filtersData.entity === "doctor" ? "Doctor" : "Hospital" }}
-      </button>
-      <button
-        v-if="filtersData.min"
-        class="btn rounded-5 bg-white border-secondary-subtle shadow-sm mx-1 fw-light"
-      >
-        Precio mínimo: {{ filtersData.min }}
-      </button>
-      <button
-        v-if="filtersData.max"
-        class="btn rounded-5 bg-white border-secondary-subtle shadow-sm mx-1 fw-light"
-      >
-        Precio máximo: {{ filtersData.max }}
-      </button>
-      <WebsiteMasFiltrosModal :filters="filtersData" />
-    </div>
   </div>
 </template>
+
+<style scoped>
+.input-wrapper {
+  position: relative;
+}
+
+.status-message {
+  position: absolute;
+  right: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 0.8rem;
+  background: white;
+  padding: 0 5px;
+  color: #6c757d; /* Bootstrap's text-muted color */
+}
+
+.form-select {
+  padding-right: 90px; /* Make space for the status message */
+}
+
+.text-danger {
+  color: #dc3545 !important; /* Bootstrap's danger color */
+}
+</style>
