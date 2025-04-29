@@ -13,6 +13,8 @@ const address = ref(user.address);
 const city = ref(user.city);
 const country_iso_code = ref(user.country_iso_code);
 const postal_code = ref(user.postal_code);
+const profilePicture = ref(null); // To store the selected file
+const imagePreview = ref(null); // To store the image preview URL
 
 const updateDoctor = async () => {
   const { data: user, error } = await useFetch(
@@ -36,6 +38,14 @@ const updateDoctor = async () => {
   }
   if (error.value) {
     console.log(error.value, "data");
+  }
+};
+
+const handleFileChange = (event) => {
+  const file = event.target.files[0];
+  if (file) {
+    profilePicture.value = file; // Store the file
+    imagePreview.value = URL.createObjectURL(file); // Create a preview URL
   }
 };
 
@@ -64,7 +74,7 @@ const updateHospital = async () => {
 </script>
 
 <template>
-  <NuxtLayout name="medicos-dashboard-perfil">
+  <NuxtLayout name="socio-dashboard-perfil">
     <h4 class="fw-normal">Datos Personales</h4>
     <form
       class="mt-4"
@@ -72,6 +82,35 @@ const updateHospital = async () => {
         user.last_name ? updateDoctor($event) : updateHospital($event)
       "
     >
+      <div class="form-group mb-3">
+        <label class="fw-normal">Foto de Perfil</label>
+        <div class="d-flex align-items-end">
+          <div class="profile-picture-container">
+            <img
+              :src="
+                imagePreview ||
+                user_info.profile_picture ||
+                '/_nuxt/src/assets/picture.svg'
+              "
+              :class="!profilePicture ? 'preview' : 'uploaded'"
+              alt="Profile Picture"
+            />
+          </div>
+          <label
+            for="upload-picture"
+            class="bg-primary badge upload-picture-button mb-0"
+          >
+            <img src="@/src/assets/camera.svg" alt="Upload Picture" />
+          </label>
+          <input
+            type="file"
+            id="upload-picture"
+            accept="image/*"
+            style="display: none"
+            @change="handleFileChange"
+          />
+        </div>
+      </div>
       <div class="row row-cols-2">
         <div class="form-group mb-3">
           <label for="nombre" class="form-label text-capitalize"
@@ -174,3 +213,35 @@ const updateHospital = async () => {
     </form>
   </NuxtLayout>
 </template>
+<style>
+.profile-picture-container {
+  border-radius: 18px;
+  border: 3px solid var(--Primary-Gradients-Violet-02, #c2c6e9);
+  background: #f8faff;
+  width: 130px;
+  height: 132px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.profile-picture-container .preview {
+  width: 40px;
+  height: 40px;
+}
+
+.profile-picture-container .uploaded {
+  width: 100%;
+}
+
+.upload-picture-button {
+  border-radius: 39px;
+  width: 40px;
+  height: 40px;
+  margin-left: -25px;
+  cursor: pointer;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+</style>

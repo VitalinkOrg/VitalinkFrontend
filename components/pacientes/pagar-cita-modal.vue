@@ -396,8 +396,6 @@
 import { ref, defineProps } from "vue";
 const props = defineProps(["appointment", "step", "showStatus"]);
 
-console.log(props);
-
 const open = ref(false);
 const step = ref(1);
 const errorText = ref("");

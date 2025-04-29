@@ -43,20 +43,18 @@ export default {
         <thead>
           <tr>
             <th scope="col"></th>
-            <th scope="col" class="text-muted">Nombre del paciente</th>
-            <th scope="col" class="text-muted">Fecha</th>
-            <th scope="col" class="text-muted">Hora</th>
-            <th scope="col" class="text-muted">Procedimiento</th>
-            <th scope="col" class="text-muted">Lugar</th>
-            <th scope="col" class="text-muted">Váucher</th>
-            <th scope="col" class="text-muted">Estado</th>
+            <th scope="col" class="text-muted">ID</th>
+            <th scope="col" class="text-muted">Nombre</th>
+            <th scope="col" class="text-muted">Dirección</th>
+            <th scope="col" class="text-muted">Teléfono de contacto</th>
+            <th scope="col" class="text-muted">Correo electrónico</th>
             <th scope="col" class="text-muted"></th>
           </tr>
         </thead>
 
         <tbody>
           <tr v-for="patient in patients" :key="patient.patient_id">
-            <td>
+            <td style="vertical-align: middle">
               <div class="form-check">
                 <input
                   class="form-check-input border-dark"
@@ -67,26 +65,19 @@ export default {
                 <!-- <label class="form-check-label" for="flexCheckDefault"></label> -->
               </div>
             </td>
-            <td>{{ patient.patient_name }}</td>
-            <td>{{ new Date(patient.date).toLocaleDateString() }}</td>
-            <td>{{ patient.time_from + " - " + patient.time_to }}</td>
-            <td>{{ patient.service_name }}</td>
-            <td>
-              <small>{{ patient.patient_address }}</small>
-            </td>
-            <td>
-              <span class="badge text-muted bg-white border rounded-5 w-100">{{
-                patient.code
-              }}</span>
-            </td>
-            <td>
-              <span
-                class="badge bg-success-subtle rounded-5 text-dark text-uppercase w-100"
-                >{{ patient.status }}
-                <AtomsIconsChevronDown />
+            <td style="vertical-align: middle">{{ patient.patient_id }}</td>
+            <td style="vertical-align: middle">
+              <span class="me-2">
+                <img src="@/src/assets/img-avatar-sm.png" alt="avatar" />
               </span>
+              {{ patient.patient_name }}
             </td>
-            <td>
+            <td style="vertical-align: middle">
+              {{ patient.patient_address }}
+            </td>
+            <td style="vertical-align: middle">{{ patient.patient_phone }}</td>
+            <td style="vertical-align: middle">{{ patient.patient_email }}</td>
+            <td style="vertical-align: middle">
               <div class="dropdown">
                 <AtomsIconsThreeDotsHorizontalIcon
                   data-bs-toggle="dropdown"

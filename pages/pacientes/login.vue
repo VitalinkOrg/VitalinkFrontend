@@ -135,7 +135,7 @@ const getInsuranceInfo = async () => {
   );
   if (user) {
     user_info.value = user.value;
-    router.push("/aseguradoras/inicio");
+    router.push("/socio-financiero/inicio");
   }
 };
 

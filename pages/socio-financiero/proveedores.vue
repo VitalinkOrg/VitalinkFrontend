@@ -24,7 +24,7 @@ const { data: suppliers, pending: pendingSuppliers } = await useFetch(
       >
         <ol class="breadcrumb">
           <li class="breadcrumb-item">
-            <NuxtLink href="/aseguradoras/inicio" class="text-muted"
+            <NuxtLink href="/socio-financiero/inicio" class="text-muted"
               >Inicio</NuxtLink
             >
           </li>

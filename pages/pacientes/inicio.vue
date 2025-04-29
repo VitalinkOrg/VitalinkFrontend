@@ -8,6 +8,16 @@ const user_info = useCookie("user_info");
 
 console.log(user_info);
 
+const { data: specialties, pending: pendingSpecialties } = await useFetch(
+  config.public.API_BASE_URL + "/udc/get_all?type=MEDICAL_SPECIALTY",
+  {
+    headers: { Authorization: token.value },
+    transform: (res) =>
+      res.data.map((item) => ({ code: item.code, name: item.name })),
+    server: false, // Ensure this runs on client-side
+  }
+);
+
 const { data: appointments, pending: pendingAppointments } = await useFetch(
   config.public.API_BASE_URL + "/internal_patient_dashboard/appointments",
   {
@@ -16,65 +26,13 @@ const { data: appointments, pending: pendingAppointments } = await useFetch(
   }
 );
 
-// const { data: historial, pending: pendingHistorial } = await useFetch(
-//   config.public.API_BASE_URL +
-//     "/internal_patient_dashboard/doctors_and_hospitals",
-//   {
-//     headers: { Authorization: token.value },
-//     transform: (_historial) => _historial.data,
-//   },
-// );
-const historial = [
+const { data: historial, pending: pendingHistorial } = await useFetch(
+  config.public.API_BASE_URL + "/supplier/get_all_main",
   {
-    id: 1,
-    review_score: 4.5,
-    review_count: 20,
-    name: "Dr. Juan Pérez",
-    servicios: ["Cardiología", "Medicina Interna"],
-  },
-  {
-    id: 2,
-    review_score: 4.8,
-    review_count: 35,
-    name: "Dra. María López",
-    servicios: ["Pediatría", "Neonatología"],
-  },
-  {
-    id: 3,
-    review_score: 4.2,
-    review_count: 15,
-    name: "Dr. Carlos García",
-    servicios: ["Dermatología", "Cirugía Plástica"],
-  },
-  {
-    id: 4,
-    review_score: 4.9,
-    review_count: 50,
-    name: "Dra. Ana Martínez",
-    servicios: ["Ginecología", "Obstetricia"],
-  },
-  {
-    id: 5,
-    review_score: 4.7,
-    review_count: 40,
-    name: "Dr. Luis Fernández",
-    servicios: ["Neurología", "Psiquiatría"],
-  },
-  {
-    id: 6,
-    review_score: 4.3,
-    review_count: 25,
-    name: "Dra. Laura Gómez",
-    servicios: ["Oftalmología", "Optometría"],
-  },
-  {
-    id: 7,
-    review_score: 4.6,
-    review_count: 30,
-    name: "Dr. Pedro Sánchez",
-    servicios: ["Ortopedia", "Traumatología"],
-  },
-];
+    headers: { Authorization: token.value },
+    transform: (_historial) => _historial.data,
+  }
+);
 </script>
 <template>
   <NuxtLayout name="pacientes-dashboard">
@@ -88,7 +46,11 @@ const historial = [
               ¿Qué servicio médico estás buscando?
             </span>
           </h1>
-          <WebsiteSearchBar :solicitar="true" />
+          <WebsiteSearchBar
+            :solicitar="true"
+            :specialties="specialties || []"
+            :token="token.value"
+          />
         </div>
       </header>
 
@@ -102,7 +64,10 @@ const historial = [
                 >
                   <span class="fw-semibold fs-5">Recomendados</span>
                 </p>
-                <div v-if="historial !== null" class="card-body">
+                <div
+                  v-if="historial !== null && historial.length > 0"
+                  class="card-body"
+                >
                   <div class="row">
                     <div
                       class="col-md-4 mb-4"
@@ -123,7 +88,8 @@ const historial = [
                               class="bg-primary d-flex p-2 score justify-content-between gap-2"
                             >
                               <p class="text-white mb-0">
-                                {{ medico.review_score }}
+                                {{ medico.stars_by_supplier.toFixed(1) }}
+                                <!-- Placeholder - replace with actual rating if available -->
                               </p>
                               <img
                                 src="@/src/assets/star.svg"
@@ -146,7 +112,7 @@ const historial = [
                                 class="img-fluid"
                               />
                               <p class="text-muted mb-0">
-                                {{ medico.servicios[0] }}
+                                {{ medico.medical_type?.name || "none" }}
                               </p>
                             </div>
 
@@ -157,7 +123,12 @@ const historial = [
                                 class="img-fluid"
                               />
                               <p class="text-muted mb-0">
-                                +5 Hospitales diferentes
+                                {{ medico.locations.length }}
+                                {{
+                                  medico.locations.length === 1
+                                    ? "Hospital"
+                                    : "Hospitales diferentes"
+                                }}
                               </p>
                             </div>
                           </div>
@@ -170,7 +141,9 @@ const historial = [
                               alt="Busca centro medico"
                               class="img-fluid"
                             />
-                            <p class="m-0">5 de Octubre, 2025</p>
+                            <p class="m-0">
+                              {{ medico.availabilities[0].weekday }}
+                            </p>
                           </div>
                           <div class="d-flex align-items-center gap-2">
                             <img
@@ -178,23 +151,28 @@ const historial = [
                               alt="Busca centro medico"
                               class="img-fluid"
                             />
-                            <p class="m-0">11:00 am</p>
+                            <p class="m-0">
+                              {{ medico.availabilities[0].from_hour }} -
+                              {{ medico.availabilities[0].to_hour }}
+                            </p>
                           </div>
                         </div>
+
                         <div class="mt-3">
-                          <span class="badge me-2 text-primary p-2"
-                            >Oftalmología</span
+                          <span
+                            v-for="service in medico.services"
+                            class="badge me-2 text-primary p-2"
+                            >{{ service.medical_specialty.name }}</span
                           >
-                          <span class="badge me-2 text-primary p-2"
-                            >Cirugía</span
-                          >
-                          <span class="badge text-primary p-2">Pediatría</span>
                         </div>
+
                         <div
                           class="mt-3 d-flex justify-content-between align-items-center"
                         >
                           <div>
-                            <p class="fw-bold mb-0">$23,200 USD</p>
+                            <p class="fw-bold mb-0">
+                              {{ medico.search_reference_price }}
+                            </p>
                             <p class="text-muted mb-0">Precio de referencia</p>
                           </div>
 

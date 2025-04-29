@@ -94,18 +94,6 @@ const logout = () => {
             </span>
             Servicios
           </NuxtLink>
-          <div class="ms-5">
-            <NuxtLink
-              href="/medicos/servicios"
-              class="nav-link rounded-3 text-secondary"
-              ><small>Mis Servicios</small></NuxtLink
-            >
-            <NuxtLink
-              href="/medicos/servicios/agregar"
-              class="nav-link fs-6 rounded-3 text-secondary"
-              ><small>Agregar Servicio</small></NuxtLink
-            >
-          </div>
         </li>
         <li class="nav-item w-100 mb-3">
           <NuxtLink
@@ -192,10 +180,7 @@ const logout = () => {
                   data-bs-toggle="dropdown"
                   aria-expanded="false"
                 >
-                  {{
-                    user_info.name ||
-                    user_info.first_name + " " + user_info.last_name
-                  }}
+                  <img src="@/src/assets/img-avatar-sm.png" alt="avatar" />
                 </button>
                 <ul class="dropdown-menu" :class="sort ? 'show' : ''">
                   <li>
@@ -209,7 +194,7 @@ const logout = () => {
                     >
                   </li>
                   <li>
-                    <NuxtLink class="dropdown-item" href="/medicos/perfil"
+                    <NuxtLink class="dropdown-item" href="/medicos/resenas"
                       >Reseñas</NuxtLink
                     >
                   </li>

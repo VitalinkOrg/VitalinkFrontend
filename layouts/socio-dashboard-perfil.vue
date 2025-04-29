@@ -2,11 +2,13 @@
 const user_info = useCookie("user_info");
 </script>
 <template>
-  <NuxtLayout name="medicos-dashboard">
+  <NuxtLayout name="aseguradoras-dashboard">
     <nav style="--bs-breadcrumb-divider: &quot;/&quot;" aria-label="breadcrumb">
       <ol class="breadcrumb">
         <li class="breadcrumb-item">
-          <NuxtLink href="/medicos/inicio" class="text-muted">Inicio</NuxtLink>
+          <NuxtLink href="/socio-financiero/inicio" class="text-muted"
+            >Inicio</NuxtLink
+          >
         </li>
       </ol>
     </nav>
@@ -18,43 +20,43 @@ const user_info = useCookie("user_info");
       <ul class="nav nav-underline d-flex flex-row w-100">
         <li class="nav-item">
           <NuxtLink
-            href="/medicos/perfil"
+            href="/socio-financiero/perfil"
             class="nav-link"
             active-class="active text-primary"
           >
-            Datos Personales
+            Información Básica
           </NuxtLink>
         </li>
         <li class="nav-item">
           <NuxtLink
-            href="/medicos/perfil/profesional"
+            href="/socio-financiero/perfil/notificaciones"
             class="nav-link"
             active-class="active text-primary"
           >
-            Datos Profesionales
+            Notificaciones
           </NuxtLink>
         </li>
         <li class="nav-item">
           <NuxtLink
-            href="/medicos/perfil/educacion-experiencia"
+            href="/socio-financiero/perfil/privacidad"
             class="nav-link"
             active-class="active text-primary"
           >
-            Educación y Experiencia
+            Privacidad
           </NuxtLink>
         </li>
         <!-- <li class="nav-item">
-          <NuxtLink href="/medicos/perfil/galeria" class="nav-link" active-class="active text-primary">
+          <NuxtLink href="/socio-financiero/perfil/galeria" class="nav-link" active-class="active text-primary">
             Galería
           </NuxtLink>
         </li> -->
         <li class="nav-item">
           <NuxtLink
-            href="/medicos/perfil/especialidades"
+            href="/socio-financiero/perfil/eliminar-cuenta"
             class="nav-link"
             active-class="active text-primary"
           >
-            Especialidades
+            Eliminar cuenta
           </NuxtLink>
         </li>
       </ul>
