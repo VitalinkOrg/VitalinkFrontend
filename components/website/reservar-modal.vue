@@ -757,7 +757,6 @@ export default {
       });
     },
     confirmReservation() {
-      console.log("hello");
       this.goToStep(4); // Use goToStep to update the step
     },
   },

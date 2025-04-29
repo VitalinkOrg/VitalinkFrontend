@@ -67,8 +67,12 @@ const getOffers = async (type, id) => {
               width="67.088px"
               height="66.975px"
             />
-            <div class="bg-primary d-flex p-2 score justify-content-between gap-2">
-              <p class="text-white mb-0">{{ parseFloat(clinica.review_score).toFixed(1) || "" }}</p>
+            <div
+              class="bg-primary d-flex p-2 score justify-content-between gap-2"
+            >
+              <p class="text-white mb-0">
+                {{ clinica.stars_by_supplier.toFixed(1) }}
+              </p>
               <img
                 src="@/src/assets/star.svg"
                 alt="Busca centro medico"
@@ -85,7 +89,7 @@ const getOffers = async (type, id) => {
                 class="img-fluid"
               />
               <p class="text-muted mb-0">
-                {{ clinica.specialty_name[0] || "Servicio no disponible" }}
+                {{ clinica.medical_type?.name || "none" }}
               </p>
             </div>
             <div class="d-flex align-items-center gap-2">
@@ -95,7 +99,12 @@ const getOffers = async (type, id) => {
                 class="img-fluid"
               />
               <p class="text-muted mb-0">
-                +{{ clinica.hospital_count || 0 }} Hospitales diferentes
+                {{ clinica.locations.length }}
+                {{
+                  clinica.locations.length === 1
+                    ? "Hospital"
+                    : "Hospitales diferentes"
+                }}
               </p>
             </div>
             <div class="mt-3 availability p-2">
@@ -106,7 +115,7 @@ const getOffers = async (type, id) => {
                   alt="Busca centro medico"
                   class="img-fluid"
                 />
-                <p class="m-0">5 de Octubre, 2025</p>
+                <p class="m-0">{{ clinica.availabilities[0].weekday }}</p>
               </div>
               <div class="d-flex align-items-center gap-2">
                 <img
@@ -114,26 +123,30 @@ const getOffers = async (type, id) => {
                   alt="Busca centro medico"
                   class="img-fluid"
                 />
-                <p class="m-0">11:00 am</p>
+                <p class="m-0">
+                  {{ clinica.availabilities[0].from_hour }} -
+                  {{ clinica.availabilities[0].to_hour }}
+                </p>
               </div>
             </div>
             <div class="mt-3">
               <span
+                v-for="service in clinica.services"
                 class="badge me-2 text-primary p-2"
-                v-for="specialty in clinica.specialty_name"
-                :key="specialty"
+                >{{ service.medical_specialty.name }}</span
               >
-                {{ specialty }}
-              </span>
             </div>
             <div class="mt-3 d-flex justify-content-between align-items-center">
               <div>
                 <p class="fw-bold mb-0">
-                  {{ parseFloat(clinica.min_price).toLocaleString() }} USD
+                  {{ clinica.search_reference_price }} USD
                 </p>
                 <p class="text-muted mb-0">Precio de referencia</p>
               </div>
-              <a href="#" class="text-decoration-none"  @click.prevent="getOffers(clinica.entity_type, clinica.id)">
+              <a
+                :href="'/perfiles/doctor/' + clinica.id"
+                class="text-decoration-none"
+              >
                 Ver paquetes
                 <img
                   src="@/src/assets/arrow-next.svg"
@@ -210,28 +223,33 @@ const getOffers = async (type, id) => {
       </div>
     </div>
   </NuxtLink>
-  <WebsiteReservarModal :isOpen="panel" :currentStep=0 :offers="offers" @close="panel = false" />
+  <WebsiteReservarModal
+    :isOpen="panel"
+    :currentStep="0"
+    :offers="offers"
+    @close="panel = false"
+  />
 </template>
 <style lang="scss" scoped>
-  .card {
-    background-color: #fff;
-    border-radius: 8px;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-  }
+.card {
+  background-color: #fff;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
 
-  .badge {
-    font-size: 0.9rem;
-    background-color: #ebecf7;
-    border-radius: 105.022px;
-  }
+.badge {
+  font-size: 0.9rem;
+  background-color: #ebecf7;
+  border-radius: 105.022px;
+}
 
-  .score {
-    width: 62px;
-    border-radius: 23px;
-  }
+.score {
+  width: 62px;
+  border-radius: 23px;
+}
 
-  .availability {
-    background-color: #f9f8f8;
-    border-radius: 9px;
-  }
+.availability {
+  background-color: #f9f8f8;
+  border-radius: 9px;
+}
 </style>

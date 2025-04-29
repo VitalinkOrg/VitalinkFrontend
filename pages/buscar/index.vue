@@ -1,45 +1,16 @@
 <script>
+definePageMeta({
+  middleware: ["auth-pacientes"],
+});
 import axios from "axios";
 
 export default {
   data() {
     return {
-      clinicas: [
-        {
-          id: 2000,
-          entity_type: "doctor",
-          name: "Clinica Santa Fe",
-          review_score: 4.5,
-          review_count: 23,
-          specialty_name: ["Cardiology", "Pediatrics"],
-          service_name: ["Consultation"],
-          hospital_count: 3,
-          min_price: 150.0,
-        },
-        {
-          id: 2001,
-          entity_type: "hospital",
-          name: "Hospital General",
-          review_score: 4.0,
-          review_count: 45,
-          specialty_name: ["Orthopedics", "Neurology"],
-          service_name: ["Surgery"],
-          hospital_count: 5,
-          min_price: 200.0,
-        },
-        {
-          id: 2002,
-          entity_type: "doctor",
-          name: "Dr. Ana Perez",
-          review_score: 4.7,
-          review_count: 30,
-          specialty_name: ["Dermatology"],
-          service_name: ["Skin Treatment"],
-          hospital_count: 1,
-          min_price: 100.0,
-        },
-      ],
+      clinicas: [],
+      specialties: [], // Add specialties data
       isLoading: true,
+      isSpecialtiesLoading: true, // Add loading state for specialties
       filter_query: this.$route.query.filter_name,
       insurance: this.$route.query.insurance,
       entity_type: this.$route.query.entity_type,
@@ -47,66 +18,125 @@ export default {
       max_price: this.$route.query.max_price,
       specialty: this.$route.query.specialty,
       isMapVisible: false,
+      config: {}, // Will store runtime config
+      token: "", // Will store token
     };
   },
-  watchQuery: true,
+  watchQuery: [
+    "filter_name",
+    "insurance",
+    "entity_type",
+    "min_price",
+    "max_price",
+    "specialty",
+    "min_stars",
+    "specialty_code",
+    "procedure_code",
+    "lugar",
+  ],
   watch: {
-    "$route.query.filter_name": {
+    "$route.query.min_stars": {
       handler(oldUrl) {
-        this.filter_query = oldUrl;
+        this.min_starts = oldUrl;
         this.search();
       },
     },
-    "$route.query.insurance": {
+    "$route.query.specialty_code": {
       handler(oldUrl) {
-        this.insurance = oldUrl;
+        this.specialty_code = oldUrl;
         this.search();
       },
     },
-    "$route.query.entity_type": {
+    "$route.query.procedure_code": {
       handler(oldUrl) {
-        this.entity_type = oldUrl;
+        this.procedure_code = oldUrl;
         this.search();
       },
     },
-    "$route.query.specialty": {
+    "$route.query.min_price": {
       handler(oldUrl) {
-        this.specialty = oldUrl;
+        this.min_price = oldUrl;
+        this.search();
+      },
+    },
+    "$route.query.max_price": {
+      handler(oldUrl) {
+        this.max_price = oldUrl;
         this.search();
       },
     },
   },
-  created() {
+  async created() {
+    this.config = useRuntimeConfig();
+    this.token = useCookie("token").value;
+
+    // Set initial values from route query
+    this.filter_query = this.$route.query.filter_name || "";
+    this.insurance = this.$route.query.insurance || "";
+    this.entity_type = this.$route.query.entity_type || "";
+    this.min_price = this.$route.query.min_price || "";
+    this.max_price = this.$route.query.max_price || "";
+    this.specialty = this.$route.query.specialty || "";
+    this.min_stars = this.$route.query.min_stars || "";
+    this.specialty_code = this.$route.query.specialty_code || "";
+    this.procedure_code = this.$route.query.procedure_code || "";
+    this.lugar = this.$route.query.lugar || "";
+
+    await this.loadSpecialties();
     this.search();
   },
   methods: {
+    async loadSpecialties() {
+      this.isSpecialtiesLoading = true;
+      try {
+        const response = await axios.get(
+          this.config.public.API_BASE_URL +
+            "/udc/get_all?type=MEDICAL_SPECIALTY",
+          {
+            headers: { Authorization: useCookie("token").value },
+          }
+        );
+        this.specialties = response.data.data.map((item) => ({
+          code: item.code,
+          name: item.name,
+        }));
+      } catch (error) {
+        console.error("Error loading specialties:", error);
+      } finally {
+        this.isSpecialtiesLoading = false;
+      }
+    },
     async search() {
       this.isLoading = true;
-      // this.clinicas = [];
+      this.clinicas = [];
+
+      // Create a clean params object
+      const params = {};
+
+      // Only add parameters that have values
+      if (this.filter_query) params.filter_name = this.filter_query;
+      if (this.procedure_code) params.procedure_code = this.procedure_code;
+      if (this.min_stars) params.min_stars = this.min_stars;
+      if (this.min_price) params.min_price = this.min_price;
+      if (this.max_price) params.max_price = this.max_price;
+      if (this.lugar) params.lugar = this.lugar;
+      if (this.specialty_code) params.specialty_code = this.specialty_code;
+
       const setup = {
-        params: {
-          ...(this.filter_query !== ""
-            ? { filter_name: this.filter_query }
-            : {}),
-          ...(this.insurance !== "" ? { insurance: this.insurance } : {}),
-          ...(this.entity_type !== "" ? { entity_type: this.entity_type } : {}),
-          ...(this.min_price !== "" ? { min_price: this.min_price } : {}),
-          ...(this.max_price !== "" ? { max_price: this.max_price } : {}),
-          ...(this.specialty !== "" ? { specialty: this.specialty } : {}),
-        },
+        params,
+        headers: { Authorization: useCookie("token").value },
       };
+
       try {
-        await axios
-          .get(
-            config.public.API_BASE_URL +
-              "/patient_dashboard/search_doctors_hospitals",
-            setup
-          )
-          .then((r) => {
-            // this.clinicas = r.data.data;
-            this.isLoading = false;
-          });
+        console.log("Search params:", setup); // Debug log
+        const response = await axios.get(
+          this.config.public.API_BASE_URL + "/supplier/get_all_main",
+          setup
+        );
+        this.clinicas = response.data.data;
       } catch (e) {
+        console.error("Search error:", e);
+      } finally {
         this.isLoading = false;
       }
     },
@@ -124,7 +154,10 @@ export default {
               <h1 class="text-sm-center h3 mb-4 fw-medium">
                 ¿Qué servicio médico estás buscando?
               </h1>
-              <WebsiteSearchBar />
+              <WebsiteSearchBar
+                :specialties="specialties"
+                :loading="isSpecialtiesLoading"
+              />
             </div>
           </div>
         </div>
@@ -137,13 +170,13 @@ export default {
               <div
                 class="d-flex align-items-center justify-content-between mb-3"
               >
-              <div class="d-flex flex-column gap-2">
-                <span class="fw-semibold fs-5">{{ filter_query }}</span>
-                <span class="fw-medium text-muted" v-if="clinicas"
-                  >{{ clinicas.length }} resultados</span
-                >
-              </div>
-              
+                <div class="d-flex flex-column gap-2">
+                  <span class="fw-semibold fs-5">{{ filter_query }}</span>
+                  <span class="fw-medium text-muted" v-if="clinicas">
+                    {{ clinicas.length }} resultados
+                  </span>
+                </div>
+
                 <span class="d-flex align-items-center">
                   <div style="display: flex" class="px-5">
                     <div
@@ -186,7 +219,7 @@ export default {
             </div>
           </div>
 
-          <div class="row ">
+          <div class="row">
             <div
               :class="{ 'col-sm-12': !isMapVisible, 'col-sm-8': isMapVisible }"
             >

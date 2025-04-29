@@ -442,7 +442,6 @@ const cancelAppointment = () => {
 };
 
 const closeModal = () => {
-  console.log("hello");
   // Reset form
   approvedAmount.value = props.credit?.requested_amount || 0;
   description.value = "";
