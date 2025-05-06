@@ -1,6 +1,5 @@
 <script setup>
 import { ref, defineProps } from "vue";
-import defaultImage from "@/assets/img-medico-thumbnail.png";
 const panel = ref(false);
 const props = defineProps(["clinica"]);
 const offers = ref([]);
