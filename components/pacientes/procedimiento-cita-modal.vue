@@ -8,9 +8,9 @@
     @click="openModal"
     role="button"
     class="badge rounded-5 text-dark"
-    :class="statusClass(appointment.status)"
+    :class="statusClass(appointment.appointment_status.name)"
   >
-    {{ appointment.status }}
+    {{ appointment.appointment_status.name }}
   </span>
   <div
     class="modal fade"

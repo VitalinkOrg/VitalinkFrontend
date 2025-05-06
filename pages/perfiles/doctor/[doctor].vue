@@ -1,15 +1,22 @@
 <script setup>
-// const config = useRuntimeConfig();
-// const route = useRoute();
-// const { data: doctor, pending } = await useLazyFetch(
-//   config.public.API_BASE_URL + "/patient_dashboard/doctor_profile",
-//   {
-//     params: {
-//       doctor_id: route.params.doctor,
-//     },
-//     transform: (_doctor) => _doctor.data,
-//   },
-// );
+definePageMeta({
+  middleware: ["auth-pacientes"],
+});
+const config = useRuntimeConfig();
+const token = useCookie("token");
+const route = useRoute();
+const { data: doctorData, pending } = await useLazyFetch(
+  config.public.API_BASE_URL + "/supplier/get",
+  {
+    headers: { Authorization: token.value },
+    params: {
+      id: route.params.doctor,
+    },
+    transform: (_doctor) => _doctor.data,
+  }
+);
+
+console.log(doctorData);
 
 const isModalOpen = ref(false);
 
@@ -39,8 +46,6 @@ const doctor = ref({
     { doctor_service_id: 2, specialty: "Internal Medicine" },
   ],
 });
-
-const pending = ref(false); // Mock pending state
 </script>
 
 <template>
@@ -69,11 +74,11 @@ const pending = ref(false); // Mock pending state
         </div>
         <div v-if="pending">Loading clinica...</div>
         <div v-else class="row">
-          <div class="col-sm-4">
+          <div class="col-sm-3">
             <div class="card shadow border-0">
               <div class="card-body text-left">
                 <img
-                  src="@/src/assets/img-clinica-thumbnail-md.png"
+                  :src="doctorData.profile_picture_url"
                   alt=""
                   class="img-fluid mb-3"
                 />
@@ -87,14 +92,10 @@ const pending = ref(false); // Mock pending state
                   </small>
                 </div>
                 <h2 class="h5 fw-semibold my-2">
-                  {{
-                    doctor.doctor_information.personal.first_name +
-                    " " +
-                    doctor.doctor_information.personal.last_name
-                  }}
+                  {{ doctorData.name }}
                 </h2>
                 <h2 class="h5 fw-semibold my-2 text-muted">
-                  Nº de Colegiado: {{ doctor.doctor_information.personal.code }}
+                  Nº de Colegiado: {{ doctorData.num_medical_enrollment }}
                 </h2>
                 <span
                   class="badge bg-primary text-primary me-2 rounded-5 text-capitalize"
@@ -106,17 +107,17 @@ const pending = ref(false); // Mock pending state
 
                 <div class="my-2">
                   <a
-                    :href="`tel:${doctor.doctor_information.personal.phone_number}`"
+                    :href="`tel:${doctorData.phone_number}`"
                     class="badge bg-info rounded-2 mx-1 p-2"
                     ><AtomsIconsPhoneIcon
                   /></a>
                   <a
-                    :href="`mailto:${doctor.doctor_information.personal.email}`"
+                    :href="`mailto:${doctorData.email}`"
                     class="badge bg-info rounded-2 mx-1 p-2"
                     ><AtomsIconsMailIcon
                   /></a>
                   <a
-                    :href="`mailto:${doctor.doctor_information.personal.email}`"
+                    :href="`mailto:${doctorData.email}`"
                     class="badge bg-info rounded-2 mx-1 p-2"
                     ><AtomsIconsMapPointerIcon
                   /></a>
@@ -125,11 +126,13 @@ const pending = ref(false); // Mock pending state
                   <small v-if="doctor">
                     <AtomsIconsMapPointerIcon />
                     {{
-                      doctor.doctor_information.personal.address +
+                      doctorData.street_number +
+                      " " +
+                      doctorData.address +
                       ", " +
-                      doctor.doctor_information.personal.city +
+                      doctorData.city_name +
                       ", " +
-                      doctor.doctor_information.personal.country_iso_code
+                      doctorData.country_iso_code
                     }}
                   </small>
                 </p>
@@ -144,7 +147,7 @@ const pending = ref(false); // Mock pending state
                         <p
                           class="fw-semibold text-primary text-center m-0 fs-5"
                         >
-                          +10 años
+                          + {{ doctorData.experience_years }} años
                         </p>
                       </div>
                     </div>
@@ -159,7 +162,7 @@ const pending = ref(false); // Mock pending state
                         <p
                           class="fw-semibold text-primary text-center m-0 fs-5"
                         >
-                          +1000
+                          + {{ doctorData.patients_number }}
                         </p>
                       </div>
                     </div>
@@ -204,7 +207,7 @@ const pending = ref(false); // Mock pending state
               </div>
             </div>
           </div>
-          <div class="col-sm-8">
+          <div class="col-sm-9">
             <div class="card shadow border-0" style="height: 100%">
               <div class="card-body">
                 <h3 class="fw-semibold fs-6">Detalles y Agenda</h3>
@@ -214,7 +217,7 @@ const pending = ref(false); // Mock pending state
                   atención médica personalizada.
                 </p>
 
-                <WebsiteDoctorNav :doctor="doctor" />
+                <WebsiteDoctorNav :doctor="doctorData" />
               </div>
             </div>
           </div>

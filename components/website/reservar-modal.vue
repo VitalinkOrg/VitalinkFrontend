@@ -386,12 +386,6 @@
               <div class="row mt-4">
                 <div class="col-12 d-flex justify-content-between">
                   <button
-                    class="btn btn-outline-dark me-2 w-50"
-                    @click="goToStep(0)"
-                  >
-                    Volver
-                  </button>
-                  <button
                     class="btn btn-primary w-50"
                     :disabled="!selectedHour"
                     @click="reserveAppointment"
@@ -465,25 +459,19 @@
               <h4 class="h6 fw-semibold">Resumen de pago:</h4>
               <div class="d-flex justify-content-between mb-2">
                 <span class="text-muted">Precio</span>
-                <span>€18.000</span>
+                <span>€{{ selectedPackage.reference_price }}</span>
               </div>
               <div class="d-flex justify-content-between mb-2">
                 <span class="text-muted">Descuento</span>
-                <span>.</span>
+                <span>{{ selectedPackage.discount }}</span>
               </div>
               <div class="d-flex justify-content-between mb-4">
                 <span class="text-muted">Precio Final</span>
-                <span>€18.000</span>
+                <span>€{{ selectedPackage.discounted_price }}</span>
               </div>
 
               <div class="row mt-4">
-                <div class="col-12 d-flex justify-content-between">
-                  <button
-                    class="btn btn-outline-dark me-2 w-50"
-                    @click="goToStep(0)"
-                  >
-                    Volver
-                  </button>
+                <div class="col-12 d-flex justify-content-end">
                   <button class="btn btn-primary w-50" @click="goToStep(3)">
                     Continuar
                   </button>
@@ -502,35 +490,53 @@
                 <tbody>
                   <tr>
                     <td><strong>Tipo de servicio:</strong></td>
-                    <td>Cita de valoración</td>
+                    <td>
+                      {{
+                        this.doctorInfo.services.find(
+                          (service) =>
+                            service.medical_specialty.id ===
+                            this.selectedSpecialtyId
+                        ).medical_specialty.name
+                      }}
+                    </td>
                   </tr>
                   <tr>
                     <td><strong>Fecha de la cita:</strong></td>
-                    <td>Jueves, 5 de Octubre</td>
+                    <td>{{ formatDate(this.selectedDay) }}</td>
                   </tr>
                   <tr>
                     <td><strong>Hora de la cita:</strong></td>
-                    <td>11:00 hs</td>
+                    <td>{{ formatTime(this.selectedHour) }}</td>
                   </tr>
                   <tr>
                     <td><strong>Paciente titular:</strong></td>
-                    <td>Ana Pérez</td>
+                    <td>{{ this.userInfo.name }}</td>
                   </tr>
                   <tr>
                     <td><strong>Teléfono de Contacto:</strong></td>
-                    <td>0000000</td>
+                    <td>{{ this.phoneNumber }}</td>
                   </tr>
                   <tr>
                     <td><strong>Profesional Médico:</strong></td>
-                    <td>María Pérez</td>
+                    <td>{{ this.doctorInfo.name }}</td>
                   </tr>
                   <tr>
                     <td><strong>Procedimiento:</strong></td>
-                    <td>Operación de cataratas</td>
+                    <td>
+                      {{
+                        this.doctorInfo.services
+                          .flatMap((service) => service.procedures)
+                          .find(
+                            (procedure) =>
+                              procedure.procedure.id ===
+                              this.selectedProcedureId
+                          ).procedure.name
+                      }}
+                    </td>
                   </tr>
                   <tr>
                     <td><strong>Costo del servicio:</strong></td>
-                    <td>€18.000</td>
+                    <td>{{ this.selectedPackage.reference_price }}</td>
                   </tr>
                 </tbody>
               </table>
@@ -539,7 +545,7 @@
                 <div class="col-12 d-flex justify-content-between">
                   <button
                     class="btn btn-outline-dark me-2 w-50"
-                    @click="goToStep(1)"
+                    @click="goToStep(2)"
                   >
                     Volver
                   </button>
@@ -571,43 +577,65 @@
                   <div class="confirmation-details">
                     <div class="detail-item">
                       <span class="detail-label">Tipo de servicio:</span>
-                      <span class="detail-value">Cita de valoración</span>
+                      <span class="detail-value">
+                        {{
+                          this.doctorInfo.services.find(
+                            (service) =>
+                              service.medical_specialty.id ===
+                              this.selectedSpecialtyId
+                          ).medical_specialty.name
+                        }}</span
+                      >
                     </div>
                     <div class="detail-item">
                       <span class="detail-label">Fecha de la cita:</span>
                       <span class="detail-value">{{
-                        formatDate(selectedDay)
+                        formatDate(this.selectedDay)
                       }}</span>
                     </div>
                     <div class="detail-item">
                       <span class="detail-label">Hora de la cita:</span>
                       <span class="detail-value">{{
-                        formatTime(selectedHour)
+                        formatTime(this.selectedHour)
                       }}</span>
                     </div>
                     <div class="detail-item">
                       <span class="detail-label">Paciente titular:</span>
-                      <span class="detail-value">Ana Pérez</span>
+                      <span class="detail-value">{{ this.userInfo.name }}</span>
                     </div>
                     <div class="detail-item">
                       <span class="detail-label">Teléfono de Contacto:</span>
-                      <span class="detail-value">0000000</span>
+                      <span class="detail-value">{{ this.phoneNumber }}</span>
                     </div>
                     <div class="detail-item">
                       <span class="detail-label">Profesional Médico:</span>
-                      <span class="detail-value">María Pérez</span>
+                      <span class="detail-value">{{
+                        this.doctorInfo.name
+                      }}</span>
                     </div>
                     <div class="detail-item">
                       <span class="detail-label">Procedimiento:</span>
-                      <span class="detail-value">Operación de cataratas</span>
+                      <span class="detail-value">
+                        {{
+                          this.doctorInfo.services
+                            .flatMap((service) => service.procedures)
+                            .find(
+                              (procedure) =>
+                                procedure.procedure.id ===
+                                this.selectedProcedureId
+                            ).procedure.name
+                        }}</span
+                      >
                     </div>
                     <div class="detail-item">
                       <span class="detail-label">Pago:</span>
-                      <span class="detail-value">• Pendiente</span>
+                      <span class="detail-value">Pendiente</span>
                     </div>
                     <div class="detail-item">
                       <span class="detail-label">Monto a Pagar:</span>
-                      <span class="detail-value">€18.000</span>
+                      <span class="detail-value">{{
+                        this.selectedPackage.reference_price
+                      }}</span>
                     </div>
                   </div>
                   <div class="row mt-4">
@@ -644,6 +672,34 @@
 <script>
 export default {
   props: {
+    selectedPackage: {
+      type: Object,
+      required: true,
+    },
+    selectedProcedureId: {
+      type: String,
+      required: true,
+    },
+    selectedSpecialtyId: {
+      type: String,
+      required: true,
+    },
+    userInfo: {
+      type: Object,
+      required: true,
+    },
+    doctorInfo: {
+      type: Object,
+      required: true,
+    },
+    selectedDay: {
+      type: String,
+      default: null,
+    },
+    selectedHour: {
+      type: String,
+      default: null,
+    },
     isOpen: Boolean,
     currentStep: {
       type: Number,
@@ -654,8 +710,8 @@ export default {
     return {
       isConfirmationModalOpen: false,
       selectedMonth: null,
-      selectedDay: null,
-      selectedHour: null,
+      selectedDay: this.selectedDay,
+      selectedHour: this.selectedHour,
       availableDays: [],
       availableHours: [],
       steps: ["1", "2", "3"],
@@ -696,6 +752,7 @@ export default {
     },
     closeMainModal() {
       this.isConfirmationModalOpen = false;
+      this.internalCurrentStep = 2;
       this.$emit("close");
     },
     goToStep(step) {
@@ -756,8 +813,39 @@ export default {
         month: "long",
       });
     },
-    confirmReservation() {
-      this.goToStep(4); // Use goToStep to update the step
+    async confirmReservation() {
+      const token = useCookie("token");
+      const config = useRuntimeConfig();
+      const user_info = useCookie("user_info");
+
+      try {
+        const payload = {
+          customer_id: user_info.value.id,
+          is_for_external_user: this.appointmentFor === "someoneElse",
+          user_description: this.description,
+          supplier_id: this.doctorInfo.id, // Make sure this is defined
+          appointment_date: this.selectedDay,
+          appointment_hour: this.selectedHour,
+          package_id: this.selectedPackage.id,
+          appointment_status_code: "PENDING",
+          reservation_type_code: "PRE_RESERVATION",
+          phone_number_external_user: this.phoneNumber,
+        };
+
+        const response = await $fetch(
+          config.public.API_BASE_URL + "/appointment/add",
+          {
+            method: "POST",
+            body: payload,
+            headers: { Authorization: token.value },
+          }
+        );
+
+        this.goToStep(4);
+      } catch (error) {
+        console.error("Error creating appointment:", error);
+        // You might want to show an error message to the user here
+      }
     },
   },
 };

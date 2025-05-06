@@ -12,6 +12,7 @@ export default {
   data() {
     return {
       panel: false,
+      user: useCookie("user_info"),
       tab: 1,
       appointment: {
         specialty: "",
@@ -24,49 +25,11 @@ export default {
       result: null,
       open: false,
       errorText: "",
-      doctorReviews: [
-        {
-          first_name: "John",
-          last_name: "Doe",
-          message:
-            "La cirugía de cataratas ha transformado mi vida visual por completo; el procedimiento rápido y preciso me permitió recuperar una claridad visual asombrosa, devolviéndome la independencia y la nitidez que había perdido.",
-          pacient_type: "Paciente de Cirugía de Cataratas",
-          score: 5,
-        },
-        {
-          first_name: "Jane",
-          last_name: "Smith",
-          message:
-            "El proceso fue indoloro, y ahora veo el mundo con una claridad que pensé que nunca recuperaría, agradecido por esta intervención que ha cambiado mi perspectiva de la vida.",
-          pacient_type: "Paciente de Cirugía de Cataratas",
-          score: 4,
-        },
-        {
-          first_name: "Alice",
-          last_name: "Johnson",
-          message:
-            "La precisión del procedimiento y la rápida recuperación me dejaron asombrado, brindándome una nueva visión sin las limitaciones que las cataratas habían impuesto previamente.",
-          pacient_type: "Paciente de Cirugía de Cataratas",
-          score: 5,
-        },
-      ],
-      doctorHistory:
-        "Desde su fundación en 1985, la Clínica Oftalmológica Santa Lucía ha sido un faro de excelencia en la atención visual. Inspirados por la misión de proporcionar cuidado ocular de calidad, comenzamos como una pequeña clínica con un compromiso inquebrantable con la salud visual. Con el tiempo, hemos crecido y evolucionado, incorporando las últimas tecnologías y atrayendo a un equipo de oftalmólogos altamente especializados. La historia de Santa Lucía es la narrativa de décadas dedicadas a mejorar la visión y transformar vidas a través de un enfoque centrado en el paciente.",
-      doctorVision:
-        "En la Clínica Oftalmológica Santa Lucía, visualizamos un futuro donde cada individuo experimente una visión óptima y una calidad de vida mejorada. Nos esforzamos por ser líderes en innovación oftalmológica, introduciendo tecnologías avanzadas y prácticas médicas progresistas. Aspiramos a expandir nuestro alcance, brindando atención oftalmológica accesible y de calidad a comunidades en todo el país. Nuestra visión es ser reconocidos como el referente en excelencia oftalmológica, marcando el camino hacia un mundo donde la visión es valorada, protegida y optimizada.",
-      doctorMision:
-        "La misión de la Clínica Oftalmológica Santa Lucía es simple pero profunda: brindar atención oftalmológica compasiva y de vanguardia para preservar y mejorar la salud visual de nuestros pacientes. Nos comprometemos a ofrecer diagnósticos precisos, tratamientos efectivos y cirugías oftalmológicas de alta calidad. Buscamos educar y empoderar a nuestros pacientes, fomentando un viaje hacia la claridad visual y el bienestar ocular. Nuestra misión se extiende más allá de la consulta, aspirando a ser un faro de ",
-      breadcumCitaValoracion: 1,
       selectedMonth: null,
       selectedDay: null,
       selectedHour: null,
       availableDays: [],
       availableHours: [],
-      availability: {
-        "2025-02-10": ["09:00", "10:00", "11:00", "14:00"],
-        "2025-02-11": ["10:30", "12:00", "15:00"],
-        "2025-02-12": ["08:00", "09:30", "11:00", "13:00", "16:00"],
-      },
       months: [
         { value: 0, label: "Enero" },
         { value: 1, label: "Febrero" },
@@ -81,49 +44,265 @@ export default {
         { value: 10, label: "Noviembre" },
         { value: 11, label: "Diciembre" },
       ],
-      dates: Array.from({ length: 7 }, (_, i) => {
-        const date = new Date();
-        date.setDate(date.getDate() + i);
-        return {
-          date: date.toISOString().split("T")[0],
-          day: date
-            .toLocaleDateString("es-ES", { weekday: "short" })
-            .slice(0, 3),
-          number: date.getDate(),
-        };
-      }),
+      breadcumCitaValoracion: 1,
+      selectedSpecialty: null,
+      selectedSpecialtyId: null,
+      selectedPackage: null,
+      selectedProcedure: null,
+      selectedProcedureId: null,
+      selectedMonth: null,
+      selectedDay: null,
+      selectedHour: null,
+      availableDays: [],
+      availableHours: [],
+      reviewDetails: [],
+      assessmentDetails: [],
+      weekdayMap: {
+        Monday: "Lun",
+        Tuesday: "Mar",
+        Wednesday: "Mié",
+        Thursday: "Jue",
+        Friday: "Vie",
+        Saturday: "Sáb",
+        Sunday: "Dom",
+      },
     };
   },
+  async created() {
+    const token = useCookie("token");
+    const config = useRuntimeConfig();
+
+    try {
+      // Fetch review details
+      const reviewResponse = await $fetch(
+        config.public.API_BASE_URL + "/udc/get_all",
+        {
+          headers: { Authorization: token.value },
+          params: { type: "REVIEW" },
+        }
+      );
+      this.reviewDetails = reviewResponse.data;
+
+      // Fetch assessment details
+      const assessmentResponse = await $fetch(
+        config.public.API_BASE_URL + "/udc/get_all",
+        {
+          headers: { Authorization: token.value },
+          params: { type: "ASSESSMENT_DETAIL" },
+        }
+      );
+      this.assessmentDetails = assessmentResponse.data;
+
+      // Set default specialty, procedure, and procedureId
+      if (this.doctor.services && this.doctor.services.length > 0) {
+        this.selectedSpecialty = this.doctor.services[0].medical_specialty.code;
+        this.selectedSpecialtyId = this.doctor.services[0].medical_specialty.id;
+        this.appointment.specialty = this.selectedSpecialty;
+
+        if (
+          this.doctor.services[0].procedures &&
+          this.doctor.services[0].procedures.length > 0
+        ) {
+          this.selectedProcedure =
+            this.doctor.services[0].procedures[0].procedure.code;
+          this.selectedProcedureId =
+            this.doctor.services[0].procedures[0].procedure.id;
+          this.appointment.service = this.selectedProcedure;
+        }
+      }
+    } catch (error) {
+      console.error("Error fetching details:", error);
+    }
+  },
   computed: {
-    availableHours() {
-      return this.availability[this.selectedDay] || [];
+    defaultService() {
+      return this.doctor.services && this.doctor.services.length > 0
+        ? this.doctor.services[0]
+        : null;
+    },
+
+    defaultProcedure() {
+      if (!this.defaultService) return null;
+      return this.defaultService.procedures &&
+        this.defaultService.procedures.length > 0
+        ? this.defaultService.procedures[0]
+        : null;
+    },
+    formattedSelectedMonth() {
+      return this.selectedMonth !== null ? this.selectedMonth + 1 : null;
+    },
+    doctorReviews() {
+      return (
+        this.doctor.reviews?.map((review) => ({
+          first_name: review.customer.split(" ")[0] || "Anónimo",
+          last_name: review.is_annonymous
+            ? ""
+            : review.customer.split(" ")[1] || "",
+          message: review.comment,
+          pacient_type: "Paciente",
+          score: review.stars_average,
+        })) || []
+      );
+    },
+    reviewSummary() {
+      return this.doctor.review_details_summary || [];
+    },
+    availability() {
+      const availabilityMap = {};
+      // You would need to implement logic to convert the doctor.availabilities
+      // into the format expected by your calendar
+      return availabilityMap;
+    },
+    packages() {
+      if (!this.selectedSpecialty) return [];
+      const specialty = this.doctor.services.find(
+        (s) => s.medical_specialty.code === this.selectedSpecialty
+      );
+      if (!specialty) return [];
+
+      return specialty.procedures.flatMap((procedure) =>
+        procedure.packages.map((pkg) => ({
+          ...pkg,
+          procedureName: procedure.procedure.name,
+          specialtyName: specialty.medical_specialty.name,
+        }))
+      );
+    },
+    availability() {
+      const availabilityMap = {};
+
+      // Get current date and next 30 days
+      const today = new Date();
+      const endDate = new Date();
+      endDate.setDate(today.getDate() + 30);
+
+      // Process each availability
+      this.doctor.availabilities.forEach((avail) => {
+        // Find all dates that match this weekday within the next 30 days
+        const currentDate = new Date(today);
+        while (currentDate <= endDate) {
+          if (
+            currentDate.toLocaleDateString("en-US", { weekday: "long" }) ===
+            avail.weekday
+          ) {
+            const dateStr = currentDate.toISOString().split("T")[0];
+            const fromHour = avail.from_hour.substring(0, 5);
+
+            if (!availabilityMap[dateStr]) {
+              availabilityMap[dateStr] = [];
+            }
+
+            // Add the exact time slot
+            availabilityMap[dateStr].push(`${fromHour}`);
+          }
+          currentDate.setDate(currentDate.getDate() + 1);
+        }
+      });
+
+      return availabilityMap;
+    },
+    specialties() {
+      return (
+        this.doctor.services?.map((service) => service.medical_specialty) || []
+      );
+    },
+    filteredProcedures() {
+      if (
+        !this.selectedSpecialty &&
+        this.doctor.services &&
+        this.doctor.services.length > 0
+      ) {
+        // Set default specialty if none selected
+        this.selectedSpecialty = this.doctor.services[0].medical_specialty.code;
+        this.appointment.specialty = this.selectedSpecialty;
+        return this.doctor.services[0].procedures;
+      }
+
+      const specialty = this.doctor.services.find(
+        (s) => s.medical_specialty.code === this.selectedSpecialty
+      );
+      return specialty?.procedures || [];
+    },
+    filteredPackages() {
+      if (
+        !this.selectedProcedure &&
+        this.filteredProcedures &&
+        this.filteredProcedures.length > 0
+      ) {
+        // Set default procedure if none selected
+        this.selectedProcedure = this.filteredProcedures[0].procedure.code;
+        this.selectedProcedureId = this.filteredProcedures[0].procedure.id;
+        this.appointment.service = this.selectedProcedure;
+        return this.filteredProcedures[0].packages;
+      }
+
+      const procedure = this.filteredProcedures.find(
+        (p) => p.procedure.code === this.selectedProcedure
+      );
+      return procedure?.packages || [];
     },
     formattedSelectedMonth() {
       return this.selectedMonth !== null ? this.selectedMonth + 1 : null;
     },
   },
-  methods : {
+  methods: {
     search() {
-      let filter = this.doctor.servicesResult;
+      let filter = this.doctor.services;
 
       filter = filter.filter((item) => {
         return (
-          item.specialty === this.appointment.specialty &&
-          item.service === this.appointment.service &&
-          item.hospital_name === this.appointment.location &&
-          item.cpt === this.appointment.type
+          item.medical_specialty.code === this.appointment.specialty &&
+          item.procedures.some(
+            (p) => p.procedure.code === this.appointment.service
+          ) &&
+          this.doctor.locations.some(
+            (l) => l.name === this.appointment.location
+          )
         );
       });
-      if (!filter[0].schedule) {
+
+      if (filter.length === 0) {
         this.errorText = "No hay disponibilidad para esta cita";
       } else {
         this.errorText = "";
       }
       return (this.result = filter[0]);
     },
+    getReviewLabel(reviewCode) {
+      if (!this.reviewDetails) return reviewCode;
+
+      const detail = this.reviewDetails.find(
+        (item) => item.code === reviewCode
+      );
+      return detail ? detail.name : reviewCode;
+    },
+    getAssesmentLabel(assesmentCode) {
+      if (!this.assessmentDetails) return assesmentCode;
+
+      const detail = this.assessmentDetails.find(
+        (item) => item.code === assesmentCode
+      );
+      return detail ? detail.name : assesmentCode;
+    },
+    calculateAverageRating() {
+      if (!this.doctor.reviews || this.doctor.reviews.length === 0) {
+        return 0; // Return 0 if no reviews
+      }
+
+      // Calculate average from stars_average of each review
+      const sum = this.doctor.reviews.reduce(
+        (total, review) => total + review.stars_average,
+        0
+      );
+
+      const average = sum / this.doctor.reviews.length;
+
+      // Return rounded to 1 decimal place
+      return Math.round(average * 10) / 10;
+    },
     selectDay(date) {
       this.selectedDay = date;
-      this.selectedDate = date; // Ensure selectedDate is updated
+      this.selectedDate = date;
       this.availableHours = this.availability[date] || [];
     },
     handleMonthChange() {
@@ -157,30 +336,102 @@ export default {
       const period = hours >= 12 ? "PM" : "AM";
       return `${hours % 12 || 12}:${minutes}${period}`;
     },
-    openConfirmationModal() {
-      const authenticated = useCookie("authenticated");
-      if (authenticated.value) {
-        this.open = true;
-      } else {
-        this.$router.push("/pacientes/login");
-      }
-    },
     closeModal() {
       this.open = false;
     },
     reserveAppointment() {
-      if (this.panel) { // Simplificado
+      if (this.panel) {
         this.panel = false;
-        return; // Salir de la función
+        return;
       }
-  
+
       console.log(
-          "Reserving appointment at",
-          this.selectedDate,
-          this.selectedHour
-        );
-  
+        "Reserving appointment at",
+        this.selectedDate,
+        this.selectedHour
+      );
+
       this.panel = true;
+    },
+    selectSpecialty(specialtyCode, specialtyId) {
+      this.selectedSpecialty = specialtyCode;
+      this.selectedSpecialtyId = specialtyId;
+      this.selectedProcedure = null; // Reset selected procedure when specialty changes
+      this.appointment.specialty = specialtyCode;
+
+      // Set default procedure for the new specialty
+      const specialty = this.doctor.services.find(
+        (s) => s.medical_specialty.code === specialtyCode
+      );
+      if (
+        specialty &&
+        specialty.procedures &&
+        specialty.procedures.length > 0
+      ) {
+        this.selectedProcedure = specialty.procedures[0].procedure.code;
+        this.selectedProcedureId = specialty.procedures[0].procedure.id;
+        this.appointment.service = this.selectedProcedure;
+      }
+    },
+    selectPackage(selectedPackage) {
+      this.selectedPackage = selectedPackage;
+      console.log("Selected package:", this.selectedPackage); // Debug log
+      this.tab = 2;
+    },
+    selectProcedure(procedureCode, procedureId) {
+      this.selectedProcedure = procedureCode;
+      this.selectedProcedureId = procedureId;
+      this.appointment.service = procedureCode;
+    },
+    getPackagePrice(pkg) {
+      const price = parseFloat(pkg.product.value1);
+      const discount = pkg.discount / 100;
+      return price - price * discount;
+    },
+    handleMonthChange() {
+      this.selectedDay = null;
+      this.selectedHour = null;
+      this.availableDays = this.getAvailableDaysForMonth(this.selectedMonth);
+    },
+
+    getAvailableDaysForMonth(month) {
+      const year = new Date().getFullYear();
+      const daysInMonth = new Date(year, month + 1, 0).getDate();
+      const availableDays = [];
+
+      for (let day = 1; day <= daysInMonth; day++) {
+        const date = new Date(year, month, day);
+        const dateStr = date.toISOString().split("T")[0];
+        console.log(this.availability);
+        console.log(dateStr);
+
+        if (
+          this.availability[dateStr] &&
+          this.availability[dateStr].length > 0
+        ) {
+          availableDays.push({
+            date: dateStr,
+            day: this.weekdayMap[
+              date.toLocaleDateString("en-US", { weekday: "long" })
+            ],
+            number: date.getDate(),
+          });
+        }
+      }
+
+      return availableDays;
+    },
+
+    selectDay(date) {
+      this.selectedDay = date;
+      this.availableHours = this.availability[date] || [];
+      this.selectedHour = null;
+    },
+
+    formatTime(time) {
+      const [hours, minutes] = time.split(":");
+      const period = hours >= 12 ? "PM" : "AM";
+      return `${hours % 12 || 12}:${minutes}${period}`;
     },
   },
 };
@@ -236,247 +487,92 @@ export default {
   </ul>
 
   <section class="py-4 px-1">
-    <!-- Dsiponibilidad  -->
+    <!-- Servicios Tab -->
     <div v-if="tab === 1">
       <p class="fw-semibold">Servicios disponibles</p>
 
-      <!-- doctor specialities -->
-      <div>
+      <!-- Specialty badges -->
+      <div class="mb-3">
         <button
-          v-for="service in doctor.servicesResult"
-          :key="service.doctor_service_id"
-          @click="appointment.specialty = service.specialty"
+          v-for="specialty in specialties"
+          :key="specialty.code"
+          @click="selectSpecialty(specialty.code, specialty.id)"
           class="badge bg-info text-info border-none me-2 rounded-5 text-capitalize"
           style="--bs-bg-opacity: 0.07"
+          :class="{ 'active-specialty': selectedSpecialty === specialty.code }"
         >
-          {{ service.specialty }}
+          {{ specialty.name }}
         </button>
       </div>
 
-      <div v-if="result && result.schedule">
-        <form @submit.prevent="openConfirmationModal">
-          <div class="mb-2 row align-items-center justify-content-between">
-            <span class="col-md-4 fw-semibold"
-              >Resultados de la Disponibilidad:</span
-            >
-            <div
-              class="col-md-8 row gap-2 align-items-center justify-content-center justify-content-md-end"
-            >
-              <div
-                class="col-auto btn rounded-5 btn-outline-success btn-sm me-1"
-              >
-                <small>
-                  {{ this.appointment.specialty }}
-                </small>
-              </div>
-              <div
-                class="col-auto btn rounded-5 btn-outline-success btn-sm me-1"
-              >
-                <small>
-                  {{ this.appointment.service }}
-                </small>
-              </div>
-              <div
-                class="col-auto btn rounded-5 btn-outline-success btn-sm me-1"
-              >
-                <small>
-                  {{ this.appointment.location }}
-                </small>
-              </div>
-              <div
-                class="col-auto btn rounded-5 btn-outline-success btn-sm me-1"
-              >
-                <small>
-                  {{ this.appointment.type }}
-                </small>
-              </div>
-            </div>
-          </div>
-
-          <div
-            class="bg-primary rounded-4 h-100 p-4"
-            style="--bs-bg-opacity: 0.04"
-          >
-            <div class="row row-cols-2">
-              <div class="form-group mb-3">
-                <label for="fecha" class="form-label"
-                  >Seleccione una fecha</label
-                >
-                <input
-                  type="date"
-                  name="fecha"
-                  id="fecha"
-                  class="form-control"
-                  v-model="appointment.date"
-                  required
-                />
-              </div>
-              <div class="form-group mb-3">
-                <label for="hora" class="form-label">Seleccione la Hora</label>
-                <input
-                  type="time"
-                  id="hora"
-                  name="hora"
-                  :min="result.schedule[0].open + ':00'"
-                  :max="result.schedule[0].close + ':00'"
-                  class="form-control"
-                  v-model="appointment.time"
-                  required
-                />
-              </div>
-            </div>
-          </div>
-          <div class="text-end pt-4">
-            <button type="submit" class="btn btn-primary btn-lg">
-              Reservar Cita de valoración
-            </button>
-          </div>
-        </form>
-        <WebsiteConfirmationCitaModal
-          :open="open"
-          :appointment="appointment"
-          :result="result"
-          @close-modal="closeModal"
-        />
-      </div>
-      <div v-else>
-        <p>{{ errorText }}</p>
+      <!-- Procedure badges (shown when specialty is selected) -->
+      <div class="mb-3">
+        <button
+          v-for="procedure in filteredProcedures"
+          :key="procedure.procedure.code"
+          @click="
+            selectProcedure(procedure.procedure.code, procedure.procedure.id)
+          "
+          class="badge bg-secondary text-white border-none me-2 rounded-5 text-capitalize"
+          :class="{
+            'active-procedure': selectedProcedure === procedure.procedure.code,
+          }"
+        >
+          {{ procedure.procedure.name }}
+        </button>
       </div>
 
-      <p>Procedimientos avanzados para el tratamiento de cataratas</p>
-      <p>Packs:</p>
-
-      <!-- plans -->
-      <div class="container">
+      <!-- All packages for selected procedure -->
+      <div v-if="filteredPackages.length > 0" class="container">
         <div class="row">
-          <!-- Option 1 -->
-          <div class="col-4">
-            <div class="custom-card">
-              <div class="card-header text-center">OPCIÓN 1</div>
-              <div class="card-body">
-                <h5 class="card-title">19.000 USD</h5>
-                <p class="card-text">Precio original 28.000 USD</p>
-                <p class="card-text rating">
-                  <span class="icon"
-                    ><img
-                      src="@/src/assets/star.svg"
-                      alt="Busca centro medico"
-                      class="img-fluid"
-                  /></span>
-                  5.0 <span class="text-muted">(13 Reseñas)</span>
-                </p>
-                <ul class="list-group list-group-flush">
-                  <li class="list-group-item">
-                    <span class="icon"
-                      ><img
-                        src="@/src/assets/check.svg"
-                        alt="Busca centro medico"
-                        class="img-fluid"
-                    /></span>
-                    Cita de valoración
-                  </li>
-                  <li class="list-group-item">
-                    <span class="icon"
-                      ><img
-                        src="@/src/assets/check.svg"
-                        alt="Busca centro medico"
-                        class="img-fluid"
-                    /></span>
-                    Medicamentos
-                  </li>
-                  <li class="list-group-item">
-                    <span class="icon"
-                      ><img
-                        src="@/src/assets/check.svg"
-                        alt="Busca centro medico"
-                        class="img-fluid"
-                    /></span>
-                    Cita de seguimiento 1 mes después.
-                  </li>
-                </ul>
-                <p class="text-muted">Próxima Disponibilidad:</p>
-                <p class="card-text availability">
-                  <span class="availability-text">
-                    <span class="icon">
-                      <img
-                        src="@/src/assets/calendar.svg"
-                        alt="Busca centro medico"
-                        class="img-fluid"
-                      />
-                    </span>
-                    19/10/2024
-                  </span>
-                  <span class="time-text">
-                    <span class="icon">
-                      <img
-                        src="@/src/assets/clock.svg"
-                        alt="Busca centro medico"
-                        class="img-fluid"
-                      />
-                    </span>
-                    11:00 am
-                  </span>
-                </p>
-                <button class="btn btn-outline-primary">
-                  Cita de valoración
-                </button>
-              </div>
-            </div>
-          </div>
-
-          <!-- Option 2 -->
-          <div class="col-4">
-            <div class="custom-card">
-              <div
-                class="card-header selected text-center d-flex gap-2 align-items-center justify-content-center"
-              >
-                <span
-                  ><img
+          <div
+            class="col-4"
+            v-for="(pkg, index) in filteredPackages"
+            :key="pkg.id"
+          >
+            <div class="custom-card h-100" :class="{ selected: pkg.is_king }">
+              <div class="card-header text-center">
+                {{ pkg.is_king ? "OPCIÓN RECOMENDADA" : `OPCIÓN ${index + 1}` }}
+                <span v-if="pkg.is_king">
+                  <img
                     src="@/src/assets/crown.svg"
-                    alt="Busca centro medico"
+                    alt="Recomendado"
                     class="img-fluid"
-                /></span>
-                <p class="m-0">OPCIÓN 2</p>
+                  />
+                </span>
               </div>
               <div class="card-body">
-                <h5 class="card-title">23.000 USD</h5>
-                <p class="card-text">Precio original 28.000 USD</p>
+                <h5 class="card-title">{{ getPackagePrice(pkg) }} USD</h5>
+                <p class="card-text" v-if="pkg.discount">
+                  Precio original {{ pkg.product.value1 }} USD
+                </p>
                 <p class="card-text rating">
-                  <span class="icon"
-                    ><img
+                  <span class="icon">
+                    <img
                       src="@/src/assets/star.svg"
-                      alt="Busca centro medico"
+                      alt="Rating"
                       class="img-fluid"
-                  /></span>
-                  5.0 <span class="text-muted">(13 Reseñas)</span>
+                    />
+                  </span>
+                  5.0
+                  <span class="text-muted"
+                    >({{ doctorReviews.length }} Reseñas)</span
+                  >
                 </p>
                 <ul class="list-group list-group-flush">
-                  <li class="list-group-item">
-                    <span class="icon"
-                      ><img
+                  <li
+                    class="list-group-item"
+                    v-for="service in pkg.services_offer.ASSESSMENT_DETAILS"
+                    :key="service"
+                  >
+                    <span class="icon">
+                      <img
                         src="@/src/assets/check.svg"
-                        alt="Busca centro medico"
+                        alt="Incluido"
                         class="img-fluid"
-                    /></span>
-                    Cita de valoración
-                  </li>
-                  <li class="list-group-item">
-                    <span class="icon"
-                      ><img
-                        src="@/src/assets/check.svg"
-                        alt="Busca centro medico"
-                        class="img-fluid"
-                    /></span>
-                    Medicamentos
-                  </li>
-                  <li class="list-group-item">
-                    <span class="icon"
-                      ><img
-                        src="@/src/assets/check.svg"
-                        alt="Busca centro medico"
-                        class="img-fluid"
-                    /></span>
-                    Cita de seguimiento 1 mes después.
+                      />
+                    </span>
+                    {{ getAssesmentLabel(service) }}
                   </li>
                 </ul>
                 <p class="text-muted">Próxima Disponibilidad:</p>
@@ -485,100 +581,27 @@ export default {
                     <span class="icon">
                       <img
                         src="@/src/assets/calendar.svg"
-                        alt="Busca centro medico"
+                        alt="Fecha"
                         class="img-fluid"
                       />
                     </span>
-                    19/10/2024
+                    {{ doctor.date_availability }}
                   </span>
                   <span class="time-text">
                     <span class="icon">
                       <img
                         src="@/src/assets/clock.svg"
-                        alt="Busca centro medico"
+                        alt="Hora"
                         class="img-fluid"
                       />
                     </span>
-                    11:00 am
+                    {{ doctor.hour_availability }}
                   </span>
                 </p>
-                <button class="btn btn-outline-primary">
-                  Cita de valoración
-                </button>
-              </div>
-            </div>
-          </div>
-
-          <!-- Option 3 -->
-          <div class="col-4">
-            <div class="custom-card">
-              <div class="card-header text-center">OPCIÓN 3</div>
-              <div class="card-body">
-                <h5 class="card-title">26.000 USD</h5>
-                <p class="card-text">Precio original 28.000 USD</p>
-                <p class="card-text rating">
-                  <span class="icon"
-                    ><img
-                      src="@/src/assets/star.svg"
-                      alt="Busca centro medico"
-                      class="img-fluid"
-                  /></span>
-                  5.0 <span class="text-muted">(13 Reseñas)</span>
-                </p>
-                <ul class="list-group list-group-flush">
-                  <li class="list-group-item">
-                    <span class="icon"
-                      ><img
-                        src="@/src/assets/check.svg"
-                        alt="Busca centro medico"
-                        class="img-fluid"
-                    /></span>
-                    Cita con nutricionista
-                  </li>
-                  <li class="list-group-item">
-                    <span class="icon"
-                      ><img
-                        src="@/src/assets/check.svg"
-                        alt="Busca centro medico"
-                        class="img-fluid"
-                    /></span>
-                    Cita con alergólogo
-                  </li>
-                  <li class="list-group-item">
-                    <span class="icon"
-                      ><img
-                        src="@/src/assets/cross.svg"
-                        alt="Busca centro medico"
-                        class="img-fluid"
-                    /></span>
-                    Cita de seguimiento 1 mes después.
-                  </li>
-                </ul>
-                <p class="text-muted">Próxima Disponibilidad:</p>
-                <p class="card-text availability">
-                  <span class="availability-text">
-                    <span class="icon">
-                      <img
-                        src="@/src/assets/calendar.svg"
-                        alt="Busca centro medico"
-                        class="img-fluid"
-                      />
-                    </span>
-                    19/10/2024
-                  </span>
-
-                  <span class="time-text">
-                    <span class="icon">
-                      <img
-                        src="@/src/assets/clock.svg"
-                        alt="Busca centro medico"
-                        class="img-fluid"
-                      />
-                    </span>
-                    11:00 am
-                  </span>
-                </p>
-                <button class="btn btn-outline-primary">
+                <button
+                  class="btn btn-outline-primary"
+                  @click="selectPackage(pkg)"
+                >
                   Cita de valoración
                 </button>
               </div>
@@ -586,52 +609,21 @@ export default {
           </div>
         </div>
       </div>
-    </div>
 
-    <!-- <WebsiteClinicaServiciosTab
-      :services="doctor.servicesResult"
-      v-if="tab === 2"
-    />  -->
-
-    <!-- Ubicacion -->
-    <div v-if="tab === 3">
-      <div class="row gap-2">
-        <div class="col-md-3">
-          <p class="fw-semibold">Encuentranos Facilmente</p>
-          <p class="d-flex">
-            <span class="fs-4 text-success me-2"
-              ><AtomsIconsMapPointerIcon
-            /></span>
-            <span class="fw-light">{{
-              doctor.doctor_information.personal.address +
-              ", " +
-              doctor.doctor_information.personal.city +
-              ", " +
-              doctor.doctor_information.personal.country_iso_code
-            }}</span>
-          </p>
-          <div>
-            <a
-              :href="`tel:${doctor.doctor_information.personal.phone_number}`"
-              class="btn btn-info rounded-4 text-white me-2 py-1 px-2"
-            >
-              <span class="fs-5"><AtomsIconsPhoneIcon /></span>
-            </a>
-            <a
-              :href="`mailto:${doctor.doctor_information.personal.email}`"
-              class="btn btn-info rounded-4 text-white py-1 px-2"
-            >
-              <span class="fs-5"><AtomsIconsMailIcon /></span>
-            </a>
-          </div>
-        </div>
-        <div class="col">
-          <AtomsMapaInteractivo />
-        </div>
+      <div
+        v-else-if="selectedSpecialty && filteredProcedures.length === 0"
+        class="alert alert-info"
+      >
+        No hay procedimientos disponibles para esta especialidad
+      </div>
+      <div
+        v-else-if="selectedProcedure && filteredPackages.length === 0"
+        class="alert alert-info"
+      >
+        No hay paquetes disponibles para este procedimiento
       </div>
     </div>
-    <!-- calendar -->
-    <!-- Disponibilidad (Tab 2) -->
+
     <div v-if="tab === 2">
       <div class="card mb-4 rounded-4">
         <div class="card-body">
@@ -733,7 +725,47 @@ export default {
         </div>
       </div>
     </div>
-    <!-- Reseñas  -->
+
+    <!-- Ubicación Tab -->
+    <div v-if="tab === 3">
+      <div class="row gap-2">
+        <div class="col-md-3">
+          <p class="fw-semibold">Encuentranos Facilmente</p>
+          <p class="d-flex">
+            <span class="fs-4 text-success me-2">
+              <AtomsIconsMapPointerIcon />
+            </span>
+            <span class="fw-light">
+              {{ doctor.address }}, {{ doctor.city_name }},
+              {{ doctor.country_iso_code }}
+            </span>
+          </p>
+          <div>
+            <a
+              :href="`tel:${doctor.phone_number}`"
+              class="btn btn-info rounded-4 text-white me-2 py-1 px-2"
+            >
+              <span class="fs-5"><AtomsIconsPhoneIcon /></span>
+            </a>
+            <a
+              :href="`mailto:${doctor.email}`"
+              class="btn btn-info rounded-4 text-white py-1 px-2"
+            >
+              <span class="fs-5"><AtomsIconsMailIcon /></span>
+            </a>
+          </div>
+        </div>
+        <div class="col">
+          <AtomsMapaInteractivo
+            :latitude="doctor.latitude"
+            :longitude="doctor.longitude"
+            :name="doctor.name"
+          />
+        </div>
+      </div>
+    </div>
+
+    <!-- Reseñas Tab -->
     <div v-if="tab === 4">
       <div class="card mb-4 rounded-4">
         <div class="card-body">
@@ -743,78 +775,54 @@ export default {
                 class="fw-semibold d-flex align-items-center justify-content-between"
               >
                 Reseñas logradas
-                <small class="text-muted"
-                  >5.0
+                <small class="text-muted">
+                  {{ calculateAverageRating() }}
                   <span class="fw-light"
                     >({{ doctorReviews.length }} Opiniones)</span
-                  ></small
-                >
+                  >
+                </small>
               </p>
-              <div class="d-flex justify-content-between fw-light text-muted">
-                Calidad de atención
+              <div
+                v-for="summary in reviewSummary"
+                :key="summary.review"
+                class="d-flex justify-content-between fw-light text-muted"
+              >
+                {{ getReviewLabel(summary.review) }}
                 <span class="text-warning">
-                  <AtomsIconsStarFilled v-for="i in 5" :key="i" />
-                </span>
-              </div>
-              <div class="d-flex justify-content-between fw-light text-muted">
-                Limpieza de instalaciones
-                <span class="text-warning">
-                  <AtomsIconsStarFilled v-for="i in 4" :key="i" />
-                  <AtomsIconsStarOutline />
-                </span>
-              </div>
-              <div class="d-flex justify-content-between fw-light text-muted">
-                Amabilidad del Staff
-                <span class="text-warning">
-                  <AtomsIconsStarFilled v-for="i in 5" :key="i" />
-                </span>
-              </div>
-              <div class="d-flex justify-content-between fw-light text-muted">
-                Relacion Precio/Calidad
-                <span class="text-warning">
-                  <AtomsIconsStarFilled v-for="i in 4" :key="i" />
-                  <AtomsIconsStarOutline />
+                  <AtomsIconsStarFilled
+                    v-for="i in summary.stars_point_average"
+                    :key="i"
+                  />
+                  <AtomsIconsStarOutline
+                    v-for="i in 5 - summary.stars_point_average"
+                    :key="i + 5"
+                  />
                 </span>
               </div>
             </div>
             <div class="col-md-5">
               <p class="fw-semibold">Servicios Destacados</p>
               <div>
-                <span class="btn btn-outline-info rounded-5 btn-sm mb-2 me-2"
-                  >Profesional</span
+                <span class="btn btn-outline-info rounded-5 btn-sm mb-2 me-2">
+                  {{ doctor.medical_type.name }}
+                </span>
+                <span
+                  v-for="specialty in specialties"
+                  :key="specialty.code"
+                  class="btn btn-outline-info rounded-5 btn-sm mb-2 me-2"
                 >
-                <span class="btn btn-outline-info rounded-5 btn-sm mb-2 me-2"
-                  >Enfermeros</span
-                >
-                <span class="btn btn-outline-info rounded-5 btn-sm mb-2 me-2"
-                  >Váucher</span
-                >
-                <span class="btn btn-outline-info rounded-5 btn-sm mb-2 me-2"
-                  >Oftalmólogo</span
-                >
-                <span class="btn btn-outline-info rounded-5 btn-sm mb-2 me-2"
-                  >Médicos</span
-                >
-                <span class="btn btn-outline-info rounded-5 btn-sm mb-2 me-2"
-                  >Buen trato</span
-                >
+                  {{ specialty.name }}
+                </span>
               </div>
             </div>
           </div>
         </div>
       </div>
       <div class="row row-cols-1 row-cols-md-3 g-4">
-        <!-- Added g-4 for gap between cards -->
-        <div
-          class="col"
-          v-for="review in doctorReviews"
-          :key="review.first_name"
-        >
+        <div class="col" v-for="review in doctorReviews" :key="review.id">
           <div class="card h-100 rounded-4 shadow-sm border-none">
-            <!-- Added h-100 for equal height -->
             <div class="card-body d-flex flex-column">
               <div class="text-warning">
-                <!-- Dynamic stars based on review.score -->
                 <AtomsIconsStarFilled v-for="i in review.score" :key="i" />
                 <AtomsIconsStarOutline
                   v-for="i in 5 - review.score"
@@ -822,7 +830,6 @@ export default {
                 />
               </div>
               <p class="fst-italic my-3 flex-grow-1">{{ review.message }}</p>
-              <!-- Added flex-grow-1 -->
               <p class="text-primary fw-semibold m-0">
                 {{ review.first_name }} {{ review.last_name }}
               </p>
@@ -833,26 +840,33 @@ export default {
       </div>
     </div>
 
-    <!-- Perfil  -->
+    <!-- Perfil Tab -->
     <div v-if="tab === 5">
       <div class="row">
         <div class="col-12">
-          <h5 class="fw-bold">Nuestra historia</h5>
-          <p class="text-muted">{{ doctorHistory }}</p>
+          <h5 class="fw-bold">Descripción</h5>
+          <p class="text-muted">{{ doctor.description }}</p>
         </div>
       </div>
 
-      <div class="row">
+      <div class="row" v-if="doctor.our_history">
         <div class="col-12">
-          <h5 class="fw-bold">Visión</h5>
-          <p class="text-muted">{{ doctorVision }}</p>
+          <h5 class="fw-bold">Nuestra historia</h5>
+          <p class="text-muted">{{ doctor.our_history }}</p>
         </div>
       </div>
 
-      <div class="row">
+      <div class="row" v-if="doctor.mission">
         <div class="col-12">
           <h5 class="fw-bold">Misión</h5>
-          <p class="text-muted">{{ doctorMision }}</p>
+          <p class="text-muted">{{ doctor.mission }}</p>
+        </div>
+      </div>
+
+      <div class="row" v-if="doctor.vision">
+        <div class="col-12">
+          <h5 class="fw-bold">Visión</h5>
+          <p class="text-muted">{{ doctor.vision }}</p>
         </div>
       </div>
     </div>
@@ -930,7 +944,19 @@ export default {
     :result="result"
     @close-modal="closeModal"
   />
-  <WebsiteReservarModal :isOpen="panel" :currentStep=2 :offers="offers" @close="panel = false" />
+  <WebsiteReservarModal
+    :selectedProcedureId="selectedProcedureId"
+    :selectedSpecialtyId="selectedSpecialtyId"
+    :userInfo="user"
+    :doctorInfo="doctor"
+    :selectedDay="selectedDay"
+    :selectedHour="selectedHour"
+    :selectedPackage="selectedPackage"
+    :isOpen="panel"
+    :currentStep="2"
+    :offers="offers"
+    @close="panel = false"
+  />
 </template>
 
 <style scoped>

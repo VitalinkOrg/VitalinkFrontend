@@ -1,5 +1,6 @@
 <script setup>
 import { ref, defineProps } from "vue";
+import defaultImage from "@/assets/img-medico-thumbnail.png";
 const panel = ref(false);
 const props = defineProps(["clinica"]);
 const offers = ref([]);
@@ -61,7 +62,9 @@ const getOffers = async (type, id) => {
         <div class="row gap-2">
           <div class="col-md-3 d-flex justify-content-center d-md-block">
             <img
-              src="@/src/assets/img-medico-thumbnail.png"
+              :src="
+                clinica.profile_picture_url || '/_nuxt/src/assets/picture.svg'
+              "
               class="img-fluid rounded-circle"
               alt="clinica"
               width="67.088px"
@@ -89,7 +92,7 @@ const getOffers = async (type, id) => {
                 class="img-fluid"
               />
               <p class="text-muted mb-0">
-                {{ clinica.medical_type?.name || "none" }}
+                {{ clinica.description }}
               </p>
             </div>
             <div class="d-flex align-items-center gap-2">
@@ -99,9 +102,9 @@ const getOffers = async (type, id) => {
                 class="img-fluid"
               />
               <p class="text-muted mb-0">
-                {{ clinica.locations.length }}
+                {{ clinica.location_number }}
                 {{
-                  clinica.locations.length === 1
+                  clinica.location_number === 1
                     ? "Hospital"
                     : "Hospitales diferentes"
                 }}
@@ -115,7 +118,7 @@ const getOffers = async (type, id) => {
                   alt="Busca centro medico"
                   class="img-fluid"
                 />
-                <p class="m-0">{{ clinica.availabilities[0].weekday }}</p>
+                <p class="m-0">{{ clinica.date_availability }}</p>
               </div>
               <div class="d-flex align-items-center gap-2">
                 <img
@@ -124,16 +127,15 @@ const getOffers = async (type, id) => {
                   class="img-fluid"
                 />
                 <p class="m-0">
-                  {{ clinica.availabilities[0].from_hour }} -
-                  {{ clinica.availabilities[0].to_hour }}
+                  {{ clinica.hour_availability }}
                 </p>
               </div>
             </div>
             <div class="mt-3">
               <span
-                v-for="service in clinica.services"
+                v-for="service in clinica.services_names"
                 class="badge me-2 text-primary p-2"
-                >{{ service.medical_specialty.name }}</span
+                >{{ service }}</span
               >
             </div>
             <div class="mt-3 d-flex justify-content-between align-items-center">
