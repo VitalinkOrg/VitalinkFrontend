@@ -33,6 +33,8 @@ const { data: historial, pending: pendingHistorial } = await useFetch(
     transform: (_historial) => _historial.data,
   }
 );
+
+console.log(historial);
 </script>
 <template>
   <NuxtLayout name="pacientes-dashboard">
@@ -74,13 +76,16 @@ const { data: historial, pending: pendingHistorial } = await useFetch(
                       v-for="medico in historial"
                       :key="medico.id"
                     >
-                      <div class="card p-3">
+                      <div class="card p-3 h-100">
                         <div class="d-flex align-items-center">
                           <div>
                             <img
-                              src="@/src/assets/img-medico-thumbnail.png"
+                              :src="
+                                medico.profile_picture_url ||
+                                '/_nuxt/src/assets/picture.svg'
+                              "
                               alt=""
-                              class="img-fluid rounded-circle"
+                              class="rounded-circle"
                               width="67.088px"
                               height="66.975px"
                             />
@@ -88,7 +93,7 @@ const { data: historial, pending: pendingHistorial } = await useFetch(
                               class="bg-primary d-flex p-2 score justify-content-between gap-2"
                             >
                               <p class="text-white mb-0">
-                                {{ medico.stars_by_supplier.toFixed(1) }}
+                                {{ medico.stars_by_supplier?.toFixed(1) || 0 }}
                                 <!-- Placeholder - replace with actual rating if available -->
                               </p>
                               <img
@@ -112,7 +117,7 @@ const { data: historial, pending: pendingHistorial } = await useFetch(
                                 class="img-fluid"
                               />
                               <p class="text-muted mb-0">
-                                {{ medico.medical_type?.name || "none" }}
+                                {{ medico.description }}
                               </p>
                             </div>
 
@@ -123,9 +128,9 @@ const { data: historial, pending: pendingHistorial } = await useFetch(
                                 class="img-fluid"
                               />
                               <p class="text-muted mb-0">
-                                {{ medico.locations.length }}
+                                {{ medico.location_number }}
                                 {{
-                                  medico.locations.length === 1
+                                  medico.location_number === 1
                                     ? "Hospital"
                                     : "Hospitales diferentes"
                                 }}
@@ -142,7 +147,7 @@ const { data: historial, pending: pendingHistorial } = await useFetch(
                               class="img-fluid"
                             />
                             <p class="m-0">
-                              {{ medico.availabilities[0].weekday }}
+                              {{ medico.date_availability }}
                             </p>
                           </div>
                           <div class="d-flex align-items-center gap-2">
@@ -152,17 +157,16 @@ const { data: historial, pending: pendingHistorial } = await useFetch(
                               class="img-fluid"
                             />
                             <p class="m-0">
-                              {{ medico.availabilities[0].from_hour }} -
-                              {{ medico.availabilities[0].to_hour }}
+                              {{ medico.hour_availability }}
                             </p>
                           </div>
                         </div>
 
                         <div class="mt-3">
                           <span
-                            v-for="service in medico.services"
+                            v-for="service in medico.services_names"
                             class="badge me-2 text-primary p-2"
-                            >{{ service.medical_specialty.name }}</span
+                            >{{ service }}</span
                           >
                         </div>
 
