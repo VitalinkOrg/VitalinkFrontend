@@ -821,15 +821,15 @@ export default {
       try {
         const payload = {
           customer_id: user_info.value.id,
-          is_for_external_user: this.appointmentFor === "someoneElse",
-          user_description: this.description,
+          // is_for_external_user: this.appointmentFor === "someoneElse",
+          // user_description: this.description,
           supplier_id: this.doctorInfo.id, // Make sure this is defined
           appointment_date: this.selectedDay,
           appointment_hour: this.selectedHour,
           package_id: this.selectedPackage.id,
-          appointment_status_code: "PENDING",
-          reservation_type_code: "PRE_RESERVATION",
-          phone_number_external_user: this.phoneNumber,
+          // appointment_status_code: "PENDING",
+          // reservation_type_code: "PRE_RESERVATION",
+          // phone_number_external_user: this.phoneNumber,
         };
 
         const response = await $fetch(

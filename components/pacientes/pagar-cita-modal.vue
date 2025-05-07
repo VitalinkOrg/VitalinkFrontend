@@ -1,7 +1,14 @@
 <template>
   <div>
     <!-- Confirmed and not paid -->
-    <div v-if="appointment.status === 'Confirmada' && !appointment.payed">
+    <div
+      v-if="
+        appointment.appointment_status.code ===
+          'CONFIRM_VALIDATION_APPOINTMENT' &&
+        appointment.payment_status.code ===
+          'PAYMENT_STATUS_NOT_PAID_VALORATION_APPOINTMENT'
+      "
+    >
       <button
         v-if="!showStatus"
         role="button"
@@ -15,14 +22,55 @@
         role="button"
         @click="open = true"
         class="badge rounded-5 text-dark"
-        :class="statusClass(appointment.appointment_status.name)"
+        :class="statusClass(appointment.appointment_status.code)"
       >
-        {{ appointment.appointment_status.name }}
+        {{ appointment.appointment_status.value1 }}
+      </span>
+    </div>
+    <div
+      v-if="
+        appointment.appointment_status.code ===
+        'VALUATION_PENDING_VALORATION_APPOINTMENT'
+      "
+    >
+      <div v-if="!showStatus" class="d-flex gap-2">
+        <img src="@/src/assets/success.svg" class="mr-2" alt="Success" />
+        <p class="text-success mb-0">Pagado</p>
+      </div>
+      <span
+        v-else
+        role="button"
+        @click="open = true"
+        class="badge rounded-5 text-dark"
+        :class="statusClass(appointment.appointment_status.code)"
+      >
+        {{ appointment.appointment_status.value1 }}
+      </span>
+    </div>
+
+    <div
+      v-else-if="
+        appointment.appointment_status.code === 'CONCRETED_APPOINTMENT'
+      "
+    >
+      <span
+        v-if="showStatus"
+        role="button"
+        @click="open = true"
+        class="badge rounded-5 text-dark"
+        :class="statusClass(appointment.appointment_status.code)"
+      >
+        {{ appointment.appointment_status.value1 }}
       </span>
     </div>
 
     <!-- Paid -->
-    <div v-else-if="appointment.payed" role="button">
+    <div
+      v-else-if="
+        appointment.payment_status.code === 'PAYMENT_STATUS_PAID_PROCEDURE'
+      "
+      role="button"
+    >
       <div v-if="!showStatus" class="d-flex gap-2">
         <img src="@/src/assets/success.svg" class="mr-2" alt="Success" />
         <p class="text-success mb-0">Pagado</p>
@@ -31,14 +79,19 @@
         v-else
         role="button"
         class="badge rounded-5 text-dark"
-        :class="statusClass(appointment.status)"
+        :class="statusClass(appointment.appointment_status.code)"
       >
-        {{ appointment.status }}
+        {{ appointment.appointment_status.value1 }}
       </span>
     </div>
 
     <!-- Pending -->
-    <div v-else-if="appointment.status === 'Pendiente'">
+    <div
+      v-else-if="
+        appointment.appointment_status?.code ===
+        'PENDING_VALORATION_APPOINTMENT'
+      "
+    >
       <button
         v-if="!showStatus"
         role="button"
@@ -52,20 +105,22 @@
         role="button"
         @click="open = true"
         class="badge rounded-5 text-dark"
-        :class="statusClass(appointment.status)"
+        :class="statusClass(appointment.appointment_status.code)"
       >
-        {{ appointment.status }}
+        {{ appointment.appointment_status.value1 }}
       </span>
     </div>
     <!-- Cancelled -->
-    <div v-else-if="appointment.status === 'Cancelada'">
+    <div
+      v-else-if="appointment.appointment_status.code === 'CANCEL_APPOINTMENT'"
+    >
       <span
         v-if="showStatus"
         role="button"
         class="badge rounded-5 text-dark"
-        :class="statusClass(appointment.status)"
+        :class="statusClass(appointment.appointment_status.code)"
       >
-        {{ appointment.status }}
+        {{ appointment.appointment_status.value1 }}
       </span>
     </div>
   </div>
@@ -106,46 +161,58 @@
                 </tr>
                 <tr>
                   <td><strong>Fecha de la cita:</strong></td>
-                  <td>{{ formatDate(appointment.date) }}</td>
+                  <td>
+                    {{
+                      new Date(
+                        appointment.appointment_date
+                      ).toLocaleDateString()
+                    }}
+                  </td>
                 </tr>
                 <tr>
                   <td><strong>Hora de la cita:</strong></td>
-                  <td>{{ appointment.hour }}</td>
+                  <td>{{ appointment.appointment_hour }}</td>
                 </tr>
                 <tr>
                   <td><strong>Paciente titular:</strong></td>
-                  <td>{{ appointment.patient_name }}</td>
+                  <td>{{ appointment.customer.name }}</td>
                 </tr>
                 <tr>
                   <td><strong>Teléfono de Contacto:</strong></td>
-                  <td>{{ appointment.phone }}</td>
+                  <td>{{ appointment.customer.phone_number }}</td>
                 </tr>
                 <tr>
                   <td><strong>Profesional Médico:</strong></td>
-                  <td>{{ appointment.professional_name }}</td>
+                  <td>{{ appointment.supplier.name }}</td>
                 </tr>
                 <tr>
                   <td><strong>Estado:</strong></td>
                   <td>
                     <span
                       class="badge rounded-5 text-dark"
-                      :class="statusClass(appointment.status)"
+                      :class="statusClass(appointment.appointment_status.code)"
                     >
-                      {{ appointment.status }}
+                      {{ appointment.appointment_status.value1 }}
                     </span>
                   </td>
                 </tr>
                 <tr>
                   <td><strong>Procedimiento:</strong></td>
-                  <td>{{ appointment.notes }}</td>
+                  <td>{{ appointment.appointment_type.name }}</td>
                 </tr>
                 <tr>
                   <td><strong>Costo del servicio:</strong></td>
-                  <td>{{ appointment.cost }}</td>
+                  <td>{{ appointment.price_valoration_appointment }}</td>
                 </tr>
               </tbody>
             </table>
-            <div class="mb-3">
+            <div
+              v-if="
+                appointment.appointment_status.code !==
+                'VALUATION_PENDING_VALORATION_APPOINTMENT'
+              "
+              class="mb-3"
+            >
               <p class="mb-1 fw-bold">
                 <strong>Información de métodos de Pago:</strong>
               </p>
@@ -165,12 +232,21 @@
               </div>
               <p>Pagaras directamente el día de tu cita.</p>
             </div>
-            <div class="d-flex justify-content-between gap-2">
+            <div
+              v-if="
+                appointment.appointment_status.code !==
+                'VALUATION_PENDING_VALORATION_APPOINTMENT'
+              "
+              class="d-flex justify-content-between gap-2"
+            >
               <button class="btn btn-outline-dark w-50" @click="step = 4">
                 Anular cita
               </button>
               <button
-                v-if="appointment.status === 'Confirmada'"
+                v-if="
+                  appointment.payment_status.code ===
+                  'PAYMENT_STATUS_NOT_PAID_VALORATION_APPOINTMENT'
+                "
                 class="btn btn-primary w-50"
                 @click="step = 2"
               >
@@ -257,7 +333,7 @@
                 <tbody>
                   <tr>
                     <td><strong>Subtotal:</strong></td>
-                    <td>€18.000</td>
+                    <td>{{ appointment.price_valoration_appointment }}</td>
                   </tr>
                   <tr>
                     <td><strong>Descuento:</strong></td>
@@ -265,7 +341,9 @@
                   </tr>
                   <tr class="total">
                     <td><strong>Total:</strong></td>
-                    <td class="fw-bold">€18.000</td>
+                    <td class="fw-bold">
+                      {{ appointment.price_valoration_appointment }}
+                    </td>
                   </tr>
                 </tbody>
               </table>
@@ -393,6 +471,8 @@
 </template>
 
 <script setup>
+const token = useCookie("token");
+const config = useRuntimeConfig();
 import { ref, defineProps } from "vue";
 const props = defineProps(["appointment", "step", "showStatus"]);
 
@@ -415,26 +495,54 @@ const formatDate = (dateString) => {
   });
 };
 
-const processPayment = () => {
+const processPayment = async () => {
   // Simulate payment processing
   if (cardName.value && cardNumber.value && expiryDate.value && cvv.value) {
-    step.value = 3;
     errorText.value = "";
   } else {
     errorText.value = "Por favor, complete todos los campos.";
+  }
+
+  const { data, error } = await useFetch(
+    config.public.API_BASE_URL +
+      "/appointment/success_payment_valoration_appointment",
+    {
+      method: "PUT",
+      headers: { Authorization: token.value },
+      params: {
+        id: props.appointment.id,
+      },
+      body: {
+        payment_method_code: "ON_CONSULTATION",
+      },
+    }
+  );
+  if (data) {
+    step.value = 3;
+  }
+  if (error.value) {
+    console.log(error.value, "data");
   }
 };
 
 const statusClass = (status) => {
   switch (status) {
-    case "Cancelada":
+    case "CANCEL_APPOINTMENT":
       return "bg-danger-subtle";
-    case "Pendiente":
+    case "PENDING_VALORATION_APPOINTMENT":
       return "bg-warning-subtle";
-    case "Confirmada":
+    case "PENDING_PROCEDURE":
+      return "bg-warning-subtle";
+    case "CONFIRM_PROCEDURE":
       return "bg-primary-subtle";
-    case "Valorado":
+    case "CONCRETED_APPOINTMENT":
+      return "bg-primary-subtle";
+    case "VALUED_VALORATION_APPOINTMENT":
       return "bg-success-subtle";
+    case "CONFIRM_VALIDATION_APPOINTMENT":
+      return "bg-success-subtle";
+    case "VALUATION_PENDING_VALORATION_APPOINTMENT":
+      return "bg-primary-subtle";
     default:
       return "";
   }
