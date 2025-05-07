@@ -245,7 +245,9 @@
               <button
                 v-if="
                   appointment.payment_status.code ===
-                  'PAYMENT_STATUS_NOT_PAID_VALORATION_APPOINTMENT'
+                    'PAYMENT_STATUS_NOT_PAID_VALORATION_APPOINTMENT' &&
+                  appointment.appointment_status.code ===
+                    'CONFIRM_VALIDATION_APPOINTMENT'
                 "
                 class="btn btn-primary w-50"
                 @click="step = 2"

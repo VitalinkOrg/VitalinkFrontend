@@ -3,6 +3,7 @@
     <div
       class="modal-content packs z-3"
       :class="{ confirmation: internalCurrentStep === 4 }"
+      style="height: 800px; overflow-y: auto"
     >
       <div class="modal-header">
         <h2>
