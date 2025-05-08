@@ -23,7 +23,7 @@
               {{ new Date(appointment.appointment_date).toLocaleDateString() }}
             </td>
             <td>{{ appointment.appointment_hour }}</td>
-            <td>{{ appointment.procedure?.name }}</td>
+            <td>{{ appointment.package?.procedure.name }}</td>
             <td>{{ appointment.appointment_qr_code }}</td>
             <td>{{ appointment.reservation_type.name }}</td>
             <td>

@@ -157,7 +157,7 @@ export default {
               a las
               {{ appointment.appointment_hour }}
             </td>
-            <td>{{ appointment.service_name }}</td>
+            <td>{{ appointment.package?.procedure.name }}</td>
             <td>
               <small class="text-capitalize">{{
                 appointment.reservation_type.name
