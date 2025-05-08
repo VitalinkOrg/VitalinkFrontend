@@ -29,15 +29,14 @@
             <td>
               <PacientesPagarCitaModal
                 v-if="
-                  appointment.appointment_status.code !==
+                  (appointment.appointment_status.code !==
                     'VALUED_VALORATION_APPOINTMENT' &&
-                  appointment.appointment_status.code !== 'PENDING_PROCEDURE' &&
-                  !(
                     appointment.appointment_status.code !==
-                      'CONFIRM_PROCEDURE' &&
-                    appointment.payment_status.code !==
-                      'PAYMENT_STATUS_NOT_PAID_PROCEDURE'
-                  )
+                      'PENDING_PROCEDURE') ||
+                  (appointment.appointment_status.code ===
+                    'CONFIRM_PROCEDURE' &&
+                    appointment.payment_status.code ===
+                      'PAYMENT_STATUS_NOT_PAID_PROCEDURE')
                 "
                 :appointment="appointment"
                 :showStatus="true"
@@ -51,15 +50,14 @@
             <td>
               <PacientesPagarCitaModal
                 v-if="
-                  appointment.appointment_status.code !==
+                  (appointment.appointment_status.code !==
                     'VALUED_VALORATION_APPOINTMENT' &&
-                  appointment.appointment_status.code !== 'PENDING_PROCEDURE' &&
-                  !(
                     appointment.appointment_status.code !==
-                      'CONFIRM_PROCEDURE' &&
-                    appointment.payment_status.code !==
-                      'PAYMENT_STATUS_NOT_PAID_PROCEDURE'
-                  )
+                      'PENDING_PROCEDURE') ||
+                  (appointment.appointment_status.code ===
+                    'CONFIRM_PROCEDURE' &&
+                    appointment.payment_status.code ===
+                      'PAYMENT_STATUS_NOT_PAID_PROCEDURE')
                 "
                 :appointment="appointment"
                 :showStatus="false"
