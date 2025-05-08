@@ -7,15 +7,9 @@ const config = useRuntimeConfig();
 const router = useRouter();
 
 function goTo(type, id) {
-  if (type == "doctor") {
-    router.push({
-      path: `perfiles/doctor/${id}`,
-    });
-  } else {
-    router.push({
-      path: `perfiles/hospital/${id}`,
-    });
-  }
+  router.push({
+    path: `perfiles/doctor/${id}`,
+  });
 }
 
 const getOffers = async (type, id) => {
@@ -48,14 +42,7 @@ const getOffers = async (type, id) => {
 </script>
 
 <template>
-  <NuxtLink
-    :to="
-      clinica.entity_type == 'doctor'
-        ? `perfiles/doctor/${clinica.id}`
-        : `perfiles/hospital/${clinica.id}`
-    "
-    style="text-decoration: none"
-  >
+  <NuxtLink :to="`perfiles/doctor/${clinica.id}`" style="text-decoration: none">
     <div class="card shadow border-0 rounded-4 mb-4">
       <div class="card-body" style="cursor: pointer">
         <div class="row gap-2">
