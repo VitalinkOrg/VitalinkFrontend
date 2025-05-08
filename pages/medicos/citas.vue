@@ -3,14 +3,15 @@ import { jsPDF } from "jspdf";
 import "jspdf-autotable";
 import { ref, computed } from "vue";
 import { useRefreshToken } from "#imports";
-/*definePageMeta({
+definePageMeta({
   middleware: ["auth-doctors-hospitals"],
-});*/
+});
 const config = useRuntimeConfig();
 const token = useCookie("token");
 const role = useCookie("role");
 const tab = ref(1);
 const allAppointments = ref();
+const allAppointmentsData = ref();
 const searchQuery = ref("");
 const sortOption = ref("date");
 const activeStatus = ref("Todos");
@@ -20,6 +21,18 @@ if (role.value == "R_HOS") {
   url = "/hospital_dashboard/history_appointments";
 } else {
   url = "/doctor_dashboard/history_appointments";
+}
+
+const { data: appointmentsResponse, loading } = await useFetch(
+  config.public.API_BASE_URL + "/appointment/get_all",
+  {
+    headers: { Authorization: token.value },
+    transform: (_appointments) => _appointments.data,
+  }
+);
+if (appointmentsResponse) {
+  allAppointmentsData.value = appointmentsResponse.value;
+  useRefreshToken();
 }
 
 const downloadAllAppointments = () => {
@@ -414,7 +427,7 @@ const setStatusFilter = (status) => {
 
     <div class="card">
       <MedicosCitasTable
-        :appointments="filteredAppointments"
+        :appointments="allAppointmentsData"
         :useDropdown="true"
       />
     </div>

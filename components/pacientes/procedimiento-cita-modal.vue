@@ -218,15 +218,15 @@
               <tbody>
                 <tr>
                   <td><strong>Paciente titular:</strong></td>
-                  <td>Ana Pérez</td>
+                  <td>{{ appointment.customer.name }}</td>
                 </tr>
                 <tr>
                   <td><strong>Doctor:</strong></td>
-                  <td>María Pérez</td>
+                  <td>{{ appointment.supplier.name }}</td>
                 </tr>
                 <tr>
                   <td><strong>Costo del servicio:</strong></td>
-                  <td>💤1.800</td>
+                  <td>{{ appointment.price_procedure }}</td>
                 </tr>
                 <tr>
                   <td><strong>Fecha de la cita:</strong></td>

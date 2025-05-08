@@ -3,10 +3,13 @@
     <!-- Confirmed and not paid -->
     <div
       v-if="
-        appointment.appointment_status.code ===
+        (appointment.appointment_status.code ===
           'CONFIRM_VALIDATION_APPOINTMENT' &&
-        appointment.payment_status.code ===
-          'PAYMENT_STATUS_NOT_PAID_VALORATION_APPOINTMENT'
+          appointment.payment_status.code ===
+            'PAYMENT_STATUS_NOT_PAID_VALORATION_APPOINTMENT') ||
+        (appointment.appointment_status.code === 'CONFIRM_PROCEDURE' &&
+          appointment.payment_status.code ===
+            'PAYMENT_STATUS_NOT_PAID_PROCEDURE')
       "
     >
       <button
@@ -208,8 +211,13 @@
             </table>
             <div
               v-if="
-                appointment.appointment_status.code !==
-                'VALUATION_PENDING_VALORATION_APPOINTMENT'
+                (appointment.appointment_status.code ===
+                  'CONFIRM_VALIDATION_APPOINTMENT' &&
+                  appointment.payment_status.code ===
+                    'PAYMENT_STATUS_NOT_PAID_VALORATION_APPOINTMENT') ||
+                (appointment.appointment_status.code === 'CONFIRM_PROCEDURE' &&
+                  appointment.payment_status.code ===
+                    'PAYMENT_STATUS_NOT_PAID_PROCEDURE')
               "
               class="mb-3"
             >
@@ -244,10 +252,14 @@
               </button>
               <button
                 v-if="
-                  appointment.payment_status.code ===
-                    'PAYMENT_STATUS_NOT_PAID_VALORATION_APPOINTMENT' &&
-                  appointment.appointment_status.code ===
-                    'CONFIRM_VALIDATION_APPOINTMENT'
+                  (appointment.appointment_status.code ===
+                    'CONFIRM_VALIDATION_APPOINTMENT' &&
+                    appointment.payment_status.code ===
+                      'PAYMENT_STATUS_NOT_PAID_VALORATION_APPOINTMENT') ||
+                  (appointment.appointment_status.code ===
+                    'CONFIRM_PROCEDURE' &&
+                    appointment.payment_status.code ===
+                      'PAYMENT_STATUS_NOT_PAID_PROCEDURE')
                 "
                 class="btn btn-primary w-50"
                 @click="step = 2"
@@ -355,8 +367,21 @@
                   Atrás
                 </button>
                 <button
+                  v-if="
+                    appointment.appointment_status.code ===
+                    'CONFIRM_VALIDATION_APPOINTMENT'
+                  "
                   class="btn btn-primary w-50"
                   @click.prevent="processPayment"
+                >
+                  Pagar
+                </button>
+                <button
+                  v-else-if="
+                    appointment.appointment_status.code === 'CONFIRM_PROCEDURE'
+                  "
+                  class="btn btn-primary w-50"
+                  @click.prevent="processPaymentProcedure"
                 >
                   Pagar
                 </button>
@@ -505,9 +530,42 @@ const processPayment = async () => {
     errorText.value = "Por favor, complete todos los campos.";
   }
 
+  console.log(config.public.API_BASE_URL);
+
   const { data, error } = await useFetch(
     config.public.API_BASE_URL +
       "/appointment/success_payment_valoration_appointment",
+
+    {
+      method: "PUT",
+      headers: { Authorization: token.value },
+      params: {
+        id: props.appointment.id,
+      },
+      body: {
+        payment_method_code: "ON_CONSULTATION",
+      },
+    }
+  );
+  if (data) {
+    step.value = 3;
+  }
+  if (error.value) {
+    console.log(error.value, "data");
+  }
+};
+
+const processPaymentProcedure = async () => {
+  console.log("hello");
+  // Simulate payment processing
+  if (cardName.value && cardNumber.value && expiryDate.value && cvv.value) {
+    errorText.value = "";
+  } else {
+    errorText.value = "Por favor, complete todos los campos.";
+  }
+
+  const { data, error } = await useFetch(
+    config.public.API_BASE_URL + "/appointment/success_payment_procedure",
     {
       method: "PUT",
       headers: { Authorization: token.value },

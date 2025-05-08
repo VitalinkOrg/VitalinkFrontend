@@ -1,7 +1,7 @@
 <script setup>
-/*definePageMeta({
+definePageMeta({
   middleware: ["auth-doctors-hospitals"],
-});*/
+});
 const config = useRuntimeConfig();
 const token = useCookie("token");
 const user_info = useCookie("user_info");

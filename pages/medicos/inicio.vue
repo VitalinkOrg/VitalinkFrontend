@@ -12,12 +12,13 @@ import {
   Colors,
 } from "chart.js";
 
-/*definePageMeta({
+definePageMeta({
   middleware: ["auth-doctors-hospitals"],
-});*/
+});
 const config = useRuntimeConfig();
 const token = useCookie("token");
 const role = useCookie("role");
+const appointmentsData = ref();
 // const user_info = useCookie("user_info");
 const user_info = {
   services: [
@@ -45,6 +46,21 @@ const user_info = {
   medical_license_number: "MLN-123",
   medical_number: "MN-456", // If medical_license_number is undefined
 };
+
+const { data: appointmentsResponse, loading } = await useFetch(
+  config.public.API_BASE_URL + "/appointment/get_all",
+  {
+    headers: { Authorization: token.value },
+    params: {
+      customer_id: user_info.id,
+    },
+    transform: (_appointments) => _appointments.data,
+  }
+);
+if (appointmentsResponse) {
+  appointmentsData.value = appointmentsResponse.value;
+  useRefreshToken();
+}
 
 let url;
 if (role.value == "R_HOS") {
@@ -457,7 +473,10 @@ const singleValueOptions = {
         </NuxtLink>
       </p>
       <div>
-        <MedicosCitasTable :appointments="appointments" :useDropdown="false" />
+        <MedicosCitasTable
+          :appointments="appointmentsData"
+          :useDropdown="false"
+        />
       </div>
     </div>
   </NuxtLayout>
