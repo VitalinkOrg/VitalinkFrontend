@@ -29,7 +29,7 @@
               <tbody>
                 <tr>
                   <td class="text-muted">Paciente:</td>
-                  <td>{{ appointment.patient_name }}</td>
+                  <td>{{ appointment.customer.name }}</td>
                 </tr>
                 <tr>
                   <td class="text-muted">Tipo de servicio:</td>
@@ -37,11 +37,17 @@
                 </tr>
                 <tr>
                   <td class="text-muted">Fecha de la cita:</td>
-                  <td>{{ formatDate(appointment.date) }}</td>
+                  <td>
+                    {{
+                      new Date(
+                        appointment.appointment_date
+                      ).toLocaleDateString()
+                    }}
+                  </td>
                 </tr>
                 <tr>
                   <td class="text-muted">Hora de la cita:</td>
-                  <td>{{ appointment.hour }}</td>
+                  <td>{{ appointment.appointment_hour }}</td>
                 </tr>
                 <tr>
                   <td class="text-muted">Procedimiento:</td>
@@ -49,7 +55,7 @@
                 </tr>
                 <tr>
                   <td class="text-muted">Motivo:</td>
-                  <td>{{ appointment.professional_name }}</td>
+                  <td>{{ appointment.user_description }}</td>
                 </tr>
                 <tr>
                   <td class="text-muted">Procedimiento:</td>
@@ -57,16 +63,22 @@
                 </tr>
                 <tr>
                   <td class="text-muted">Costo del servicio:</td>
-                  <td>{{ appointment.cost }}</td>
+                  <td>{{ appointment.price_valoration_appointment }}</td>
                 </tr>
                 <tr>
                   <td class="text-muted">Fecha de solicitud:</td>
-                  <td>{{ appointment.cost }}</td>
+                  <td>
+                    {{
+                      new Date(
+                        appointment.application_date
+                      ).toLocaleDateString()
+                    }}
+                  </td>
                 </tr>
                 <tr>
                   <td class="text-muted">Tipo de reserva:</td>
                   <td class="text-capitalize">
-                    {{ appointment.appointment_type }}
+                    {{ appointment.appointment_type.name }}
                   </td>
                 </tr>
                 <tr>
@@ -74,13 +86,18 @@
                   <td>
                     <span
                       class="badge rounded-5 text-dark"
-                      :class="statusClass(appointment.status)"
+                      :class="statusClass(appointment.appointment_status.code)"
                     >
-                      {{ appointment.status }}
+                      {{ appointment.appointment_status.value1 }}
                     </span>
                   </td>
                 </tr>
-                <tr v-if="appointment.status == 'Valorado'">
+                <tr
+                  v-if="
+                    appointment.appointment_status.code ==
+                    'VALUED_VALORATION_APPOINTMENT'
+                  "
+                >
                   <td class="text-muted">Proforma:</td>
                   <td>
                     <div>
@@ -113,7 +130,12 @@
                     </div>
                   </td>
                 </tr>
-                <tr v-if="appointment.status == 'Valorado'">
+                <tr
+                  v-if="
+                    appointment.appointment_status.code ==
+                    'VALUED_VALORATION_APPOINTMENT'
+                  "
+                >
                   <td class="text-muted">Valor del procedimiento:</td>
                   <td>
                     <input
@@ -123,7 +145,12 @@
                     />
                   </td>
                 </tr>
-                <tr v-if="appointment.status == 'Valorado'">
+                <tr
+                  v-if="
+                    appointment.appointment_status.code ==
+                    'VALUED_VALORATION_APPOINTMENT'
+                  "
+                >
                   <td class="text-muted">Recomendaciones Post-Cita:</td>
                   <td>
                     <textarea
@@ -148,7 +175,11 @@
               </p>
             </div>
             <div
-              v-if="appointment.appointment_type == 'pre-reserva'"
+              v-if="
+                appointment.appointment_status.code ==
+                  'PENDING_VALORATION_APPOINTMENT' ||
+                appointment.appointment_status.code == 'PENDING_PROCEDURE'
+              "
               class="d-flex justify-content-between gap-2"
             >
               <button class="btn btn-outline-dark w-50" @click="localStep = 6">
@@ -165,7 +196,10 @@
             >
               <div
                 class="d-flex justify-content-between align-items-center w-100"
-                v-if="appointment.status !== 'Valorado'"
+                v-if="
+                  appointment.appointment_status.code !==
+                  'VALUED_VALORATION_APPOINTMENT'
+                "
               >
                 <button class="btn text-danger" @click="localStep = 4">
                   Anular cita
@@ -179,7 +213,10 @@
               </div>
               <div
                 class="d-flex justify-content-between align-items-center w-100"
-                v-if="appointment.status == 'Valorado'"
+                v-if="
+                  appointment.appointment_status.code ==
+                  'VALUED_VALORATION_APPOINTMENT'
+                "
               >
                 <span
                   class="d-flex align-items-center gap-2"
@@ -214,7 +251,7 @@
           <!-- Step 2: Payment Details -->
           <div v-if="localStep === 2">
             <span
-              v-if="appointment.appointment_type == 'reserva'"
+              v-if="appointment.appointment_status.code == 'PENDING_PROCEDURE'"
               style="max-width: max-content"
               class="d-flex justify-content-between gap-2 rounded-circle bg-warning-subtle text-warning p-3 my-3"
             >
@@ -228,20 +265,30 @@
             <h5 class="fw-bold">¿Confirmar reserva?</h5>
             <p class="fw-bold">
               {{
-                appointment.appointment_type == "pre-reserva"
+                appointment.appointment_status.code ==
+                  "PENDING_VALORATION_APPOINTMENT" ||
+                appointment.appointment_status.code == "PENDING_PROCEDURE"
                   ? "Con estos cambios el estado de la solicitud de reserva pasará de: Pendiente a Confirmada"
-                  : "Con estos cambios el estado de la solicitud de reserva pasará de: Pendiente a Valorada"
+                  : appointment.appointment_status.code == "WAITING_PROCEDURE"
+                    ? "Con estos cambios el estado de la solicitud de reserva pasará de: Pendiente a Concretada"
+                    : "Con estos cambios el estado de la solicitud de reserva pasará de: Pendiente a Valorada"
               }}
             </p>
             <p
-              v-if="appointment.appointment_type == 'pre-reserva'"
+              v-if="
+                appointment.appointment_status.code ==
+                'PENDING_VALORATION_APPOINTMENT'
+              "
               class="text-muted"
             >
               Le enviaremos una notificación al paciente para que acuda a la
               cita de valoración en la fecha que has confirmado
             </p>
             <div
-              v-if="appointment.appointment_type == 'pre-reserva'"
+              v-if="
+                appointment.appointment_status.code ==
+                'PENDING_VALORATION_APPOINTMENT'
+              "
               class="d-flex align-items-center justify-content-between gap-2 bg-warning-subtle text-warning p-3 my-3"
             >
               <img
@@ -258,7 +305,39 @@
               <button class="btn btn-outline-dark w-50" @click="localStep = 1">
                 Cancelar
               </button>
-              <button class="btn btn-primary w-50" @click="confirmAppointment">
+              <button
+                v-if="
+                  appointment.appointment_status.code ==
+                  'PENDING_VALORATION_APPOINTMENT'
+                "
+                class="btn btn-primary w-50"
+                @click="confirmAppointment"
+              >
+                Confirmar
+              </button>
+              <button
+                v-else-if="
+                  appointment.appointment_status.code == 'PENDING_PROCEDURE'
+                "
+                class="btn btn-primary w-50"
+                @click="confirmProcedure"
+              >
+                Confirmar
+              </button>
+              <button
+                v-else-if="
+                  appointment.appointment_status.code == 'WAITING_PROCEDURE'
+                "
+                class="btn btn-primary w-50"
+                @click="finishProcedure"
+              >
+                Confirmar
+              </button>
+              <button
+                v-else
+                class="btn btn-primary w-50"
+                @click="confirmValoration"
+              >
                 Confirmar
               </button>
             </div>
@@ -280,13 +359,15 @@
             <h4
               class="confirmation-title text-primary"
               :class="
-                appointment.appointment_type == 'reserva'
+                appointment.appointment_status.code ==
+                'VALUED_VALORATION_APPOINTMENT'
                   ? 'text-success text-left fw-bold'
                   : 'text-primary text-center'
               "
             >
               {{
-                appointment.appointment_type == "pre-reserva"
+                appointment.appointment_status.code ==
+                "PENDING_VALORATION_APPOINTMENT"
                   ? "¡Felicitaciones!"
                   : "¡Bien hecho!"
               }}
@@ -294,76 +375,27 @@
             <p
               class="mb-4 text-muted"
               :class="
-                appointment.appointment_type == 'pre-reserva'
+                appointment.appointment_status.code ==
+                'PENDING_VALORATION_APPOINTMENT'
                   ? 'text-center'
                   : 'text-left'
               "
             >
               {{
-                appointment.appointment_type == "pre-reserva"
+                appointment.appointment_status.code ==
+                "PENDING_VALORATION_APPOINTMENT"
                   ? "Acabas de confirmar la cita de valoración para tu paciente."
-                  : "El cambio de estado de la cita se ha realizado con éxito:"
+                  : "El cambio de estado de la cita se ha realizado con éxito"
               }}
             </p>
-            <table class="table table-borderless">
-              <tbody>
-                <tr>
-                  <td class="text-muted">Paciente:</td>
-                  <td>{{ appointment.patient_name }}</td>
-                </tr>
-                <tr>
-                  <td class="text-muted">Tipo de servicio:</td>
-                  <td>Cita de valoración</td>
-                </tr>
-                <tr>
-                  <td class="text-muted">Fecha de la cita:</td>
-                  <td>{{ formatDate(appointment.date) }}</td>
-                </tr>
-                <tr>
-                  <td class="text-muted">Hora de la cita:</td>
-                  <td>{{ appointment.hour }}</td>
-                </tr>
-                <tr>
-                  <td class="text-muted">Procedimiento:</td>
-                  <td>{{ appointment.service_name }}</td>
-                </tr>
-                <tr>
-                  <td class="text-muted">Motivo:</td>
-                  <td>{{ appointment.professional_name }}</td>
-                </tr>
-                <tr>
-                  <td class="text-muted">Procedimiento:</td>
-                  <td>{{ appointment.notes }}</td>
-                </tr>
-                <tr>
-                  <td class="text-muted">Costo del servicio:</td>
-                  <td>{{ appointment.cost }}</td>
-                </tr>
-                <tr>
-                  <td class="text-muted">Fecha de solicitud:</td>
-                  <td>{{ appointment.cost }}</td>
-                </tr>
-                <tr>
-                  <td class="text-muted">Tipo de reserva:</td>
-                  <td class="text-capitalize">
-                    {{ appointment.appointment_type }}
-                  </td>
-                </tr>
-                <tr>
-                  <td class="text-muted">Estado:</td>
-                  <td>
-                    <span
-                      class="badge rounded-5 text-dark"
-                      :class="statusClass('Confirmada')"
-                    >
-                      Confirmada
-                    </span>
-                  </td>
-                </tr>
-              </tbody>
-            </table>
+            <table class="table table-borderless"></table>
             <div
-              v-if="appointment.appointment_type == 'pre-reserva'"
+              v-if="
+                appointment.appointment_status.code ==
+                  'PENDING_VALORATION_APPOINTMENT' ||
+                appointment.appointment_status.code == 'PENDING_PROCEDURE' ||
+                appointment.appointment_status.code == 'WAITING_PROCEDURE'
+              "
               class="col-12 d-flex justify-content-between gap-2"
             >
               <button
@@ -414,47 +446,139 @@
             <table class="table table-borderless">
               <tbody>
                 <tr>
-                  <td><strong>Tipo de servicio:</strong></td>
+                  <td class="text-muted">Paciente:</td>
+                  <td>{{ appointment.customer.name }}</td>
+                </tr>
+                <tr>
+                  <td class="text-muted">Tipo de servicio:</td>
                   <td>Cita de valoración</td>
                 </tr>
                 <tr>
-                  <td><strong>Fecha de la cita:</strong></td>
-                  <td>{{ formatDate(appointment.date) }}</td>
-                </tr>
-                <tr>
-                  <td><strong>Hora de la cita:</strong></td>
-                  <td>{{ appointment.hour }}</td>
-                </tr>
-                <tr>
-                  <td><strong>Paciente titular:</strong></td>
-                  <td>{{ appointment.patient_name }}</td>
-                </tr>
-                <tr>
-                  <td><strong>Teléfono de Contacto:</strong></td>
-                  <td>{{ appointment.phone }}</td>
-                </tr>
-                <tr>
-                  <td><strong>Profesional Médico:</strong></td>
-                  <td>{{ appointment.professional_name }}</td>
-                </tr>
-                <tr>
-                  <td><strong>Estado:</strong></td>
+                  <td class="text-muted">Fecha de la cita:</td>
                   <td>
-                    <span
-                      class="badge rounded-5 text-dark"
-                      :class="statusClass('Cancelada')"
-                    >
-                      Cancelada
-                    </span>
+                    {{
+                      new Date(
+                        appointment.appointment_date
+                      ).toLocaleDateString()
+                    }}
                   </td>
                 </tr>
                 <tr>
-                  <td><strong>Procedimiento:</strong></td>
+                  <td class="text-muted">Hora de la cita:</td>
+                  <td>{{ appointment.appointment_hour }}</td>
+                </tr>
+                <tr>
+                  <td class="text-muted">Procedimiento:</td>
+                  <td>{{ appointment.service_name }}</td>
+                </tr>
+                <tr>
+                  <td class="text-muted">Motivo:</td>
+                  <td>{{ appointment.user_description }}</td>
+                </tr>
+                <tr>
+                  <td class="text-muted">Procedimiento:</td>
                   <td>{{ appointment.notes }}</td>
                 </tr>
                 <tr>
-                  <td><strong>Costo del servicio:</strong></td>
-                  <td>{{ appointment.cost }}</td>
+                  <td class="text-muted">Costo del servicio:</td>
+                  <td>{{ appointment.price_valoration_appointment }}</td>
+                </tr>
+                <tr>
+                  <td class="text-muted">Fecha de solicitud:</td>
+                  <td>
+                    {{
+                      new Date(
+                        appointment.application_date
+                      ).toLocaleDateString()
+                    }}
+                  </td>
+                </tr>
+                <tr>
+                  <td class="text-muted">Tipo de reserva:</td>
+                  <td class="text-capitalize">
+                    {{ appointment.appointment_type.name }}
+                  </td>
+                </tr>
+                <tr>
+                  <td class="text-muted">Estado:</td>
+                  <td>
+                    <span
+                      class="badge rounded-5 text-dark"
+                      :class="statusClass(appointment.appointment_status.code)"
+                    >
+                      {{ appointment.appointment_status.value1 }}
+                    </span>
+                  </td>
+                </tr>
+                <tr
+                  v-if="
+                    appointment.appointment_status.code ==
+                    'VALUED_VALORATION_APPOINTMENT'
+                  "
+                >
+                  <td class="text-muted">Proforma:</td>
+                  <td>
+                    <div>
+                      <input
+                        type="file"
+                        ref="proformaFile"
+                        style="display: none"
+                        @change="handleProformaUpload"
+                        accept=".pdf,.doc,.docx"
+                      />
+                      <button
+                        class="btn btn-outline-dark d-flex gap-2"
+                        @click="$refs.proformaFile.click()"
+                        :disabled="proformaGuardado"
+                      >
+                        <img
+                          src="@/src/assets/cloud-upload.svg"
+                          width="20"
+                          class="mr-2"
+                          alt="Vitalink"
+                        />
+                        Adjuntar Proforma
+                      </button>
+                      <div
+                        v-if="proformaFileName"
+                        class="mt-2 text-primary fw-bold"
+                      >
+                        {{ proformaFileName }}
+                      </div>
+                    </div>
+                  </td>
+                </tr>
+                <tr
+                  v-if="
+                    appointment.appointment_status.code ==
+                    'VALUED_VALORATION_APPOINTMENT'
+                  "
+                >
+                  <td class="text-muted">Valor del procedimiento:</td>
+                  <td>
+                    <input
+                      type="text"
+                      :value="appointment.procedure_value"
+                      disabled
+                    />
+                  </td>
+                </tr>
+                <tr
+                  v-if="
+                    appointment.appointment_status.code ==
+                    'VALUED_VALORATION_APPOINTMENT'
+                  "
+                >
+                  <td class="text-muted">Recomendaciones Post-Cita:</td>
+                  <td>
+                    <textarea
+                      v-model="description"
+                      class="form-control mb-4"
+                      rows="3"
+                      placeholder="Escribe las recomendaciones médicas..."
+                      :disabled="proformaGuardado"
+                    ></textarea>
+                  </td>
                 </tr>
               </tbody>
             </table>
@@ -543,10 +667,6 @@
                   </td>
                 </tr>
                 <tr>
-                  <td class="text-muted">Procedimiento:</td>
-                  <td>{{ appointment.service_name }}</td>
-                </tr>
-                <tr>
                   <td class="text-muted">Motivo:</td>
                   <td>{{ appointment.professional_name }}</td>
                 </tr>
@@ -612,6 +732,8 @@
 
 <script setup>
 import { ref, watch, toRef } from "vue";
+const config = useRuntimeConfig();
+const token = useCookie("token");
 
 const selectedDate = ref("");
 const selectedTime = ref("");
@@ -783,7 +905,7 @@ const updateAppointmentStatus = async () => {
     // });
 
     // For now, we'll just update the local appointment object
-    props.appointment.status = "Valorado";
+    props.appointment.status = "VALUED_VALORATION_APPOINTMENT";
 
     // Go back to step 1 to show the updated status
     localStep.value = 1;
@@ -798,21 +920,105 @@ const selectTime = (time) => {
 };
 const statusClass = (status) => {
   switch (status) {
-    case "Cancelada":
+    case "CANCEL_APPOINTMENT":
       return "bg-danger-subtle";
-    case "Pendiente":
+    case "PENDING_VALORATION_APPOINTMENT":
       return "bg-warning-subtle";
-    case "Confirmada":
+    case "PENDING_PROCEDURE":
+      return "bg-warning-subtle";
+    case "CONFIRM_PROCEDURE":
       return "bg-primary-subtle";
-    case "Valorado":
+    case "CONCRETED_APPOINTMENT":
+      return "bg-primary-subtle";
+    case "VALUED_VALORATION_APPOINTMENT":
       return "bg-success-subtle";
+    case "CONFIRM_VALIDATION_APPOINTMENT":
+      return "bg-success-subtle";
+    case "VALUATION_PENDING_VALORATION_APPOINTMENT":
+      return "bg-primary-subtle";
     default:
       return "";
   }
 };
 
 const confirmAppointment = async () => {
-  localStep.value = 3; // This will update both local and parent
+  const { data, error } = await useFetch(
+    config.public.API_BASE_URL + "/appointment/confirm_valoration_appointment",
+    {
+      method: "PUT",
+      headers: { Authorization: token.value },
+      params: {
+        id: props.appointment.id,
+      },
+    }
+  );
+  if (data) {
+    localStep.value = 3;
+  }
+  if (error.value) {
+    console.log(error.value, "data");
+  }
+};
+
+const confirmValoration = async () => {
+  const { data, error } = await useFetch(
+    config.public.API_BASE_URL + "/appointment/upload_proforma",
+    {
+      method: "PUT",
+      headers: { Authorization: token.value },
+      params: {
+        id: props.appointment.id,
+      },
+      body: {
+        appointment_result_code: "FIT_FOR_PROCEDURE",
+        proforma_file_code: "PERSONAL_DOCUMENT____6__DOC__652025134811",
+      },
+    }
+  );
+  if (data) {
+    localStep.value = 3;
+  }
+  if (error.value) {
+    console.log(error.value, "data");
+  }
+};
+
+const confirmProcedure = async () => {
+  const { data, error } = await useFetch(
+    config.public.API_BASE_URL + "/appointment/confirm_procedure",
+    {
+      method: "PUT",
+      headers: { Authorization: token.value },
+      params: {
+        id: props.appointment.id,
+      },
+    }
+  );
+  if (data) {
+    localStep.value = 3;
+  }
+  if (error.value) {
+    console.log(error.value, "data");
+  }
+};
+
+const finishProcedure = async () => {
+  const { data, error } = await useFetch(
+    config.public.API_BASE_URL + "/appointment/set_procedure_realized",
+    {
+      method: "PUT",
+      headers: { Authorization: token.value },
+      params: {
+        id: props.appointment.id,
+      },
+    }
+  );
+  if (data) {
+    localStep.value = 3;
+  }
+  if (error.value) {
+    console.log(error.value, "data");
+  }
 };
 
 const selectDate = (date) => {

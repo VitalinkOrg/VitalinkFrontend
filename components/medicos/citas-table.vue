@@ -12,6 +12,7 @@ export default {
     },
   },
   data() {
+    console.log(this.appointments);
     return {
       openUserModal: false,
       openDateModal: false,
@@ -36,15 +37,24 @@ export default {
       this.currentStep = step;
     },
     statusClass(status) {
+      console.log(status);
       switch (status) {
-        case "Cancelada":
+        case "CANCEL_APPOINTMENT":
           return "bg-danger-subtle";
-        case "Pendiente":
+        case "PENDING_VALORATION_APPOINTMENT":
           return "bg-warning-subtle";
-        case "Confirmada":
+        case "PENDING_PROCEDURE":
+          return "bg-warning-subtle";
+        case "CONFIRM_PROCEDURE":
           return "bg-primary-subtle";
-        case "Valorado":
+        case "CONCRETED_APPOINTMENT":
+          return "bg-primary-subtle";
+        case "VALUED_VALORATION_APPOINTMENT":
           return "bg-success-subtle";
+        case "CONFIRM_VALIDATION_APPOINTMENT":
+          return "bg-success-subtle";
+        case "VALUATION_PENDING_VALORATION_APPOINTMENT":
+          return "bg-primary-subtle";
         default:
           return "";
       }
@@ -141,22 +151,23 @@ export default {
 
         <tbody>
           <tr v-for="appointment in appointments" :key="appointment.id">
-            <td>{{ appointment.patient_name }}</td>
+            <td>{{ appointment.customer.name }}</td>
             <td>
-              {{ new Date(appointment.date).toLocaleDateString() }} a las
-              {{ appointment.time_from }}
+              {{ new Date(appointment.appointment_date).toLocaleDateString() }}
+              a las
+              {{ appointment.appointment_hour }}
             </td>
             <td>{{ appointment.service_name }}</td>
             <td>
               <small class="text-capitalize">{{
-                appointment.appointment_type
+                appointment.reservation_type.name
               }}</small>
             </td>
             <td>
               <span
                 class="badge bg-success-subtle rounded-5 text-dark text-center"
-                :class="statusClass(appointment.status)"
-                >{{ appointment.status }}
+                :class="statusClass(appointment.appointment_status.code)"
+                >{{ appointment.appointment_status.value1 }}
               </span>
             </td>
             <td v-if="useDropdown">
@@ -178,7 +189,7 @@ export default {
                   <li>
                     <button
                       class="dropdown-item"
-                      @click="showDateDetails(appointment, 1)"
+                      @click="showDateDetails(appointment)"
                     >
                       <Icon name="fa6-regular:eye" class="text-primary" />
                       Ver más detalles
@@ -186,8 +197,9 @@ export default {
                   </li>
                   <li
                     v-if="
-                      appointment.status == 'Pendiente' &&
-                      appointment.appointment_type == 'pre-reserva'
+                      appointment.appointment_status.code ==
+                        'PENDING_VALORATION_APPOINTMENT' ||
+                      appointment.appointment_status.code == 'PENDING_PROCEDURE'
                     "
                   >
                     <button
@@ -198,7 +210,12 @@ export default {
                       Confirmar reserva
                     </button>
                   </li>
-                  <li v-if="appointment.status == 'Pendiente'">
+                  <li
+                    v-if="
+                      appointment.appointment_status.code ==
+                      'PENDING_VALORATION_APPOINTMENT'
+                    "
+                  >
                     <button
                       class="dropdown-item"
                       @click="showDateDetails(appointment, 6)"

@@ -8,9 +8,9 @@
     @click="openModal"
     role="button"
     class="badge rounded-5 text-dark"
-    :class="statusClass(appointment.appointment_status.name)"
+    :class="statusClass(appointment.appointment_status.code)"
   >
-    {{ appointment.appointment_status.name }}
+    {{ appointment.appointment_status.value1 }}
   </span>
   <div
     class="modal fade"
@@ -42,31 +42,62 @@
               <tbody>
                 <tr>
                   <td><strong>Tipo de servicio:</strong></td>
-                  <td>Procedimiento Medico</td>
+                  <td>Cita de valoración</td>
                 </tr>
                 <tr>
                   <td><strong>Fecha de la cita:</strong></td>
-                  <td>{{ selectedDate }}</td>
+                  <td>
+                    {{
+                      new Date(
+                        appointment.appointment_date
+                      ).toLocaleDateString()
+                    }}
+                  </td>
                 </tr>
                 <tr>
                   <td><strong>Hora de la cita:</strong></td>
-                  <td>{{ selectedTime }}</td>
+                  <td>{{ appointment.appointment_hour }}</td>
                 </tr>
                 <tr>
                   <td><strong>Paciente titular:</strong></td>
-                  <td>Ana Pérez</td>
+                  <td>{{ appointment.customer.name }}</td>
+                </tr>
+                <tr>
+                  <td><strong>Teléfono de Contacto:</strong></td>
+                  <td>{{ appointment.customer.phone_number }}</td>
                 </tr>
                 <tr>
                   <td><strong>Profesional Médico:</strong></td>
-                  <td>María Pérez</td>
+                  <td>{{ appointment.supplier.name }}</td>
+                </tr>
+                <tr>
+                  <td><strong>Estado:</strong></td>
+                  <td>
+                    <span
+                      class="badge rounded-5 text-dark"
+                      :class="statusClass(appointment.appointment_status.code)"
+                    >
+                      {{ appointment.appointment_status.value1 }}
+                    </span>
+                  </td>
+                </tr>
+                <tr>
+                  <td><strong>Procedimiento:</strong></td>
+                  <td>{{ appointment.appointment_type.name }}</td>
                 </tr>
                 <tr>
                   <td><strong>Costo del servicio:</strong></td>
-                  <td>💤1.800</td>
+                  <td>{{ appointment.price_valoration_appointment }}</td>
                 </tr>
               </tbody>
             </table>
-            <div class="d-flex justify-content-between gap-2">
+            <div
+              v-if="
+                appointment.appointment_status.code ===
+                'VALUED_VALORATION_APPOINTMENT'
+              "
+              class="d-flex justify-content-between gap-2"
+            >
               <button class="btn btn-outline-dark w-50" @click="step = 4">
                 Reservar el procedimiento
               </button>
@@ -187,15 +218,15 @@
               <tbody>
                 <tr>
                   <td><strong>Paciente titular:</strong></td>
-                  <td>Ana Pérez</td>
+                  <td>{{ appointment.customer.name }}</td>
                 </tr>
                 <tr>
                   <td><strong>Doctor:</strong></td>
-                  <td>María Pérez</td>
+                  <td>{{ appointment.supplier.name }}</td>
                 </tr>
                 <tr>
                   <td><strong>Costo del servicio:</strong></td>
-                  <td>💤1.800</td>
+                  <td>{{ appointment.price_procedure }}</td>
                 </tr>
                 <tr>
                   <td><strong>Fecha de la cita:</strong></td>
@@ -297,6 +328,8 @@
 </template>
 
 <script setup>
+const token = useCookie("token");
+const config = useRuntimeConfig();
 import { ref, defineProps } from "vue";
 const props = defineProps(["appointment", "showStatus"]);
 
@@ -327,6 +360,25 @@ const selectTime = (time) => {
   selectedTime.value = time;
 };
 
+const confirmReservation = async () => {
+  const { data, error } = await useFetch(
+    config.public.API_BASE_URL + "/appointment/reserve_procedure",
+    {
+      method: "PUT",
+      headers: { Authorization: token.value },
+      params: {
+        id: props.appointment.id,
+      },
+    }
+  );
+  if (data) {
+    step.value = 6;
+  }
+  if (error.value) {
+    console.log(error.value, "data");
+  }
+};
+
 const processRequest = () => {
   if (procedureAmount.value && loanAmount.value) {
     step.value = 3;
@@ -336,11 +388,6 @@ const processRequest = () => {
   }
 };
 
-const confirmReservation = () => {
-  // Simulate reservation confirmation
-  step.value = 6;
-};
-
 const cancelAppointment = async () => {
   step.value = 1;
   open.value = false;
@@ -348,14 +395,20 @@ const cancelAppointment = async () => {
 
 const statusClass = (status) => {
   switch (status) {
-    case "Cancelada":
+    case "CANCEL_APPOINTMENT":
       return "bg-danger-subtle";
-    case "Pendiente":
+    case "PENDING_VALORATION_APPOINTMENT":
       return "bg-warning-subtle";
-    case "Confirmada":
+    case "PENDING_PROCEDURE":
+      return "bg-warning-subtle";
+    case "CONFIRM_PROCEDURE":
       return "bg-primary-subtle";
-    case "Valorado":
+    case "CONCRETED_APPOINTMENT":
+      return "bg-primary-subtle";
+    case "VALUED_VALORATION_APPOINTMENT":
       return "bg-success-subtle";
+    case "VALUATION_PENDING_VALORATION_APPOINTMENT":
+      return "bg-primary-subtle";
     default:
       return "";
   }

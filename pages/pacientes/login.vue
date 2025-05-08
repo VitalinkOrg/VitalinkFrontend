@@ -70,8 +70,8 @@ const refreshToken = useCookie("refresh_token");
 const role = useCookie("role");
 const authenticated = useCookie("authenticated");
 const user_info = useCookie("user_info");
-const email = ref("vitalinkcr2@gmail.com");
-const password = ref("VitalinkCR2*");
+const email = ref("");
+const password = ref("");
 const errorText = ref(null);
 const username = ref(null);
 
@@ -91,19 +91,20 @@ const login = async () => {
     authenticated.value = true;
     token.value = data?.value?.data?.access_token;
     refreshToken.value = data?.value?.data?.refresh_token;
-    role.value = "R_PAT"; // data?.value?.data?.user_info.role;
+    // data?.value?.data?.user_info.role;
 
     const decodedToken = jwtDecode(token.value);
     const userId = decodedToken.id;
+    role.value = decodedToken.role;
 
-    if (role.value === "R_PAT") {
+    if (decodedToken.role === "CUSTOMER") {
       getUserInfo(userId);
-    } else if (role.value === "R_INS") {
-      getInsuranceInfo();
-    } else if (role.value === "R_HOS") {
-      getHospitalInfo();
+      // } else if (role.value === "R_INS") {
+      // getInsuranceInfo();
+    } else if (decodedToken.role === "LEGAL_REPRESENTATIVE") {
+      getDoctorInfo(userId);
     } else {
-      getDoctorInfo();
+      getHospitalInfo(userId);
     }
   }
   if (error.value) {
@@ -139,7 +140,7 @@ const getInsuranceInfo = async () => {
   }
 };
 
-const getHospitalInfo = async () => {
+const getHospitalInfo = async (userId) => {
   const { data: user } = await useFetch(
     config.public.API_BASE_URL + "/hospitals/get_hospital_info",
     {
@@ -153,9 +154,9 @@ const getHospitalInfo = async () => {
   }
 };
 
-const getDoctorInfo = async () => {
+const getDoctorInfo = async (userId) => {
   const { data: user } = await useFetch(
-    config.public.API_BASE_URL + "/doctors/get_doctor_info",
+    config.public.API_BASE_URL + +"/supplier/get?id=" + userId,
     {
       headers: { Authorization: token.value },
       transform: (_user) => _user.data,

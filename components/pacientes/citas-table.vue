@@ -17,16 +17,28 @@
         <tbody>
           <tr v-for="appointment in appointments" :key="appointment.id">
             <td>
-              {{ appointment.professional_name || appointment.hospital_name }}
+              {{ appointment.supplier.name || appointment.hospital_name }}
             </td>
-            <td>{{ new Date(appointment.date).toLocaleDateString() }}</td>
-            <td>{{ appointment.hour }}</td>
-            <td>{{ appointment.notes }}</td>
-            <td>{{ appointment.id }}</td>
-            <td>{{ appointment.type }}</td>
+            <td>
+              {{ new Date(appointment.appointment_date).toLocaleDateString() }}
+            </td>
+            <td>{{ appointment.appointment_hour }}</td>
+            <td>{{ appointment.procedure?.name }}</td>
+            <td>{{ appointment.appointment_qr_code }}</td>
+            <td>{{ appointment.reservation_type.name }}</td>
             <td>
               <PacientesPagarCitaModal
-                v-if="appointment.status !== 'Valorado'"
+                v-if="
+                  appointment.appointment_status.code !==
+                    'VALUED_VALORATION_APPOINTMENT' &&
+                  appointment.appointment_status.code !== 'PENDING_PROCEDURE' &&
+                  !(
+                    appointment.appointment_status.code !==
+                      'CONFIRM_PROCEDURE' &&
+                    appointment.payment_status.code !==
+                      'PAYMENT_STATUS_NOT_PAID_PROCEDURE'
+                  )
+                "
                 :appointment="appointment"
                 :showStatus="true"
               />
@@ -38,7 +50,17 @@
             </td>
             <td>
               <PacientesPagarCitaModal
-                v-if="appointment.status !== 'Valorado'"
+                v-if="
+                  appointment.appointment_status.code !==
+                    'VALUED_VALORATION_APPOINTMENT' &&
+                  appointment.appointment_status.code !== 'PENDING_PROCEDURE' &&
+                  !(
+                    appointment.appointment_status.code !==
+                      'CONFIRM_PROCEDURE' &&
+                    appointment.payment_status.code !==
+                      'PAYMENT_STATUS_NOT_PAID_PROCEDURE'
+                  )
+                "
                 :appointment="appointment"
                 :showStatus="false"
               />

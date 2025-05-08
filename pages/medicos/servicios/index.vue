@@ -1,9 +1,9 @@
 <script setup>
 import { ref, defineProps } from "vue";
 const open = ref(false);
-/*definePageMeta({
+definePageMeta({
   middleware: ["auth-doctors-hospitals"],
-});*/
+});
 const config = useRuntimeConfig();
 //const user_info = useCookie("user_info");
 const user_info = {

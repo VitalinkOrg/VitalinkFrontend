@@ -1,7 +1,7 @@
 <script setup>
-/*definePageMeta({
+definePageMeta({
   middleware: ["auth-doctors-hospitals"],
-});*/
+});
 import { ref, defineProps } from "vue";
 const open = ref(false);
 const remove = ref(false);

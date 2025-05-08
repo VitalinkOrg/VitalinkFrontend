@@ -7,23 +7,28 @@ definePageMeta({
   middleware: "auth-pacientes",
 });
 
-/*const config = useRuntimeConfig();
+const config = useRuntimeConfig();
 const token = useCookie("token");
-const tab = ref(1);
-const sort = ref(false);
-const allAppointments = ref();
+const user_info = useCookie("user_info");
+console.log(user_info);
+const appointmentsData = ref();
 
-const { data: appointments, loading } = await useFetch(
-  config.public.API_BASE_URL + "/internal_patient_dashboard/appointments",
+const { data: appointmentsResponse, loading } = await useFetch(
+  config.public.API_BASE_URL + "/appointment/get_all",
   {
     headers: { Authorization: token.value },
+    params: {
+      customer_id: user_info.id,
+    },
     transform: (_appointments) => _appointments.data,
   }
 );
-if (appointments) {
-  allAppointments.value = appointments.value;
+if (appointmentsResponse) {
+  appointmentsData.value = appointmentsResponse.value;
   useRefreshToken();
-} */
+}
+
+console.log(appointmentsData);
 
 // Mocked data for appointments
 const mockedAppointments = {
@@ -133,7 +138,6 @@ const tab = ref(1); // Active tab
 const sort = ref(false); // Sort dropdown state
 const allAppointments = ref(mockedAppointments.data); // All appointments
 const appointments = ref(mockedAppointments.data); // Filtered appointments
-const loading = ref(false); // Loading state (not used here since we're using mocked data)
 
 // Function to apply filters based on status and tab number
 const applyFilter = (typeFilter, tabNumber) => {
@@ -239,7 +243,7 @@ const applyFilter = (typeFilter, tabNumber) => {
         </div>
 
         <div class="card">
-          <PacientesCitasTable :appointments="appointments" />
+          <PacientesCitasTable :appointments="appointmentsData" />
         </div>
       </section>
     </main>
