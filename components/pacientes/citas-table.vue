@@ -23,21 +23,20 @@
               {{ new Date(appointment.appointment_date).toLocaleDateString() }}
             </td>
             <td>{{ appointment.appointment_hour }}</td>
-            <td>{{ appointment.procedure?.name }}</td>
+            <td>{{ appointment.package?.procedure.name }}</td>
             <td>{{ appointment.appointment_qr_code }}</td>
             <td>{{ appointment.reservation_type.name }}</td>
             <td>
               <PacientesPagarCitaModal
                 v-if="
-                  appointment.appointment_status.code !==
+                  (appointment.appointment_status.code !==
                     'VALUED_VALORATION_APPOINTMENT' &&
-                  appointment.appointment_status.code !== 'PENDING_PROCEDURE' &&
-                  !(
                     appointment.appointment_status.code !==
-                      'CONFIRM_PROCEDURE' &&
-                    appointment.payment_status.code !==
-                      'PAYMENT_STATUS_NOT_PAID_PROCEDURE'
-                  )
+                      'PENDING_PROCEDURE') ||
+                  (appointment.appointment_status.code ===
+                    'CONFIRM_PROCEDURE' &&
+                    appointment.payment_status.code ===
+                      'PAYMENT_STATUS_NOT_PAID_PROCEDURE')
                 "
                 :appointment="appointment"
                 :showStatus="true"
@@ -51,15 +50,14 @@
             <td>
               <PacientesPagarCitaModal
                 v-if="
-                  appointment.appointment_status.code !==
+                  (appointment.appointment_status.code !==
                     'VALUED_VALORATION_APPOINTMENT' &&
-                  appointment.appointment_status.code !== 'PENDING_PROCEDURE' &&
-                  !(
                     appointment.appointment_status.code !==
-                      'CONFIRM_PROCEDURE' &&
-                    appointment.payment_status.code !==
-                      'PAYMENT_STATUS_NOT_PAID_PROCEDURE'
-                  )
+                      'PENDING_PROCEDURE') ||
+                  (appointment.appointment_status.code ===
+                    'CONFIRM_PROCEDURE' &&
+                    appointment.payment_status.code ===
+                      'PAYMENT_STATUS_NOT_PAID_PROCEDURE')
                 "
                 :appointment="appointment"
                 :showStatus="false"
