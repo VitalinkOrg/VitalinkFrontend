@@ -138,11 +138,7 @@
                 >
                   <td class="text-muted">Valor del procedimiento:</td>
                   <td>
-                    <input
-                      type="text"
-                      :value="appointment.procedure_value"
-                      disabled
-                    />
+                    <input type="text" :value="appointment.procedure_value" />
                   </td>
                 </tr>
                 <tr
@@ -556,11 +552,7 @@
                 >
                   <td class="text-muted">Valor del procedimiento:</td>
                   <td>
-                    <input
-                      type="text"
-                      :value="appointment.procedure_value"
-                      disabled
-                    />
+                    <input type="text" :value="appointment.procedure_value" />
                   </td>
                 </tr>
                 <tr

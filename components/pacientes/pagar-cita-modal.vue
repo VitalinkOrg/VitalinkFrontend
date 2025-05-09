@@ -347,7 +347,7 @@
                 <tbody>
                   <tr>
                     <td><strong>Subtotal:</strong></td>
-                    <td>{{ appointment.price_valoration_appointment }}</td>
+                    <td>18000</td>
                   </tr>
                   <tr>
                     <td><strong>Descuento:</strong></td>
@@ -355,9 +355,7 @@
                   </tr>
                   <tr class="total">
                     <td><strong>Total:</strong></td>
-                    <td class="fw-bold">
-                      {{ appointment.price_valoration_appointment }}
-                    </td>
+                    <td class="fw-bold">18000</td>
                   </tr>
                 </tbody>
               </table>
