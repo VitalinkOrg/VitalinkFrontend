@@ -62,10 +62,6 @@
                   <td>{{ appointment.notes }}</td>
                 </tr>
                 <tr>
-                  <td class="text-muted">Costo del servicio:</td>
-                  <td>{{ appointment.price_valoration_appointment }}</td>
-                </tr>
-                <tr>
                   <td class="text-muted">Fecha de solicitud:</td>
                   <td>
                     {{
