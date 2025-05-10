@@ -175,9 +175,11 @@ console.log(historial);
                         >
                           <div>
                             <p class="fw-bold mb-0">
-                              {{ medico.search_reference_price }}
+                              ₡{{ medico.search_reference_price }}
                             </p>
-                            <p class="text-muted mb-0">Precio de referencia</p>
+                            <p class="text-muted mb-0">
+                              Costo Cita de Valoracion
+                            </p>
                           </div>
 
                           <a

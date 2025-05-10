@@ -127,9 +127,9 @@ const getOffers = async (type, id) => {
             <div class="mt-3 d-flex justify-content-between align-items-center">
               <div>
                 <p class="fw-bold mb-0">
-                  {{ clinica.search_reference_price }} USD
+                  ₡{{ clinica.search_reference_price }}
                 </p>
-                <p class="text-muted mb-0">Precio de referencia</p>
+                <p class="text-muted mb-0">Costo Cita de Valoracion</p>
               </div>
               <a
                 :href="'/perfiles/doctor/' + clinica.id"

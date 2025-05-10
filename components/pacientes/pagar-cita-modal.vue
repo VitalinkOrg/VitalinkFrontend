@@ -152,7 +152,14 @@
         <div class="modal-body">
           <!-- Step 1: Appointment Details -->
           <div v-if="step === 1">
-            <h5 class="fw-bold">Detalles de la cita</h5>
+            <h5 class="fw-bold">
+              Detalles de
+              {{
+                appointment.appointment_type.code == "VALORATION_APPOINTMENT"
+                  ? "la cita"
+                  : "la reserva"
+              }}
+            </h5>
             <p class="text-muted">
               Te avisaremos cuando tu solicitud de cita sea aceptada.
             </p>
@@ -201,11 +208,11 @@
                 </tr>
                 <tr>
                   <td><strong>Procedimiento:</strong></td>
-                  <td>{{ appointment.appointment_type.name }}</td>
+                  <td>{{ appointment.package?.procedure.name }}</td>
                 </tr>
                 <tr>
                   <td><strong>Costo del servicio:</strong></td>
-                  <td>{{ appointment.price_valoration_appointment }}</td>
+                  <td>{{ appointment.price_procedure }}</td>
                 </tr>
               </tbody>
             </table>
@@ -347,7 +354,7 @@
                 <tbody>
                   <tr>
                     <td><strong>Subtotal:</strong></td>
-                    <td>18000</td>
+                    <td>{{ appointment.price_valoration_appointment }}</td>
                   </tr>
                   <tr>
                     <td><strong>Descuento:</strong></td>
@@ -355,7 +362,9 @@
                   </tr>
                   <tr class="total">
                     <td><strong>Total:</strong></td>
-                    <td class="fw-bold">18000</td>
+                    <td class="fw-bold">
+                      {{ appointment.price_valoration_appointment }}
+                    </td>
                   </tr>
                 </tbody>
               </table>
@@ -397,15 +406,53 @@
             />
             <h2>¡Pago Exitoso y Cita Confirmada!</h2>
             <p class="mb-4">¡Todo está listo para tu consulta!</p>
-            <p><strong>Tipo de servicio:</strong> Cita de valoración</p>
-            <p><strong>Fecha de la cita:</strong> Jueves, 5 de Octubre</p>
-            <p><strong>Hora de la cita:</strong> 1h00 hs</p>
-            <p><strong>Paciente titular:</strong> Ana Pérez</p>
-            <p><strong>Teléfono de Contacto:</strong> 0000000</p>
-            <p><strong>Profesional Médico:</strong> María Pérez</p>
-            <p><strong>Procedimiento:</strong> Operación de cataratas</p>
-            <p><strong>Costo del servicio:</strong> €18.000</p>
-            <p><strong>Monto Pagado:</strong> €18.000</p>
+            <p>
+              <strong>Tipo de servicio:</strong>
+              {{
+                appointment.appointment_type.code == "VALORATION_APPOINTMENT"
+                  ? "Cita de valoración"
+                  : "Cita de procedimiento"
+              }}
+            </p>
+            <p>
+              <strong>Fecha de la cita:</strong>
+              {{ appointment.appointment_date }}
+            </p>
+            <p>
+              <strong>Hora de la cita:</strong>
+              {{ appointment.appointment_hour }}
+            </p>
+            <p>
+              <strong>Paciente titular:</strong>{{ appointment.customer.name }}
+            </p>
+            <p>
+              <strong>Teléfono de Contacto:</strong>
+              {{ appointment.phone_number }}
+            </p>
+            <p>
+              <strong>Profesional Médico:</strong>
+              {{ appointment.supplier.name }}
+            </p>
+            <p>
+              <strong>Procedimiento:</strong
+              >{{ appointment.package?.procedure.name }}
+            </p>
+            <p>
+              <strong>Costo del servicio:</strong>
+              {{
+                appointment.appointment_type.code == "VALORATION_APPOINTMENT"
+                  ? "€18.000"
+                  : "€" + appointment.price_procedure
+              }}
+            </p>
+            <p>
+              <strong>Monto Pagado:</strong>
+              {{
+                appointment.appointment_type.code == "VALORATION_APPOINTMENT"
+                  ? "€18.000"
+                  : "€" + appointment.price_procedure
+              }}
+            </p>
             <div class="col-12 d-flex justify-content-between gap-2">
               <button
                 class="btn btn-outline-dark me-2 text-sm w-50"
