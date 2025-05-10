@@ -532,7 +532,7 @@ export default {
           >
             <div class="custom-card h-100" :class="{ selected: pkg.is_king }">
               <div class="card-header text-center">
-                {{ pkg.is_king ? "OPCIÓN RECOMENDADA" : `OPCIÓN ${index + 1}` }}
+                {{ pkg.product.name }}
                 <span v-if="pkg.is_king">
                   <img
                     src="@/src/assets/crown.svg"
@@ -542,9 +542,9 @@ export default {
                 </span>
               </div>
               <div class="card-body">
-                <h5 class="card-title">{{ getPackagePrice(pkg) }} USD</h5>
+                <h5 class="card-title">₡{{ getPackagePrice(pkg) }}</h5>
                 <p class="card-text" v-if="pkg.discount">
-                  Precio original {{ pkg.product.value1 }} USD
+                  Precio original ₡{{ pkg.product.value1 }}
                 </p>
                 <p class="card-text rating">
                   <span class="icon">
@@ -597,6 +597,9 @@ export default {
                     </span>
                     {{ doctor.hour_availability }}
                   </span>
+                </p>
+                <p class="card-text" v-if="pkg.discount">
+                  Costo Cita de Valoracion ₡18000
                 </p>
                 <button
                   class="btn btn-outline-primary"

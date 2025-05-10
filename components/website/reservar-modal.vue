@@ -460,15 +460,15 @@
               <h4 class="h6 fw-semibold">Resumen de pago:</h4>
               <div class="d-flex justify-content-between mb-2">
                 <span class="text-muted">Precio</span>
-                <span>€{{ selectedPackage.reference_price }}</span>
+                <span>€18000</span>
               </div>
               <div class="d-flex justify-content-between mb-2">
                 <span class="text-muted">Descuento</span>
-                <span>{{ selectedPackage.discount }}</span>
+                <span>€0</span>
               </div>
               <div class="d-flex justify-content-between mb-4">
                 <span class="text-muted">Precio Final</span>
-                <span>€{{ selectedPackage.discounted_price }}</span>
+                <span>€18000</span>
               </div>
 
               <div class="row mt-4">
@@ -537,7 +537,7 @@
                   </tr>
                   <tr>
                     <td><strong>Costo del servicio:</strong></td>
-                    <td>{{ this.selectedPackage.reference_price }}</td>
+                    <td>₡18000</td>
                   </tr>
                 </tbody>
               </table>
@@ -634,9 +634,7 @@
                     </div>
                     <div class="detail-item">
                       <span class="detail-label">Monto a Pagar:</span>
-                      <span class="detail-value">{{
-                        this.selectedPackage.reference_price
-                      }}</span>
+                      <span class="detail-value">₡18000</span>
                     </div>
                   </div>
                   <div class="row mt-4">

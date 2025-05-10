@@ -37,12 +37,27 @@
         <div class="modal-body">
           <!-- Step 1: Appointment Details -->
           <div v-if="step === 1">
-            <h5 class="fw-bold">Detalles de la cita</h5>
+            <h5 class="fw-bold">
+              Detalles
+              {{
+                appointment.reservation_type.code ==
+                "PRE_RESERVATION_VALORATION_APPOINTMENT"
+                  ? "de la valoración"
+                  : "del procedimiento"
+              }}
+            </h5>
             <table class="table table-borderless">
               <tbody>
                 <tr>
                   <td><strong>Tipo de servicio:</strong></td>
-                  <td>Cita de valoración</td>
+                  <td>
+                    {{
+                      appointment.reservation_type.code ==
+                      "PRE_RESERVATION_VALORATION_APPOINTMENT"
+                        ? "Cita de valoración"
+                        : "Procedimiento médico"
+                    }}
+                  </td>
                 </tr>
                 <tr>
                   <td><strong>Fecha de la cita:</strong></td>
@@ -83,11 +98,18 @@
                 </tr>
                 <tr>
                   <td><strong>Procedimiento:</strong></td>
-                  <td>{{ appointment.appointment_type.name }}</td>
+                  <td>{{ appointment.package?.procedure.name }}</td>
                 </tr>
                 <tr>
                   <td><strong>Costo del servicio:</strong></td>
-                  <td>{{ appointment.price_valoration_appointment }}</td>
+                  <td>
+                    {{
+                      appointment.reservation_type.code ==
+                      "PRE_RESERVATION_VALORATION_APPOINTMENT"
+                        ? appointment.price_valoration_appointment
+                        : appointment.price_procedure
+                    }}
+                  </td>
                 </tr>
               </tbody>
             </table>

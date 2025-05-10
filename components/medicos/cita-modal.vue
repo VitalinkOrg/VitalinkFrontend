@@ -24,7 +24,16 @@
         <div class="modal-body">
           <!-- Step 1: Appointment Details -->
           <div v-if="localStep === 1">
-            <h5 class="fw-bold">Detalles de la solicitud</h5>
+            <h5 class="fw-bold">
+              Detalles
+              {{
+                appointment.appointment_type.code == "VALORATION_APPOINTMENT"
+                  ? "de la valoración"
+                  : appointment.appointment_status.code == "WAITING_PROCEDURE"
+                    ? "del procedimiento"
+                    : "de la reserva"
+              }}
+            </h5>
             <table class="table table-borderless">
               <tbody>
                 <tr>
@@ -33,7 +42,14 @@
                 </tr>
                 <tr>
                   <td class="text-muted">Tipo de servicio:</td>
-                  <td>Cita de valoración</td>
+                  <td>
+                    {{
+                      appointment.appointment_type.code ==
+                      "VALORATION_APPOINTMENT"
+                        ? "Cita de valoración"
+                        : "Procedimiento médico"
+                    }}
+                  </td>
                 </tr>
                 <tr>
                   <td class="text-muted">Fecha de la cita:</td>
@@ -51,20 +67,17 @@
                 </tr>
                 <tr>
                   <td class="text-muted">Procedimiento:</td>
-                  <td>{{ appointment.service_name }}</td>
+                  <td>{{ appointment.package?.procedure.name }}</td>
+                </tr>
+                <tr>
+                  <td class="text-muted">Costo del servicio:</td>
+                  <td>{{ appointment.price_procedure }}</td>
                 </tr>
                 <tr>
                   <td class="text-muted">Motivo:</td>
                   <td>{{ appointment.user_description }}</td>
                 </tr>
-                <tr>
-                  <td class="text-muted">Procedimiento:</td>
-                  <td>{{ appointment.notes }}</td>
-                </tr>
-                <tr>
-                  <td class="text-muted">Costo del servicio:</td>
-                  <td>{{ appointment.price_valoration_appointment }}</td>
-                </tr>
+
                 <tr>
                   <td class="text-muted">Fecha de solicitud:</td>
                   <td>
@@ -75,12 +88,7 @@
                     }}
                   </td>
                 </tr>
-                <tr>
-                  <td class="text-muted">Tipo de reserva:</td>
-                  <td class="text-capitalize">
-                    {{ appointment.appointment_type.name }}
-                  </td>
-                </tr>
+
                 <tr>
                   <td class="text-muted">Estado:</td>
                   <td>
@@ -90,6 +98,20 @@
                     >
                       {{ appointment.appointment_status.value1 }}
                     </span>
+                  </td>
+                </tr>
+                <tr
+                  v-if="
+                    appointment.appointment_status.code ==
+                    'VALUED_VALORATION_APPOINTMENT'
+                  "
+                >
+                  <td class="text-muted">Procedimiento:</td>
+                  <td>
+                    <input
+                      type="text"
+                      :value="appointment.package?.procedure.name"
+                    />
                   </td>
                 </tr>
                 <tr
@@ -138,11 +160,7 @@
                 >
                   <td class="text-muted">Valor del procedimiento:</td>
                   <td>
-                    <input
-                      type="text"
-                      :value="appointment.procedure_value"
-                      disabled
-                    />
+                    <input type="text" :value="appointment.price_procedure" />
                   </td>
                 </tr>
                 <tr
@@ -479,10 +497,7 @@
                   <td class="text-muted">Procedimiento:</td>
                   <td>{{ appointment.notes }}</td>
                 </tr>
-                <tr>
-                  <td class="text-muted">Costo del servicio:</td>
-                  <td>{{ appointment.price_valoration_appointment }}</td>
-                </tr>
+
                 <tr>
                   <td class="text-muted">Fecha de solicitud:</td>
                   <td>
@@ -556,11 +571,7 @@
                 >
                   <td class="text-muted">Valor del procedimiento:</td>
                   <td>
-                    <input
-                      type="text"
-                      :value="appointment.procedure_value"
-                      disabled
-                    />
+                    <input type="text" :value="appointment.procedure_value" />
                   </td>
                 </tr>
                 <tr
