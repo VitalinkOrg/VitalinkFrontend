@@ -69,10 +69,7 @@
                   <td class="text-muted">Procedimiento:</td>
                   <td>{{ appointment.package?.procedure.name }}</td>
                 </tr>
-                <tr>
-                  <td class="text-muted">Costo del servicio:</td>
-                  <td>{{ appointment.price_procedure }}</td>
-                </tr>
+
                 <tr>
                   <td class="text-muted">Motivo:</td>
                   <td>{{ appointment.user_description }}</td>
