@@ -460,15 +460,15 @@
               <h4 class="h6 fw-semibold">Resumen de pago:</h4>
               <div class="d-flex justify-content-between mb-2">
                 <span class="text-muted">Precio</span>
-                <span>€18000</span>
+                <span>₡18000</span>
               </div>
               <div class="d-flex justify-content-between mb-2">
                 <span class="text-muted">Descuento</span>
-                <span>€0</span>
+                <span>₡0</span>
               </div>
               <div class="d-flex justify-content-between mb-4">
                 <span class="text-muted">Precio Final</span>
-                <span>€18000</span>
+                <span>₡18000</span>
               </div>
 
               <div class="row mt-4">
