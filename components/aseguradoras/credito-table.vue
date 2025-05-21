@@ -20,12 +20,10 @@ export default {
       return (status) => {
         return (
           {
-            Pendiente: "bg-warning-subtle",
-            Aprobada: "bg-success-subtle",
-            Confirmada: "bg-primary-subtle",
-            Rechazada: "bg-danger-subtle",
-            Activo: "bg-success-subtle",
-            Vencido: "bg-warning-subtle",
+            REQUIRED: "bg-warning-subtle",
+            APPROVED: "bg-success-subtle",
+            CANCELLED: "bg-danger-subtle",
+            REJECTED: "bg-danger-subtle",
           }[status] || "bg-secondary-subtle"
         );
       };
@@ -66,15 +64,15 @@ export default {
         <tbody>
           <template v-for="voucher in vouchers" :key="voucher.voucher_id">
             <tr>
-              <td>{{ voucher.patient_name }}</td>
-              <td>{{ voucher.reason_for_request }}</td>
+              <td>{{ voucher.appointment.customer.name }}</td>
+              <td>{{ voucher.appointment.package.procedure.name }}</td>
               <td>${{ voucher.requested_amount }}</td>
               <td>
                 <span
                   class="badge rounded-5 text-dark"
-                  :class="statusClass(voucher.status)"
+                  :class="statusClass(voucher.credit_status.code)"
                 >
-                  {{ voucher.status }}
+                  {{ voucher.credit_status.name }}
                 </span>
               </td>
               <td>

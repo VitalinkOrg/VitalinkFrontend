@@ -1,20 +1,28 @@
 <script setup>
-/*definePageMeta({
+definePageMeta({
   middleware: ["auth-insurances"],
-});*/
+});
 import { ref, watch, computed } from "vue";
 import { jsPDF } from "jspdf";
 import "jspdf-autotable";
 const config = useRuntimeConfig();
 const token = useCookie("token");
+const creditsData = ref();
 
-// const { data: vouchers, pending: pendingVouchers } = await useFetch(
-//   config.public.API_BASE_URL + "/insurance_dashboard/list_vouchers",
-//   {
-//     headers: { Authorization: token.value },
-//     transform: (_vouchers) => _vouchers.data,
-//   },
-// );
+const { data: vouchersResponse, pending: pendingVouchers } = await useFetch(
+  config.public.API_BASE_URL + "/appointmentcredit/get_all",
+  {
+    headers: { Authorization: token.value },
+    transform: (_vouchers) => _vouchers.data,
+  }
+);
+
+if (vouchersResponse) {
+  creditsData.value = vouchersResponse.value;
+  useRefreshToken();
+}
+
+console.log(creditsData);
 
 const vouchers = [
   {
@@ -372,8 +380,8 @@ const downloadAllCredits = () => {
     </div>
     <div class="card">
       <AseguradorasCreditoTable
-        v-if="filteredVouchers !== null"
-        :vouchers="filteredVouchers"
+        v-if="creditsData !== null"
+        :vouchers="creditsData"
       />
     </div>
   </NuxtLayout>

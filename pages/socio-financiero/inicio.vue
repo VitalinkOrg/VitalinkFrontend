@@ -12,9 +12,9 @@ import {
   Colors,
 } from "chart.js";
 
-/*definePageMeta({
+definePageMeta({
   middleware: ["auth-insurances"],
-});*/
+});
 
 const config = useRuntimeConfig();
 const token = useCookie("token");
