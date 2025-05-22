@@ -177,7 +177,11 @@
                     ></textarea>
                   </td>
                 </tr>
-                <tr>
+                <tr
+                  v-if="
+                    appointment.appointment_status.code == 'WAITING_PROCEDURE'
+                  "
+                >
                   <td class="text-muted">Validación de Crédito:</td>
                   <td>
                     <div v-if="!qrValidated">

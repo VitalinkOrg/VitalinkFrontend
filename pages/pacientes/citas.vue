@@ -14,7 +14,7 @@ console.log(user_info);
 const appointmentsData = ref();
 
 const { data: appointmentsResponse, loading } = await useFetch(
-  config.public.API_BASE_URL + "/appointmentcredit/get_all",
+  config.public.API_BASE_URL + "/appointment/get_all",
   {
     headers: { Authorization: token.value },
     params: {

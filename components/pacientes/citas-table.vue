@@ -17,32 +17,25 @@
         <tbody>
           <tr v-for="appointment in appointments" :key="appointment.id">
             <td>
-              {{
-                appointment.appointment.supplier.name ||
-                appointment.appointment.hospital_name
-              }}
+              {{ appointment.supplier.name || appointment.hospital_name }}
             </td>
             <td>
-              {{
-                new Date(
-                  appointment.appointment.appointment_date
-                ).toLocaleDateString()
-              }}
+              {{ new Date(appointment.appointment_date).toLocaleDateString() }}
             </td>
-            <td>{{ appointment.appointment.appointment_hour }}</td>
-            <td>{{ appointment.appointment.package?.procedure.name }}</td>
-            <td>{{ appointment.appointment.appointment_qr_code }}</td>
-
+            <td>{{ appointment.appointment_hour }}</td>
+            <td>{{ appointment.package?.procedure.name }}</td>
+            <td>{{ appointment.appointment_qr_code }}</td>
+            <td>{{ appointment.reservation_type.name }}</td>
             <td>
               <PacientesPagarCitaModal
                 v-if="
-                  (appointment.appointment.appointment_status_code !==
+                  (appointment.appointment_status.code !==
                     'VALUED_VALORATION_APPOINTMENT' &&
-                    appointment.appointment.appointment_status_code !==
+                    appointment.appointment_status.code !==
                       'PENDING_PROCEDURE') ||
-                  (appointment.appointment.appointment_status_code ===
+                  (appointment.appointment_status.code ===
                     'CONFIRM_PROCEDURE' &&
-                    appointment.appointment.payment_status_code ===
+                    appointment.payment_status.code ===
                       'PAYMENT_STATUS_NOT_PAID_PROCEDURE')
                 "
                 :appointment="appointment"
@@ -57,13 +50,13 @@
             <td>
               <PacientesPagarCitaModal
                 v-if="
-                  (appointment.appointment.appointment_status_code !==
+                  (appointment.appointment_status.code !==
                     'VALUED_VALORATION_APPOINTMENT' &&
-                    appointment.appointment.appointment_status_code !==
+                    appointment.appointment_status.code !==
                       'PENDING_PROCEDURE') ||
-                  (appointment.appointment.appointment_status_code ===
+                  (appointment.appointment_status.code ===
                     'CONFIRM_PROCEDURE' &&
-                    appointment.appointment.payment_status_code ===
+                    appointment.payment_status.code ===
                       'PAYMENT_STATUS_NOT_PAID_PROCEDURE')
                 "
                 :appointment="appointment"

@@ -458,7 +458,7 @@ const confirmAppointment = async () => {
         },
         body: {
           credit_status_code:
-            approvedAmount.value <= parseFloat(props.credit.requested_amount)
+            approvedAmount.value < parseFloat(props.credit.requested_amount)
               ? "APPROVED_PERCENTAGE"
               : "APPROVED",
           approved_amount: approvedAmount.value,
