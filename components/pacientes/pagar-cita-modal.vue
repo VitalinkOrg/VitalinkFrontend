@@ -354,16 +354,50 @@
                 <tbody>
                   <tr>
                     <td><strong>Subtotal:</strong></td>
-                    <td>{{ appointment.price_valoration_appointment }}</td>
+                    <td>
+                      {{
+                        appointment.appointment_type.code ==
+                        "VALORATION_APPOINTMENT"
+                          ? "€" + appointment.price_valoration_appointment
+                          : "€" + appointment.price_procedure
+                      }}
+                    </td>
                   </tr>
                   <tr>
                     <td><strong>Descuento:</strong></td>
                     <td>€0</td>
                   </tr>
+                  <tr
+                    v-if="
+                      appointment.appointment_type.code !==
+                      'VALORATION_APPOINTMENT'
+                    "
+                  >
+                    <td><strong>Monto del credito:</strong></td>
+                    <td>
+                      {{
+                        appointment.appointment_credit?.credit_status.code ==
+                          "APPROVED" ||
+                        appointment.appointment_credit?.credit_status.code ==
+                          "APPROVED_PERCENTAGE"
+                          ? "-€" +
+                            appointment.appointment_credit?.approved_amount
+                          : "€0"
+                      }}
+                    </td>
+                  </tr>
                   <tr class="total">
                     <td><strong>Total:</strong></td>
                     <td class="fw-bold">
-                      {{ appointment.price_valoration_appointment }}
+                      {{
+                        appointment.appointment_type.code ==
+                        "VALORATION_APPOINTMENT"
+                          ? "€" + appointment.price_valoration_appointment
+                          : "€" +
+                            (appointment.price_procedure -
+                              (appointment.appointment_credit
+                                ?.approved_amount || 0))
+                      }}
                     </td>
                   </tr>
                 </tbody>

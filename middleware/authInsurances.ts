@@ -1,9 +1,7 @@
 // middleware/authPacientes.ts
 export default defineNuxtRouteMiddleware((to) => {
-    const authenticated = useCookie("authenticated");
-    const role = useCookie("role");
-  
-    if (!authenticated.value || role.value !== "R_INS") {
-      return navigateTo('/');
-    }
+  const role = useCookie("role");
+  if (role.value !== "FINANCE_ENTITY") {
+    return navigateTo("/");
+  }
 });

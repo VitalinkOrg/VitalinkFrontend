@@ -99,10 +99,10 @@ const login = async () => {
 
     if (decodedToken.role === "CUSTOMER") {
       getUserInfo(userId);
-      // } else if (role.value === "R_INS") {
-      // getInsuranceInfo();
     } else if (decodedToken.role === "LEGAL_REPRESENTATIVE") {
       getDoctorInfo(userId);
+    } else if (decodedToken.role === "FINANCE_ENTITY") {
+      getFinanceEntityInfo(decodedToken);
     } else {
       getHospitalInfo(userId);
     }
@@ -126,16 +126,9 @@ const getUserInfo = async (userId) => {
   }
 };
 
-const getInsuranceInfo = async () => {
-  const { data: user } = await useFetch(
-    config.public.API_BASE_URL + "/insurances/get_insurance_info",
-    {
-      headers: { Authorization: token.value },
-      transform: (_user) => _user.data,
-    }
-  );
-  if (user) {
-    user_info.value = user.value;
+const getFinanceEntityInfo = async (decodedToken) => {
+  if (decodedToken) {
+    user_info.value = decodedToken;
     router.push("/socio-financiero/inicio");
   }
 };

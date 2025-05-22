@@ -29,19 +29,24 @@
               <tbody>
                 <tr>
                   <td class="text-muted">Información del Paciente:</td>
-                  <td>{{ credit.patient_name }}</td>
+                  <td>{{ credit.appointment.customer.name }}</td>
                 </tr>
                 <tr>
                   <td class="text-muted">Especialidad:</td>
-                  <td>Oftalmología</td>
+                  <td>
+                    {{
+                      credit.appointment.package.specialty.medical_specialty
+                        .name
+                    }}
+                  </td>
                 </tr>
                 <tr>
                   <td class="text-muted">Procedimiento:</td>
-                  <td>{{ credit.reason_for_request }}</td>
+                  <td>{{ credit.appointment.package.procedure.name }}</td>
                 </tr>
                 <tr>
                   <td class="text-muted">Fecha de Solicitud:</td>
-                  <td>{{ formatDate(credit.date) }}</td>
+                  <td>{{ formatDate(credit.created_date) }}</td>
                 </tr>
                 <tr>
                   <td class="text-muted">Monto Solicitado:</td>
@@ -261,6 +266,9 @@
 
 <script setup>
 import { ref, watch, computed } from "vue";
+const config = useRuntimeConfig();
+const token = useCookie("token");
+const user_info = useCookie("user_info");
 
 const props = defineProps({
   credit: Object,
@@ -398,16 +406,74 @@ const confirmAppointment = async () => {
   }
 
   try {
-    // In a real app, you would upload the file and send the approval data to your API
-    // const formData = new FormData();
-    // formData.append('document', uploadedFile.value);
-    // formData.append('approvedAmount', approvedAmount.value);
-    // formData.append('comments', description.value);
-    // formData.append('creditId', props.credit.id);
+    // Step 1: Upload the document first to get the document code
+    const formData = new FormData();
+    formData.append("file", uploadedFile.value);
 
-    // await axios.post('/api/credits/approve', formData);
+    // Prepare the document metadata fields
+    const documentFields = {
+      title: `Credit_Document_${props.credit.id}`,
+      type: "DOC",
+      description: description.value || "",
+      id_for_table: props.credit.id,
+      table: "APPOINTMENT_CREDIT",
+      action_type: "PRIVATE_CONTRACT",
+      user_id: user_info.value.id, // Assuming you have the current user available
+      is_public: 0,
+    };
 
-    // For now, just proceed to confirmation
+    formData.append("fields", JSON.stringify(documentFields));
+
+    // Make the document upload request
+    const documentResponse = await fetch(
+      `${config.public.API_BASE_URL}/document/add`,
+      {
+        method: "POST",
+        headers: { Authorization: token.value },
+        body: formData,
+      }
+    );
+
+    if (!documentResponse.ok) {
+      throw new Error("Error al subir el documento");
+    }
+
+    const documentResult = await documentResponse.json();
+    const documentCode = documentResult.data?.code;
+
+    if (!documentCode) {
+      throw new Error("No se pudo obtener el código del documento");
+    }
+
+    console.log(props.credit);
+
+    // Step 2: Approve the credit with the document code
+    const { data, error } = await useFetch(
+      `${config.public.API_BASE_URL}/appointmentcredit/edit?id=${props.credit.id}`,
+      {
+        method: "PUT",
+        headers: {
+          Authorization: token.value,
+          "Content-Type": "application/json",
+        },
+        body: {
+          credit_status_code:
+            approvedAmount.value < parseFloat(props.credit.requested_amount)
+              ? "APPROVED_PERCENTAGE"
+              : "APPROVED",
+          approved_amount: approvedAmount.value,
+          credit_observations: description.value || "Solicitud Aprobada",
+          pagare_file_code: documentCode,
+        },
+      }
+    );
+
+    if (error.value) {
+      console.error("Error approving credit:", error.value);
+      throw new Error(error.value.data?.info || "Error al aprobar el crédito");
+    }
+
+    // Success - move to confirmation step
     localStep.value = 3;
 
     // Emit event to parent
@@ -416,27 +482,40 @@ const confirmAppointment = async () => {
       approvedAmount: approvedAmount.value,
       document: uploadedFile.value.name,
       comments: description.value,
+      documentCode: documentCode,
     });
   } catch (error) {
     console.error("Error approving credit:", error);
-    fileError.value = "Error al procesar la aprobación";
+    fileError.value = error.message || "Error al procesar la aprobación";
   }
 };
 
-const cancelAppointment = () => {
+const cancelAppointment = async () => {
   if (!rejectionReason.value) return;
 
-  // In a real app, you would send this to your API
-  // await axios.post('/api/credits/reject', {
-  //   creditId: props.credit.id,
-  //   reason: rejectionReason.value
-  // });
-
-  // Emit event to parent
-  emit("reject-credit", {
-    creditId: props.credit.id,
-    reason: rejectionReason.value,
-  });
+  const { data, error } = await useFetch(
+    config.public.API_BASE_URL +
+      "/appointmentcredit/edit?id=" +
+      props.credit.id,
+    {
+      method: "PUT",
+      headers: { Authorization: token.value },
+      body: {
+        credit_status_code: "REJECTED",
+      },
+    }
+  );
+  if (data.value) {
+    // Emit event to parent
+    emit("reject-credit", {
+      creditId: props.credit.id,
+      reason: rejectionReason.value,
+    });
+  }
+  if (error.value) {
+    console.log(error.value, "data");
+    errorText.value = error.value.data.info;
+  }
 
   closeModal();
 };

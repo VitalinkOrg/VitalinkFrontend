@@ -111,6 +111,19 @@
                     }}
                   </td>
                 </tr>
+                <tr
+                  v-if="
+                    appointment.appointment_credit?.credit_status.code ==
+                      'APPROVED' ||
+                    appointment.appointment_credit?.credit_status.code ==
+                      'APPROVED_PERCENTAGE'
+                  "
+                >
+                  <td><strong>Monto aprobado del credito:</strong></td>
+                  <td>
+                    {{ appointment.appointment_credit.approved_amount }}
+                  </td>
+                </tr>
               </tbody>
             </table>
             <div
@@ -123,7 +136,16 @@
               <button class="btn btn-outline-dark w-50" @click="step = 4">
                 Reservar el procedimiento
               </button>
-              <button class="btn btn-primary w-50" @click="step = 2">
+              <button
+                v-if="
+                  appointment.appointment_credit?.credit_status.code !==
+                    'APPROVED' &&
+                  appointment.appointment_credit?.credit_status.code !==
+                    'APPROVED_PERCENTAGE'
+                "
+                class="btn btn-primary w-50"
+                @click="step = 2"
+              >
                 Solicitar crédito
               </button>
             </div>
@@ -150,7 +172,8 @@
                     type="text"
                     class="form-control"
                     id="procedureAmount"
-                    v-model="procedureAmount"
+                    :placeholder="appointment.price_procedure"
+                    disabled
                   />
                 </div>
                 <div class="col-8 d-flex w-100">
@@ -249,6 +272,19 @@
                 <tr>
                   <td><strong>Costo del servicio:</strong></td>
                   <td>{{ appointment.price_procedure }}</td>
+                </tr>
+                <tr
+                  v-if="
+                    appointment.appointment_credit?.credit_status.code ==
+                      'APPROVED' ||
+                    appointment.appointment_credit?.credit_status.code ==
+                      'APPROVED_PERCENTAGE'
+                  "
+                >
+                  <td><strong>Monto aprobado del credito:</strong></td>
+                  <td>
+                    {{ appointment.appointment_credit.approved_amount }}
+                  </td>
                 </tr>
                 <tr>
                   <td><strong>Fecha de la cita:</strong></td>
@@ -401,8 +437,28 @@ const confirmReservation = async () => {
   }
 };
 
-const processRequest = () => {
-  if (procedureAmount.value && loanAmount.value) {
+const processRequest = async () => {
+  if (loanAmount.value) {
+    const { data, error } = await useFetch(
+      `${config.public.API_BASE_URL}/appointmentcredit/add`,
+      {
+        method: "POST",
+        headers: {
+          Authorization: token.value,
+          "Content-Type": "application/json",
+        },
+        body: {
+          appointment: props.appointment.id,
+          requested_amount: loanAmount.value,
+        },
+      }
+    );
+
+    if (error.value) {
+      console.error("Error approving credit:", error.value);
+      throw new Error(error.value.data?.info || "Error al aprobar el crédito");
+    }
+
     step.value = 3;
     errorText.value = "";
   } else {
