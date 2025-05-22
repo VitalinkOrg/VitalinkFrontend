@@ -8,9 +8,9 @@
     @click="openModal"
     role="button"
     class="badge rounded-5 text-dark"
-    :class="statusClass(appointment.appointment_status.code)"
+    :class="statusClass(appointment.appointment.appointment_status.code)"
   >
-    {{ appointment.appointment_status.value1 }}
+    {{ appointment.appointment.appointment_status.value1 }}
   </span>
   <div
     class="modal fade"
@@ -40,7 +40,7 @@
             <h5 class="fw-bold">
               Detalles
               {{
-                appointment.reservation_type.code ==
+                appointment.appointment.reservation_type.code ==
                 "PRE_RESERVATION_VALORATION_APPOINTMENT"
                   ? "de la valoración"
                   : "del procedimiento"
@@ -52,7 +52,7 @@
                   <td><strong>Tipo de servicio:</strong></td>
                   <td>
                     {{
-                      appointment.reservation_type.code ==
+                      appointment.appointment.reservation_type.code ==
                       "PRE_RESERVATION_VALORATION_APPOINTMENT"
                         ? "Cita de valoración"
                         : "Procedimiento médico"
@@ -64,58 +64,73 @@
                   <td>
                     {{
                       new Date(
-                        appointment.appointment_date
+                        appointment.appointment.appointment_date
                       ).toLocaleDateString()
                     }}
                   </td>
                 </tr>
                 <tr>
                   <td><strong>Hora de la cita:</strong></td>
-                  <td>{{ appointment.appointment_hour }}</td>
+                  <td>{{ appointment.appointment.appointment_hour }}</td>
                 </tr>
                 <tr>
                   <td><strong>Paciente titular:</strong></td>
-                  <td>{{ appointment.customer.name }}</td>
+                  <td>{{ appointment.appointment.customer.name }}</td>
                 </tr>
                 <tr>
                   <td><strong>Teléfono de Contacto:</strong></td>
-                  <td>{{ appointment.customer.phone_number }}</td>
+                  <td>{{ appointment.appointment.customer.phone_number }}</td>
                 </tr>
                 <tr>
                   <td><strong>Profesional Médico:</strong></td>
-                  <td>{{ appointment.supplier.name }}</td>
+                  <td>{{ appointment.appointment.supplier.name }}</td>
                 </tr>
                 <tr>
                   <td><strong>Estado:</strong></td>
                   <td>
                     <span
                       class="badge rounded-5 text-dark"
-                      :class="statusClass(appointment.appointment_status.code)"
+                      :class="
+                        statusClass(
+                          appointment.appointment.appointment_status.code
+                        )
+                      "
                     >
-                      {{ appointment.appointment_status.value1 }}
+                      {{ appointment.appointment.appointment_status.value1 }}
                     </span>
                   </td>
                 </tr>
                 <tr>
                   <td><strong>Procedimiento:</strong></td>
-                  <td>{{ appointment.package?.procedure.name }}</td>
+                  <td>{{ appointment.appointment.package?.procedure.name }}</td>
                 </tr>
                 <tr>
                   <td><strong>Costo del servicio:</strong></td>
                   <td>
                     {{
-                      appointment.reservation_type.code ==
+                      appointment.appointment.reservation_type.code ==
                       "PRE_RESERVATION_VALORATION_APPOINTMENT"
-                        ? appointment.price_valoration_appointment
-                        : appointment.price_procedure
+                        ? appointment.appointment.price_valoration_appointment
+                        : appointment.appointment.price_procedure
                     }}
+                  </td>
+                </tr>
+                <tr
+                  v-if="
+                    appointment.credit_status.code == 'APPROVED' ||
+                    appointment.credit_status.code == 'APPROVED_PERCENTAGE'
+                  "
+                >
+                  <td><strong>Monto aprobado del credito:</strong></td>
+                  <td>
+                    {{ appointment.approved_amount }}
                   </td>
                 </tr>
               </tbody>
             </table>
             <div
               v-if="
-                appointment.appointment_status.code ===
+                appointment.appointment.appointment_status.code ===
                 'VALUED_VALORATION_APPOINTMENT'
               "
               class="d-flex justify-content-between gap-2"
@@ -123,7 +138,14 @@
               <button class="btn btn-outline-dark w-50" @click="step = 4">
                 Reservar el procedimiento
               </button>
-              <button class="btn btn-primary w-50" @click="step = 2">
+              <button
+                v-if="
+                  appointment.credit_status.code !== 'APPROVED' &&
+                  appointment.credit_status.code !== 'APPROVED_PERCENTAGE'
+                "
+                class="btn btn-primary w-50"
+                @click="step = 2"
+              >
                 Solicitar crédito
               </button>
             </div>
@@ -240,15 +262,26 @@
               <tbody>
                 <tr>
                   <td><strong>Paciente titular:</strong></td>
-                  <td>{{ appointment.customer.name }}</td>
+                  <td>{{ appointment.appointment.customer.name }}</td>
                 </tr>
                 <tr>
                   <td><strong>Doctor:</strong></td>
-                  <td>{{ appointment.supplier.name }}</td>
+                  <td>{{ appointment.appointment.supplier.name }}</td>
                 </tr>
                 <tr>
                   <td><strong>Costo del servicio:</strong></td>
-                  <td>{{ appointment.price_procedure }}</td>
+                  <td>{{ appointment.appointment.price_procedure }}</td>
+                </tr>
+                <tr
+                  v-if="
+                    appointment.credit_status.code == 'APPROVED' ||
+                    appointment.credit_status.code == 'APPROVED_PERCENTAGE'
+                  "
+                >
+                  <td><strong>Monto aprobado del credito:</strong></td>
+                  <td>
+                    {{ appointment.approved_amount }}
+                  </td>
                 </tr>
                 <tr>
                   <td><strong>Fecha de la cita:</strong></td>
@@ -389,7 +422,7 @@ const confirmReservation = async () => {
       method: "PUT",
       headers: { Authorization: token.value },
       params: {
-        id: props.appointment.id,
+        id: props.appointment.appointment.id,
       },
     }
   );
@@ -401,8 +434,28 @@ const confirmReservation = async () => {
   }
 };
 
-const processRequest = () => {
+const processRequest = async () => {
   if (procedureAmount.value && loanAmount.value) {
+    const { data, error } = await useFetch(
+      `${config.public.API_BASE_URL}/appointmentcredit/add`,
+      {
+        method: "POST",
+        headers: {
+          Authorization: token.value,
+          "Content-Type": "application/json",
+        },
+        body: {
+          appointment: props.appointment.appointment.id,
+          requested_amount: loanAmount.value,
+        },
+      }
+    );
+
+    if (error.value) {
+      console.error("Error approving credit:", error.value);
+      throw new Error(error.value.data?.info || "Error al aprobar el crédito");
+    }
+
     step.value = 3;
     errorText.value = "";
   } else {

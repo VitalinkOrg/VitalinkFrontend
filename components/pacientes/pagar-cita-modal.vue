@@ -3,12 +3,13 @@
     <!-- Confirmed and not paid -->
     <div
       v-if="
-        (appointment.appointment_status.code ===
+        (appointment.appointment.appointment_status.code ===
           'CONFIRM_VALIDATION_APPOINTMENT' &&
-          appointment.payment_status.code ===
+          appointment.appointment.payment_status.code ===
             'PAYMENT_STATUS_NOT_PAID_VALORATION_APPOINTMENT') ||
-        (appointment.appointment_status.code === 'CONFIRM_PROCEDURE' &&
-          appointment.payment_status.code ===
+        (appointment.appointment.appointment_status.code ===
+          'CONFIRM_PROCEDURE' &&
+          appointment.appointment.payment_status.code ===
             'PAYMENT_STATUS_NOT_PAID_PROCEDURE')
       "
     >
@@ -25,14 +26,14 @@
         role="button"
         @click="open = true"
         class="badge rounded-5 text-dark"
-        :class="statusClass(appointment.appointment_status.code)"
+        :class="statusClass(appointment.appointment.appointment_status.code)"
       >
-        {{ appointment.appointment_status.value1 }}
+        {{ appointment.appointment.appointment_status.value1 }}
       </span>
     </div>
     <div
       v-if="
-        appointment.appointment_status.code ===
+        appointment.appointment.appointment_status.code ===
         'VALUATION_PENDING_VALORATION_APPOINTMENT'
       "
     >
@@ -45,15 +46,16 @@
         role="button"
         @click="open = true"
         class="badge rounded-5 text-dark"
-        :class="statusClass(appointment.appointment_status.code)"
+        :class="statusClass(appointment.appointment.appointment_status.code)"
       >
-        {{ appointment.appointment_status.value1 }}
+        {{ appointment.appointment.appointment_status.value1 }}
       </span>
     </div>
 
     <div
       v-else-if="
-        appointment.appointment_status.code === 'CONCRETED_APPOINTMENT'
+        appointment.appointment.appointment_status.code ===
+        'CONCRETED_APPOINTMENT'
       "
     >
       <span
@@ -61,16 +63,17 @@
         role="button"
         @click="open = true"
         class="badge rounded-5 text-dark"
-        :class="statusClass(appointment.appointment_status.code)"
+        :class="statusClass(appointment.appointment.appointment_status.code)"
       >
-        {{ appointment.appointment_status.value1 }}
+        {{ appointment.appointment.appointment_status.value1 }}
       </span>
     </div>
 
     <!-- Paid -->
     <div
       v-else-if="
-        appointment.payment_status.code === 'PAYMENT_STATUS_PAID_PROCEDURE'
+        appointment.appointment.payment_status.code ===
+        'PAYMENT_STATUS_PAID_PROCEDURE'
       "
       role="button"
     >
@@ -82,16 +85,16 @@
         v-else
         role="button"
         class="badge rounded-5 text-dark"
-        :class="statusClass(appointment.appointment_status.code)"
+        :class="statusClass(appointment.appointment.appointment_status.code)"
       >
-        {{ appointment.appointment_status.value1 }}
+        {{ appointment.appointment.appointment_status.value1 }}
       </span>
     </div>
 
     <!-- Pending -->
     <div
       v-else-if="
-        appointment.appointment_status?.code ===
+        appointment.appointment.appointment_status?.code ===
         'PENDING_VALORATION_APPOINTMENT'
       "
     >
@@ -108,22 +111,24 @@
         role="button"
         @click="open = true"
         class="badge rounded-5 text-dark"
-        :class="statusClass(appointment.appointment_status.code)"
+        :class="statusClass(appointment.appointment.appointment_status.code)"
       >
-        {{ appointment.appointment_status.value1 }}
+        {{ appointment.appointment.appointment_status.value1 }}
       </span>
     </div>
     <!-- Cancelled -->
     <div
-      v-else-if="appointment.appointment_status.code === 'CANCEL_APPOINTMENT'"
+      v-else-if="
+        appointment.appointment.appointment_status.code === 'CANCEL_APPOINTMENT'
+      "
     >
       <span
         v-if="showStatus"
         role="button"
         class="badge rounded-5 text-dark"
-        :class="statusClass(appointment.appointment_status.code)"
+        :class="statusClass(appointment.appointment.appointment_status.code)"
       >
-        {{ appointment.appointment_status.value1 }}
+        {{ appointment.appointment.appointment_status.value1 }}
       </span>
     </div>
   </div>
@@ -155,7 +160,8 @@
             <h5 class="fw-bold">
               Detalles de
               {{
-                appointment.appointment_type.code == "VALORATION_APPOINTMENT"
+                appointment.appointment.appointment_type_code ==
+                "VALORATION_APPOINTMENT"
                   ? "la cita"
                   : "la reserva"
               }}
@@ -174,56 +180,61 @@
                   <td>
                     {{
                       new Date(
-                        appointment.appointment_date
+                        appointment.appointment.appointment_date
                       ).toLocaleDateString()
                     }}
                   </td>
                 </tr>
                 <tr>
                   <td><strong>Hora de la cita:</strong></td>
-                  <td>{{ appointment.appointment_hour }}</td>
+                  <td>{{ appointment.appointment.appointment_hour }}</td>
                 </tr>
                 <tr>
                   <td><strong>Paciente titular:</strong></td>
-                  <td>{{ appointment.customer.name }}</td>
+                  <td>{{ appointment.appointment.customer.name }}</td>
                 </tr>
                 <tr>
                   <td><strong>Teléfono de Contacto:</strong></td>
-                  <td>{{ appointment.customer.phone_number }}</td>
+                  <td>{{ appointment.appointment.customer.phone_number }}</td>
                 </tr>
                 <tr>
                   <td><strong>Profesional Médico:</strong></td>
-                  <td>{{ appointment.supplier.name }}</td>
+                  <td>{{ appointment.appointment.supplier.name }}</td>
                 </tr>
                 <tr>
                   <td><strong>Estado:</strong></td>
                   <td>
                     <span
                       class="badge rounded-5 text-dark"
-                      :class="statusClass(appointment.appointment_status.code)"
+                      :class="
+                        statusClass(
+                          appointment.appointment.appointment_status.code
+                        )
+                      "
                     >
-                      {{ appointment.appointment_status.value1 }}
+                      {{ appointment.appointment.appointment_status.value1 }}
                     </span>
                   </td>
                 </tr>
                 <tr>
                   <td><strong>Procedimiento:</strong></td>
-                  <td>{{ appointment.package?.procedure.name }}</td>
+                  <td>{{ appointment.appointment.package?.procedure.name }}</td>
                 </tr>
                 <tr>
                   <td><strong>Costo del servicio:</strong></td>
-                  <td>{{ appointment.price_procedure }}</td>
+                  <td>{{ appointment.appointment.price_procedure }}</td>
                 </tr>
               </tbody>
             </table>
             <div
               v-if="
-                (appointment.appointment_status.code ===
+                (appointment.appointment.appointment_status.code ===
                   'CONFIRM_VALIDATION_APPOINTMENT' &&
-                  appointment.payment_status.code ===
+                  appointment.appointment.payment_status.code ===
                     'PAYMENT_STATUS_NOT_PAID_VALORATION_APPOINTMENT') ||
-                (appointment.appointment_status.code === 'CONFIRM_PROCEDURE' &&
-                  appointment.payment_status.code ===
+                (appointment.appointment.appointment_status.code ===
+                  'CONFIRM_PROCEDURE' &&
+                  appointment.appointment.payment_status.code ===
                     'PAYMENT_STATUS_NOT_PAID_PROCEDURE')
               "
               class="mb-3"
@@ -249,7 +260,7 @@
             </div>
             <div
               v-if="
-                appointment.appointment_status.code !==
+                appointment.appointment.appointment_status.code !==
                 'VALUATION_PENDING_VALORATION_APPOINTMENT'
               "
               class="d-flex justify-content-between gap-2"
@@ -259,13 +270,13 @@
               </button>
               <button
                 v-if="
-                  (appointment.appointment_status.code ===
+                  (appointment.appointment.appointment_status.code ===
                     'CONFIRM_VALIDATION_APPOINTMENT' &&
-                    appointment.payment_status.code ===
+                    appointment.appointment.payment_status.code ===
                       'PAYMENT_STATUS_NOT_PAID_VALORATION_APPOINTMENT') ||
-                  (appointment.appointment_status.code ===
+                  (appointment.appointment.appointment_status.code ===
                     'CONFIRM_PROCEDURE' &&
-                    appointment.payment_status.code ===
+                    appointment.appointment.payment_status.code ===
                       'PAYMENT_STATUS_NOT_PAID_PROCEDURE')
                 "
                 class="btn btn-primary w-50"
@@ -354,16 +365,43 @@
                 <tbody>
                   <tr>
                     <td><strong>Subtotal:</strong></td>
-                    <td>{{ appointment.price_valoration_appointment }}</td>
+                    <td>
+                      {{
+                        appointment.appointment.appointment_type_code ==
+                        "VALORATION_APPOINTMENT"
+                          ? "€" +
+                            appointment.appointment.price_valoration_appointment
+                          : "€" + appointment.appointment.price_procedure
+                      }}
+                    </td>
                   </tr>
                   <tr>
                     <td><strong>Descuento:</strong></td>
                     <td>€0</td>
                   </tr>
+                  <tr>
+                    <td><strong>Monto del credito:</strong></td>
+                    <td>
+                      {{
+                        appointment.credit_status.code == "APPROVED" ||
+                        appointment.credit_status.code == "APPROVED_PERCENTAGE"
+                          ? "-€" + appointment.approved_amount
+                          : "€0"
+                      }}
+                    </td>
+                  </tr>
                   <tr class="total">
                     <td><strong>Total:</strong></td>
                     <td class="fw-bold">
-                      {{ appointment.price_valoration_appointment }}
+                      {{
+                        appointment.appointment.appointment_type_code ==
+                        "VALORATION_APPOINTMENT"
+                          ? "€" +
+                            appointment.appointment.price_valoration_appointment
+                          : "€" +
+                            (appointment.appointment.price_procedure -
+                              appointment.approved_amount)
+                      }}
                     </td>
                   </tr>
                 </tbody>
@@ -375,7 +413,7 @@
                 </button>
                 <button
                   v-if="
-                    appointment.appointment_status.code ===
+                    appointment.appointment.appointment_status.code ===
                     'CONFIRM_VALIDATION_APPOINTMENT'
                   "
                   class="btn btn-primary w-50"
@@ -385,7 +423,8 @@
                 </button>
                 <button
                   v-else-if="
-                    appointment.appointment_status.code === 'CONFIRM_PROCEDURE'
+                    appointment.appointment.appointment_status.code ===
+                    'CONFIRM_PROCEDURE'
                   "
                   class="btn btn-primary w-50"
                   @click.prevent="processPaymentProcedure"
@@ -409,48 +448,52 @@
             <p>
               <strong>Tipo de servicio:</strong>
               {{
-                appointment.appointment_type.code == "VALORATION_APPOINTMENT"
+                appointment.appointment.appointment_type_code ==
+                "VALORATION_APPOINTMENT"
                   ? "Cita de valoración"
                   : "Cita de procedimiento"
               }}
             </p>
             <p>
               <strong>Fecha de la cita:</strong>
-              {{ appointment.appointment_date }}
+              {{ appointment.appointment.appointment_date }}
             </p>
             <p>
               <strong>Hora de la cita:</strong>
-              {{ appointment.appointment_hour }}
+              {{ appointment.appointment.appointment_hour }}
             </p>
             <p>
-              <strong>Paciente titular:</strong>{{ appointment.customer.name }}
+              <strong>Paciente titular:</strong
+              >{{ appointment.appointment.customer.name }}
             </p>
             <p>
               <strong>Teléfono de Contacto:</strong>
-              {{ appointment.phone_number }}
+              {{ appointment.appointment.phone_number }}
             </p>
             <p>
               <strong>Profesional Médico:</strong>
-              {{ appointment.supplier.name }}
+              {{ appointment.appointment.supplier.name }}
             </p>
             <p>
               <strong>Procedimiento:</strong
-              >{{ appointment.package?.procedure.name }}
+              >{{ appointment.appointment.package?.procedure.name }}
             </p>
             <p>
               <strong>Costo del servicio:</strong>
               {{
-                appointment.appointment_type.code == "VALORATION_APPOINTMENT"
+                appointment.appointment.appointment_type_code ==
+                "VALORATION_APPOINTMENT"
                   ? "€18.000"
-                  : "€" + appointment.price_procedure
+                  : "€" + appointment.appointment.price_procedure
               }}
             </p>
             <p>
               <strong>Monto Pagado:</strong>
               {{
-                appointment.appointment_type.code == "VALORATION_APPOINTMENT"
+                appointment.appointment.appointment_type_code ==
+                "VALORATION_APPOINTMENT"
                   ? "€18.000"
-                  : "€" + appointment.price_procedure
+                  : "€" + appointment.appointment.price_procedure
               }}
             </p>
             <div class="col-12 d-flex justify-content-between gap-2">
@@ -493,23 +536,23 @@
                 </tr>
                 <tr>
                   <td><strong>Fecha de la cita:</strong></td>
-                  <td>{{ formatDate(appointment.date) }}</td>
+                  <td>{{ formatDate(appointment.appointment.date) }}</td>
                 </tr>
                 <tr>
                   <td><strong>Hora de la cita:</strong></td>
-                  <td>{{ appointment.hour }}</td>
+                  <td>{{ appointment.appointment.hour }}</td>
                 </tr>
                 <tr>
                   <td><strong>Paciente titular:</strong></td>
-                  <td>{{ appointment.patient_name }}</td>
+                  <td>{{ appointment.appointment.patient_name }}</td>
                 </tr>
                 <tr>
                   <td><strong>Teléfono de Contacto:</strong></td>
-                  <td>{{ appointment.phone }}</td>
+                  <td>{{ appointment.appointment.phone }}</td>
                 </tr>
                 <tr>
                   <td><strong>Profesional Médico:</strong></td>
-                  <td>{{ appointment.professional_name }}</td>
+                  <td>{{ appointment.appointment.professional_name }}</td>
                 </tr>
                 <tr>
                   <td><strong>Estado:</strong></td>
@@ -524,11 +567,11 @@
                 </tr>
                 <tr>
                   <td><strong>Procedimiento:</strong></td>
-                  <td>{{ appointment.notes }}</td>
+                  <td>{{ appointment.appointment.notes }}</td>
                 </tr>
                 <tr>
                   <td><strong>Costo del servicio:</strong></td>
-                  <td>{{ appointment.cost }}</td>
+                  <td>{{ appointment.appointment.cost }}</td>
                 </tr>
               </tbody>
             </table>
@@ -585,7 +628,7 @@ const processPayment = async () => {
       method: "PUT",
       headers: { Authorization: token.value },
       params: {
-        id: props.appointment.id,
+        id: props.appointment.appointment.id,
       },
       body: {
         payment_method_code: "ON_CONSULTATION",
@@ -615,7 +658,7 @@ const processPaymentProcedure = async () => {
       method: "PUT",
       headers: { Authorization: token.value },
       params: {
-        id: props.appointment.id,
+        id: props.appointment.appointment.id,
       },
       body: {
         payment_method_code: "ON_CONSULTATION",

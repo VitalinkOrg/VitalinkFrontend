@@ -445,6 +445,8 @@ const confirmAppointment = async () => {
       throw new Error("No se pudo obtener el código del documento");
     }
 
+    console.log(props.credit);
+
     // Step 2: Approve the credit with the document code
     const { data, error } = await useFetch(
       `${config.public.API_BASE_URL}/appointmentcredit/edit?id=${props.credit.id}`,
@@ -455,7 +457,10 @@ const confirmAppointment = async () => {
           "Content-Type": "application/json",
         },
         body: {
-          credit_status_code: "APPROVED",
+          credit_status_code:
+            approvedAmount.value <= parseFloat(props.credit.requested_amount)
+              ? "APPROVED_PERCENTAGE"
+              : "APPROVED",
           approved_amount: approvedAmount.value,
           credit_observations: description.value || "Solicitud Aprobada",
           pagare_file_code: documentCode,

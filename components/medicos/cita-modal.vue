@@ -177,6 +177,41 @@
                     ></textarea>
                   </td>
                 </tr>
+                <tr>
+                  <td class="text-muted">Validación de Crédito:</td>
+                  <td>
+                    <div v-if="!qrValidated">
+                      <input
+                        type="text"
+                        v-model="qrCodeInput"
+                        placeholder="Escanear código QR"
+                        class="form-control mb-2"
+                      />
+                      <button
+                        class="btn btn-primary"
+                        @click="validateQRCode"
+                        :disabled="!qrCodeInput"
+                      >
+                        Validar QR
+                      </button>
+                    </div>
+                    <div v-else>
+                      <div class="alert alert-success mb-2">
+                        Crédito pre-aprobado válido: {{ creditAmount }}
+                      </div>
+                      <button
+                        class="btn btn-success"
+                        @click="useCredit"
+                        :disabled="creditUsed"
+                      >
+                        {{ creditUsed ? "Crédito utilizado" : "Usar crédito" }}
+                      </button>
+                    </div>
+                  </td>
+                  <div v-if="errorText" class="alert alert-danger mt-2">
+                    {{ errorText }}
+                  </div>
+                </tr>
               </tbody>
             </table>
             <div
@@ -747,6 +782,12 @@ const selectedDate = ref("");
 const selectedTime = ref("");
 const proformaFileName = ref("");
 const proformaGuardado = ref(false);
+const qrCodeInput = ref("");
+const qrValidated = ref(false);
+const creditAmount = ref(0);
+const creditUsed = ref(false);
+const creditId = ref(null);
+const errorText = ref("");
 
 // Mock data for available dates and times
 const availableDates = ref(["2023-10-19", "2023-10-20", "2023-10-21"]);
@@ -1026,6 +1067,80 @@ const finishProcedure = async () => {
   }
   if (error.value) {
     console.log(error.value, "data");
+  }
+};
+
+const validateQRCode = async () => {
+  try {
+    errorText.value = "";
+    const { data, error } = await useFetch(
+      `${config.public.API_BASE_URL}/appointmentcredit/get_all`,
+      {
+        method: "GET",
+        headers: { Authorization: token.value },
+        params: {
+          appointment_qr_code: qrCodeInput.value,
+        },
+      }
+    );
+
+    if (error.value) {
+      throw new Error(
+        error.value.data?.message || "Error al validar el código QR"
+      );
+    }
+
+    if (!data.value || data.value.length === 0) {
+      throw new Error("No se encontró crédito asociado a este código QR");
+    }
+
+    const credit = data.value.data[0];
+
+    if (credit.already_been_used) {
+      throw new Error("Este crédito ya ha sido utilizado");
+    }
+
+    // If we get here, the credit is valid
+    qrValidated.value = true;
+    creditAmount.value = credit.approved_amount;
+    creditId.value = credit.id;
+  } catch (err) {
+    errorText.value = err.message;
+    qrValidated.value = false;
+  }
+};
+
+const useCredit = async () => {
+  try {
+    errorText.value = "";
+    const { data, error } = await useFetch(
+      `${config.public.API_BASE_URL}/appointmentcredit/edit`,
+      {
+        method: "PUT",
+        headers: { Authorization: token.value },
+        params: {
+          id: creditId.value,
+        },
+        body: {
+          already_been_used: true,
+        },
+      }
+    );
+
+    if (error.value) {
+      throw new Error(
+        error.value.data?.message || "Error al utilizar el crédito"
+      );
+    }
+
+    // Mark as used locally
+    creditUsed.value = true;
+
+    // You might want to update the appointment price here
+    // For example:
+    // appointment.value.price_procedure -= creditAmount.value;
+  } catch (err) {
+    errorText.value = err.message;
   }
 };
 

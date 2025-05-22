@@ -11,6 +11,7 @@ import {
   LinearScale,
   Colors,
 } from "chart.js";
+import { ref, watch, computed } from "vue";
 
 definePageMeta({
   middleware: ["auth-insurances"],
@@ -19,13 +20,20 @@ definePageMeta({
 const config = useRuntimeConfig();
 const token = useCookie("token");
 
-// const { data: vouchers, pending: pendingVouchers } = await useFetch(
-//   config.public.API_BASE_URL + "/insurance_dashboard/list_vouchers",
-//   {
-//     headers: { Authorization: token.value },
-//     transform: (_vouchers) => _vouchers.data,
-//   },
-// );
+const creditsData = ref();
+
+const { data: vouchersResponse, pending: pendingVouchers } = await useFetch(
+  config.public.API_BASE_URL + "/appointmentcredit/get_all",
+  {
+    headers: { Authorization: token.value },
+    transform: (_vouchers) => _vouchers.data,
+  }
+);
+
+if (vouchersResponse) {
+  creditsData.value = vouchersResponse.value;
+  useRefreshToken();
+}
 const vouchers = [
   {
     voucher_id: 1,
@@ -440,8 +448,8 @@ const chartOptions = {
         </p>
 
         <AseguradorasCreditoTable
-          v-if="vouchers !== null"
-          :vouchers="vouchers"
+          v-if="creditsData !== null"
+          :vouchers="creditsData"
         />
 
         <div class="card border-0 shadow rounded-3 py-4 h-100" v-else>

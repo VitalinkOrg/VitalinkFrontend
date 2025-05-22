@@ -819,7 +819,7 @@ export default {
 
       try {
         const payload = {
-          customer_id: user_info.value.id,
+          customer_id: "",
           // is_for_external_user: this.appointmentFor === "someoneElse",
           // user_description: this.description,
           supplier_id: this.doctorInfo.id, // Make sure this is defined
