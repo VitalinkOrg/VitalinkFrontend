@@ -284,6 +284,7 @@ const emit = defineEmits([
   "close-modal",
   "approve-credit",
   "reject-credit",
+  "refresh",
 ]);
 
 // Form data
@@ -315,7 +316,6 @@ watch(
   }
 );
 
-// Validate approved amount
 watch(
   () => approvedAmount.value,
   (newVal) => {
@@ -445,8 +445,6 @@ const confirmAppointment = async () => {
       throw new Error("No se pudo obtener el código del documento");
     }
 
-    console.log(props.credit);
-
     // Step 2: Approve the credit with the document code
     const { data, error } = await useFetch(
       `${config.public.API_BASE_URL}/appointmentcredit/edit?id=${props.credit.id}`,
@@ -475,7 +473,7 @@ const confirmAppointment = async () => {
 
     // Success - move to confirmation step
     localStep.value = 3;
-
+    emit("refresh");
     // Emit event to parent
     emit("approve-credit", {
       creditId: props.credit.id,
@@ -506,6 +504,7 @@ const cancelAppointment = async () => {
     }
   );
   if (data.value) {
+    emit("refresh");
     // Emit event to parent
     emit("reject-credit", {
       creditId: props.credit.id,

@@ -40,11 +40,13 @@
                 "
                 :appointment="appointment"
                 :showStatus="true"
+                @refresh="refreshAppointments"
               />
               <PacientesProcedimientoCitaModal
                 v-else
                 :appointment="appointment"
                 :showStatus="true"
+                @refresh="refreshAppointments"
               />
             </td>
             <td>
@@ -61,11 +63,13 @@
                 "
                 :appointment="appointment"
                 :showStatus="false"
+                @refresh="refreshAppointments"
               />
               <PacientesProcedimientoCitaModal
                 v-else
                 :appointment="appointment"
                 :showStatus="false"
+                @refresh="refreshAppointments"
               />
             </td>
           </tr>
@@ -136,7 +140,9 @@
 </template>
 
 <script setup>
-import { ref } from "vue";
+import { ref, inject } from "vue";
+const { emit } = defineEmits(["refreshed"]);
+const refreshAppointments = inject("refreshAppointments");
 
 const props = defineProps(["appointments"]);
 const activeAppointment = ref(null);

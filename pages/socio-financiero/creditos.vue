@@ -1,14 +1,30 @@
 <script setup>
-definePageMeta({
-  middleware: ["auth-insurances"],
-});
 import { ref, watch, computed } from "vue";
 import { jsPDF } from "jspdf";
 import "jspdf-autotable";
+import { useRefreshToken } from "#imports";
+
+definePageMeta({
+  middleware: ["auth-insurances"],
+});
+
 const config = useRuntimeConfig();
 const token = useCookie("token");
-const creditsData = ref();
 
+// Enhanced loading states
+const loading = ref(false);
+const isRefreshing = ref(false); // Separate loading state for refresh
+const previousCredits = ref([]); // Initialize previous data store
+
+// First declare creditsResponse
+const creditsData = ref(null);
+
+// Then declare computed property for credits data
+const creditsDataComputed = computed(() => {
+  return creditsData.value || previousCredits.value;
+});
+
+// Original useFetch for initial data load
 const { data: vouchersResponse, pending: pendingVouchers } = await useFetch(
   config.public.API_BASE_URL + "/appointmentcredit/get_all",
   {
@@ -17,129 +33,113 @@ const { data: vouchersResponse, pending: pendingVouchers } = await useFetch(
   }
 );
 
-if (vouchersResponse) {
+// Initialize data
+if (vouchersResponse.value) {
   creditsData.value = vouchersResponse.value;
+  previousCredits.value = vouchersResponse.value; // Store initial data
   useRefreshToken();
+} else {
+  // Initialize with empty array if no data
+  creditsData.value = [];
+  previousCredits.value = [];
 }
 
-console.log(creditsData);
-
-const vouchers = [
-  {
-    voucher_id: 1,
-    patient_name: "Juan Pérez",
-    reason_for_request: "Oftalmología - Cirugía de cataratas",
-    status: "Pendiente",
-    address: "Calle Falsa 123",
-    phone_number: "+506 1234-5678",
-    city: "San José",
-    postal_code: "10101",
-    comment_by_insurance:
-      "Se requiere evaluación adicional del especialista antes de aprobar el procedimiento.",
-    requested_amount: 1200,
-    service_provider: "Hospital CIMA",
-    service_cost: 2300,
-    provider_phone: "+506 2208-2000",
-    provider_address: "San José, Autop. Próspero Fernández, San Rafael",
-    patient_message:
-      "Solicito un voucher para cubrir la operación de cataratas en ambos ojos, recomendada por mi oftalmólogo para mejorar mi visión.",
-  },
-  {
-    voucher_id: 2,
-    patient_name: "María Gómez",
-    reason_for_request: "Cardiología - Prueba de esfuerzo",
-    status: "Aprobada",
-    address: "Avenida Siempre Viva 742",
-    phone_number: "+506 8765-4321",
-    city: "Cartago",
-    postal_code: "20101",
-    comment_by_insurance: "Aprobado según cobertura del plan básico.",
-    requested_amount: 500,
-    service_provider: "Clínica Bíblica",
-    service_cost: 750,
-    provider_phone: "+506 2522-1000",
-    provider_address: "San José, Calle 1, Avenida 14",
-    patient_message:
-      "Necesito realizar una prueba de esfuerzo como seguimiento a mi condición cardíaca.",
-  },
-  {
-    voucher_id: 3,
-    patient_name: "Carlos Rodríguez",
-    reason_for_request: "Ortopedia - Reemplazo de cadera",
-    status: "Confirmada",
-    address: "Boulevard de los Sueños Rotos 456",
-    phone_number: "+506 2345-6789",
-    city: "Alajuela",
-    postal_code: "30101",
-    comment_by_insurance: "Procedimiento confirmado para el 15 de noviembre.",
-    requested_amount: 3000,
-    service_provider: "Hospital Metropolitano",
-    service_cost: 4500,
-    provider_phone: "+506 2436-1000",
-    provider_address: "San José, Lindora, Santa Ana",
-    patient_message:
-      "Requiero cirugía de reemplazo de cadera debido a artritis severa.",
-  },
-  {
-    voucher_id: 4,
-    patient_name: "Ana Fernández",
-    reason_for_request: "Dermatología - Remoción de lunar",
-    status: "Rechazada",
-    address: "Calle de la Amargura 789",
-    phone_number: "+506 3456-7890",
-    city: "Heredia",
-    postal_code: "40101",
-    comment_by_insurance:
-      "No cumple con los criterios de cobertura para procedimiento cosmético.",
-    requested_amount: 800,
-    service_provider: "Hospital La Católica",
-    service_cost: 1200,
-    provider_phone: "+506 2246-3000",
-    provider_address: "San José, Guadalupe",
-    patient_message:
-      "Necesito remover un lunar que ha cambiado de apariencia recientemente.",
-  },
-  {
-    voucher_id: 5,
-    patient_name: "Luis Martínez",
-    reason_for_request: "Neurología - Resonancia magnética",
-    status: "Activo",
-    address: "Avenida Central 101",
-    phone_number: "+506 4567-8901",
-    city: "Puntarenas",
-    postal_code: "60101",
-    comment_by_insurance:
-      "Aprobado con prioridad debido a síntomas reportados.",
-    requested_amount: 1500,
-    service_provider: "Hospital San Juan de Dios",
-    service_cost: 1800,
-    provider_phone: "+506 2542-5000",
-    provider_address: "San José, Calle 14, Avenida 6",
-    patient_message:
-      "Presento dolores de cabeza persistentes y el médico recomienda una resonancia.",
-  },
-];
-
-const activeStatus = ref("Todos"); // Default filter
-const filteredVouchers = ref(vouchers); // Initially show all vouchers
-
-const setStatusFilter = (status) => {
-  activeStatus.value = status;
-
-  if (status === "Todos") {
-    filteredVouchers.value = vouchers;
+// Create refresh function
+const fetchCredits = async (isRefresh = false) => {
+  if (isRefresh) {
+    isRefreshing.value = true;
   } else {
-    filteredVouchers.value = vouchers.filter((voucher) => {
-      // Handle different status labels if needed
-      if (status === "Completada") return voucher.status === "Confirmada";
-      if (status === "Cancelada") return voucher.status === "Rechazada";
-      return voucher.status === status;
-    });
+    loading.value = true;
+  }
+
+  try {
+    const { data } = await useFetch(
+      config.public.API_BASE_URL + "/appointmentcredit/get_all",
+      {
+        headers: { Authorization: token.value },
+        transform: (_vouchers) => _vouchers.data,
+        server: false,
+        // Add a unique key to prevent caching during refresh
+        key: isRefresh ? `credits-${Date.now()}` : "credits",
+      }
+    );
+
+    if (data.value) {
+      // Store previous data before updating
+      if (creditsData.value) {
+        previousCredits.value = creditsData.value;
+      }
+
+      creditsData.value = data.value;
+      useRefreshToken();
+    }
+  } catch (error) {
+    console.error("Fetch error:", error);
+  } finally {
+    loading.value = false;
+    isRefreshing.value = false;
   }
 };
 
+// Watch for changes and store previous data
+watch(
+  creditsData,
+  (newVal, oldVal) => {
+    if (oldVal && newVal !== oldVal) {
+      previousCredits.value = oldVal;
+    }
+  },
+  { deep: true }
+);
+
+// Refresh function to expose (optimized for smooth refresh)
+const refreshCredits = async () => {
+  await fetchCredits(true); // Pass true to indicate this is a refresh
+};
+
+// Provide the refresh function to child components
+provide("refreshCredits", refreshCredits);
+
+// Handle refresh events from child components
+const handleRefresh = async () => {
+  await refreshCredits();
+};
+
+// Expose handler for child components
+provide("handleRefresh", handleRefresh);
+
+// Computed property for vouchers (using the enhanced data source)
+const vouchers = computed(() => {
+  return creditsDataComputed.value || [];
+});
+
+// Filter logic
+const activeStatus = ref("Todos"); // Default filter
+
+const filteredVouchers = computed(() => {
+  let filtered = vouchers.value;
+
+  if (activeStatus.value === "Todos") {
+    return filtered;
+  } else {
+    return filtered.filter((voucher) => {
+      // Handle different status labels if needed
+      if (activeStatus.value === "Completada")
+        return voucher.status === "Confirmada";
+      if (activeStatus.value === "Cancelada")
+        return voucher.status === "Rechazada";
+      return voucher.status === activeStatus.value;
+    });
+  }
+});
+
+const setStatusFilter = (status) => {
+  activeStatus.value = status;
+};
+
 const downloadAllCredits = () => {
-  if (!vouchers || vouchers.length === 0) return;
+  const currentVouchers = vouchers.value;
+  if (!currentVouchers || currentVouchers.length === 0) return;
 
   const doc = new jsPDF();
   const pageWidth = doc.internal.pageSize.getWidth();
@@ -196,7 +196,7 @@ const downloadAllCredits = () => {
   doc.setFontSize(10);
   doc.setFont("helvetica", "normal");
 
-  vouchers.forEach((credit, index) => {
+  currentVouchers.forEach((credit, index) => {
     // Check if we need a new page
     if (yPosition > 270) {
       doc.addPage();
@@ -208,12 +208,17 @@ const downloadAllCredits = () => {
 
     // Process each cell with text wrapping
     const cells = [
-      { text: credit.patient_name, width: columnWidths[0] },
-      { text: credit.reason_for_request, width: columnWidths[1] },
-      { text: `$${credit.requested_amount}`, width: columnWidths[2] },
-      { text: credit.status, width: columnWidths[3] },
-      { text: credit.service_provider, width: columnWidths[4] },
-      { text: new Date().toLocaleDateString("es-ES"), width: columnWidths[5] },
+      { text: credit.patient_name || "N/A", width: columnWidths[0] },
+      { text: credit.reason_for_request || "N/A", width: columnWidths[1] },
+      { text: `$${credit.requested_amount || 0}`, width: columnWidths[2] },
+      { text: credit.status || "N/A", width: columnWidths[3] },
+      { text: credit.service_provider || "N/A", width: columnWidths[4] },
+      {
+        text: credit.created_at
+          ? new Date(credit.created_at).toLocaleDateString("es-ES")
+          : new Date().toLocaleDateString("es-ES"),
+        width: columnWidths[5],
+      },
     ];
 
     // First pass to calculate needed lines
@@ -248,7 +253,7 @@ const downloadAllCredits = () => {
     yPosition += maxLines * 6;
 
     // Add light gray line between rows
-    if (index < vouchers.length - 1) {
+    if (index < currentVouchers.length - 1) {
       doc.setDrawColor(220, 220, 220);
       doc.line(margin, yPosition - 2, pageWidth - margin, yPosition - 2);
       doc.setDrawColor(0, 0, 0);
@@ -259,13 +264,14 @@ const downloadAllCredits = () => {
   // Footer
   doc.setFontSize(8);
   doc.setTextColor(100);
-  doc.text(`Total solicitudes: ${vouchers.length}`, margin, 280);
+  doc.text(`Total solicitudes: ${currentVouchers.length}`, margin, 280);
   doc.text("Sistema de Gestión Médica - Vitalink", pageWidth / 2, 280, {
     align: "center",
   });
 
   doc.save(`Reporte_Creditos_${new Date().toISOString().slice(0, 10)}.pdf`);
 };
+provide("refreshAppointments", refreshCredits);
 </script>
 
 <template>
