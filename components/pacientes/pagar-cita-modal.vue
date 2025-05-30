@@ -581,6 +581,7 @@ const token = useCookie("token");
 const config = useRuntimeConfig();
 import { ref, defineProps } from "vue";
 const props = defineProps(["appointment", "step", "showStatus"]);
+const emit = defineEmits(["refresh"]);
 
 const open = ref(false);
 const step = ref(1);
@@ -609,8 +610,6 @@ const processPayment = async () => {
     errorText.value = "Por favor, complete todos los campos.";
   }
 
-  console.log(config.public.API_BASE_URL);
-
   const { data, error } = await useFetch(
     config.public.API_BASE_URL +
       "/appointment/success_payment_valoration_appointment",
@@ -627,6 +626,7 @@ const processPayment = async () => {
     }
   );
   if (data) {
+    emit("refresh");
     step.value = 3;
   }
   if (error.value) {
@@ -635,7 +635,6 @@ const processPayment = async () => {
 };
 
 const processPaymentProcedure = async () => {
-  console.log("hello");
   // Simulate payment processing
   if (cardName.value && cardNumber.value && expiryDate.value && cvv.value) {
     errorText.value = "";
@@ -688,6 +687,7 @@ const statusClass = (status) => {
 };
 
 const cancelAppointment = async () => {
+  emit("refresh");
   // Simulate cancellation
   step.value = 5;
 };

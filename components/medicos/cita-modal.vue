@@ -818,6 +818,7 @@ const props = defineProps({
 const emit = defineEmits([
   "update:step", // Required for v-model
   "close-modal",
+  "refresh",
 ]);
 
 // Local ref that syncs with the prop
@@ -1006,6 +1007,7 @@ const confirmAppointment = async () => {
     }
   );
   if (data) {
+    emit("refresh");
     localStep.value = 3;
   }
   if (error.value) {
@@ -1029,6 +1031,7 @@ const confirmValoration = async () => {
     }
   );
   if (data) {
+    emit("refresh");
     localStep.value = 3;
   }
   if (error.value) {
@@ -1048,6 +1051,7 @@ const confirmProcedure = async () => {
     }
   );
   if (data) {
+    emit("refresh");
     localStep.value = 3;
   }
   if (error.value) {
@@ -1067,6 +1071,7 @@ const finishProcedure = async () => {
     }
   );
   if (data) {
+    emit("refresh");
     localStep.value = 3;
   }
   if (error.value) {

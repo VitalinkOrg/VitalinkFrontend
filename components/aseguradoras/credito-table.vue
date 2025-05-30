@@ -1,48 +1,48 @@
-<script>
-export default {
-  props: {
-    vouchers: {
-      type: Array,
-      default: () => [],
-    },
+<script setup>
+import { ref, computed, inject } from "vue";
+
+const emit = defineEmits(["refreshed"]);
+const refreshAppointments = inject("refreshAppointments");
+
+const props = defineProps({
+  vouchers: {
+    type: Array,
+    default: () => [],
   },
-  data() {
-    return {
-      expand: false,
-      openCreditModal: false,
-      modalData: null,
-      currentStep: 1,
-      expandedRow: null, // Track which row is expanded
-    };
-  },
-  computed: {
-    statusClass() {
-      return (status) => {
-        return (
-          {
-            REQUIRED: "bg-warning-subtle",
-            APPROVED: "bg-success-subtle",
-            CANCELLED: "bg-danger-subtle",
-            REJECTED: "bg-danger-subtle",
-          }[status] || "bg-secondary-subtle"
-        );
-      };
-    },
-  },
-  methods: {
-    showCreditDetails(voucher) {
-      this.modalData = voucher;
-      this.openCreditModal = true;
-    },
-    closeModal() {
-      this.modalData = null;
-      this.openCreditModal = false;
-    },
-    toggleExpand(voucherId) {
-      this.expandedRow = this.expandedRow === voucherId ? null : voucherId;
-    },
-  },
-};
+});
+
+const expand = ref(false);
+const openCreditModal = ref(false);
+const modalData = ref(null);
+const currentStep = ref(1);
+const expandedRow = ref(null); // Track which row is expanded
+
+const statusClass = computed(() => {
+  return (status) => {
+    return (
+      {
+        REQUIRED: "bg-warning-subtle",
+        APPROVED: "bg-success-subtle",
+        CANCELLED: "bg-danger-subtle",
+        REJECTED: "bg-danger-subtle",
+      }[status] || "bg-secondary-subtle"
+    );
+  };
+});
+
+function showCreditDetails(voucher) {
+  modalData.value = voucher;
+  openCreditModal.value = true;
+}
+
+function closeModal() {
+  modalData.value = null;
+  openCreditModal.value = false;
+}
+
+function toggleExpand(voucherId) {
+  expandedRow.value = expandedRow.value === voucherId ? null : voucherId;
+}
 </script>
 
 <template>
@@ -201,6 +201,7 @@ export default {
         :credit="modalData"
         v-model:step="currentStep"
         @close-modal="closeModal"
+        @refresh="refreshAppointments"
       />
     </div>
   </div>

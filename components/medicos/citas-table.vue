@@ -1,135 +1,160 @@
-<script>
+<script setup>
+import { ref, inject } from "vue";
 import { jsPDF } from "jspdf";
-export default {
-  props: {
-    appointments: {
-      type: Object,
-      default: [],
-    },
-    useDropdown: {
-      type: Boolean,
-      default: false,
-    },
+
+// Define emits - this is the correct way in script setup
+const emit = defineEmits(["refreshed"]);
+
+// Define props
+const props = defineProps({
+  appointments: {
+    type: Object,
+    default: [],
   },
-  data() {
-    console.log(this.appointments);
-    return {
-      openUserModal: false,
-      openDateModal: false,
-      openContactModal: false,
-      openDateCancelModal: false,
-      modalData: null,
-      currentStep: 1,
-    };
+  useDropdown: {
+    type: Boolean,
+    default: false,
   },
-  methods: {
-    showUserDetails(appointment) {
-      this.modalData = appointment;
-      this.openUserModal = true;
-    },
-    showContactDetails(appointment) {
-      this.modalData = appointment;
-      this.openContactModal = true;
-    },
-    showDateDetails(appointment, step) {
-      this.modalData = appointment;
-      this.openDateModal = true;
-      this.currentStep = step;
-    },
-    statusClass(status) {
-      console.log(status);
-      switch (status) {
-        case "CANCEL_APPOINTMENT":
-          return "bg-danger-subtle";
-        case "PENDING_VALORATION_APPOINTMENT":
-          return "bg-warning-subtle";
-        case "PENDING_PROCEDURE":
-          return "bg-warning-subtle";
-        case "CONFIRM_PROCEDURE":
-          return "bg-primary-subtle";
-        case "CONCRETED_APPOINTMENT":
-          return "bg-primary-subtle";
-        case "VALUED_VALORATION_APPOINTMENT":
-          return "bg-success-subtle";
-        case "CONFIRM_VALIDATION_APPOINTMENT":
-          return "bg-success-subtle";
-        case "VALUATION_PENDING_VALORATION_APPOINTMENT":
-          return "bg-primary-subtle";
-        default:
-          return "";
-      }
-    },
-    showDateCancel(appointment) {
-      this.modalData = appointment;
-      this.openDateCancelModal = true;
-    },
-    downloadSummary(appointment) {
-      const doc = new jsPDF();
+});
 
-      // Add logo or header
-      // doc.addImage(logo, 'JPEG', 10, 10, 50, 20);
+// Inject refresh function from parent
+const refreshAppointments = inject("refreshAppointments");
 
-      // Title
-      doc.setFontSize(18);
-      doc.text("Detalles de la Cita Médica", 105, 20, { align: "center" });
+// Reactive data
+const openUserModal = ref(false);
+const openDateModal = ref(false);
+const openContactModal = ref(false);
+const openDateCancelModal = ref(false);
+const modalData = ref(null);
+const currentStep = ref(1);
 
-      // Line separator
-      doc.setDrawColor(200, 200, 200);
-      doc.line(20, 25, 190, 25);
+// Log appointments (equivalent to your console.log in data())
+console.log(props.appointments);
 
-      // Reset font for content
-      doc.setFontSize(12);
-      doc.setFont("helvetica", "normal");
+// Methods
+const showUserDetails = (appointment) => {
+  modalData.value = appointment;
+  openUserModal.value = true;
+};
 
-      // Patient information section
-      doc.setFontSize(14);
-      doc.text("Información del Paciente", 20, 35);
-      doc.setFontSize(12);
+const showContactDetails = (appointment) => {
+  modalData.value = appointment;
+  openContactModal.value = true;
+};
 
-      let yPosition = 45;
+const showDateDetails = (appointment, step) => {
+  modalData.value = appointment;
+  openDateModal.value = true;
+  currentStep.value = step;
+};
 
-      // Function to add field to PDF
-      const addField = (label, value) => {
-        doc.setFont("helvetica", "bold");
-        doc.text(`${label}:`, 20, yPosition);
-        doc.setFont("helvetica", "normal");
-        doc.text(value, 60, yPosition);
-        yPosition += 7;
-      };
+const statusClass = (status) => {
+  console.log(status);
+  switch (status) {
+    case "CANCEL_APPOINTMENT":
+      return "bg-danger-subtle";
+    case "PENDING_VALORATION_APPOINTMENT":
+      return "bg-warning-subtle";
+    case "PENDING_PROCEDURE":
+      return "bg-warning-subtle";
+    case "CONFIRM_PROCEDURE":
+      return "bg-primary-subtle";
+    case "CONCRETED_APPOINTMENT":
+      return "bg-primary-subtle";
+    case "VALUED_VALORATION_APPOINTMENT":
+      return "bg-success-subtle";
+    case "CONFIRM_VALIDATION_APPOINTMENT":
+      return "bg-success-subtle";
+    case "VALUATION_PENDING_VALORATION_APPOINTMENT":
+      return "bg-primary-subtle";
+    default:
+      return "";
+  }
+};
 
-      // Add all appointment details
-      addField("Paciente", appointment.patient_name);
-      addField("Tipo de Reserva", appointment.appointment_type);
-      addField(
-        "Fecha de la cita",
-        new Date(appointment.date).toLocaleDateString()
-      );
-      addField("Hora de la cita", appointment.time_from);
-      addField("Procedimiento", appointment.service_name);
-      addField("Estado", appointment.status);
+const showDateCancel = (appointment) => {
+  modalData.value = appointment;
+  openDateCancelModal.value = true;
+};
 
-      // Footer
-      doc.setFontSize(10);
-      doc.setTextColor(100, 100, 100);
-      doc.text(
-        "Documento generado el: " + new Date().toLocaleDateString(),
-        20,
-        280
-      );
-      doc.text("Vitalink - Sistema de Gestión Médica", 105, 280, {
-        align: "center",
-      });
+const downloadSummary = (appointment) => {
+  const doc = new jsPDF();
 
-      // Save the PDF
-      doc.save(`Cita_${appointment.patient_name}_${appointment.date}.pdf`);
-    },
-    closeModal() {
-      this.modalData = null;
-      this.openUserModal = false;
-      this.openDateModal = false;
-      this.openDateCancelModal = false;
-    },
-  },
+  // Add logo or header
+  // doc.addImage(logo, 'JPEG', 10, 10, 50, 20);
+
+  // Title
+  doc.setFontSize(18);
+  doc.text("Detalles de la Cita Médica", 105, 20, { align: "center" });
+
+  // Line separator
+  doc.setDrawColor(200, 200, 200);
+  doc.line(20, 25, 190, 25);
+
+  // Reset font for content
+  doc.setFontSize(12);
+  doc.setFont("helvetica", "normal");
+
+  // Patient information section
+  doc.setFontSize(14);
+  doc.text("Información del Paciente", 20, 35);
+  doc.setFontSize(12);
+
+  let yPosition = 45;
+
+  // Function to add field to PDF
+  const addField = (label, value) => {
+    doc.setFont("helvetica", "bold");
+    doc.text(`${label}:`, 20, yPosition);
+    doc.setFont("helvetica", "normal");
+    doc.text(value, 60, yPosition);
+    yPosition += 7;
+  };
+
+  // Add all appointment details
+  addField("Paciente", appointment.patient_name);
+  addField("Tipo de Reserva", appointment.appointment_type);
+  addField("Fecha de la cita", new Date(appointment.date).toLocaleDateString());
+  addField("Hora de la cita", appointment.time_from);
+  addField("Procedimiento", appointment.service_name);
+  addField("Estado", appointment.status);
+
+  // Footer
+  doc.setFontSize(10);
+  doc.setTextColor(100, 100, 100);
+  doc.text(
+    "Documento generado el: " + new Date().toLocaleDateString(),
+    20,
+    280
+  );
+  doc.text("Vitalink - Sistema de Gestión Médica", 105, 280, {
+    align: "center",
+  });
+
+  // Save the PDF
+  doc.save(`Cita_${appointment.patient_name}_${appointment.date}.pdf`);
+};
+
+const closeModal = () => {
+  modalData.value = null;
+  openUserModal.value = false;
+  openDateModal.value = false;
+  openDateCancelModal.value = false;
+};
+
+// Example of how to use the emit
+const handleRefresh = async () => {
+  if (refreshAppointments) {
+    await refreshAppointments();
+    // Emit the refreshed event to parent
+    emit("refreshed");
+  }
+};
+
+// Example of emitting with data
+const handleAppointmentUpdate = (appointmentData) => {
+  // Emit with payload
+  emit("refreshed", appointmentData);
 };
 </script>
 <template>
@@ -376,22 +401,26 @@ export default {
       :open="openUserModal"
       :appointment="modalData"
       @close-modal="closeModal"
+      @refresh="refreshAppointments"
     />
     <MedicosCitaModal
       :open="openDateModal"
       :appointment="modalData"
       v-model:step="currentStep"
       @close-modal="closeModal"
+      @refresh="refreshAppointments"
     />
     <MedicosCitaCancelModal
       :open="openDateCancelModal"
       :appointment="modalData"
       @close-modal="closeModal"
+      @refresh="refreshAppointments"
     />
     <MedicosCitaContactModal
       :open="openContactModal"
       :appointment="modalData"
       @close-modal="closeModal"
+      @refresh="refreshAppointments"
     />
   </div>
 </template>

@@ -1,5 +1,5 @@
 <script setup>
-import { ref } from "vue";
+import { ref, computed, watch } from "vue";
 import { useRefreshToken } from "#imports";
 
 // Define page meta with middleware
@@ -10,10 +10,20 @@ definePageMeta({
 const config = useRuntimeConfig();
 const token = useCookie("token");
 const user_info = useCookie("user_info");
-console.log(user_info);
-const appointmentsData = ref();
+const loading = ref(false);
+const isRefreshing = ref(false); // Separate loading state for refresh
+const previousAppointments = ref([]); // Initialize previous data store
 
-const { data: appointmentsResponse, loading } = await useFetch(
+// First declare appointmentsResponse
+const appointmentsResponse = ref(null);
+
+// Then declare appointmentsData as computed
+const appointmentsData = computed(() => {
+  return appointmentsResponse.value || previousAppointments.value;
+});
+
+// Original useFetch remains unchanged
+const { data: fetchedData } = await useFetch(
   config.public.API_BASE_URL + "/appointment/get_all",
   {
     headers: { Authorization: token.value },
@@ -23,133 +33,112 @@ const { data: appointmentsResponse, loading } = await useFetch(
     transform: (_appointments) => _appointments.data,
   }
 );
-if (appointmentsResponse) {
-  appointmentsData.value = appointmentsResponse.value;
+
+// Initialize data
+if (fetchedData.value) {
+  appointmentsResponse.value = fetchedData.value;
+  previousAppointments.value = fetchedData.value; // Store initial data
   useRefreshToken();
 }
 
-console.log(appointmentsData);
+// Create refresh function
+const fetchAppointments = async (isRefresh = false) => {
+  if (isRefresh) {
+    isRefreshing.value = true;
+  } else {
+    loading.value = true;
+  }
 
-// Mocked data for appointments
-const mockedAppointments = {
-  data: [
-    {
-      id: 1,
-      date: "2023-10-15T10:00:00Z",
-      hour: "10:00",
-      professional_name: "Dr. John Doe",
-      specialty: "Cardiology",
-      type: "Procedimiento",
-      status: "Confirmada",
-      payed: true,
-      notes: "Routine checkup",
-    },
-    {
-      id: 2,
-      date: "2023-10-16T11:00:00Z",
-      hour: "10:00",
-      type: "Valoración",
-      professional_name: "Dr. Jane Smith",
-      specialty: "Dermatology",
-      status: "Pendiente",
-      payed: false,
-      notes: "Skin allergy consultation",
-    },
-    {
-      id: 3,
-      date: "2023-10-17T09:00:00Z",
-      hour: "10:00",
-      type: "Valoración",
-      professional_name: "Dr. Emily Davis",
-      specialty: "Orthopedics",
-      status: "Cancelada",
-      payed: false,
-      notes: "Knee pain evaluation",
-    },
-    {
-      id: 4,
-      date: "2023-10-18T14:00:00Z",
-      hour: "10:00",
-      professional_name: "Dr. Michael Brown",
-      specialty: "Neurology",
-      status: "Confirmada",
-      payed: false,
-      type: "Valoración",
-      notes: "Migraine follow-up",
-    },
-    {
-      id: 5,
-      date: "2023-10-19T16:00:00Z",
-      professional_name: "Dr. Sarah Wilson",
-      hour: "10:00",
-      specialty: "Pediatrics",
-      status: "Pendiente",
-      payed: false,
-      type: "Procedimiento",
-      notes: "Child vaccination",
-    },
-    {
-      id: 6,
-      date: "2023-10-19T16:00:00Z",
-      professional_name: "Dr. Sarah Wilson",
-      hour: "10:00",
-      specialty: "Pediatrics",
-      status: "Valorado",
-      allowed_for_loan: true,
-      allowed_for_procedure: false,
-      valoration_description: "Paciente no apto para procedimiento",
-      payed: true,
-      type: "Procedimiento",
-      notes: "Child vaccination",
-    },
-    {
-      id: 6,
-      date: "2023-10-19T16:00:00Z",
-      professional_name: "Dr. Sarah Wilson",
-      hour: "10:00",
-      specialty: "Pediatrics",
-      status: "Valorado",
-      allowed_for_loan: false,
-      allowed_for_procedure: false,
-      valoration_description: "Paciente no apto para procedimiento",
-      payed: true,
-      type: "Procedimiento",
-      notes: "Child vaccination",
-    },
-    {
-      id: 6,
-      date: "2023-10-19T16:00:00Z",
-      professional_name: "Dr. Sarah Wilson",
-      hour: "10:00",
-      specialty: "Pediatrics",
-      status: "Valorado",
-      allowed_for_loan: false,
-      allowed_for_procedure: true,
-      valoration_description: "Paciente no apto para procedimiento",
-      payed: true,
-      type: "Procedimiento",
-      notes: "Child vaccination",
-    },
-  ],
+  try {
+    const { data } = await useFetch(
+      config.public.API_BASE_URL + "/appointment/get_all",
+      {
+        headers: { Authorization: token.value },
+        params: { customer_id: user_info.id },
+        transform: (_appointments) => _appointments.data,
+        server: false,
+        // Add a unique key to prevent caching during refresh
+        key: isRefresh ? `appointments-${Date.now()}` : "appointments",
+      }
+    );
+
+    if (data.value) {
+      // Store previous data before updating
+      if (appointmentsResponse.value) {
+        previousAppointments.value = appointmentsResponse.value;
+      }
+
+      appointmentsResponse.value = data.value;
+      useRefreshToken();
+    }
+  } catch (error) {
+    console.error("Fetch error:", error);
+  } finally {
+    loading.value = false;
+    isRefreshing.value = false;
+  }
 };
+
+// Watch for changes and store previous data
+watch(
+  appointmentsResponse,
+  (newVal, oldVal) => {
+    if (oldVal && newVal !== oldVal) {
+      previousAppointments.value = oldVal;
+    }
+  },
+  { deep: true }
+);
+
+// Initial fetch
+fetchAppointments();
+
+// Refresh function to expose (optimized for smooth refresh)
+const refreshAppointments = async () => {
+  await fetchAppointments(true); // Pass true to indicate this is a refresh
+};
+
+// Provide the refresh function to child components
+provide("refreshAppointments", refreshAppointments);
 
 // Refs for state management
-const tab = ref(1); // Active tab
-const sort = ref(false); // Sort dropdown state
-const allAppointments = ref(mockedAppointments.data); // All appointments
-const appointments = ref(mockedAppointments.data); // Filtered appointments
+const tab = ref(1);
+const sort = ref(false);
+const filteredAppointments = ref([]); // Store filtered results
 
-// Function to apply filters based on status and tab number
-const applyFilter = (typeFilter, tabNumber) => {
-  let filteredAppointments = allAppointments.value;
-  if (typeFilter !== "ALL") {
-    filteredAppointments = filteredAppointments.filter(
-      (appointment) => appointment.type === typeFilter
+// Computed property for current display data
+const displayAppointments = computed(() => {
+  const sourceData = appointmentsData.value || [];
+  let filtered = [...sourceData];
+
+  // Apply current filter based on active tab
+  if (tab.value === 2) {
+    filtered = filtered.filter(
+      (appointment) => appointment.type === "Procedimiento"
+    );
+  } else if (tab.value === 3) {
+    filtered = filtered.filter(
+      (appointment) => appointment.type === "Valoración"
     );
   }
-  appointments.value = filteredAppointments;
+  // tab.value === 1 shows all appointments (no filter)
+
+  return filtered;
+});
+
+// Fixed filter function
+const applyFilter = (typeFilter, tabNumber) => {
   tab.value = tabNumber;
+  // The filtering will be handled by the computed property
 };
+
+// Handle refresh events from child components
+const handleRefresh = async () => {
+  await refreshAppointments();
+};
+
+// Expose handler for child components
+provide("handleRefresh", handleRefresh);
 </script>
 
 <template>
