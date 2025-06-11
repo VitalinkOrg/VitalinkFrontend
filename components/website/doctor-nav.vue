@@ -108,6 +108,8 @@ export default {
           this.selectedProcedureId =
             this.doctor.services[0].procedures[0].procedure.id;
           this.appointment.service = this.selectedProcedure;
+          this.selectedPackage =
+            this.doctor.services[0].procedures[0].packages[0];
         }
       }
     } catch (error) {
@@ -268,6 +270,9 @@ export default {
       }
       return (this.result = filter[0]);
     },
+    formatPrice(price) {
+      return price.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+    },
     getReviewLabel(reviewCode) {
       if (!this.reviewDetails) return reviewCode;
 
@@ -373,10 +378,14 @@ export default {
         this.appointment.service = this.selectedProcedure;
       }
     },
-    selectPackage(selectedPackage) {
+    selectPackage(selectedPackage, schedule) {
       this.selectedPackage = selectedPackage;
-      console.log("Selected package:", this.selectedPackage); // Debug log
-      this.tab = 2;
+      if (schedule) {
+        this.tab = 2;
+      }
+    },
+    isPackageSelected(pkg) {
+      return this.selectedPackage && this.selectedPackage.id === pkg.id;
     },
     selectProcedure(procedureCode, procedureId) {
       this.selectedProcedure = procedureCode;
@@ -526,11 +535,19 @@ export default {
       <div v-if="filteredPackages.length > 0" class="container">
         <div class="row">
           <div
-            class="col-4"
+            class="col-4 d-flex"
             v-for="(pkg, index) in filteredPackages"
             :key="pkg.id"
           >
-            <div class="custom-card h-100" :class="{ selected: pkg.is_king }">
+            <div
+              class="custom-card h-100 d-flex flex-column"
+              :class="{
+                selected: pkg.is_king,
+                'border-primary': isPackageSelected(pkg),
+                'selected-package': isPackageSelected(pkg),
+              }"
+              @click="selectPackage(pkg, false)"
+            >
               <div class="card-header text-center">
                 {{ pkg.product.name }}
                 <span v-if="pkg.is_king">
@@ -541,72 +558,82 @@ export default {
                   />
                 </span>
               </div>
-              <div class="card-body">
-                <h5 class="card-title">₡{{ getPackagePrice(pkg) }}</h5>
-                <p class="card-text" v-if="pkg.discount">
-                  Precio original ₡{{ pkg.product.value1 }}
-                </p>
-                <p class="card-text rating">
-                  <span class="icon">
-                    <img
-                      src="@/src/assets/star.svg"
-                      alt="Rating"
-                      class="img-fluid"
-                    />
-                  </span>
-                  5.0
-                  <span class="text-muted"
-                    >({{ doctorReviews.length }} Reseñas)</span
+              <div class="card-body d-flex flex-column flex-grow-1">
+                <div>
+                  <h5 class="card-title">
+                    ₡{{ formatPrice(getPackagePrice(pkg)) }}
+                  </h5>
+                  <p class="card-text" v-if="pkg.discount">
+                    Precio original ₡{{ formatPrice(pkg.product.value1) }}
+                  </p>
+                  <p class="card-text rating">
+                    <span class="icon">
+                      <img
+                        src="@/src/assets/star.svg"
+                        alt="Rating"
+                        class="img-fluid"
+                      />
+                    </span>
+                    5.0
+                    <span class="text-muted"
+                      >({{ doctorReviews.length }} Reseñas)</span
+                    >
+                  </p>
+                  <ul class="list-group list-group-flush">
+                    <li
+                      class="list-group-item"
+                      v-for="service in pkg.services_offer.ASSESSMENT_DETAILS"
+                      :key="service"
+                    >
+                      <span class="icon">
+                        <img
+                          src="@/src/assets/check.svg"
+                          alt="Incluido"
+                          class="img-fluid"
+                        />
+                      </span>
+                      {{ getAssesmentLabel(service) }}
+                    </li>
+                  </ul>
+                  <p class="text-muted">Próxima Disponibilidad:</p>
+                  <p class="card-text availability">
+                    <span class="availability-text">
+                      <span class="icon">
+                        <img
+                          src="@/src/assets/calendar.svg"
+                          alt="Fecha"
+                          class="img-fluid"
+                        />
+                      </span>
+                      {{ doctor.date_availability }}
+                    </span>
+                    <span class="time-text">
+                      <span class="icon">
+                        <img
+                          src="@/src/assets/clock.svg"
+                          alt="Hora"
+                          class="img-fluid"
+                        />
+                      </span>
+                      {{ doctor.hour_availability }}
+                    </span>
+                  </p>
+                  <p class="card-text" v-if="pkg.discount">
+                    Costo Cita de Valoracion ₡{{ formatPrice(18000) }}
+                  </p>
+                </div>
+                <div class="mt-auto pt-3">
+                  <button
+                    class="btn w-100"
+                    :class="{
+                      'btn-outline-primary': !isPackageSelected(pkg),
+                      'btn-primary': isPackageSelected(pkg),
+                    }"
+                    @click="selectPackage(pkg, true)"
                   >
-                </p>
-                <ul class="list-group list-group-flush">
-                  <li
-                    class="list-group-item"
-                    v-for="service in pkg.services_offer.ASSESSMENT_DETAILS"
-                    :key="service"
-                  >
-                    <span class="icon">
-                      <img
-                        src="@/src/assets/check.svg"
-                        alt="Incluido"
-                        class="img-fluid"
-                      />
-                    </span>
-                    {{ getAssesmentLabel(service) }}
-                  </li>
-                </ul>
-                <p class="text-muted">Próxima Disponibilidad:</p>
-                <p class="card-text availability">
-                  <span class="availability-text">
-                    <span class="icon">
-                      <img
-                        src="@/src/assets/calendar.svg"
-                        alt="Fecha"
-                        class="img-fluid"
-                      />
-                    </span>
-                    {{ doctor.date_availability }}
-                  </span>
-                  <span class="time-text">
-                    <span class="icon">
-                      <img
-                        src="@/src/assets/clock.svg"
-                        alt="Hora"
-                        class="img-fluid"
-                      />
-                    </span>
-                    {{ doctor.hour_availability }}
-                  </span>
-                </p>
-                <p class="card-text" v-if="pkg.discount">
-                  Costo Cita de Valoracion ₡18000
-                </p>
-                <button
-                  class="btn btn-outline-primary"
-                  @click="selectPackage(pkg)"
-                >
-                  Cita de valoración
-                </button>
+                    Cita de valoración
+                  </button>
+                </div>
               </div>
             </div>
           </div>
