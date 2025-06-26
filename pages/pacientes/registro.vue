@@ -21,17 +21,26 @@
         </div>
 
         <!-- Sección de opciones -->
-        <section v-if="signupOption === null" class="signup-section signup-section--option-selector">
+        <section
+          v-if="signupOption === null"
+          class="signup-section signup-section--option-selector"
+        >
           <RegisterOptionSelector ref="selectorRef" />
         </section>
 
         <!-- Formulario por correo -->
-        <section v-else-if="signupOption === 'email'" class="signup-section signup-section--form-email">
+        <section
+          v-else-if="signupOption === 'email'"
+          class="signup-section signup-section--form-email"
+        >
           <RegisterWithEmailForm />
         </section>
 
         <!-- Formulario por cédula -->
-        <section v-else-if="signupOption === 'idCard'" class="signup-section signup-section--form-idcard">
+        <section
+          v-else-if="signupOption === 'idCard'"
+          class="signup-section signup-section--form-idcard"
+        >
           <RegisterWithIdCardWizard @back-to-selector="signupOption = null" />
         </section>
       </div>
@@ -39,7 +48,9 @@
       <!-- Acciones inferiores -->
       <div class="signup-actions" v-if="signupOption === null">
         <p class="signup-login-redirect">
-          <span class="signup-login-redirect__text">¿Ya tienes una cuenta?</span>
+          <span class="signup-login-redirect__text"
+            >¿Ya tienes una cuenta?</span
+          >
           <NuxtLink href="/pacientes/login" class="signup-login-redirect__link">
             Iniciar sesión
           </NuxtLink>
@@ -79,10 +90,9 @@ const continueSignup = () => {
   flex: 1;
   display: flex;
   flex-direction: column;
-  padding: 0 $spacing-lg;
+  padding: 0;
 
   .signup-header {
-    padding-top: 20px;
     margin-bottom: 34px;
 
     &__title {
