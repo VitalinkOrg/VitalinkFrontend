@@ -76,10 +76,10 @@
 
       <div class="registration-social-buttons">
         <button class="registration-social-button registration-google-button">
-          <AtomsIconsGoogleIcon />
+          <AtomsIconsGoogleIcon size="24" />
         </button>
         <button class="registration-social-button registration-apple-button">
-          <AtomsIconsAppleIcon />
+          <AtomsIconsAppleIcon size="24" />
         </button>
       </div>
     </div>
