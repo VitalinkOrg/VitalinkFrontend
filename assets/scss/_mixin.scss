@@ -202,8 +202,21 @@
   transition: color 0.2s ease;
 }
 
-@mixin form-label {
+@mixin label-base {
+  margin: 0;
+  padding: 0;
+  border: none;
+  font: inherit;
+  background: none;
   font-family: $font-family-main;
+  font-weight: 400;
+  font-size: 14px;
+  color: $color-text-secondary;
+  display: block;
+}
+
+@mixin form-label {
+  @include label-base;
   font-weight: 500;
   font-size: 14px;
   color: #344054;
