@@ -1,0 +1,212 @@
+@mixin button-base {
+  background: none;
+  border: none;
+  padding: 0;
+  margin: 0;
+  font: inherit;
+  color: inherit;
+  cursor: pointer;
+  outline: none;
+
+  -webkit-appearance: none;
+  appearance: none;
+  box-shadow: none;
+  text-shadow: none;
+
+  display: inline-flex;
+  justify-content: center;
+  align-items: center;
+  gap: $spacing-sm;
+  padding: 12px 20px;
+  border-radius: $border-radius-md;
+  border-width: 1px;
+  font-family: $font-family-main;
+  font-size: 16px;
+  line-height: 24px;
+  letter-spacing: 0%;
+  cursor: pointer;
+  transition: background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease;
+
+    &:focus-visible {
+    outline: none;
+    box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.5);
+  }
+}
+
+
+@mixin primary-button {
+  @include button-base;
+
+  background-color: $color-primary;
+  border-color: $color-primary;
+  color: #FFFFFF;
+  font-weight: 600;
+
+  &:hover {
+    background-color: $color-primary-darkened-5;
+    border-color: $color-primary-darkened-5;
+  }
+
+  &:active {
+    background-color: $color-primary-darkened-10;
+  }
+
+  &:disabled {
+    background-color: #C2C6E9;
+    color: #FFFFFF;
+    cursor: not-allowed;
+  }
+
+  &:focus-visible {
+    border-color: darken($color-primary, 10%);
+    box-shadow: 0 0 0 3px rgba($color-primary, 0.4);
+  }
+}
+
+
+@mixin secondary-button {
+  @include button-base;
+
+  background-color: #F1F3F7;
+  border-color: #F1F3F7;
+  color: #353E5C;
+  font-weight: 500;
+
+  &:hover {
+    background-color: lighten(#F1F3F7, 3%);
+    border-color: lighten(#F1F3F7, 3%);
+  }
+
+  &:active {
+    background-color: darken(#F1F3F7, 3%);
+  }
+
+  &:disabled {
+    background-color: #DADCE0;
+    color: #A0A4AA;
+    cursor: not-allowed;
+  }
+
+   &:focus-visible {
+    border-color: #2C344B;
+    box-shadow: 0 0 0 3px rgba(44, 52, 75, 0.4);
+  }
+}
+
+@mixin outline-button {
+  @include button-base;
+
+  background-color: #FFFFFF;
+  border: 1px solid #D0D5DD;
+  color: #344054;
+  font-weight: 600;
+
+  &:hover {
+    background-color: #F9FAFB;
+    border-color: #B2B8C0;
+  }
+
+  &:active {
+    background-color: #F2F4F7;
+  }
+
+  &:disabled {
+    background-color: #FFFFFF;
+    border-color: #D0D5DD;
+    color: #A0A4AA;
+    cursor: not-allowed;
+  }
+
+   &:focus-visible {
+    border-color: #667085;
+    box-shadow: 0 0 0 3px rgba(102, 112, 133, 0.4);
+  }
+}
+
+@mixin custom-radio {
+  appearance: none;
+  -webkit-appearance: none;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  border: 2px solid #c1c7d0;
+  margin: 0;
+  cursor: pointer;
+  position: relative;
+  flex-shrink: 0;
+
+  &:checked {
+    border-color: $color-primary;
+
+    &::after {
+      content: "";
+      width: 10px;
+      height: 10px;
+      background-color: $color-primary;
+      border-radius: 50%;
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+    }
+  }
+}
+
+@mixin input-base {
+  border-radius: $border-radius-md;
+  padding: 15px 17px;
+  font-family: $font-family-main;
+  font-size: 14.7px;
+  color: #425466;
+  border: 1px solid #d4dae0;
+  box-shadow:
+    0 0 1.05px rgba(50, 50, 71, 0.2),
+    0 1.05px 2.1px rgba(50, 50, 71, 0.08);
+  transition: all 0.3s ease;
+
+  &::placeholder {
+    color: #7a828a;
+    opacity: 1;
+  }
+
+  &:focus-visible {
+    outline: none;
+    border-color: $color-primary;
+    box-shadow:
+      0 0 0 4px rgba($color-primary, 0.2),
+      0 0 1.05px rgba(53, 65, 180, 0.4),
+      0 1.05px 2.1px rgba(50, 50, 71, 0.1);
+  }
+
+  &:disabled {
+    background-color: #f9f9f9;
+    color: #a0a4aa;
+    cursor: not-allowed;
+    border-color: #e0e0e0;
+  }
+
+  &.has-error {
+    border-color: #e74c3c;
+    &:focus-visible {
+      border-color: #e74c3c;
+      box-shadow:
+        0 0 0 4px rgba(231, 76, 60, 0.2),
+        0 0 1.05px rgba(231, 76, 60, 0.4);
+    }
+  }
+}
+
+@mixin link-base {
+  text-decoration: none;
+  color: inherit;
+  transition: color 0.2s ease;
+}
+
+@mixin form-label {
+  font-family: $font-family-main;
+  font-weight: 500;
+  font-size: 14px;
+  color: #344054;
+  display: block;
+  margin: 0;
+}
