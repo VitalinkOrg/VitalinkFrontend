@@ -559,7 +559,7 @@ watch(() => isIdCardEdited.value, (newValue) => {
 .navigation-note {
   height: 21px;
   display: flex;
-  justify-content: end;
+  justify-content: flex-end;
 
   small {
     font-style: italic;
