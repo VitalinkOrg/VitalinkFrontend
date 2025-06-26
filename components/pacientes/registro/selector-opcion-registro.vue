@@ -45,7 +45,6 @@ defineExpose({ selectedOption });
 </script>
 
 <style lang="scss" scoped>
-
 .registration-options {
   display: flex;
   flex-direction: column;
@@ -56,8 +55,8 @@ defineExpose({ selectedOption });
   display: flex;
   align-items: center;
   gap: $spacing-md;
-  padding: $spacing-lg;
-  border-radius: $border-radius-md;
+  padding: 17.5px;
+  border-radius: 20px;
   border: 1px solid #e1e4ed;
   cursor: pointer;
   transition: border-color 0.3s ease;
