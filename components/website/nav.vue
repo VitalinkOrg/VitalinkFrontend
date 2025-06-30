@@ -1,5 +1,7 @@
 <template>
-  <nav class="navbar navbar-expand-lg navbar-light bg-white border-bottom navbar-custom">
+  <nav
+    class="navbar navbar-expand-lg navbar-light bg-white border-bottom navbar-custom"
+  >
     <div class="container-fluid">
       <!-- Botón Toggler -->
       <button
@@ -24,16 +26,24 @@
         <!-- Navegación principal -->
         <ul class="navbar-nav mx-auto mb-2 mb-lg-0 nav-list">
           <li class="nav-item">
-            <NuxtLink to="/" class="nav-link" active-class="active">Home</NuxtLink>
+            <NuxtLink to="/" class="nav-link" active-class="active"
+              >Home</NuxtLink
+            >
           </li>
           <li class="nav-item">
-            <NuxtLink to="/pacientes/registro" class="nav-link">¿Eres paciente?</NuxtLink>
+            <NuxtLink to="/pacientes/registro" class="nav-link"
+              >¿Eres paciente?</NuxtLink
+            >
           </li>
           <li class="nav-item">
-            <NuxtLink to="/medicos/registro" class="nav-link">¿Eres profesional médico?</NuxtLink>
+            <NuxtLink to="/medicos/registro" class="nav-link"
+              >¿Eres profesional médico?</NuxtLink
+            >
           </li>
           <li class="nav-item">
-            <NuxtLink to="/socio-financiero/registro" class="nav-link">¿Eres aseguradora?</NuxtLink>
+            <NuxtLink to="/socio-financiero/registro" class="nav-link"
+              >¿Eres aseguradora?</NuxtLink
+            >
           </li>
           <li class="nav-item">
             <NuxtLink to="" class="nav-link">Nosotros</NuxtLink>
@@ -41,11 +51,20 @@
         </ul>
 
         <!-- Botones de autenticación -->
-        <div v-if="!authenticated" class="auth-buttons d-flex align-items-center gap-3">
-          <NuxtLink to="/pacientes/login" class="btn btn-outline-primary btn-custom-secondary">
+        <div
+          v-if="!authenticated"
+          class="auth-buttons d-flex align-items-center gap-3"
+        >
+          <NuxtLink
+            to="/pacientes/login"
+            class="btn btn-outline-primary btn-custom-secondary"
+          >
             Ingresar
           </NuxtLink>
-          <NuxtLink to="/pacientes/registro" class="btn btn-primary btn-custom-primary">
+          <NuxtLink
+            to="/pacientes/registro"
+            class="btn btn-primary btn-custom-primary"
+          >
             Registrarse
           </NuxtLink>
         </div>
@@ -100,7 +119,6 @@ const logout = () => {
   .nav-list {
     display: flex;
     gap: 25px;
-    flex-wrap: wrap;
     justify-content: center;
   }
 
@@ -119,6 +137,16 @@ const logout = () => {
     justify-content: center;
     transition: color 0.3s ease-in-out;
 
+    display: block;
+    white-space: normal;
+    text-align: center;
+    padding: 8px 16px;
+
+    @supports (text-wrap: balance) {
+      white-space: unset;
+      text-wrap: balance;
+    }
+
     &:hover,
     &.active {
       color: darken(#353e5c, 12%);
@@ -136,7 +164,7 @@ const logout = () => {
     align-items: center;
   }
 
-  @media (min-width: 992px) and (max-width: 1340px) {
+  @media (min-width: 993px) and (max-width: 1340px) {
     padding: 15px 30px;
 
     .nav-link {
@@ -148,7 +176,7 @@ const logout = () => {
     }
   }
 
-  @media (max-width: 992px) {
+  @media (max-width: 991px) {
     padding: 15px 30px;
 
     .nav-list {
