@@ -31,22 +31,33 @@
             >
           </li>
           <li class="nav-item">
-            <NuxtLink to="/pacientes/registro" class="nav-link"
+            <NuxtLink
+              to="/pacientes/registro"
+              class="nav-link"
+              active-class="active"
               >¿Eres paciente?</NuxtLink
             >
           </li>
           <li class="nav-item">
-            <NuxtLink to="/medicos/registro" class="nav-link"
+            <NuxtLink
+              to="/medicos/registro"
+              class="nav-link"
+              active-class="active"
               >¿Eres profesional médico?</NuxtLink
             >
           </li>
           <li class="nav-item">
-            <NuxtLink to="/socio-financiero/registro" class="nav-link"
+            <NuxtLink
+              to="/socio-financiero/registro"
+              class="nav-link"
+              active-class="active"
               >¿Eres aseguradora?</NuxtLink
             >
           </li>
           <li class="nav-item">
-            <NuxtLink to="" class="nav-link">Nosotros</NuxtLink>
+            <NuxtLink to="" class="nav-link" active-class="active"
+              >Nosotros</NuxtLink
+            >
           </li>
         </ul>
 
@@ -147,9 +158,13 @@ const logout = () => {
       text-wrap: balance;
     }
 
-    &:hover,
+    &:hover {
+      color: darken($color: #353e5c, $amount: 12%);
+      background: rgba(226, 228, 250, 0.15);
+    }
+
     &.active {
-      color: darken(#353e5c, 12%);
+      background: rgba(226, 228, 250, 0.3);
     }
   }
 
