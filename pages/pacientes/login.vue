@@ -1,62 +1,92 @@
 <template>
   <NuxtLayout name="pacientes-login">
-    <h1 class="fw-semibold fs-2">Ingrese a su cuenta</h1>
-    <hr />
-    <form @submit.prevent="login">
-      <div class="form-group mb-4">
-        <label for="email" class="form-label text-capitalize"
-          >Correo Electrónico</label
-        >
-        <input
-          v-model="email"
-          type="email"
-          class="form-control"
-          placeholder="Escribe tu correo electrónico"
-          name="email"
-          required
-        />
-        <!-- <div id="nombreHelp" class="form-text">We'll never share your email with anyone else.</div> -->
+    <!-- Formulario principal con rol de formulario -->
+    <form @submit.prevent="login" class="auth-form__main" role="form" aria-labelledby="login-heading">
+      <!-- Título del formulario -->
+      <div class="login-header">
+        <h1 id="login-heading" class="login-header__title">Ingrese a su cuenta</h1>
       </div>
-      <div class="form-group mb-4">
-        <label for="password" class="form-label text-capitalize"
-          >Contraseña</label
-        >
-        <input
-          v-model="password"
-          type="password"
-          class="form-control"
-          id="password"
-          placeholder="Escribe tu contraseña"
-          aria-describedby="passwordHelp"
-          required
-          name="password"
-        />
-        <!-- <div id="passwordHelp" class="form-text">Deben ser 8 caracteres como mínimo</div> -->
+
+      <!-- Grupo de campos -->
+      <div class="auth-controls-group">
+        <!-- Campo: Email o Cédula -->
+        <div class="auth-field-group">
+          <label for="email" class="auth-field-group__label">Nº de Cédula o Correo electrónico</label>
+          <input
+            v-model="email"
+            type="email"
+            id="email"
+            class="auth-field-group__input"
+            placeholder="Escribe tu número de cédula o correo electrónico"
+            required
+            aria-required="true"
+            :aria-invalid="!!errorText"
+            autocomplete="username"
+          />
+        </div>
+
+        <!-- Campo: Contraseña -->
+        <div class="auth-field-group">
+          <label for="password" class="auth-field-group__label">Contraseña</label>
+          <input
+            v-model="password"
+            type="password"
+            id="password"
+            class="auth-field-group__input"
+            placeholder="Escribe tu contraseña"
+            required
+            aria-required="true"
+            aria-describedby="passwordHelp"
+            autocomplete="current-password"
+            :aria-invalid="!!errorText"
+          />
+          <small id="passwordHelp" class="form-text text-muted">
+            Ingrese su contraseña segura.
+          </small>
+        </div>
+
+        <!-- Mensaje de error accesible -->
+        <div v-if="errorText" role="alert" aria-live="polite">
+          <p class="text-danger">{{ errorText }}</p>
+        </div>
+
+        <!-- Inicio de sesión social -->
+        <div class="text-center d-flex flex-column">
+          <div class="auth-social-login">
+            <p class="auth-social-login__label" id="social-login-label">
+              <small>O hacerlo con:</small>
+            </p>
+            <button
+              type="button"
+              class="auth-social-login__auth-button"
+              aria-labelledby="social-login-label google-login-label"
+            >
+              <AtomsIconsGoogleIcon />
+              <span id="google-login-label">Ingresar con Google</span>
+            </button>
+          </div>
+        </div>
       </div>
-      <div v-if="errorText">
-        <p class="text-danger">{{ errorText }}</p>
+
+      <!-- Acciones del formulario -->
+      <div class="auth-actions">
+        <button type="submit" class="auth-submit-button" aria-label="Iniciar sesión">
+          Ingresar
+        </button>
+
+        <!-- Enlace de registro -->
+        <div class="auth-footer-actions">
+          <p class="auth-already-account" id="register-link-label">
+            <span>¿No tienes cuenta?</span>
+            <NuxtLink to="/pacientes/registro" class="auth-login-link" aria-describedby="register-link-label">
+              Regístrate
+            </NuxtLink>
+          </p>
+        </div>
       </div>
-      <button type="submit" class="btn btn-primary w-100 mt-4">Ingresar</button>
     </form>
-    <hr />
-    <p class="text-center"><small class="text-muted">O Ingresa Con</small></p>
-    <div class="text-center d-flex flex-column">
-      <button class="btn btn-light border-dark-subtle mb-3">
-        Ingresar con Facebook
-      </button>
-      <button class="btn btn-light border-dark-subtle mb-3">
-        Ingresar con Google
-      </button>
-    </div>
-    <p class="text-center">
-      <span class="text-muted">No tienes Cuenta? </span>
-      <NuxtLink href="/pacientes/registro" class="btn-link text-dark fw-medium"
-        >Registrate</NuxtLink
-      >
-    </p>
   </NuxtLayout>
 </template>
-
 <script setup>
 import { jwtDecode } from "jwt-decode";
 definePageMeta({
@@ -163,38 +193,101 @@ const getDoctorInfo = async (userId) => {
 </script>
 
 <style lang="scss" scoped>
-main {
-  height: 100vh;
+.login-header {
+  margin-bottom: 34px;
+  &__title {
+    font-family: $font-family-main;
+    font-weight: 700;
+    font-size: 24px;
+    line-height: 100%;
+    letter-spacing: 0%;
+    vertical-align: middle;
+    color: $color-foregorund;
+  }
 }
 
-.logo {
-  width: 35%;
+.auth-social-login {
+  &__label {
+    @include label-base;
+  }
+
+  &__auth-button {
+    @include outline-button;
+    width: 100%;
+    padding: 10px 16px;
+    gap: 12px;
+  }
+
+  & > * + * {
+    margin-top: 10px;
+  }
 }
 
-.left,
-.right {
-  width: 100%;
-  height: 100%;
-}
-
-.left {
-  background-color: #ebecf7;
-  background-image: url("@/src/assets/bg-login.svg");
-  background-size: cover;
-  background-position: center center;
+.auth-form__main {
   display: flex;
   flex-direction: column;
-  align-items: center;
-  justify-content: space-around;
-  padding: 1rem;
+  min-height: 100%;
+
+  .auth-controls-group {
+    display: flex;
+    flex-direction: column;
+    gap: $spacing-lg;
+    flex: 1;
+    height: 100%;
+
+    .auth-field-group {
+      display: flex;
+      flex-direction: column;
+      gap: $spacing-sm;
+
+      &__label {
+        @include label-base;
+      }
+
+      &__input {
+        @include input-base;
+      }
+    }
+  }
 }
 
-.right {
-  padding: 1rem;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  align-items: center;
-  overflow-y: auto;
+.auth-actions {
+  margin-top: auto;
+
+  .auth-submit-button {
+    @include primary-button;
+    width: 100%;
+  }
+
+  .auth-footer-actions {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    width: 100%;
+    margin-top: 20px;
+
+    .auth-already-account {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      margin: 0;
+      font-family: $font-family-alt;
+      font-weight: 400;
+      font-size: 14px;
+      color: $color-text-muted;
+    }
+
+    .auth-login-link {
+      @include link-base;
+      font-weight: 600;
+      text-decoration: none;
+      color: $color-primary;
+
+      &:hover {
+        text-decoration: underline;
+        color: darken($color-primary, 10%);
+      }
+    }
+  }
 }
 </style>
