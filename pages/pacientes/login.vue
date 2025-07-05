@@ -1,17 +1,26 @@
 <template>
-  <NuxtLayout name="pacientes-login">
+  <NuxtLayout name="pacientes-autenticacion">
     <!-- Formulario principal con rol de formulario -->
-    <form @submit.prevent="login" class="auth-form__main" role="form" aria-labelledby="login-heading">
+    <form
+      @submit.prevent="login"
+      class="auth-form__main"
+      role="form"
+      aria-labelledby="login-heading"
+    >
       <!-- Título del formulario -->
       <div class="login-header">
-        <h1 id="login-heading" class="login-header__title">Ingrese a su cuenta</h1>
+        <h1 id="login-heading" class="login-header__title">
+          Ingrese a su cuenta
+        </h1>
       </div>
 
       <!-- Grupo de campos -->
       <div class="auth-controls-group">
         <!-- Campo: Email o Cédula -->
         <div class="auth-field-group">
-          <label for="email" class="auth-field-group__label">Nº de Cédula o Correo electrónico</label>
+          <label for="email" class="auth-field-group__label"
+            >Nº de Cédula o Correo electrónico</label
+          >
           <input
             v-model="email"
             type="email"
@@ -27,7 +36,9 @@
 
         <!-- Campo: Contraseña -->
         <div class="auth-field-group">
-          <label for="password" class="auth-field-group__label">Contraseña</label>
+          <label for="password" class="auth-field-group__label"
+            >Contraseña</label
+          >
           <input
             v-model="password"
             type="password"
@@ -40,9 +51,6 @@
             autocomplete="current-password"
             :aria-invalid="!!errorText"
           />
-          <small id="passwordHelp" class="form-text text-muted">
-            Ingrese su contraseña segura.
-          </small>
         </div>
 
         <!-- Mensaje de error accesible -->
@@ -70,7 +78,11 @@
 
       <!-- Acciones del formulario -->
       <div class="auth-actions">
-        <button type="submit" class="auth-submit-button" aria-label="Iniciar sesión">
+        <button
+          type="submit"
+          class="auth-submit-button"
+          aria-label="Iniciar sesión"
+        >
           Ingresar
         </button>
 
@@ -78,7 +90,11 @@
         <div class="auth-footer-actions">
           <p class="auth-already-account" id="register-link-label">
             <span>¿No tienes cuenta?</span>
-            <NuxtLink to="/pacientes/registro" class="auth-login-link" aria-describedby="register-link-label">
+            <NuxtLink
+              to="/pacientes/registro"
+              class="auth-login-link"
+              aria-describedby="register-link-label"
+            >
               Regístrate
             </NuxtLink>
           </p>
@@ -87,6 +103,7 @@
     </form>
   </NuxtLayout>
 </template>
+
 <script setup>
 import { jwtDecode } from "jwt-decode";
 definePageMeta({
@@ -202,7 +219,7 @@ const getDoctorInfo = async (userId) => {
     line-height: 100%;
     letter-spacing: 0%;
     vertical-align: middle;
-    color: $color-foregorund;
+    color: $color-foreground;
   }
 }
 
