@@ -1,5 +1,5 @@
 <template>
-  <NuxtLayout name="pacientes-login">
+  <NuxtLayout name="pacientes-autenticacion">
     <div class="signup-container">
       <div class="signup-content">
         <!-- Botón de regresar -->
