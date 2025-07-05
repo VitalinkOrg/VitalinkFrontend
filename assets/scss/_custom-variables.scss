@@ -1,12 +1,19 @@
 $color-primary: #3541b4;
-$color-foregorund: #19213D;
+$color-foreground: #19213d;
 $color-primary-darkened-5: darken($color-primary, 5%);
 $color-primary-darkened-10: darken($color-primary, 10%);
 $color-text-secondary: #6d758f;
 $color-text-muted: #667085;
+$primary-aqua: #0cadbb;
+$primary-aqua-light: #9edee4;
 
+// Fuentes principales
 $font-family-main: "Montserrat", sans-serif;
 $font-family-alt: "Inter", sans-serif;
+
+// Fuentes alternativas
+$font-family-montserrat-alt: "Montserrat Alternates", sans-serif;
+$font-family-mulish: "Mulish", sans-serif;
 
 $border-radius-md: 8px;
 $spacing-xs: 4px;
