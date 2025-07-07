@@ -1,13 +1,13 @@
 <template>
   <NuxtLayout name="medicos-autenticacion">
-    <section class="register-section">
+    <section class="register">
       <HeaderRegistro />
-      <div class="stepper-wrapper">
+      <div class="register__stepper">
         <StepperRegistro :steps="steps" :current-step="tab" />
       </div>
-      <form @submit.prevent="handleSubmit">
+      <form @submit.prevent="handleSubmit" class="register__form">
         <!-- Paso 1: Formulario proveedor médico -->
-        <div v-if="tab === 1">
+        <div v-if="tab === 1" class="register__step">
           <FormularioProveedorMedico
             :document-type="formData.documentType"
             :document-number="formData.documentNumber"
@@ -30,7 +30,7 @@
         </div>
 
         <!-- Paso 2: Médicos relacionados -->
-        <div v-if="tab === 2">
+        <div v-if="tab === 2" class="register__step">
           <FormularioMedicosRelacionados
             :doctors-list="doctorsList"
             :specialties="specialties"
@@ -50,14 +50,6 @@
           />
         </div>
       </form>
-
-      <hr class="divider" />
-      <p class="text-center mt-3">
-        <span class="text-muted">Ya tienes Cuenta? </span>
-        <NuxtLink href="/pacientes/login" class="link-dark fw-medium">
-          Iniciar Sesión
-        </NuxtLink>
-      </p>
     </section>
   </NuxtLayout>
 </template>
@@ -247,3 +239,54 @@ const removeDoctor = (index: number) => {
   doctorsList.value.splice(index, 1);
 };
 </script>
+
+<style lang="scss" scoped>
+.register {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+
+  &__stepper {
+    margin-bottom: 2rem;
+    flex-shrink: 0;
+  }
+
+  &__form {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    max-width: 100%;
+  }
+
+  &__step {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+  }
+
+  &__login-link {
+    text-align: center;
+    margin-top: 1.5rem;
+    font-size: 0.9rem;
+  }
+
+  &__login-text {
+    color: #6c757d;
+    margin-right: 0.5rem;
+  }
+
+  &__login-button {
+    color: #212529;
+    font-weight: 500;
+    text-decoration: none;
+    transition: color 0.2s ease;
+
+    &:hover {
+      color: #0d6efd;
+      text-decoration: underline;
+    }
+  }
+}
+</style>

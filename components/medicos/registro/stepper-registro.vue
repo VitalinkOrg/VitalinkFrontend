@@ -90,7 +90,7 @@ export default {
       const lastRect = lastCircle.getBoundingClientRect();
       const stepperRect = stepper.value.getBoundingClientRect();
 
-      const start = firstRect.left + 54 / 2 - stepperRect.left;
+      const start = firstRect.left + firstRect.width / 2 - stepperRect.left;
       const end = lastRect.left + lastRect.width / 2 - stepperRect.left;
       const width = end - start;
 
@@ -138,8 +138,8 @@ export default {
   }
 
   &__circle {
-    width: 24px;
-    height: 24px;
+    width: 31px;
+    height: 31px;
     border-radius: 50%;
     display: flex;
     align-items: center;
@@ -172,7 +172,7 @@ export default {
 
   &__line {
     position: absolute;
-    top: 11px;
+    top: 14.5px;
     height: 2px;
     background-color: $primary-aqua;
     z-index: 0;
