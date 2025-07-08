@@ -91,7 +91,7 @@
           <p class="auth-already-account" id="register-link-label">
             <span>¿No tienes cuenta?</span>
             <NuxtLink
-              to="/pacientes/registro"
+              to="/medicos/registro"
               class="auth-login-link"
               aria-describedby="register-link-label"
             >

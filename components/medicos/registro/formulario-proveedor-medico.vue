@@ -201,7 +201,7 @@
       <p class="auth-already-account" id="register-link-label">
         <span>Ya tienes cuenta?</span>
         <NuxtLink
-          to="/pacientes/registro"
+          to="/medicos/login"
           class="auth-login-link"
           aria-describedby="register-link-label"
         >
