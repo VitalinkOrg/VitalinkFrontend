@@ -25,21 +25,23 @@
   line-height: 24px;
   letter-spacing: 0%;
   cursor: pointer;
-  transition: background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease;
+  transition:
+    background-color 0.2s ease,
+    border-color 0.2s ease,
+    color 0.2s ease;
 
-    &:focus-visible {
+  &:focus-visible {
     outline: none;
     box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.5);
   }
 }
-
 
 @mixin primary-button {
   @include button-base;
 
   background-color: $color-primary;
   border-color: $color-primary;
-  color: #FFFFFF;
+  color: #ffffff;
   font-weight: 600;
 
   &:hover {
@@ -52,8 +54,8 @@
   }
 
   &:disabled {
-    background-color: #C2C6E9;
-    color: #FFFFFF;
+    background-color: #c2c6e9;
+    color: #ffffff;
     cursor: not-allowed;
   }
 
@@ -63,32 +65,31 @@
   }
 }
 
-
 @mixin secondary-button {
   @include button-base;
 
-  background-color: #F1F3F7;
-  border-color: #F1F3F7;
-  color: #353E5C;
+  background-color: #f1f3f7;
+  border-color: #f1f3f7;
+  color: #353e5c;
   font-weight: 500;
 
   &:hover {
-    background-color: lighten(#F1F3F7, 3%);
-    border-color: lighten(#F1F3F7, 3%);
+    background-color: lighten(#f1f3f7, 3%);
+    border-color: lighten(#f1f3f7, 3%);
   }
 
   &:active {
-    background-color: darken(#F1F3F7, 3%);
+    background-color: darken(#f1f3f7, 3%);
   }
 
   &:disabled {
-    background-color: #DADCE0;
-    color: #A0A4AA;
+    background-color: #dadce0;
+    color: #a0a4aa;
     cursor: not-allowed;
   }
 
-   &:focus-visible {
-    border-color: #2C344B;
+  &:focus-visible {
+    border-color: #2c344b;
     box-shadow: 0 0 0 3px rgba(44, 52, 75, 0.4);
   }
 }
@@ -96,28 +97,28 @@
 @mixin outline-button {
   @include button-base;
 
-  background-color: #FFFFFF;
-  border: 1px solid #D0D5DD;
+  background-color: #ffffff;
+  border: 1px solid #d0d5dd;
   color: #344054;
   font-weight: 600;
 
   &:hover {
-    background-color: #F9FAFB;
-    border-color: #B2B8C0;
+    background-color: #f9fafb;
+    border-color: #b2b8c0;
   }
 
   &:active {
-    background-color: #F2F4F7;
+    background-color: #f2f4f7;
   }
 
   &:disabled {
-    background-color: #FFFFFF;
-    border-color: #D0D5DD;
-    color: #A0A4AA;
+    background-color: #ffffff;
+    border-color: #d0d5dd;
+    color: #a0a4aa;
     cursor: not-allowed;
   }
 
-   &:focus-visible {
+  &:focus-visible {
     border-color: #667085;
     box-shadow: 0 0 0 3px rgba(102, 112, 133, 0.4);
   }
@@ -222,4 +223,71 @@
   color: #344054;
   display: block;
   margin: 0;
+}
+
+// Mixins para responsive
+@mixin respond-to($breakpoint) {
+  @if $breakpoint == xs {
+    @media (min-width: $breakpoint-xs) {
+      @content;
+    }
+  }
+  @if $breakpoint == sm {
+    @media (min-width: $breakpoint-sm) {
+      @content;
+    }
+  }
+  @if $breakpoint == md {
+    @media (min-width: $breakpoint-md) {
+      @content;
+    }
+  }
+  @if $breakpoint == lg {
+    @media (min-width: $breakpoint-lg) {
+      @content;
+    }
+  }
+  @if $breakpoint == xl {
+    @media (min-width: $breakpoint-xl) {
+      @content;
+    }
+  }
+  @if $breakpoint == xxl {
+    @media (min-width: $breakpoint-xxl) {
+      @content;
+    }
+  }
+}
+
+@mixin respond-to-max($breakpoint) {
+  @if $breakpoint == xs {
+    @media (max-width: #{ $breakpoint-xs - 1 }) {
+      @content;
+    }
+  }
+  @if $breakpoint == sm {
+    @media (max-width: #{ $breakpoint-sm - 1 }) {
+      @content;
+    }
+  }
+  @if $breakpoint == md {
+    @media (max-width: #{ $breakpoint-md - 1 }) {
+      @content;
+    }
+  }
+  @if $breakpoint == lg {
+    @media (max-width: #{ $breakpoint-lg - 1 }) {
+      @content;
+    }
+  }
+  @if $breakpoint == xl {
+    @media (max-width: #{ $breakpoint-xl - 1 }) {
+      @content;
+    }
+  }
+  @if $breakpoint == xxl {
+    @media (max-width: #{ $breakpoint-xxl - 1 }) {
+      @content;
+    }
+  }
 }
