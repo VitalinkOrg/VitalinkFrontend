@@ -108,13 +108,15 @@
               aria-expanded="false"
               aria-label="Menú de usuario"
             >
-              <img
-                src="@/src/assets/img-avatar-sm.png"
-                alt=""
-                class="rounded-circle me-2"
-                width="32"
-                height="32"
-              />
+              <div class="avatar-container me-2">
+                <img
+                  src="@/src/assets/img-avatar-sm.png"
+                  alt=""
+                  class="rounded-circle"
+                  width="32"
+                  height="32"
+                />
+              </div>
               <AtomsIconsChevronDown />
             </button>
 
@@ -531,8 +533,16 @@ const logout = () => {
     }
   }
 }
+.avatar-container {
+  display: inline-block;
+  padding: 2px;
+  border-radius: 50%;
+  background: linear-gradient(182.01deg, #04bfae 1.69%, #6c78e8 72.38%);
+}
 
 .rounded-circle {
+  width: 39px;
+  height: 39px;
   @include respond-to-max(sm) {
     width: 28px !important;
     height: 28px !important;
