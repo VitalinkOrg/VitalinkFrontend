@@ -176,7 +176,6 @@
               !isDoctorBasicInfoComplete(index) ||
               doctor.specialties.length >= 3
             "
-            @change="addSpecialty(index)"
           >
             <option value="" disabled>Seleccione una especialidad</option>
             <option
@@ -195,8 +194,10 @@
             class="registro-form__input-button"
             :disabled="
               !isDoctorBasicInfoComplete(index) ||
-              doctor.specialties.length >= 3
+              doctor.specialties.length >= 3 ||
+              !doctor.selectedSpecialty
             "
+            @click="addSpecialty(index)"
           >
             Agregar otra especialidad
           </button>
@@ -381,6 +382,7 @@ const removeSpecialty = (index, specIndex) => {
     color: #dc2626;
     border: 1px solid #dc2626;
     background-color: transparent;
+    margin-top: 20px;
     margin-bottom: 1rem;
     padding: 0.5rem 1rem;
     border-radius: 4px;
@@ -421,6 +423,7 @@ const removeSpecialty = (index, specIndex) => {
     font-size: 14px;
     line-height: 20px;
     letter-spacing: 0%;
+    color: $color-primary;
 
     &:disabled {
       opacity: 0.5;
@@ -510,7 +513,7 @@ const removeSpecialty = (index, specIndex) => {
 }
 
 .specialty-badge {
-  display: inline-flex;
+  display: flex;
   align-items: center;
   gap: 0.5rem;
   padding: 0.25rem 0.75rem;
@@ -522,13 +525,11 @@ const removeSpecialty = (index, specIndex) => {
   font-weight: 500;
 
   &__remove-button {
-    background: none;
-    border: none;
+    @include button-base;
     color: #1d4ed8;
     cursor: pointer;
     font-size: 1rem;
     line-height: 1;
-    padding: 0;
     margin-left: 0.25rem;
     width: 16px;
     height: 16px;
