@@ -422,7 +422,7 @@ const removeSpecialty = (index, specIndex) => {
     font-weight: 500;
     font-size: 14px;
     line-height: 20px;
-    letter-spacing: 0%;
+    letter-spacing: 0;
     color: $color-primary;
 
     &:disabled {
@@ -508,7 +508,7 @@ const removeSpecialty = (index, specIndex) => {
     font-weight: 500;
     line-height: 20px;
     color: #344054;
-    letter-spacing: 0%;
+    letter-spacing: 0;
   }
 }
 

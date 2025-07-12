@@ -316,7 +316,7 @@ console.log(historial);
     font-weight: 700;
     font-size: 20px;
     line-height: 1.2;
-    letter-spacing: 0%;
+    letter-spacing: 0;
     text-align: center;
     vertical-align: middle;
     color: #19213d;
@@ -336,7 +336,7 @@ console.log(historial);
     font-weight: 500;
     font-size: 16px;
     line-height: 1.2;
-    letter-spacing: 0%;
+    letter-spacing: 0;
     text-align: center;
     vertical-align: middle;
     color: #19213d;
@@ -411,7 +411,7 @@ console.log(historial);
     font-style: Semi Bold;
     font-size: 16px;
     line-height: 1.2;
-    letter-spacing: 0%;
+    letter-spacing: 0;
     color: #19213d;
     margin-bottom: 16px;
 
@@ -527,7 +527,7 @@ console.log(historial);
     font-style: Semi Bold;
     font-size: 12px;
     line-height: 1.2;
-    letter-spacing: 0%;
+    letter-spacing: 0;
     color: #ffffff;
 
     @include respond-to(sm) {
@@ -643,7 +643,7 @@ console.log(historial);
     font-weight: 300;
     font-size: 14px;
     line-height: 1.3;
-    letter-spacing: 0%;
+    letter-spacing: 0;
     color: #6d758f;
     word-break: break-word;
 
@@ -742,7 +742,7 @@ console.log(historial);
     font-style: SemiBold;
     font-size: 11px;
     line-height: 100%;
-    letter-spacing: 0%;
+    letter-spacing: 0;
 
     @include respond-to(md) {
       padding: 8.4px 12.6px;
@@ -798,7 +798,7 @@ console.log(historial);
     font-weight: 300;
     font-size: 12px;
     line-height: 1.2;
-    letter-spacing: 0%;
+    letter-spacing: 0;
     vertical-align: middle;
     color: #6d758f;
 

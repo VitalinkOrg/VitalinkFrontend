@@ -231,7 +231,7 @@ const removeFile = () => {
         font-weight: 400;
         font-size: 11px;
         line-height: 18px;
-        letter-spacing: 0%;
+        letter-spacing: 0;
         text-align: center;
         color: #676767;
       }

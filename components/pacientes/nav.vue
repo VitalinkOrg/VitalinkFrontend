@@ -466,7 +466,7 @@ const logout = () => {
     font-style: Medium;
     font-size: 14px;
     line-height: 20px;
-    letter-spacing: 0%;
+    letter-spacing: 0;
 
     color: #19213d;
 
