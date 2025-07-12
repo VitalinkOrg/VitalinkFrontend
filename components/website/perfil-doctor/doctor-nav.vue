@@ -1,6 +1,5 @@
 <script>
 import { useCookie } from "nuxt/app";
-import { ref } from "vue";
 
 export default {
   props: {
@@ -438,47 +437,47 @@ export default {
 </script>
 
 <template>
-  <ul class="nav nav-underline d-flex flex-row w-100">
-    <li class="nav-item">
+  <ul class="tabs-container">
+    <li class="tab-item">
       <button
-        class="nav-link info"
-        :class="{ active: tab === 1 }"
+        class="tab-item__link"
+        :class="{ 'tab-item__link--active': tab === 1 }"
         @click="tab = 1"
       >
         Servicios
       </button>
     </li>
-    <li class="nav-item">
+    <li class="tab-item">
       <button
-        class="nav-link info"
-        :class="{ active: tab === 2 }"
+        class="tab-item__link"
+        :class="{ 'tab-item__link--active': tab === 2 }"
         @click="tab = 2"
       >
         Disponibilidad
       </button>
     </li>
-    <li class="nav-item">
+    <li class="tab-item">
       <button
-        class="nav-link info"
-        :class="{ active: tab === 3 }"
+        class="tab-item__link"
+        :class="{ 'tab-item__link--active': tab === 3 }"
         @click="tab = 3"
       >
         Ubicación
       </button>
     </li>
-    <li class="nav-item">
+    <li class="tab-item">
       <button
-        class="nav-link info"
-        :class="{ active: tab === 4 }"
+        class="tab-item__link"
+        :class="{ 'tab-item__link--active': tab === 4 }"
         @click="tab = 4"
       >
         Reseñas
       </button>
     </li>
-    <li class="nav-item">
+    <li class="tab-item">
       <button
-        class="nav-link info"
-        :class="{ active: tab === 5 }"
+        class="tab-item__link"
+        :class="{ 'tab-item__link--active': tab === 5 }"
         @click="tab = 5"
       >
         Perfil
@@ -486,128 +485,169 @@ export default {
     </li>
   </ul>
 
-  <section class="py-4 px-1">
+  <section class="tabs-content">
     <!-- Servicios Tab -->
-    <div v-if="tab === 1">
-      <p class="fw-semibold">Servicios disponibles</p>
+    <div v-if="tab === 1" class="service-tab">
+      <p class="service-tab__title">Servicios disponibles</p>
 
       <!-- Specialty badges -->
-      <div class="mb-3">
+      <div class="service-tab__badges-wrapper">
         <button
           v-for="specialty in specialties"
           :key="specialty.code"
           @click="selectSpecialty(specialty.code, specialty.id)"
-          class="badge bg-info text-info border-none me-2 rounded-5 text-capitalize"
+          class="service-tab__badge"
           style="--bs-bg-opacity: 0.07"
-          :class="{ 'active-specialty': selectedSpecialty === specialty.code }"
+          :class="{
+            'service-tab__badge--active': selectedSpecialty === specialty.code,
+          }"
         >
           {{ specialty.name }}
         </button>
       </div>
 
       <!-- Procedure badges (shown when specialty is selected) -->
-      <div class="mb-3">
+      <div class="service-tab__procedures-wrapper">
         <button
           v-for="procedure in filteredProcedures"
           :key="procedure.procedure.code"
           @click="
             selectProcedure(procedure.procedure.code, procedure.procedure.id)
           "
-          class="badge bg-secondary text-white border-none me-2 rounded-5 text-capitalize"
+          class="service-tab__procedure-badge"
           :class="{
-            'active-procedure': selectedProcedure === procedure.procedure.code,
+            'service-tab__procedure-badge--active':
+              selectedProcedure === procedure.procedure.code,
           }"
         >
           {{ procedure.procedure.name }}
         </button>
       </div>
 
+      <div>
+        <p class="service-tab__packages-title">Packs:</p>
+      </div>
+
       <!-- All packages for selected procedure -->
-      <div v-if="filteredPackages.length > 0" class="container">
-        <div class="row">
+      <div v-if="filteredPackages.length > 0" class="service-tab__packages">
+        <div
+          class="service-tab-card"
+          v-for="(pkg, index) in filteredPackages"
+          :key="pkg.id"
+        >
           <div
-            class="col-4"
-            v-for="(pkg, index) in filteredPackages"
-            :key="pkg.id"
+            class="service-tab-card__wrapper"
+            :class="{ selected: pkg.is_king }"
           >
-            <div class="custom-card h-100" :class="{ selected: pkg.is_king }">
-              <div class="card-header text-center">
-                {{ pkg.product.name }}
-                <span v-if="pkg.is_king">
+            <div class="service-tab-card__header">
+              {{ pkg.product.name }}
+              <span v-if="pkg.is_king">
+                <img
+                  src="@/src/assets/crown.svg"
+                  alt="Recomendado"
+                  class="img-fluid"
+                />
+              </span>
+            </div>
+            <div class="service-tab-card__body">
+              <h5 class="service-tab-card__price">
+                ₡{{ getPackagePrice(pkg) }}
+              </h5>
+              <p class="service-tab-card__discount" v-if="pkg.discount">
+                Precio original
+                <span>₡{{ pkg.product.value1 }}</span>
+              </p>
+              <p class="service-tab-card__rating-wrapper">
+                <span class="service-tab-card__rating">
                   <img
-                    src="@/src/assets/crown.svg"
-                    alt="Recomendado"
+                    src="@/src/assets/star.svg"
+                    alt="Rating"
                     class="img-fluid"
                   />
-                </span>
-              </div>
-              <div class="card-body">
-                <h5 class="card-title">₡{{ getPackagePrice(pkg) }}</h5>
-                <p class="card-text" v-if="pkg.discount">
-                  Precio original ₡{{ pkg.product.value1 }}
-                </p>
-                <p class="card-text rating">
-                  <span class="icon">
-                    <img
-                      src="@/src/assets/star.svg"
-                      alt="Rating"
-                      class="img-fluid"
-                    />
-                  </span>
                   5.0
-                  <span class="text-muted"
-                    >({{ doctorReviews.length }} Reseñas)</span
-                  >
-                </p>
-                <ul class="list-group list-group-flush">
+                </span>
+                <span class="service-tab-card__reviews"
+                  >({{ doctorReviews.length }} Reseñas)</span
+                >
+              </p>
+              <div class="service-tab-card__services-wrapper">
+                <p class="service-tab-card__services-title">Servicios:</p>
+                <ul class="service-tab-card__services">
                   <li
-                    class="list-group-item"
+                    class="service-tab-card__services-item"
                     v-for="service in pkg.services_offer.ASSESSMENT_DETAILS"
                     :key="service"
                   >
-                    <span class="icon">
+                    <div class="service-tab-card__services-icon-wrapper">
                       <img
                         src="@/src/assets/check.svg"
                         alt="Incluido"
-                        class="img-fluid"
+                        class="service-tab-card__services-icon"
                       />
-                    </span>
-                    {{ getAssesmentLabel(service) }}
+                    </div>
+                    <p class="service-tab-card__services-text">
+                      {{ getAssesmentLabel(service) }}
+                    </p>
                   </li>
                 </ul>
-                <p class="text-muted">Próxima Disponibilidad:</p>
-                <p class="card-text availability">
-                  <span class="availability-text">
+              </div>
+
+              <div class="service-tab-card__availability-wrapper">
+                <p class="service-tab-card__availability-title">
+                  Próxima Disponibilidad:
+                </p>
+                <p class="service-tab-card__availability-content">
+                  <span class="service-tab-card__availability-text">
                     <span class="icon">
-                      <img
-                        src="@/src/assets/calendar.svg"
-                        alt="Fecha"
-                        class="img-fluid"
-                      />
+                      <svg
+                        width="15"
+                        height="16"
+                        viewBox="0 0 15 16"
+                        fill="none"
+                        class="service-tab-card__availability-icon"
+                        xmlns="http://www.w3.org/2000/svg"
+                      >
+                        <path
+                          d="M4.07143 5.1875H10.875M3.60714 1.4375V2.56264M11.25 1.4375V2.5625M13.5 5.5625L13.5 11.5626C13.5 13.2194 12.1569 14.5626 10.5 14.5626H4.5C2.84315 14.5626 1.5 13.2194 1.5 11.5626V5.5625C1.5 3.90565 2.84315 2.5625 4.5 2.5625H10.5C12.1569 2.5625 13.5 3.90565 13.5 5.5625Z"
+                          stroke="#3541B4"
+                          stroke-width="1.5"
+                          stroke-linecap="round"
+                          stroke-linejoin="round"
+                        />
+                      </svg>
                     </span>
                     {{ doctor.date_availability }}
                   </span>
-                  <span class="time-text">
+                  <span class="service-tab-card__availability-text">
                     <span class="icon">
-                      <img
-                        src="@/src/assets/clock.svg"
-                        alt="Hora"
-                        class="img-fluid"
-                      />
+                      <svg
+                        width="15"
+                        height="16"
+                        viewBox="0 0 15 16"
+                        fill="none"
+                        xmlns="http://www.w3.org/2000/svg"
+                        class="service-tab-card__availability-icon"
+                      >
+                        <path
+                          d="M7.5 4.25V8L10 9.25M13.75 8C13.75 11.4518 10.9518 14.25 7.5 14.25C4.04822 14.25 1.25 11.4518 1.25 8C1.25 4.54822 4.04822 1.75 7.5 1.75C10.9518 1.75 13.75 4.54822 13.75 8Z"
+                          stroke="#3541B4"
+                          stroke-width="1.5"
+                          stroke-linecap="round"
+                          stroke-linejoin="round"
+                        />
+                      </svg>
                     </span>
                     {{ doctor.hour_availability }}
                   </span>
                 </p>
-                <p class="card-text" v-if="pkg.discount">
-                  Costo Cita de Valoracion ₡18000
-                </p>
-                <button
-                  class="btn btn-outline-primary"
-                  @click="selectPackage(pkg)"
-                >
-                  Cita de valoración
-                </button>
               </div>
+
+              <button
+                class="service-tab-card__assessment-appointment-button"
+                @click="selectPackage(pkg)"
+              >
+                Cita de valoración
+              </button>
             </div>
           </div>
         </div>
@@ -627,22 +667,20 @@ export default {
       </div>
     </div>
 
-    <div v-if="tab === 2">
-      <div class="card mb-4 rounded-4">
-        <div class="card-body">
+    <div v-if="tab === 2" class="availability-tab">
+      <div class="availability-tab__header">
+        <h3 class="availability-tab__title">Agenda de disponibilidad</h3>
+      </div>
+      <div class="availability-tab-card">
+        <div class="availability-tab-card__content">
           <!-- Date Selection -->
-          <div class="mb-4">
+          <div class="availability-tab-card__date-selection">
             <div class="d-flex justify-content-between align-items-center">
-              <h4 class="h6 fw-semibold mb-3">Seleccione una fecha</h4>
+              <h4 class="availability-tab-card__title">Seleccione una fecha</h4>
               <div
                 class="calendar-container badge rounded-5 bg-primary text-primary p-2"
                 style="--bs-bg-opacity: 0.07"
               >
-                <img
-                  src="@/src/assets/calendar.svg"
-                  alt="Busca centro medico"
-                  class="img-fluid text-primary"
-                />
                 <div class="custom-select-wrapper">
                   <select
                     v-model="selectedMonth"
@@ -662,6 +700,12 @@ export default {
                     </option>
                   </select>
                 </div>
+
+                <img
+                  src="@/src/assets/calendar.svg"
+                  alt="Busca centro medico"
+                  class="img-fluid text-primary"
+                />
               </div>
             </div>
 
@@ -712,53 +756,51 @@ export default {
           <div v-else class="text-muted mt-4">
             Por favor seleccione una fecha para ver los horarios disponibles
           </div>
-
-          <!-- Reservation Button -->
-          <div class="row mt-4">
-            <div class="col-12 d-flex justify-content-end">
-              <button
-                class="btn btn-primary"
-                :disabled="!selectedHour"
-                @click="reserveAppointment()"
-              >
-                Reservar Cita de valoración
-              </button>
-            </div>
-          </div>
         </div>
+      </div>
+
+      <!-- Reservation Button -->
+      <div class="availability-tab__reservation-button-wrapper">
+        <button
+          class="availability-tab__reserve-button"
+          :disabled="!selectedHour"
+          @click="reserveAppointment()"
+        >
+          Reservar Cita de valoración
+        </button>
       </div>
     </div>
 
     <!-- Ubicación Tab -->
     <div v-if="tab === 3">
-      <div class="row gap-2">
-        <div class="col-md-3">
-          <p class="fw-semibold">Encuentranos Facilmente</p>
-          <p class="d-flex">
-            <span class="fs-4 text-success me-2">
+      <div class="location-tab">
+        <div class="location-tab__info">
+          <p class="location-tab__title">Encuentranos Facilmente</p>
+          <p class="location-tab__address">
+            <span class="location-tab__icon">
               <AtomsIconsMapPointerIcon />
             </span>
-            <span class="fw-light">
+            <span class="location-tab__address-text">
               {{ doctor.address }}, {{ doctor.city_name }},
               {{ doctor.country_iso_code }}
             </span>
           </p>
-          <div>
+          <div class="location-tab__contact">
             <a
               :href="`tel:${doctor.phone_number}`"
-              class="btn btn-info rounded-4 text-white me-2 py-1 px-2"
+              class="contact-button contact-button--phone"
             >
-              <span class="fs-5"><AtomsIconsPhoneIcon /></span>
+              <span><AtomsIconsPhoneIcon /></span>
             </a>
             <a
               :href="`mailto:${doctor.email}`"
-              class="btn btn-info rounded-4 text-white py-1 px-2"
+              class="contact-button contact-button--email"
             >
-              <span class="fs-5"><AtomsIconsMailIcon /></span>
+              <span><AtomsIconsMailIcon /></span>
             </a>
           </div>
         </div>
-        <div class="col">
+        <div class="location-tab__map">
           <AtomsMapaInteractivo
             :latitude="doctor.latitude"
             :longitude="doctor.longitude"
@@ -844,33 +886,25 @@ export default {
     </div>
 
     <!-- Perfil Tab -->
-    <div v-if="tab === 5">
-      <div class="row">
-        <div class="col-12">
-          <h5 class="fw-bold">Descripción</h5>
-          <p class="text-muted">{{ doctor.description }}</p>
-        </div>
+    <div v-if="tab === 5" class="profile-tab">
+      <div class="profile-section">
+        <h5 class="profile-section__title">Descripción</h5>
+        <p class="profile-section__content">{{ doctor.description }}</p>
       </div>
 
-      <div class="row" v-if="doctor.our_history">
-        <div class="col-12">
-          <h5 class="fw-bold">Nuestra historia</h5>
-          <p class="text-muted">{{ doctor.our_history }}</p>
-        </div>
+      <div class="profile-section" v-if="doctor.our_history">
+        <h5 class="profile-section__title">Nuestra historia</h5>
+        <p class="profile-section__content">{{ doctor.our_history }}</p>
       </div>
 
-      <div class="row" v-if="doctor.mission">
-        <div class="col-12">
-          <h5 class="fw-bold">Misión</h5>
-          <p class="text-muted">{{ doctor.mission }}</p>
-        </div>
+      <div class="profile-section" v-if="doctor.mission">
+        <h5 class="profile-section__title">Misión</h5>
+        <p class="profile-section__content">{{ doctor.mission }}</p>
       </div>
 
-      <div class="row" v-if="doctor.vision">
-        <div class="col-12">
-          <h5 class="fw-bold">Visión</h5>
-          <p class="text-muted">{{ doctor.vision }}</p>
-        </div>
+      <div class="profile-section" v-if="doctor.vision">
+        <h5 class="profile-section__title">Visión</h5>
+        <p class="profile-section__content">{{ doctor.vision }}</p>
       </div>
     </div>
   </section>
@@ -962,14 +996,523 @@ export default {
   />
 </template>
 
-<style scoped>
+<style lang="scss" scoped>
+.tabs-container {
+  display: flex;
+  justify-content: space-between;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  overflow-x: auto;
+
+  -webkit-overflow-scrolling: touch;
+
+  @include respond-to-max(sm) {
+    gap: $spacing-xs;
+    padding: 0 $spacing-sm;
+  }
+
+  &::-webkit-scrollbar {
+    display: none;
+  }
+
+  scrollbar-width: none;
+}
+
+.tab-item {
+  font-family: $font-family-main;
+  font-weight: 500;
+  font-size: 14px;
+  line-height: 20px;
+  text-align: center;
+  flex-grow: 1;
+  min-width: fit-content;
+
+  @include respond-to-max(sm) {
+    flex: 0 0 auto;
+    min-width: 80px;
+  }
+
+  @include respond-to-max(md) {
+    font-size: 12px;
+  }
+
+  &__link {
+    @include button-base;
+    width: 100%;
+    display: block;
+    border-radius: 0;
+    border-bottom: 3px solid #e1e4ed;
+    color: #6d758f;
+    padding: 15px 18px;
+
+    @include respond-to-max(sm) {
+      padding: $spacing-sm $spacing-xs;
+      gap: 2px;
+    }
+
+    @include respond-to-max(md) {
+      padding: $spacing-sm;
+    }
+  }
+
+  &__link--active {
+    color: #0cadbb;
+    font-weight: 600;
+    border-bottom-color: #0cadbb;
+  }
+
+  &__icon {
+    font-size: 18px;
+
+    @include respond-to-max(sm) {
+      font-size: 14px;
+    }
+  }
+
+  &__text {
+    white-space: nowrap;
+
+    @include respond-to-max(sm) {
+      font-size: 10px;
+    }
+  }
+}
+
+.service-tab {
+  padding: 20px 0px;
+
+  &__title {
+    @include label-base;
+    font-weight: 400;
+    font-size: 14px;
+    line-height: 24px;
+    color: #19213d;
+  }
+
+  &__badges-wrapper {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin: 10px 0;
+
+    @include respond-to-max(sm) {
+      gap: $spacing-xs;
+    }
+  }
+
+  &__badge {
+    @include button-base;
+    border-radius: 10px;
+    padding: 10px 20px;
+    border-width: 1px;
+    font-weight: 400;
+    color: #6d758f;
+    background-color: #f8faff;
+
+    @include respond-to-max(sm) {
+      padding: $spacing-xs $spacing-sm;
+      font-size: 12px;
+    }
+  }
+
+  &__badge--active {
+    color: #0cadbb;
+    background-color: #e7f7f8;
+    border: 1px solid #0cadbb;
+  }
+
+  &__procedures-wrapper {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+
+    @include respond-to-max(sm) {
+      gap: $spacing-xs;
+    }
+  }
+
+  &__procedure-badge {
+    @include button-base;
+    border-radius: 16px;
+    padding: 2px 8px;
+    border-width: 1px;
+    font-weight: 400;
+    font-size: 12px;
+    color: #3541b4;
+    background-color: #ebecf7;
+
+    @include respond-to-max(sm) {
+      padding: $spacing-xs $spacing-sm;
+      font-size: 12px;
+    }
+
+    &--active {
+      color: #ffffff;
+      background-color: #3541b4;
+      border: 1px solid #3541b4;
+    }
+  }
+
+  &__packages {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 20px;
+
+    @include respond-to-max(sm) {
+      grid-template-columns: 1fr;
+      gap: $spacing-md;
+    }
+  }
+
+  &__packages-title {
+    @include label-base;
+    font-weight: 400;
+    font-size: 14px;
+    line-height: 24px;
+    color: #6d758f;
+  }
+
+  .service-tab-card {
+    width: 100%;
+    max-width: 256px;
+    height: 100%;
+    border-radius: 20px;
+    padding-bottom: 15px;
+    border-width: 1px;
+    background-color: #ffffff;
+    border: 1px solid #f1f3f7;
+    box-shadow: 0px 2px 8px 0px #00000014;
+    overflow: hidden;
+
+    @include respond-to-max(sm) {
+      max-width: 100%;
+    }
+
+    &__wrapper {
+      background-color: #fff;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      height: 100%;
+    }
+
+    &__header {
+      @include label-base;
+      font-weight: 600;
+      font-size: 16px;
+      line-height: 22px;
+      text-transform: uppercase;
+      width: 100%;
+      padding: 20px;
+      color: #19213d;
+      background: linear-gradient(
+        187.59deg,
+        #f8faff 65.03%,
+        rgba(248, 250, 255, 0.1) 112.13%
+      );
+
+      @include respond-to-max(sm) {
+        padding: $spacing-md;
+        font-size: 14px;
+      }
+    }
+
+    &__body {
+      padding: 0px 20px;
+      flex-grow: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+
+      @include respond-to-max(sm) {
+        padding: 0 $spacing-md;
+      }
+    }
+
+    &__price {
+      @include label-base;
+      font-weight: 600;
+      font-size: 18px;
+      line-height: 20px;
+      color: #19213d;
+      padding-top: 4px;
+      margin-bottom: 2px;
+    }
+
+    &__discount {
+      @include label-base;
+      font-weight: 500;
+      font-size: 12px;
+      line-height: 16px;
+      color: #6d758f;
+      padding-bottom: 4px;
+
+      span {
+        text-decoration: line-through;
+      }
+    }
+
+    &__rating-wrapper {
+      display: flex;
+      align-items: center;
+      gap: 3px;
+    }
+
+    &__rating {
+      display: flex;
+      align-items: center;
+      font-size: 14px;
+      color: #fdb022;
+
+      img {
+        width: 16px;
+        height: 16px;
+        color: #fdb022;
+      }
+    }
+
+    &__reviews {
+      font-size: 14px;
+      font-weight: 300;
+      color: #6d758f;
+    }
+
+    &__services-title {
+      @include label-base;
+      font-weight: 500;
+      font-size: 13px;
+      line-height: 24px;
+      color: #6d758f;
+      margin-bottom: 5px;
+    }
+
+    &__services {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    &__services-item {
+      display: flex;
+      align-items: center;
+      padding: 0;
+      margin: 0;
+    }
+
+    &__services-icon-wrapper {
+      width: 16px;
+      height: 16px;
+      display: flex;
+      align-items: center;
+      margin-right: 8px;
+    }
+
+    &__services-text {
+      @include label-base;
+      font-weight: 500;
+      font-size: 14px;
+      line-height: 20px;
+      color: #353e5c;
+    }
+
+    &__availability-wrapper {
+      display: flex;
+      flex-direction: column;
+      padding: 5px 0px;
+      gap: 5px;
+    }
+
+    &__availability-title {
+      @include label-base;
+      font-weight: 500;
+      font-size: 13px;
+      line-height: 24px;
+      color: #6d758f;
+    }
+
+    &__availability-icon {
+      width: 15px;
+      height: 15px;
+      color: #3541b4;
+    }
+
+    &__availability-content {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin: 0;
+    }
+
+    &__availability-text {
+      @include label-base;
+      font-weight: 500;
+      font-size: 14px;
+      line-height: 24px;
+      color: #353e5c;
+    }
+
+    &__assessment-appointment-button {
+      @include outline-button;
+      width: 100%;
+      box-shadow: 0px 1px 2px 0px #1018280d;
+    }
+  }
+}
+
+.location-tab {
+  margin-top: 20px;
+  display: grid;
+  grid-template-columns: 1fr 2fr;
+
+  &__info {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  &__title {
+    @include label-base;
+    font-weight: 600;
+    font-size: 16px;
+    line-height: 28.5px;
+    color: #19213d;
+  }
+
+  &__address {
+    display: flex;
+    align-items: center;
+    gap: 17px;
+  }
+
+  &__icon {
+    width: 15px;
+    height: 15px;
+    color: #0cadbb;
+  }
+
+  &__address-text {
+    @include label-base;
+    font-weight: 300;
+    font-size: 16px;
+    line-height: 21px;
+    color: #6d758f;
+  }
+
+  &__contact {
+    display: flex;
+    gap: 15px;
+  }
+
+  .contact-button {
+    @include button-base;
+    width: 60px;
+    height: 60px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 9.04px 12.65px;
+    gap: 18.08px;
+    border-radius: 20px;
+    background-color: #0cadbb;
+    box-shadow: 0px 18.08px 28.92px 0px #14253f0f;
+    box-shadow: 0px 0px 1.81px 0px #0c1a4b1a;
+    color: #ffffff;
+
+    svg {
+      width: 30px;
+      height: 30px;
+    }
+  }
+
+  &__map {
+    width: 100%;
+    height: 100%;
+    position: relative;
+    border-radius: 20px;
+    overflow: hidden;
+  }
+}
+
+.profile-tab {
+  padding: 20px 0px;
+
+  .profile-section {
+    &__title {
+      @include label-base;
+      font-weight: 600;
+      font-size: 16px;
+      line-height: 24px;
+      color: #19213d;
+    }
+
+    &__content {
+      @include label-base;
+      font-weight: 600;
+      font-size: 16px;
+      line-height: 24px;
+      color: #6d758f;
+      padding: 15px;
+    }
+  }
+}
+
+.availability-tab {
+  padding: 20px 0px;
+
+  &__header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding-left: 15px;
+  }
+
+  &__title {
+    @include label-base;
+    font-weight: 600;
+    font-size: 16px;
+    line-height: 20px;
+    color: #19213d;
+  }
+
+  .availability-tab-card {
+    gap: 17px;
+    border-radius: 15px;
+    padding: 15px;
+    background-color: #f8faff;
+    box-shadow: 0px 1px 4px 0px #19213d14;
+    margin-top: 22px;
+
+    &__title {
+      @include label-base;
+      font-weight: 400;
+      font-size: 16px;
+      line-height: 20px;
+      color: #19213d;
+    }
+
+    &__date-selection {
+      margin: 0;
+    }
+  }
+
+  &__reservation-button-wrapper {
+    display: flex;
+    justify-content: flex-end;
+  }
+
+  &__reserve-button {
+    @include primary-button;
+    margin-top: 20px;
+  }
+}
+
 .day-container {
   display: flex;
   /* margin-top: 20px; */
-}
-
-.nav-link.info {
-  color: #0cadbb;
 }
 
 .day {
