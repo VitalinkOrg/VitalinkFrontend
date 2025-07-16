@@ -51,6 +51,14 @@
           class="service-tab-card__wrapper"
           :class="{ selected: pkg.is_king }"
         >
+          <!-- Leyenda especial para Cita de Valoración -->
+          <div
+            v-if="pkg.product.name === 'Cita de Valoración'"
+            class="service-tab-card__legend"
+          >
+            Primero vamos a valorarte
+          </div>
+
           <div class="service-tab-card__header">
             {{ pkg.product.name }}
             <span v-if="pkg.is_king">
@@ -61,15 +69,27 @@
               />
             </span>
           </div>
+
           <div class="service-tab-card__body">
             <h5 class="service-tab-card__price">₡{{ getPackagePrice(pkg) }}</h5>
+
+            <!-- Disclaimer especial para Cita de Valoración -->
+            <p
+              v-if="pkg.product.name === 'Cita de Valoración'"
+              class="service-tab-card__payment-disclaimer"
+            >
+              Podes pagar el día de tu cita
+            </p>
+
             <p class="service-tab-card__discount" v-if="pkg.discount">
               Precio original
               <span>₡{{ pkg.product.value1 }}</span>
             </p>
+
             <small class="service-tab-card__disclaimer">
               Los precios pueden variar según el diagnóstico del médico.
             </small>
+
             <p class="service-tab-card__rating-wrapper">
               <span class="service-tab-card__rating">
                 <img
@@ -83,7 +103,64 @@
                 >({{ doctorReviews.length }} Reseñas)</span
               >
             </p>
-            <div class="service-tab-card__services-wrapper">
+
+            <!-- Disponibilidad para Cita de Valoración -->
+            <div
+              v-if="pkg.product.name === 'Cita de Valoración'"
+              class="service-tab-card__availability"
+            >
+              <p class="service-tab-card__availability-title">
+                Próxima Disponibilidad:
+              </p>
+              <p class="service-tab-card__availability-info">
+                <span class="service-tab-card__availability-date">
+                  <span class="service-tab-card__availability-icon">
+                    <svg
+                      width="15"
+                      height="16"
+                      viewBox="0 0 15 16"
+                      fill="none"
+                      xmlns="http://www.w3.org/2000/svg"
+                    >
+                      <path
+                        d="M4.07143 5.1875H10.875M3.60714 1.4375V2.56264M11.25 1.4375V2.5625M13.5 5.5625L13.5 11.5626C13.5 13.2194 12.1569 14.5626 10.5 14.5626H4.5C2.84315 14.5626 1.5 13.2194 1.5 11.5626V5.5625C1.5 3.90565 2.84315 2.5625 4.5 2.5625H10.5C12.1569 2.5625 13.5 3.90565 13.5 5.5625Z"
+                        stroke="#3541B4"
+                        stroke-width="1.5"
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                      />
+                    </svg>
+                  </span>
+                  {{ doctor.date_availability }}
+                </span>
+                <span class="service-tab-card__availability-time">
+                  <span class="service-tab-card__availability-icon">
+                    <svg
+                      width="15"
+                      height="16"
+                      viewBox="0 0 15 16"
+                      fill="none"
+                      xmlns="http://www.w3.org/2000/svg"
+                    >
+                      <path
+                        d="M7.5 4.25V8L10 9.25M13.75 8C13.75 11.4518 10.9518 14.25 7.5 14.25C4.04822 14.25 1.25 11.4518 1.25 8C1.25 4.54822 4.04822 1.75 7.5 1.75C10.9518 1.75 13.75 4.54822 13.75 8Z"
+                        stroke="#3541B4"
+                        stroke-width="1.5"
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                      />
+                    </svg>
+                  </span>
+                  {{ doctor.hour_availability }}
+                </span>
+              </p>
+            </div>
+
+            <!-- Servicios (solo para otros paquetes) -->
+            <div
+              v-if="pkg.product.name !== 'Cita de Valoración'"
+              class="service-tab-card__services-wrapper"
+            >
               <p class="service-tab-card__services-title">Servicios:</p>
               <ul class="service-tab-card__services">
                 <li
@@ -105,6 +182,7 @@
               </ul>
             </div>
 
+            <!-- Botón solo para Cita de Valoración -->
             <button
               v-if="pkg.product.name === 'Cita de Valoración'"
               class="service-tab-card__assessment-appointment-button"
@@ -170,18 +248,7 @@ interface Review {
 }
 
 defineProps<{
-  doctor: {
-    id: number;
-    name: string;
-    locations: { name: string }[];
-    availabilities: any[];
-    reviews?: Review[];
-    review_details_summary?: any[];
-    services: {
-      medical_specialty: MedicalSpecialty;
-      procedures: Procedure[];
-    }[];
-  };
+  doctor: any;
   selectSpecialty: (specialtyCode: string, specialtyId: number) => void;
   selectedSpecialty: string | null;
   filteredProcedures: Procedure[];
@@ -372,6 +439,23 @@ defineProps<{
       }
     }
 
+    &__legend {
+      @include label-base;
+      font-weight: 500;
+      font-size: 12px;
+      line-height: 16px;
+      color: #0cadbb;
+      text-align: center;
+      padding: 8px 20px;
+      background-color: #f0feff;
+      border-bottom: 1px solid #e7f7f8;
+
+      @include respond-to-max(sm) {
+        padding: 6px $spacing-md;
+        font-size: 11px;
+      }
+    }
+
     &__disclaimer {
       @include label-base;
       font-weight: 500;
@@ -379,6 +463,61 @@ defineProps<{
       line-height: 16px;
       color: #6d758f;
       padding-bottom: 4px;
+    }
+
+    &__payment-disclaimer {
+      @include label-base;
+      font-weight: 500;
+      font-size: 12px;
+      line-height: 16px;
+      color: #6d758f;
+      font-style: italic;
+      margin-bottom: 8px;
+    }
+
+    &__availability {
+      &-title {
+        @include label-base;
+        font-weight: 500;
+        font-size: 13px;
+        line-height: 24px;
+        color: #6d758f;
+        margin-bottom: 5px;
+      }
+
+      &-info {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+
+        @include respond-to-max(sm) {
+          flex-direction: column;
+          gap: 4px;
+          align-items: flex-start;
+        }
+      }
+
+      &-date,
+      &-time {
+        @include label-base;
+        display: flex;
+        align-items: center;
+        gap: 4px;
+        font-weight: 500;
+        font-size: 14px;
+        line-height: 24px;
+        color: #353e5c;
+      }
+
+      &-icon {
+        display: flex;
+        align-items: center;
+
+        svg {
+          width: 15px;
+          height: 15px;
+        }
+      }
     }
 
     &__rating-wrapper {
