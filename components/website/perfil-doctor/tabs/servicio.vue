@@ -133,19 +133,66 @@
 </template>
 
 <script setup lang="ts">
+interface MedicalSpecialty {
+  code: string;
+  id: number;
+  name: string;
+}
+
+interface Procedure {
+  procedure: {
+    code: string;
+    id: number;
+    name: string;
+  };
+  packages: Package[];
+}
+
+interface Package {
+  id: number;
+  product: {
+    name: string;
+    value1: string;
+  };
+  discount: number;
+  services_offer: {
+    ASSESSMENT_DETAILS: string[];
+  };
+  is_king: boolean;
+}
+
+interface Review {
+  first_name: string;
+  last_name: string;
+  message: string;
+  pacient_type: string;
+  score: number;
+}
+
 defineProps<{
-  doctor: any;
-  selectSpecialty: any;
-  selectedSpecialty: any;
-  filteredProcedures: any;
-  selectedProcedure: any;
-  filteredPackages: any;
-  selectPackage: any;
-  getAssesmentLabel: any;
-  doctorReviews: any;
-  getPackagePrice: any;
-  selectProcedure: any;
-  specialties: any;
+  doctor: {
+    id: number;
+    name: string;
+    locations: { name: string }[];
+    availabilities: any[];
+    reviews?: Review[];
+    review_details_summary?: any[];
+    services: {
+      medical_specialty: MedicalSpecialty;
+      procedures: Procedure[];
+    }[];
+  };
+  selectSpecialty: (specialtyCode: string, specialtyId: number) => void;
+  selectedSpecialty: string | null;
+  filteredProcedures: Procedure[];
+  selectedProcedure: string | null;
+  filteredPackages: Package[];
+  selectPackage: (pkg: Package) => void;
+  getAssesmentLabel: (code: string) => string;
+  doctorReviews: Review[];
+  getPackagePrice: (pkg: Package) => number;
+  selectProcedure: (procedureCode: string, procedureId: number) => void;
+  specialties: MedicalSpecialty[];
 }>();
 </script>
 
