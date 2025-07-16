@@ -149,7 +149,7 @@ const doctor = ref({
                   información relevante y reserva citas fácilmente para tu
                   atención médica personalizada.
                 </p>
-                <WebsitePerfilDoctorNav :doctor="doctorData" />
+                <WebsitePerfilDoctorTabs :doctor="doctorData" />
               </div>
             </div>
           </div>
