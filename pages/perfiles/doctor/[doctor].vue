@@ -1,8 +1,4 @@
 <script setup>
-import BarraLateralDoctor from "@/components/website/perfil-doctor/barra-lateral-doctor.vue";
-import CarruselFotosAdicionales from "@/components/website/perfil-doctor/carrusel-fotos-adicionales.vue";
-import PantallaCarga from "@/components/website/perfil-doctor/pantalla-carga.vue";
-
 definePageMeta({
   middleware: ["auth-pacientes"],
 });
@@ -130,11 +126,11 @@ const doctor = ref({
         </div>
 
         <!-- Loading -->
-        <PantallaCarga v-if="pending" />
+        <WebsitePerfilDoctorPantallaCarga v-if="pending" />
 
         <!-- Main content -->
         <div v-else class="content-wrapper">
-          <BarraLateralDoctor
+          <WebsitePerfilDoctorBarraLateralDoctor
             :doctor-data="doctorData"
             :doctor="doctor"
             @open-modal="openModal"
@@ -157,7 +153,10 @@ const doctor = ref({
       </div>
 
       <!-- Image Carousel -->
-      <CarruselFotosAdicionales :is-open="isModalOpen" @close="closeModal" />
+      <WebsitePerfilDoctorCarruselFotosAdicionales
+        :is-open="isModalOpen"
+        @close="closeModal"
+      />
     </main>
   </NuxtLayout>
 </template>
