@@ -7,8 +7,8 @@
         <div class="spinner-ring"></div>
       </div>
       <div class="loading-content">
-        <h3 class="loading-title">Cargando perfil médico</h3>
-        <p class="loading-description">Obteniendo información del doctor...</p>
+        <h3 class="loading-title">Cargando datos</h3>
+        <p class="loading-description">Obteniendo información...</p>
       </div>
     </div>
   </div>
