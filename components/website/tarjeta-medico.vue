@@ -143,14 +143,14 @@ const props = defineProps({
   },
 });
 
-const emit = defineEmits(["toggle-favorite", "get-doctor-data"]);
+const emit = defineEmits(["toggle-favorite", "show-packages"]);
 
 const toggleFavorite = () => {
   emit("toggle-favorite", props.medico.id);
 };
 
 const getDoctorData = () => {
-  emit("get-doctor-data", props.medico);
+  emit("show-packages", props.medico);
 };
 </script>
 
