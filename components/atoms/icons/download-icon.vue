@@ -1,3 +1,3 @@
 <template>
-  <Icon name="material-symbols:download-rounded" />
+  <Icon name="lucide:download" />
 </template>

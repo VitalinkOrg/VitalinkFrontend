@@ -1,3 +1,3 @@
 <template>
-  <Icon name="ph:magnifying-glass-bold" />
+  <Icon name="lucide:search" />
 </template>
