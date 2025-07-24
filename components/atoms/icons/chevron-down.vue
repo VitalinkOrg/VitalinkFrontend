@@ -1,3 +1,3 @@
 <template>
-  <Icon name="charm:chevron-down" />
+  <Icon name="lucide:chevron-down" />
 </template>

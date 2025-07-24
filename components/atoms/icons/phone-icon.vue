@@ -1,3 +1,3 @@
 <template>
-  <Icon name="solar:phone-rounded-outline" />
+  <Icon name="lucide:phone" />
 </template>

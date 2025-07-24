@@ -106,21 +106,18 @@ export default {
 </script>
 
 <template>
-  <div>
-    <div class="card shadow border-0 rounded-4">
-      <div class="card-body">
-        <form
-          class="row align-items-end justify-content-between"
-          @submit.prevent="searchResults"
-        >
-          <!-- Specialties Dropdown - simplified since we don't need loading states -->
-          <div class="col-md-5 form-group">
-            <label for="especialidad" class="form-label text-uppercase"
+  <div class="search-form">
+    <div class="search-form__card">
+      <div class="search-form__body">
+        <form class="search-form__form" @submit.prevent="searchResults">
+          <!-- Specialties Dropdown -->
+          <div class="search-form__group">
+            <label for="especialidad" class="search-form__label"
               >Especialidades</label
             >
             <select
               id="especialidad"
-              class="form-select"
+              class="search-form__select"
               v-model="selectedSpecialty"
             >
               <option value="" disabled selected>
@@ -137,14 +134,14 @@ export default {
           </div>
 
           <!-- Procedures Dropdown -->
-          <div class="col-md-5 form-group position-relative">
-            <label for="procedimiento" class="form-label text-uppercase"
+          <div class="search-form__group">
+            <label for="procedimiento" class="search-form__label"
               >Procedimiento</label
             >
-            <div class="input-wrapper">
+            <div class="search-form__input-icon-wrapper">
               <select
                 id="procedimiento"
-                class="form-select"
+                class="search-form__select search-form__select--with-icon"
                 v-model="filtersData.procedimiento"
                 :disabled="
                   loadingProcedures ||
@@ -153,11 +150,7 @@ export default {
                 "
               >
                 <option value="" disabled selected>
-                  {{
-                    selectedSpecialty
-                      ? "Seleccione un procedimiento"
-                      : "Primero seleccione una especialidad"
-                  }}
+                  Nombre del procedimiento
                 </option>
                 <option
                   v-for="procedure in filtersData.procedures"
@@ -169,8 +162,10 @@ export default {
               </select>
               <div
                 v-if="loadingProcedures || errorLoadingProcedures"
-                class="status-message"
-                :class="{ 'text-danger': errorLoadingProcedures }"
+                class="search-form__status-message"
+                :class="{
+                  'search-form__status-message--error': errorLoadingProcedures,
+                }"
               >
                 <span v-if="loadingProcedures">Cargando...</span>
                 <span v-else>Error al cargar</span>
@@ -178,32 +173,28 @@ export default {
             </div>
           </div>
 
-          <div class="form-group col-md-2">
-            <button type="submit" class="btn btn-info px-4 w-100">
-              <Icon name="fa6-solid:magnifying-glass" class="text-light" />
+          <div class="search-form__button-group">
+            <button type="submit" class="search-form__submit-button">
+              <Icon
+                name="fa6-solid:magnifying-glass"
+                size="18"
+                class="text-light"
+              />
             </button>
           </div>
         </form>
       </div>
     </div>
-    <div class="py-3 text-center">
-      <button
-        v-if="filtersData.entity"
-        class="btn rounded-5 bg-white border-secondary-subtle shadow-sm mx-1 fw-light"
-      >
+
+    <div class="search-form__filter-display">
+      <button v-if="filtersData.entity" class="search-form__filter-tag">
         Entidad:
         {{ filtersData.entity === "doctor" ? "Doctor" : "Hospital" }}
       </button>
-      <button
-        v-if="filtersData.min"
-        class="btn rounded-5 bg-white border-secondary-subtle shadow-sm mx-1 fw-light"
-      >
+      <button v-if="filtersData.min" class="search-form__filter-tag">
         Precio mínimo: {{ filtersData.min }}
       </button>
-      <button
-        v-if="filtersData.max"
-        class="btn rounded-5 bg-white border-secondary-subtle shadow-sm mx-1 fw-light"
-      >
+      <button v-if="filtersData.max" class="search-form__filter-tag">
         Precio máximo: {{ filtersData.max }}
       </button>
       <WebsiteMasFiltrosModal :filters="filtersData" />
@@ -211,27 +202,116 @@ export default {
   </div>
 </template>
 
-<style scoped>
-.input-wrapper {
-  position: relative;
-}
+<style lang="scss" scoped>
+.search-form {
+  width: 100%;
+  max-width: 776px;
+  gap: 20px;
+  border-radius: 15px;
+  padding: 20px;
+  margin: 0 auto;
+  background: #ffffff;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  box-shadow: 0px 4px 26.8px 0px #00000017;
 
-.status-message {
-  position: absolute;
-  right: 10px;
-  top: 50%;
-  transform: translateY(-50%);
-  font-size: 0.8rem;
-  background: white;
-  padding: 0 5px;
-  color: #6c757d;
-}
+  @media (max-width: 768px) {
+    padding: 16px;
+    gap: 16px;
+  }
 
-.form-select {
-  padding-right: 90px;
-}
+  &__form {
+    display: flex;
+    align-items: flex-end;
+    gap: 20px;
+    width: 100%;
 
-.text-danger {
-  color: #dc3545 !important;
+    @media (max-width: 768px) {
+      flex-direction: column;
+      align-items: stretch;
+    }
+  }
+
+  &__body {
+    display: flex;
+    gap: 20px;
+    width: 100%;
+
+    @media (max-width: 768px) {
+      flex-direction: column;
+    }
+  }
+
+  &__group {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    width: 100%;
+  }
+
+  &__label {
+    @include label-base;
+    font-weight: 500;
+    font-size: 14px;
+    line-height: 20px;
+    color: #344054;
+  }
+
+  &__select {
+    @include input-base;
+    width: 100%;
+    font-weight: 400;
+    font-size: 16px;
+    line-height: 24px;
+    color: #667085;
+    padding-left: 0;
+  }
+
+  &__input-icon-wrapper {
+    position: relative;
+    width: 100%;
+  }
+
+  &__submit-button {
+    @include button-base;
+    width: 56px;
+    height: 56px;
+    gap: 8px;
+    opacity: 1;
+    border-radius: 8px;
+    padding: 16px;
+    border-width: 1px;
+    box-shadow: 0px 1px 2px 0px #1018280d;
+    background: #0cadbb;
+
+    &:hover {
+      background-color: darken(#0cadbb, 0.5);
+      border-color: darken(#0cadbb, 0.5);
+    }
+
+    @media (max-width: 768px) {
+      align-self: flex-end;
+    }
+  }
+
+  &__filter-display {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    justify-content: center;
+    width: 100%;
+  }
+
+  &__filter-tag {
+    background-color: #f2f4f7;
+    border: none;
+    color: #344054;
+    padding: 6px 12px;
+    border-radius: 999px;
+    font-size: 14px;
+    cursor: default;
+  }
 }
 </style>

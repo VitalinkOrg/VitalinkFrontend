@@ -1,5 +1,5 @@
 <template>
-  <NuxtLayout name="pacientes-autenticacion">
+  <NuxtLayout name="medicos-autenticacion">
     <!-- Formulario principal con rol de formulario -->
     <form
       @submit.prevent="login"
@@ -19,14 +19,14 @@
         <!-- Campo: Email o Cédula -->
         <div class="auth-field-group">
           <label for="email" class="auth-field-group__label"
-            >Nº de Cédula o Correo electrónico</label
+            >Correo electrónico</label
           >
           <input
             v-model="email"
             type="email"
             id="email"
             class="auth-field-group__input"
-            placeholder="Escribe tu número de cédula o correo electrónico"
+            placeholder="Correo electrónico"
             required
             aria-required="true"
             :aria-invalid="!!errorText"
@@ -91,7 +91,7 @@
           <p class="auth-already-account" id="register-link-label">
             <span>¿No tienes cuenta?</span>
             <NuxtLink
-              to="/pacientes/registro"
+              to="/medicos/registro"
               class="auth-login-link"
               aria-describedby="register-link-label"
             >
@@ -298,11 +298,11 @@ const getDoctorInfo = async (userId) => {
       @include link-base;
       font-weight: 600;
       text-decoration: none;
-      color: $color-primary;
+      color: #19213d;
 
       &:hover {
         text-decoration: underline;
-        color: darken($color-primary, 10%);
+        color: darken(#19213d, 10%);
       }
     }
   }

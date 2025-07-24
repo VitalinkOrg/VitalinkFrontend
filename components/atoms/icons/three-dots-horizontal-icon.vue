@@ -1,3 +1,3 @@
 <template>
-  <Icon name="humbleicons:dots-horizontal" />
+  <Icon name="lucide:ellipsis" />
 </template>

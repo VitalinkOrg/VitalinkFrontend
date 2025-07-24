@@ -1,8 +1,8 @@
 <script setup>
+import { useRefreshToken } from "#imports";
 import { jsPDF } from "jspdf";
 import "jspdf-autotable";
-import { ref, computed, watch } from "vue";
-import { useRefreshToken } from "#imports";
+import { computed, ref, watch } from "vue";
 
 definePageMeta({
   middleware: ["auth-doctors-hospitals"],
@@ -285,161 +285,170 @@ const setStatusFilter = (status) => {
   }
 };
 
+const tabFilters = [
+  { label: "Todas las citas", value: "ALL", aria: "all-appointments-tab" },
+  {
+    label: "Citas Concretadas",
+    value: "COMPLETED",
+    aria: "completed-appointments-tab",
+  },
+  {
+    label: "Citas Pendientes",
+    value: "PENDING",
+    aria: "pending-appointments-tab",
+  },
+  {
+    label: "Citas Canceladas",
+    value: "CANCELED",
+    aria: "canceled-appointments-tab",
+  },
+];
+
+const sortOptions = [
+  { label: "Fecha", value: "fecha" },
+  { label: "Nombre", value: "nombre" },
+];
+
+const statusOptions = [
+  "Todos",
+  "Pendiente",
+  "Valorado",
+  "Completada",
+  "Cancelada",
+];
+
 provide("refreshAppointments", refreshAppointments);
 </script>
 
 <template>
   <NuxtLayout name="medicos-dashboard">
-    <nav style='--bs-breadcrumb-divider: "/&quot' aria-label="breadcrumb">
-      <ol class="breadcrumb">
-        <li class="breadcrumb-item">
-          <NuxtLink href="/medicos/inicio" class="text-muted">Inicio</NuxtLink>
-        </li>
-        <li class="breadcrumb-item active fw-semibold" aria-current="page">
-          Citas
-        </li>
-      </ol>
-    </nav>
-    <p>
-      <span class="fw-medium fs-4">Seguimiento de Citas</span>
-    </p>
+    <header class="appointment-tracking__header">
+      <nav class="breadcrumb-nav" aria-label="Breadcrumb">
+        <ol class="breadcrumb-nav__list">
+          <li class="breadcrumb-nav__item">
+            <NuxtLink
+              href="/medicos/inicio"
+              class="breadcrumb-nav__link breadcrumb-nav__link--muted"
+            >
+              Inicio
+            </NuxtLink>
+          </li>
+          <li
+            class="breadcrumb-nav__item breadcrumb-nav__item--active"
+            aria-current="page"
+          >
+            <span class="breadcrumb-nav__text">Citas</span>
+          </li>
+        </ol>
+      </nav>
 
-    <div class="d-flex align-items-end justify-content-between mb-4">
-      <ul class="nav nav-underline d-flex flex-row w-100">
-        <li class="nav-item">
+      <h1 class="appointment-tracking__title">Seguimiento de Citas</h1>
+    </header>
+
+    <nav class="appointments-tabs" aria-label="Filtros de citas médicas">
+      <ul class="appointments-tabs__list" role="tablist">
+        <li
+          class="appointments-tabs__item"
+          role="presentation"
+          v-for="(filter, index) in tabFilters"
+          :key="filter.value"
+        >
           <button
-            class="nav-link"
-            :class="tab === 1 ? 'active text-primary' : 'text-muted'"
-            @click="applyFilter('ALL', 1)"
+            class="appointments-tabs__button"
+            role="tab"
+            :aria-selected="tab === index + 1"
+            :aria-controls="filter.aria"
+            :class="{ 'appointments-tabs__button--active': tab === index + 1 }"
+            @click="applyFilter(filter.value, index + 1)"
+            @keydown.enter="applyFilter(filter.value, index + 1)"
+            @keydown.space.prevent="applyFilter(filter.value, index + 1)"
           >
-            Todas las citas
-          </button>
-        </li>
-        <li class="nav-item">
-          <button
-            class="nav-link"
-            :class="tab === 2 ? 'active text-primary' : 'text-muted'"
-            @click="applyFilter('COMPLETED', 2)"
-          >
-            Citas Concretadas
-          </button>
-        </li>
-        <li class="nav-item">
-          <button
-            class="nav-link"
-            :class="tab === 3 ? 'active text-primary' : 'text-muted'"
-            @click="applyFilter('PENDING', 3)"
-          >
-            Citas Pendientes
-          </button>
-        </li>
-        <li class="nav-item">
-          <button
-            class="nav-link"
-            :class="tab === 4 ? 'active text-primary' : 'text-muted'"
-            @click="applyFilter('CANCELED', 4)"
-          >
-            Citas Canceladas
+            <span class="visually-hidden">Mostrar </span>{{ filter.label
+            }}<span class="visually-hidden" v-if="tab === index + 1"
+              >, pestaña activa</span
+            >
           </button>
         </li>
       </ul>
-    </div>
+    </nav>
 
-    <div class="row mb-4">
-      <div class="col-auto">
-        <div class="input-group shadow-sm">
-          <span
-            class="input-group-text bg-transparent border-end-0 rounded-start-3"
-            id="basic-addon1"
-          >
-            <AtomsIconsSearchIcon />
-          </span>
+    <section class="appointments-toolbar">
+      <form class="appointments-toolbar__search" role="search" @submit.prevent>
+        <div class="search-input">
+          <label for="search-field" class="search-input__icon" id="search-icon">
+            <AtomsIconsSearchIcon
+              size="20"
+              aria-hidden="true"
+              focusable="false"
+            />
+            <span class="visually-hidden">Buscar</span>
+          </label>
           <input
             type="text"
-            class="form-control border-start-0 rounded-end-3"
+            id="search-field"
+            class="search-input__field"
             placeholder="Buscar"
             aria-label="Buscar"
-            aria-describedby="basic-addon1"
+            aria-describedby="search-icon"
           />
         </div>
-      </div>
-      <div class="col-auto ms-auto d-flex">
+      </form>
+
+      <div class="appointments-toolbar__actions">
         <button
-          class="btn btn-outline-dark text-nowrap me-2"
+          type="button"
+          class="button button--outline"
           @click="downloadAllAppointments"
         >
-          <AtomsIconsDownloadIcon /> Descargar
+          <AtomsIconsDownloadIcon
+            size="20"
+            aria-hidden="true"
+            focusable="false"
+          />
+          Descargar
         </button>
-        <div class="dropdown me-2">
-          <button
-            class="btn btn-outline-dark dropdown-toggle"
-            type="button"
-            data-bs-toggle="dropdown"
-            aria-expanded="false"
-          >
-            Ordenar por
-          </button>
-          <ul class="dropdown-menu">
-            <li><a class="dropdown-item" href="#">Action</a></li>
-            <li><a class="dropdown-item" href="#">Another action</a></li>
-            <li><a class="dropdown-item" href="#">Something else here</a></li>
-          </ul>
-        </div>
-        <div class="dropdown">
-          <button
-            class="btn btn-outline-dark dropdown-toggle"
-            type="button"
-            data-bs-toggle="dropdown"
-            aria-expanded="false"
-          >
+
+        <WebsiteBaseDropdown>
+          <template #button>
+            Ordenar por <span class="icon-chevron-down" />
+          </template>
+          <template #menu>
+            <li v-for="option in sortOptions" :key="option.value">
+              <button
+                type="button"
+                role="menuitem"
+                class="dropdown__item"
+                @click="setSort(option.value)"
+              >
+                {{ option.label }}
+              </button>
+            </li>
+          </template>
+        </WebsiteBaseDropdown>
+
+        <WebsiteBaseDropdown>
+          <template #button>
             Estado de solicitud:
-            <span class="badge text-muted">{{ activeStatus }}</span>
-          </button>
-          <ul class="dropdown-menu">
-            <li>
-              <a
-                class="dropdown-item"
-                href="#"
-                @click="setStatusFilter('Todos')"
-                >Todos</a
+            <span class="badge">
+              {{ activeStatus }}
+              <AtomsIconsTimesXIcon />
+            </span>
+          </template>
+          <template #menu>
+            <li v-for="status in statusOptions" :key="status">
+              <button
+                type="button"
+                role="menuitem"
+                class="dropdown__item"
+                @click="setStatusFilter(status)"
               >
+                {{ status }}
+              </button>
             </li>
-            <li>
-              <a
-                class="dropdown-item"
-                href="#"
-                @click="setStatusFilter('Pendiente')"
-                >Pendiente</a
-              >
-            </li>
-            <li>
-              <a
-                class="dropdown-item"
-                href="#"
-                @click="setStatusFilter('Valorado')"
-                >Valorado</a
-              >
-            </li>
-            <li>
-              <a
-                class="dropdown-item"
-                href="#"
-                @click="setStatusFilter('Completada')"
-                >Confirmado</a
-              >
-            </li>
-            <li>
-              <a
-                class="dropdown-item"
-                href="#"
-                @click="setStatusFilter('Cancelada')"
-                >Cancelada</a
-              >
-            </li>
-          </ul>
-        </div>
+          </template>
+        </WebsiteBaseDropdown>
       </div>
-    </div>
+    </section>
 
     <div class="card">
       <MedicosCitasTable
@@ -449,3 +458,173 @@ provide("refreshAppointments", refreshAppointments);
     </div>
   </NuxtLayout>
 </template>
+
+<style lang="scss" scoped>
+.appointment-tracking {
+  &__header {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  &__title {
+    font-family: Montserrat, sans-serif;
+    font-weight: 600;
+    font-size: 20px;
+    line-height: 1.2;
+    color: #19213d;
+  }
+}
+
+.breadcrumb-nav {
+  display: flex;
+  align-items: center;
+  --breadcrumb-divider: "/";
+
+  &__list {
+    display: flex;
+    list-style: none;
+    padding: 0;
+    margin: 0;
+
+    li + li::before {
+      content: var(--breadcrumb-divider);
+      padding: 0 0.5rem;
+      color: #6c757d;
+    }
+  }
+
+  &__item {
+    font-size: 0.875rem;
+
+    &--active .breadcrumb-nav__text {
+      color: #6c757d;
+    }
+  }
+
+  &__link {
+    text-decoration: none;
+    color: inherit;
+
+    &--muted {
+      color: #6c757d;
+    }
+
+    &:hover {
+      text-decoration: underline;
+    }
+  }
+
+  &__text {
+    color: inherit;
+  }
+}
+
+.appointments-tabs {
+  margin-top: 24px;
+
+  &__list {
+    display: flex;
+    list-style: none;
+    padding: 0;
+    gap: 12px;
+    border-bottom: 2px solid #e1e4ed;
+  }
+
+  &__button {
+    width: 100%;
+    padding: 10px 0;
+    font-weight: 300;
+    font-size: 16px;
+    color: #6d758f;
+    background: none;
+    border: none;
+    cursor: pointer;
+    border-bottom: 2px solid transparent;
+
+    &--active {
+      font-weight: 600;
+      color: #3541b4;
+      border-bottom-color: #3541b4;
+    }
+  }
+}
+
+.appointments-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+
+  &__search {
+    display: flex;
+    align-items: center;
+  }
+
+  &__actions {
+    display: flex;
+    align-items: center;
+    margin-left: auto;
+    gap: 0.75rem;
+  }
+}
+
+.search-input {
+  position: relative;
+  display: flex;
+  align-items: center;
+
+  &__icon {
+    position: absolute;
+    left: 12px;
+    display: flex;
+    align-items: center;
+    color: #6c757d;
+    pointer-events: none;
+  }
+
+  &__field {
+    padding: 10px 14px 10px 40px;
+    font-weight: 300;
+    font-size: 16px;
+    color: #6d758f;
+    border-radius: 8px;
+    border: 1px solid #f1f3f7;
+    box-shadow: 0 1px 2px #1018280d;
+    background-color: #fff;
+    width: 100%;
+  }
+}
+
+.button--outline {
+  @include outline-button;
+  font-weight: 400;
+  font-size: 14px;
+  line-height: 20px;
+  color: #344054;
+}
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  border-radius: 16px;
+  padding: 2px 6px;
+  background-color: #f2f4f7;
+  font-weight: 500;
+  font-size: 12px;
+  line-height: 18px;
+  color: #344054;
+}
+
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  border: 0;
+}
+</style>

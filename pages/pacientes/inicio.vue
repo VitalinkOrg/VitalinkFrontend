@@ -5,8 +5,11 @@ definePageMeta({
 const config = useRuntimeConfig();
 const token = useCookie("token");
 const user_info = useCookie("user_info");
+const doctorData = ref(null);
+const loadingPackages = ref(false);
+const openPackagesModal = ref(false);
 
-console.log(user_info);
+console.log("USER INFO: ", user_info);
 
 const { data: specialties, pending: pendingSpecialties } = await useFetch(
   config.public.API_BASE_URL + "/udc/get_all?type=MEDICAL_SPECIALTY",
@@ -14,7 +17,7 @@ const { data: specialties, pending: pendingSpecialties } = await useFetch(
     headers: { Authorization: token.value },
     transform: (res) =>
       res.data.map((item) => ({ code: item.code, name: item.name })),
-    server: false, // Ensure this runs on client-side
+    server: false,
   }
 );
 
@@ -34,19 +37,56 @@ const { data: historial, pending: pendingHistorial } = await useFetch(
   }
 );
 
+const genderWelcome = computed(() => {
+  const gender = user_info.value?.gender;
+  if (!gender) return "Bienvenido/a";
+  if (gender.toLowerCase() === "male") return "Bienvenido";
+  if (gender.toLowerCase() === "female") return "Bienvenida";
+});
+
+const selectDoctor = async (doctor) => {
+  openPackagesModal.value = true;
+  try {
+    console.log({ id: doctor.id });
+    loadingPackages.value = true;
+    const { data, pending } = await useLazyFetch(
+      config.public.API_BASE_URL + "/supplier/get",
+      {
+        headers: { Authorization: token.value },
+        params: { id: doctor.id },
+        transform: (_doctor) => _doctor.data,
+      }
+    );
+
+    doctorData.value = data.value;
+    console.log("Doctor cargado:", doctorData.value);
+  } catch (error) {
+    console.error("Error obteniendo datos del doctor", error);
+  } finally {
+    loadingPackages.value = false;
+  }
+};
+
+const closePackagesModal = () => {
+  openPackagesModal.value = false;
+};
+
 console.log(historial);
 </script>
+
 <template>
   <NuxtLayout name="pacientes-dashboard">
     <div v-if="pendingUser"></div>
     <div v-else>
-      <header class="d-flex align-items-center">
-        <div class="container">
-          <h1 class="text-center fs-3 mb-4">
-            <span class="fw-semibold"> Bienvenida {{ user_info.name }} </span>
-            <span class="fw-light ms-1">
-              ¿Qué servicio médico estás buscando?
+      <header class="dashboard-header">
+        <div class="dashboard-header__container">
+          <h1 class="dashboard-header__title">
+            <span class="dashboard-header__highlight">
+              {{ genderWelcome }} {{ user_info.name }}
             </span>
+            <span class="dashboard-header__subtitle"
+              >¿Qué servicio médico estás buscando?</span
+            >
           </h1>
           <WebsiteSearchBar
             :solicitar="true"
@@ -56,160 +96,39 @@ console.log(historial);
         </div>
       </header>
 
-      <main class="pt-3 pb-5 bg-light">
-        <div class="container">
-          <section class="mb-5 pb-5">
-            <div class="row">
-              <div class="col">
-                <p
-                  class="mx-2 d-flex align-items-center justify-content-between"
-                >
-                  <span class="fw-semibold fs-5">Recomendados</span>
-                </p>
+      <main class="dashboard-main">
+        <div class="dashboard-main__container">
+          <section class="recommended-section">
+            <div class="recommended-section__wrapper">
+              <div class="recommended-section__intro">
+                <p class="recommended-section__label">Recomendados</p>
                 <div
                   v-if="historial !== null && historial.length > 0"
-                  class="card-body"
+                  class="recommended-section__content"
                 >
-                  <div class="row">
-                    <div
-                      class="col-md-4 mb-4"
+                  <div class="recommended-grid">
+                    <WebsiteTarjetaMedico
                       v-for="medico in historial"
                       :key="medico.id"
-                    >
-                      <div class="card p-3 h-100">
-                        <div class="d-flex align-items-center">
-                          <div>
-                            <img
-                              :src="
-                                medico.profile_picture_url ||
-                                '/_nuxt/src/assets/picture.svg'
-                              "
-                              alt=""
-                              class="rounded-circle"
-                              width="67.088px"
-                              height="66.975px"
-                            />
-                            <div
-                              class="bg-primary d-flex p-2 score justify-content-between gap-2"
-                            >
-                              <p class="text-white mb-0">
-                                {{ medico.stars_by_supplier?.toFixed(1) || 0 }}
-                                <!-- Placeholder - replace with actual rating if available -->
-                              </p>
-                              <img
-                                src="@/src/assets/star.svg"
-                                alt="Busca centro medico"
-                                class="img-fluid"
-                              />
-                            </div>
-                          </div>
-
-                          <div class="ms-3">
-                            <p class="fs-5 fw-semibold mb-1">
-                              {{ medico.name }}
-                            </p>
-                            <div
-                              class="d-flex align-items-center mt-3 mb-0 gap-2"
-                            >
-                              <img
-                                src="@/src/assets/doctor-element.svg"
-                                alt="Busca centro medico"
-                                class="img-fluid"
-                              />
-                              <p class="text-muted mb-0">
-                                {{ medico.description }}
-                              </p>
-                            </div>
-
-                            <div class="d-flex align-items-center gap-2">
-                              <img
-                                src="@/src/assets/marker.svg"
-                                alt="Busca centro medico"
-                                class="img-fluid"
-                              />
-                              <p class="text-muted mb-0">
-                                {{ medico.location_number }}
-                                {{
-                                  medico.location_number === 1
-                                    ? "Hospital"
-                                    : "Hospitales diferentes"
-                                }}
-                              </p>
-                            </div>
-                          </div>
-                        </div>
-                        <div class="mt-3 availability p-2">
-                          <p class="text-muted">Disponibilidad</p>
-                          <div class="d-flex align-items-center gap-2">
-                            <img
-                              src="@/src/assets/calendar.svg"
-                              alt="Busca centro medico"
-                              class="img-fluid"
-                            />
-                            <p class="m-0">
-                              {{ medico.date_availability }}
-                            </p>
-                          </div>
-                          <div class="d-flex align-items-center gap-2">
-                            <img
-                              src="@/src/assets/clock.svg"
-                              alt="Busca centro medico"
-                              class="img-fluid"
-                            />
-                            <p class="m-0">
-                              {{ medico.hour_availability }}
-                            </p>
-                          </div>
-                        </div>
-
-                        <div class="mt-3">
-                          <span
-                            v-for="service in medico.services_names"
-                            class="badge me-2 text-primary p-2"
-                            >{{ service }}</span
-                          >
-                        </div>
-
-                        <div
-                          class="mt-3 d-flex justify-content-between align-items-center"
-                        >
-                          <div>
-                            <p class="fw-bold mb-0">
-                              ₡{{ medico.search_reference_price }}
-                            </p>
-                            <p class="text-muted mb-0">
-                              Costo Cita de Valoracion
-                            </p>
-                          </div>
-
-                          <a
-                            :href="'/perfiles/doctor/' + medico.id"
-                            class="text-decoration-none"
-                            >Ver paquetes<img
-                              src="@/src/assets/arrow-next.svg"
-                              alt="Busca centro medico"
-                              class="img-fluid"
-                          /></a>
-                        </div>
-                      </div>
-                    </div>
+                      :medico="medico"
+                      @toggle-favorite="handleToggleFavorite"
+                      @show-packages="selectDoctor"
+                    />
                   </div>
                 </div>
-                <div v-else class="card-body d-flex py-5">
-                  <div class="col-sm-5 text-end">
+                <div v-else class="empty-state">
+                  <div class="empty-state__image">
                     <AtomsIconsChartVacio />
                   </div>
-                  <div class="col-sm-7">
-                    <p class="fs-5 text-muted fw-medium">
+                  <div class="empty-state__text">
+                    <p class="empty-state__title">
                       Aún no tienes actividad en tu tablero
                     </p>
-                    <p class="fw-light text-secondary">
+                    <p class="empty-state__description">
                       Muy pronto podrás administrar y verificar estadísticas y
                       actividades de los usuarios de Vitalink.
                     </p>
-                    <button class="btn btn-primary border-danger">
-                      Empezar
-                    </button>
+                    <button class="empty-state__button">Empezar</button>
                   </div>
                 </div>
               </div>
@@ -223,32 +142,266 @@ console.log(historial);
       :appointment="modalData"
       @close-modal="closeModal"
     />
+
+    <WebsitePackTratamientos
+      :doctor="doctorData"
+      :open="openPackagesModal"
+      @close-modal="closePackagesModal"
+    />
   </NuxtLayout>
 </template>
 
 <style lang="scss" scoped>
-header {
+.dashboard-header {
   background-color: #ebecf7;
-  padding: 2rem 0 0;
-}
-.card {
-  background-color: #fff;
-  border-radius: 8px;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-}
-.badge {
-  font-size: 0.9rem;
-  background-color: #ebecf7;
-  border-radius: 105.022px;
+  padding: 20px 15px;
+
+  @include respond-to(sm) {
+    padding: 30px 30px;
+  }
+
+  @include respond-to(md) {
+    padding: 35px 50px;
+  }
+
+  @include respond-to(lg) {
+    padding: 39px 100px;
+  }
+
+  @include respond-to(xl) {
+    padding: 39px 150px;
+  }
+
+  @include respond-to(xxl) {
+    padding: 39px 255px;
+  }
+
+  &__container {
+    & > * + * {
+      margin-top: 15px;
+
+      @include respond-to(md) {
+        margin-top: 20px;
+      }
+    }
+  }
+
+  &__title {
+    display: flex;
+    flex-direction: column;
+    padding: 10px 15px;
+    gap: 10px;
+    text-shadow: 0px 1.05px 4.2px 0px #19213d14;
+
+    @include respond-to(md) {
+      padding: 15.75px 18.9px;
+      gap: 15px;
+    }
+  }
+
+  &__highlight {
+    font-family: $font-family-montserrat-alt;
+    font-weight: 700;
+    font-size: 20px;
+    line-height: 1.2;
+    letter-spacing: 0;
+    text-align: center;
+    vertical-align: middle;
+    color: #19213d;
+
+    @include respond-to(sm) {
+      font-size: 22px;
+    }
+
+    @include respond-to(md) {
+      font-size: 25.21px;
+      line-height: 21px;
+    }
+  }
+
+  &__subtitle {
+    font-family: $font-family-montserrat-alt;
+    font-weight: 500;
+    font-size: 16px;
+    line-height: 1.2;
+    letter-spacing: 0;
+    text-align: center;
+    vertical-align: middle;
+    color: #19213d;
+
+    @include respond-to(sm) {
+      font-size: 18px;
+    }
+
+    @include respond-to(md) {
+      font-size: 20px;
+    }
+
+    @include respond-to(lg) {
+      font-size: 25.21px;
+      line-height: 21px;
+    }
+  }
 }
 
-.score {
-  width: 62px;
-  border-radius: 23px;
+.dashboard-main {
+  padding: 15px 10px;
+  background-color: #f8f8f8;
+
+  @include respond-to(sm) {
+    padding: 18px 15px;
+  }
+
+  @include respond-to(md) {
+    padding: 21px 15px;
+  }
+
+  &__container {
+    width: 100%;
+    margin: 0 auto;
+    max-width: 100%;
+
+    @include respond-to(md) {
+      max-width: 720px;
+    }
+
+    @include respond-to(lg) {
+      max-width: 960px;
+    }
+
+    @include respond-to(xl) {
+      max-width: 1200px;
+    }
+
+    @include respond-to(xxl) {
+      max-width: 1310px;
+    }
+  }
 }
 
-.availability {
-  background-color: #f9f8f8;
-  border-radius: 9px;
+.recommended-section {
+  padding-top: 1rem;
+  padding-bottom: 2rem;
+  background-color: #f8f8f8;
+
+  @include respond-to(md) {
+    padding-top: 1.5rem;
+    padding-bottom: 3rem;
+  }
+
+  &__intro {
+    margin-bottom: 1rem;
+  }
+
+  &__label {
+    @include label-base;
+    font-weight: 600;
+    font-style: Semi Bold;
+    font-size: 16px;
+    line-height: 1.2;
+    letter-spacing: 0;
+    color: #19213d;
+    margin-bottom: 16px;
+
+    @include respond-to(md) {
+      font-size: 18px;
+      line-height: 21px;
+      margin-bottom: 22px;
+    }
+  }
+
+  &__content {
+    margin-top: 1rem;
+  }
+}
+
+.recommended-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 16px;
+
+  @include respond-to(sm) {
+    gap: 20px;
+  }
+
+  @include respond-to(md) {
+    grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+    gap: 24px;
+  }
+
+  @include respond-to(lg) {
+    grid-template-columns: repeat(auto-fit, minmax(380px, 1fr));
+  }
+
+  @include respond-to(xl) {
+    grid-template-columns: repeat(auto-fit, minmax(420px, 1fr));
+  }
+}
+
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  padding: 40px 20px;
+
+  @include respond-to(md) {
+    padding: 60px 40px;
+  }
+
+  &__image {
+    margin-bottom: 20px;
+
+    @include respond-to(md) {
+      margin-bottom: 30px;
+    }
+  }
+
+  &__text {
+    max-width: 400px;
+  }
+
+  &__title {
+    font-size: 18px;
+    font-weight: 600;
+    color: #19213d;
+    margin-bottom: 10px;
+
+    @include respond-to(md) {
+      font-size: 20px;
+      margin-bottom: 15px;
+    }
+  }
+
+  &__description {
+    font-size: 14px;
+    color: #6d758f;
+    line-height: 1.4;
+    margin-bottom: 20px;
+
+    @include respond-to(md) {
+      font-size: 16px;
+      margin-bottom: 25px;
+    }
+  }
+
+  &__button {
+    @include button-base;
+    background-color: #3541b4;
+    color: white;
+    padding: 12px 24px;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 600;
+
+    @include respond-to(md) {
+      padding: 15px 30px;
+      font-size: 16px;
+    }
+
+    &:hover {
+      background-color: darken(#3541b4, 10%);
+    }
+  }
 }
 </style>

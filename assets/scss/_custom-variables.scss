@@ -1,0 +1,31 @@
+$color-primary: #3541b4;
+$color-foreground: #19213d;
+$color-primary-darkened-5: darken($color-primary, 5%);
+$color-primary-darkened-10: darken($color-primary, 10%);
+$color-text-secondary: #6d758f;
+$color-text-muted: #667085;
+$primary-aqua: #0cadbb;
+$primary-aqua-light: #9edee4;
+$white: #ffffff;
+
+// Fuentes principales
+$font-family-main: "Montserrat", sans-serif;
+$font-family-alt: "Inter", sans-serif;
+
+// Fuentes alternativas
+$font-family-montserrat-alt: "Montserrat Alternates", sans-serif;
+$font-family-mulish: "Mulish", sans-serif;
+
+$border-radius-md: 8px;
+$spacing-xs: 4px;
+$spacing-sm: 8px;
+$spacing-md: 16px;
+$spacing-lg: 24px;
+
+// Breakpoints
+$breakpoint-xs: 320px;
+$breakpoint-sm: 576px;
+$breakpoint-md: 768px;
+$breakpoint-lg: 992px;
+$breakpoint-xl: 1200px;
+$breakpoint-xxl: 1400px;
