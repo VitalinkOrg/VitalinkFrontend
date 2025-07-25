@@ -82,11 +82,12 @@ onBeforeUnmount(() => {
   border-radius: 0.375rem;
   min-width: 200px;
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.05);
-  padding: 0.5rem 0;
+  padding: 0;
+  overflow: hidden;
 }
 
 .dropdown__item {
-  padding: 0.5rem 1rem;
+  padding: 0;
   display: block;
   width: 100%;
   text-align: left;
@@ -95,12 +96,6 @@ onBeforeUnmount(() => {
   background: none;
   border: none;
   cursor: pointer;
-
-  &:hover,
-  &:focus {
-    background-color: #f8f9fa;
-    outline: none;
-  }
 }
 
 .dropdown__menu li {
@@ -109,14 +104,12 @@ onBeforeUnmount(() => {
 
 .dropdown__menu a {
   display: block;
-  padding: 0.5rem 1rem;
   color: #333;
   text-decoration: none;
 }
 
 .dropdown__menu a:hover,
 .dropdown__menu a:focus {
-  background-color: #f2f2f2;
   outline: none;
 }
 </style>
