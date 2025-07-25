@@ -1,7 +1,6 @@
 <template>
   <div class="service-card">
     <div class="service-card__wrapper" :class="{ selected: pkg.is_king }">
-      <!-- Leyenda especial para Cita de Valoración -->
       <div
         v-if="pkg.product.name === 'Cita de Valoración'"
         class="service-card__legend"
@@ -21,10 +20,12 @@
       </div>
 
       <div class="service-card__body">
-        <!-- Precio -->
         <h5 class="service-card__price">₡{{ getPackagePrice(pkg) }}</h5>
 
-        <!-- Disclaimer para Cita de Valoración -->
+        <p class="service-card__monthly-payment">
+          Cuotas mensuales desde ₡{{ getMonthlyPayment(pkg) }}
+        </p>
+
         <p
           v-if="pkg.product.name === 'Cita de Valoración'"
           class="service-card__payment-disclaimer"
@@ -32,18 +33,15 @@
           Podes pagar el día de tu cita
         </p>
 
-        <!-- Precio original con descuento -->
         <p class="service-card__discount" v-if="pkg.discount">
           Precio original
           <span>₡{{ pkg.product.value1 }}</span>
         </p>
 
-        <!-- Aviso general -->
         <small class="service-card__disclaimer">
           Los precios pueden variar según el diagnóstico del médico.
         </small>
 
-        <!-- Calificación -->
         <p class="service-card__rating-wrapper">
           <span class="service-card__rating">
             <img src="@/src/assets/star.svg" alt="Rating" class="img-fluid" />
@@ -54,7 +52,6 @@
           >
         </p>
 
-        <!-- Disponibilidad (solo para Cita de Valoración) -->
         <div
           v-if="pkg.product.name === 'Cita de Valoración'"
           class="service-card__availability"
@@ -65,48 +62,19 @@
           <p class="service-card__availability-info">
             <span class="service-card__availability-date">
               <span class="service-card__availability-icon">
-                <svg
-                  width="15"
-                  height="16"
-                  viewBox="0 0 15 16"
-                  fill="none"
-                  xmlns="http://www.w3.org/2000/svg"
-                >
-                  <path
-                    d="M4.07143 5.1875H10.875M3.60714 1.4375V2.56264M11.25 1.4375V2.5625M13.5 5.5625L13.5 11.5626C13.5 13.2194 12.1569 14.5626 10.5 14.5626H4.5C2.84315 14.5626 1.5 13.2194 1.5 11.5626V5.5625C1.5 3.90565 2.84315 2.5625 4.5 2.5625H10.5C12.1569 2.5625 13.5 3.90565 13.5 5.5625Z"
-                    stroke="#3541B4"
-                    stroke-width="1.5"
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                  />
-                </svg>
+                <AtomsIconsCalendarIcon size="20" />
               </span>
               {{ doctor.date_availability }}
             </span>
             <span class="service-card__availability-time">
               <span class="service-card__availability-icon">
-                <svg
-                  width="15"
-                  height="16"
-                  viewBox="0 0 15 16"
-                  fill="none"
-                  xmlns="http://www.w3.org/2000/svg"
-                >
-                  <path
-                    d="M7.5 4.25V8L10 9.25M13.75 8C13.75 11.4518 10.9518 14.25 7.5 14.25C4.04822 14.25 1.25 11.4518 1.25 8C1.25 4.54822 4.04822 1.75 7.5 1.75C10.9518 1.75 13.75 4.54822 13.75 8Z"
-                    stroke="#3541B4"
-                    stroke-width="1.5"
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                  />
-                </svg>
+                <AtomsIconsClockIcon size="20" />
               </span>
               {{ doctor.hour_availability }}
             </span>
           </p>
         </div>
 
-        <!-- Servicios (solo para otros paquetes) -->
         <div
           v-if="pkg.product.name !== 'Cita de Valoración'"
           class="service-card__services-wrapper"
@@ -132,7 +100,6 @@
           </ul>
         </div>
 
-        <!-- Botón solo para Cita de Valoración -->
         <button
           v-if="pkg.product.name === 'Cita de Valoración'"
           class="service-card__assessment-appointment-button"
@@ -151,58 +118,75 @@
     :doctorInfo="doctor"
     :selectedDay="selectedDay"
     :selectedHour="selectedHour"
-    :selectedPackage="selectedPackage"
+    :selected-package="pkg"
     :isOpen="isOpenModal"
-    :currentStep="2"
+    :currentStep="currentModalStep"
     :offers="offers"
     @close="closeModal"
   />
 </template>
 
 <script setup>
-import { defineProps } from "vue";
+import { defineProps, ref } from "vue";
 
 defineProps({
-  // Datos del paquete
   pkg: {
     type: Object,
     required: true,
   },
-  // Datos del médico
   doctor: {
     type: Object,
     required: true,
   },
-  // Reseñas del médico
   doctorReviews: {
     type: Array,
     default: () => [],
   },
-  // Función para calcular precio
   getPackagePrice: {
     type: Function,
     required: true,
   },
-  // Función para obtener nombre de servicio
   getAssesmentLabel: {
     type: Function,
     required: true,
   },
-  // Función para seleccionar paquete
   selectPackage: {
     type: Function,
     required: true,
   },
+  selectedPackage: {
+    type: Object,
+    default: null,
+  },
+  user: {
+    type: Object,
+    required: true,
+  },
 });
 
+const currentModalStep = ref(1);
 const isOpenModal = ref(false);
+
+const getMonthlyPayment = (pkg) => {
+  let price;
+  if (pkg.discount) {
+    price = parseFloat(pkg.product.value2 || pkg.product.value1 || 0);
+  } else {
+    price = parseFloat(pkg.product.value1 || 0);
+  }
+
+  const monthlyPayment = (price / 12) * 1.1;
+  return Math.round(monthlyPayment).toLocaleString();
+};
 
 const openModal = () => {
   isOpenModal.value = true;
+  currentModalStep.value = 1;
 };
 
 const closeModal = () => {
   isOpenModal.value = false;
+  currentModalStep.value = 1;
 };
 </script>
 
@@ -211,7 +195,7 @@ const closeModal = () => {
   width: 100%;
   max-width: 256px;
   height: 100%;
-  max-height: 450px;
+  max-height: 510px;
   border-radius: 20px;
   padding-bottom: 15px;
   border-width: 1px;
@@ -264,6 +248,14 @@ const closeModal = () => {
     color: #19213d;
     padding-top: 4px;
     margin-bottom: 2px;
+  }
+
+  &__monthly-payment {
+    font-weight: 500;
+    font-size: 13px;
+    line-height: 16px;
+    color: #0cadbb;
+    margin-bottom: 4px;
   }
 
   &__discount {

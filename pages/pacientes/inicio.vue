@@ -1,17 +1,27 @@
+<!-- inicio.vue -->
 <script setup>
 definePageMeta({
   middleware: ["auth-pacientes"],
 });
+
+import { useRoute, useRouter } from "vue-router";
+
+const route = useRoute();
+const router = useRouter();
+
 const config = useRuntimeConfig();
 const token = useCookie("token");
 const user_info = useCookie("user_info");
+
 const doctorData = ref(null);
 const loadingPackages = ref(false);
 const openPackagesModal = ref(false);
+const modalHasBeenOpened = ref(false);
 
-console.log("USER INFO: ", user_info);
+const procedureCode = computed(() => route.query.procedure_code);
+const specialtyCode = computed(() => route.query.specialty_code);
 
-const { data: specialties, pending: pendingSpecialties } = await useFetch(
+const { data: specialties } = await useFetch(
   config.public.API_BASE_URL + "/udc/get_all?type=MEDICAL_SPECIALTY",
   {
     headers: { Authorization: token.value },
@@ -21,15 +31,7 @@ const { data: specialties, pending: pendingSpecialties } = await useFetch(
   }
 );
 
-const { data: appointments, pending: pendingAppointments } = await useFetch(
-  config.public.API_BASE_URL + "/internal_patient_dashboard/appointments",
-  {
-    headers: { Authorization: token.value },
-    transform: (_appointments) => _appointments.data,
-  }
-);
-
-const { data: historial, pending: pendingHistorial } = await useFetch(
+const { data: historial } = await useFetch(
   config.public.API_BASE_URL + "/supplier/get_all_main",
   {
     headers: { Authorization: token.value },
@@ -44,22 +46,22 @@ const genderWelcome = computed(() => {
   if (gender.toLowerCase() === "female") return "Bienvenida";
 });
 
-const selectDoctor = async (doctor) => {
+const selectDoctor = async ({ medico }) => {
+  modalHasBeenOpened.value = true;
   openPackagesModal.value = true;
+
   try {
-    console.log({ id: doctor.id });
     loadingPackages.value = true;
-    const { data, pending } = await useLazyFetch(
+    const { data } = await useLazyFetch(
       config.public.API_BASE_URL + "/supplier/get",
       {
         headers: { Authorization: token.value },
-        params: { id: doctor.id },
+        params: { id: medico.id },
         transform: (_doctor) => _doctor.data,
       }
     );
 
     doctorData.value = data.value;
-    console.log("Doctor cargado:", doctorData.value);
   } catch (error) {
     console.error("Error obteniendo datos del doctor", error);
   } finally {
@@ -69,24 +71,22 @@ const selectDoctor = async (doctor) => {
 
 const closePackagesModal = () => {
   openPackagesModal.value = false;
+  router.replace({ query: {} }); // Opcional: limpiar query params
 };
-
-console.log(historial);
 </script>
 
 <template>
   <NuxtLayout name="pacientes-dashboard">
-    <div v-if="pendingUser"></div>
-    <div v-else>
+    <div>
       <header class="dashboard-header">
         <div class="dashboard-header__container">
           <h1 class="dashboard-header__title">
             <span class="dashboard-header__highlight">
               {{ genderWelcome }} {{ user_info.name }}
             </span>
-            <span class="dashboard-header__subtitle"
-              >¿Qué servicio médico estás buscando?</span
-            >
+            <span class="dashboard-header__subtitle">
+              ¿Qué servicio médico estás buscando?
+            </span>
           </h1>
           <WebsiteSearchBar
             :solicitar="true"
@@ -97,57 +97,29 @@ console.log(historial);
       </header>
 
       <main class="dashboard-main">
-        <div class="dashboard-main__container">
-          <section class="recommended-section">
-            <div class="recommended-section__wrapper">
-              <div class="recommended-section__intro">
-                <p class="recommended-section__label">Recomendados</p>
-                <div
-                  v-if="historial !== null && historial.length > 0"
-                  class="recommended-section__content"
-                >
-                  <div class="recommended-grid">
-                    <WebsiteTarjetaMedico
-                      v-for="medico in historial"
-                      :key="medico.id"
-                      :medico="medico"
-                      @toggle-favorite="handleToggleFavorite"
-                      @show-packages="selectDoctor"
-                    />
-                  </div>
-                </div>
-                <div v-else class="empty-state">
-                  <div class="empty-state__image">
-                    <AtomsIconsChartVacio />
-                  </div>
-                  <div class="empty-state__text">
-                    <p class="empty-state__title">
-                      Aún no tienes actividad en tu tablero
-                    </p>
-                    <p class="empty-state__description">
-                      Muy pronto podrás administrar y verificar estadísticas y
-                      actividades de los usuarios de Vitalink.
-                    </p>
-                    <button class="empty-state__button">Empezar</button>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </section>
-        </div>
+        <section class="recommended-section">
+          <div class="recommended-grid">
+            <WebsiteTarjetaMedico
+              v-for="medico in historial"
+              :key="medico.id"
+              :medico="medico"
+              @toggle-favorite="() => {}"
+              @show-packages="selectDoctor"
+            />
+          </div>
+        </section>
       </main>
-    </div>
-    <MedicosCitaCancelModal
-      :open="openDateCancelModal"
-      :appointment="modalData"
-      @close-modal="closeModal"
-    />
 
-    <WebsitePackTratamientos
-      :doctor="doctorData"
-      :open="openPackagesModal"
-      @close-modal="closePackagesModal"
-    />
+      <WebsitePackTratamientos
+        v-if="!loadingPackages && doctorData"
+        :doctor="doctorData"
+        :open="openPackagesModal"
+        :user="user_info"
+        :procedure-code="procedureCode"
+        :specialty-code="specialtyCode"
+        @close-modal="closePackagesModal"
+      />
+    </div>
   </NuxtLayout>
 </template>
 

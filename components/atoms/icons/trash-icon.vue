@@ -1,3 +1,3 @@
 <template>
-  <Icon name="carbon:trash-can" />
+  <Icon name="lucide:trash" />
 </template>

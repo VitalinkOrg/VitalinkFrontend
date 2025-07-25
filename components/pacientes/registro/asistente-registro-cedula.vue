@@ -1,6 +1,8 @@
 <template>
   <div class="wizard-container" role="region" aria-labelledby="wizard-title">
-    <h1 id="wizard-title" class="visually-hidden">Asistente de registro con cédula</h1>
+    <h1 id="wizard-title" class="visually-hidden">
+      Asistente de registro con cédula
+    </h1>
     <div class="wizard-content">
       <!-- Indicador de pasos -->
       <nav aria-label="Pasos del asistente" class="wizard-step-indicator">
@@ -10,18 +12,34 @@
             :aria-selected="breadcrumOption === 'idCard'"
             tabindex="0"
             class="wizard-step-item"
-            :class="{ 
+            :class="{
               active: breadcrumOption === 'idCard',
               completed: isStepCompleted('idCard'),
-              disabled: !canNavigateToStep('idCard')
+              disabled: !canNavigateToStep('idCard'),
             }"
             @click="setNavigation('idCard')"
             @keydown.enter="setNavigation('idCard')"
           >
-            <small class="step-number" :class="{ 'step-completed': isStepCompleted('idCard') }">
+            <small
+              class="step-number"
+              :class="{ 'step-completed': isStepCompleted('idCard') }"
+            >
               <span v-if="!isStepCompleted('idCard')">1</span>
-              <svg v-else width="10" height="10" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <path d="M20 6L9 17L4 12" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+              <svg
+                v-else
+                width="10"
+                height="10"
+                viewBox="0 0 24 24"
+                fill="none"
+                xmlns="http://www.w3.org/2000/svg"
+              >
+                <path
+                  d="M20 6L9 17L4 12"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                />
               </svg>
             </small>
             <span>Nº de Cédula</span>
@@ -31,18 +49,34 @@
             :aria-selected="breadcrumOption === 'personalInfo'"
             tabindex="0"
             class="wizard-step-item"
-            :class="{ 
+            :class="{
               active: breadcrumOption === 'personalInfo',
               completed: isStepCompleted('personalInfo'),
-              disabled: !canNavigateToStep('personalInfo')
+              disabled: !canNavigateToStep('personalInfo'),
             }"
             @click="setNavigation('personalInfo')"
             @keydown.enter="setNavigation('personalInfo')"
           >
-            <small class="step-number" :class="{ 'step-completed': isStepCompleted('personalInfo') }">
+            <small
+              class="step-number"
+              :class="{ 'step-completed': isStepCompleted('personalInfo') }"
+            >
               <span v-if="!isStepCompleted('personalInfo')">2</span>
-              <svg v-else width="10" height="10" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <path d="M20 6L9 17L4 12" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+              <svg
+                v-else
+                width="10"
+                height="10"
+                viewBox="0 0 24 24"
+                fill="none"
+                xmlns="http://www.w3.org/2000/svg"
+              >
+                <path
+                  d="M20 6L9 17L4 12"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                />
               </svg>
             </small>
             <span>Información personal</span>
@@ -52,18 +86,34 @@
             :aria-selected="breadcrumOption === 'create'"
             tabindex="0"
             class="wizard-step-item"
-            :class="{ 
+            :class="{
               active: breadcrumOption === 'create',
               completed: isStepCompleted('create'),
-              disabled: !canNavigateToStep('create')
+              disabled: !canNavigateToStep('create'),
             }"
             @click="setNavigation('create')"
             @keydown.enter="setNavigation('create')"
           >
-            <small class="step-number" :class="{ 'step-completed': isStepCompleted('create') }">
+            <small
+              class="step-number"
+              :class="{ 'step-completed': isStepCompleted('create') }"
+            >
               <span v-if="!isStepCompleted('create')">3</span>
-              <svg v-else width="10" height="10" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <path d="M20 6L9 17L4 12" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+              <svg
+                v-else
+                width="10"
+                height="10"
+                viewBox="0 0 24 24"
+                fill="none"
+                xmlns="http://www.w3.org/2000/svg"
+              >
+                <path
+                  d="M20 6L9 17L4 12"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                />
               </svg>
             </small>
             <span>Creación de la cuenta</span>
@@ -96,17 +146,27 @@
                 @click="clearIdCard"
                 aria-label="Limpiar campo"
               >
-                <AtomsIconsTimesXIcon />
+                <AtomsIconsXIcon />
               </button>
             </div>
           </div>
         </div>
 
         <!-- Paso 2: Información personal -->
-        <div v-if="breadcrumOption === 'personalInfo'" class="input-section personal-info-section">
+        <div
+          v-if="breadcrumOption === 'personalInfo'"
+          class="input-section personal-info-section"
+        >
           <div class="step-header" role="heading" aria-level="2">
-            <h2 class="step-header__title">Formulario autocompletado de TSE:</h2>
-            <button type="button" class="edit-button" @click="toggleEditPersonalInfo" aria-label="Editar información">
+            <h2 class="step-header__title">
+              Formulario autocompletado de TSE:
+            </h2>
+            <button
+              type="button"
+              class="edit-button"
+              @click="toggleEditPersonalInfo"
+              aria-label="Editar información"
+            >
               <AtomsIconsEditPencilIcon />
             </button>
           </div>
@@ -121,12 +181,13 @@
               :disabled="!isPersonalInfoEditable"
               :readonly="!isPersonalInfoEditable"
               :aria-readonly="!isPersonalInfoEditable"
-
               aria-describedby="fullNameHint"
             />
           </div>
           <div class="input-field-group">
-            <label for="companyField" class="form-label">Empresa a la que pertenece</label>
+            <label for="companyField" class="form-label"
+              >Empresa a la que pertenece</label
+            >
             <input
               id="companyField"
               type="text"
@@ -157,7 +218,9 @@
         <!-- Paso 3: Crear cuenta -->
         <div v-if="breadcrumOption === 'create'" class="input-section">
           <div class="input-field-group">
-            <label for="passwordIdCard" class="form-label">Crear Contraseña*</label>
+            <label for="passwordIdCard" class="form-label"
+              >Crear Contraseña*</label
+            >
             <input
               id="passwordIdCard"
               type="password"
@@ -168,10 +231,14 @@
               required
               aria-describedby="passwordHint"
             />
-            <small id="passwordHint" class="input-hint">Debe tener al menos 8 caracteres</small>
+            <small id="passwordHint" class="input-hint"
+              >Debe tener al menos 8 caracteres</small
+            >
           </div>
           <div class="input-field-group">
-            <label for="confirmPasswordIdCard" class="form-label">Confirmar Contraseña*</label>
+            <label for="confirmPasswordIdCard" class="form-label"
+              >Confirmar Contraseña*</label
+            >
             <input
               id="confirmPasswordIdCard"
               type="password"
@@ -182,7 +249,9 @@
               required
               aria-describedby="confirmPasswordHint"
             />
-            <small id="confirmPasswordHint" class="input-hint">Debe coincidir con la contraseña anterior</small>
+            <small id="confirmPasswordHint" class="input-hint"
+              >Debe coincidir con la contraseña anterior</small
+            >
           </div>
         </div>
       </form>
@@ -244,9 +313,11 @@ const isCurrentStepValid = computed(() => {
     case "personalInfo":
       return address.value.trim().length > 0;
     case "create":
-      return password.value.length >= 8 && 
-             confirmPassword.value === password.value &&
-             confirmPassword.value.length > 0;
+      return (
+        password.value.length >= 8 &&
+        confirmPassword.value === password.value &&
+        confirmPassword.value.length > 0
+      );
     default:
       return false;
   }
@@ -266,15 +337,23 @@ const primaryButtonText = computed(() => {
 });
 
 const shouldDisableIdCardField = computed(() => {
-  return isIdCardVerified.value && !isIdCardEdited.value && breadcrumOption.value !== 'idCard';
+  return (
+    isIdCardVerified.value &&
+    !isIdCardEdited.value &&
+    breadcrumOption.value !== "idCard"
+  );
 });
 
 const canClearIdCard = computed(() => {
-  return !isIdCardVerified.value || isIdCardEdited.value || breadcrumOption.value === 'idCard';
+  return (
+    !isIdCardVerified.value ||
+    isIdCardEdited.value ||
+    breadcrumOption.value === "idCard"
+  );
 });
 
 function isValidIdCardFormat(value: string): boolean {
-  const cleanValue = value.replace(/\D/g, '');
+  const cleanValue = value.replace(/\D/g, "");
   return cleanValue.length >= 9;
 }
 
@@ -285,9 +364,11 @@ function isStepCompleted(step: Step): boolean {
     case "personalInfo":
       return address.value.trim().length > 0 && isStepCompleted("idCard");
     case "create":
-      return password.value.length >= 8 && 
-             confirmPassword.value === password.value &&
-             isStepCompleted("personalInfo");
+      return (
+        password.value.length >= 8 &&
+        confirmPassword.value === password.value &&
+        isStepCompleted("personalInfo")
+      );
     default:
       return false;
   }
@@ -307,7 +388,11 @@ function canNavigateToStep(targetStep: Step): boolean {
       case "personalInfo":
         return isIdCardVerified.value && !isIdCardEdited.value;
       case "create":
-        return isIdCardVerified.value && !isIdCardEdited.value && address.value.trim().length > 0;
+        return (
+          isIdCardVerified.value &&
+          !isIdCardEdited.value &&
+          address.value.trim().length > 0
+        );
       default:
         return false;
     }
@@ -347,10 +432,10 @@ function nextStep() {
       isIdCardVerified.value = true;
       isIdCardEdited.value = false;
       originalIdCard.value = idCard.value;
-      
+
       fullName.value = "Martín González";
       company.value = "Ejemplo empresa";
-      
+
       breadcrumOption.value = "personalInfo";
       break;
 
@@ -375,9 +460,9 @@ function clearIdCard() {
 }
 
 function formatIdCard(value: string): string {
-  const digits = value.replace(/\D/g, '');
+  const digits = value.replace(/\D/g, "");
 
-  if (digits.length === 0) return '';
+  if (digits.length === 0) return "";
   if (digits.length <= 1) return digits;
   if (digits.length <= 5) return `${digits.slice(0, 1)}-${digits.slice(1)}`;
   return `${digits.slice(0, 1)}-${digits.slice(1, 5)}-${digits.slice(5, 9)}`;
@@ -390,16 +475,23 @@ watch(idCard, (newValue, oldValue) => {
     return;
   }
 
-  if (isIdCardVerified.value && newValue !== originalIdCard.value && newValue !== oldValue) {
+  if (
+    isIdCardVerified.value &&
+    newValue !== originalIdCard.value &&
+    newValue !== oldValue
+  ) {
     isIdCardEdited.value = true;
   }
 });
 
-watch(() => isIdCardEdited.value, (newValue) => {
-  if (newValue && isIdCardVerified.value) {
-    isIdCardVerified.value = false;
+watch(
+  () => isIdCardEdited.value,
+  (newValue) => {
+    if (newValue && isIdCardVerified.value) {
+      isIdCardVerified.value = false;
+    }
   }
-});
+);
 </script>
 
 <style lang="scss" scoped>
@@ -616,7 +708,7 @@ watch(() => isIdCardEdited.value, (newValue) => {
 
   .step-completed {
     background-color: #ffffff;
-    border-color: #0CADBB;
+    border-color: #0cadbb;
     svg {
       color: #0cadbb;
     }

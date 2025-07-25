@@ -1,137 +1,140 @@
 <template>
   <div class="medico-card">
-    <div class="medico-card__body">
-      <div class="medico-card__top">
-        <div class="medico-card__profile">
-          <img
-            :src="medico.profile_picture_url || '/_nuxt/src/assets/picture.svg'"
-            alt=""
-            class="medico-card__avatar"
-          />
-          <div class="medico-card__score">
-            <p class="medico-card__rating">
-              {{ medico.stars_by_supplier?.toFixed(1) || 0 }}
-            </p>
+    <NuxtLink
+      :to="{
+        path: `/perfiles/doctor/${medico.id}`,
+        query: queryParams,
+      }"
+      class="medico-card__link"
+    >
+      <div class="medico-card__body">
+        <div class="medico-card__top">
+          <div class="medico-card__profile">
             <img
-              src="@/src/assets/star.svg"
-              alt="Calificación"
-              class="medico-card__star-icon"
+              :src="
+                medico.profile_picture_url || '/_nuxt/src/assets/picture.svg'
+              "
+              alt=""
+              class="medico-card__avatar"
             />
-          </div>
-        </div>
-
-        <div class="medico-card__info">
-          <div class="medico-card__name-container">
-            <p class="medico-card__name">
-              {{ medico.name }}
-            </p>
-            <div>
-              <button
-                class="medico-card__favorite-button"
-                @click="toggleFavorite"
-              >
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  width="24"
-                  height="24"
-                  viewBox="0 0 24 24"
-                  :fill="medico.is_favorite ? 'currentColor' : 'none'"
-                  stroke="currentColor"
-                  stroke-width="2"
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  class="medico-card__favorite-icon"
-                >
-                  <path stroke="none" d="M0 0h24v24H0z" fill="none" />
-                  <path
-                    d="M18 7v14l-6 -4l-6 4v-14a4 4 0 0 1 4 -4h4a4 4 0 0 1 4 4z"
-                  />
-                </svg>
-              </button>
+            <div class="medico-card__score">
+              <p class="medico-card__rating">
+                {{ medico.stars_by_supplier?.toFixed(1) || 0 }}
+              </p>
+              <img
+                src="@/src/assets/star.svg"
+                alt="Calificación"
+                class="medico-card__star-icon"
+              />
             </div>
           </div>
 
-          <div class="medico-card__detail">
+          <div class="medico-card__info">
+            <div class="medico-card__name-container">
+              <p class="medico-card__name">
+                {{ medico.name }}
+              </p>
+              <div>
+                <button
+                  class="medico-card__favorite-button"
+                  :class="{ 'is-favorite': medico.is_favorite }"
+                  @click.prevent.stop="toggleFavorite"
+                >
+                  <AtomsIconsBookmarkFilledIcon
+                    v-if="medico.is_favorite"
+                    class="medico-card__favorite-icon"
+                  />
+                  <AtomsIconsBookmarkIcon
+                    v-else
+                    class="medico-card__favorite-icon"
+                  />
+                </button>
+              </div>
+            </div>
+
+            <div class="medico-card__detail">
+              <img
+                src="@/src/assets/doctor-element.svg"
+                alt="Especialidad"
+                class="medico-card__icon"
+              />
+              <p class="medico-card__description">
+                {{ medico.description }}
+              </p>
+            </div>
+
+            <div class="medico-card__location">
+              <img
+                src="@/src/assets/marker.svg"
+                alt="Ubicaciones"
+                class="medico-card__icon"
+              />
+              <p class="medico-card__location-text">
+                {{ medico.location_number }}
+                {{
+                  medico.location_number === 1
+                    ? "Hospital"
+                    : "Hospitales diferentes"
+                }}
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <div class="medico-card__availability">
+          <p class="medico-card__availability-label">Disponibilidad</p>
+          <div class="medico-card__availability-item">
             <img
-              src="@/src/assets/doctor-element.svg"
-              alt="Especialidad"
-              class="medico-card__icon"
+              src="@/src/assets/calendar.svg"
+              alt="Fecha"
+              class="medico-card__availability-icon"
             />
-            <p class="medico-card__description">
-              {{ medico.description }}
+            <p class="medico-card__availability-date">
+              {{ medico.date_availability }}
+            </p>
+          </div>
+          <div class="medico-card__availability-item">
+            <img
+              src="@/src/assets/clock.svg"
+              alt="Hora"
+              class="medico-card__availability-icon"
+            />
+            <p class="medico-card__availability-time">
+              {{ medico.hour_availability }}
+            </p>
+          </div>
+        </div>
+
+        <div class="medico-card__tags">
+          <span
+            v-for="service in medico.services_names"
+            :key="service"
+            class="medico-card__tag"
+          >
+            {{ service }}
+          </span>
+        </div>
+
+        <div class="medico-card__footer">
+          <div class="medico-card__price">
+            <p class="medico-card__price-value">
+              ₡{{ medico.search_reference_price }}
+            </p>
+            <p class="medico-card__price-description">
+              Costo Cita de Valoración
             </p>
           </div>
 
-          <div class="medico-card__location">
-            <img
-              src="@/src/assets/marker.svg"
-              alt="Ubicaciones"
-              class="medico-card__icon"
-            />
-            <p class="medico-card__location-text">
-              {{ medico.location_number }}
-              {{
-                medico.location_number === 1
-                  ? "Hospital"
-                  : "Hospitales diferentes"
-              }}
-            </p>
-          </div>
+          <button
+            class="medico-card__packages-button"
+            @click.prevent.stop="getDoctorData"
+          >
+            Ver paquetes
+            <AtomsIconsChevronRightIcon class="medico-card__arrow-icon" />
+          </button>
         </div>
       </div>
-
-      <div class="medico-card__availability">
-        <p class="medico-card__availability-label">Disponibilidad</p>
-        <div class="medico-card__availability-item">
-          <img
-            src="@/src/assets/calendar.svg"
-            alt="Fecha"
-            class="medico-card__availability-icon"
-          />
-          <p class="medico-card__availability-date">
-            {{ medico.date_availability }}
-          </p>
-        </div>
-        <div class="medico-card__availability-item">
-          <img
-            src="@/src/assets/clock.svg"
-            alt="Hora"
-            class="medico-card__availability-icon"
-          />
-          <p class="medico-card__availability-time">
-            {{ medico.hour_availability }}
-          </p>
-        </div>
-      </div>
-
-      <div class="medico-card__tags">
-        <span
-          v-for="service in medico.services_names"
-          :key="service"
-          class="medico-card__tag"
-        >
-          {{ service }}
-        </span>
-      </div>
-
-      <div class="medico-card__footer">
-        <div class="medico-card__price">
-          <p class="medico-card__price-value">
-            ₡{{ medico.search_reference_price }}
-          </p>
-          <p class="medico-card__price-description">Costo Cita de Valoración</p>
-        </div>
-
-        <button class="medico-card__packages-button" @click="getDoctorData">
-          Ver paquetes
-          <img
-            src="@/src/assets/arrow-next.svg"
-            alt="Siguiente"
-            class="medico-card__arrow-icon"
-          />
-        </button>
-      </div>
-    </div>
+    </NuxtLink>
   </div>
 </template>
 
@@ -141,6 +144,7 @@ const props = defineProps({
     type: Object,
     required: true,
   },
+  queryParams: Object,
 });
 
 const emit = defineEmits(["toggle-favorite", "show-packages"]);
@@ -150,7 +154,7 @@ const toggleFavorite = () => {
 };
 
 const getDoctorData = () => {
-  emit("show-packages", props.medico);
+  emit("show-packages", { medico: props.medico });
 };
 </script>
 
@@ -306,9 +310,8 @@ const getDoctorData = () => {
     }
 
     &:hover {
-      svg {
-        fill: #3541b4;
-        fill-opacity: 0.2;
+      .medico-card__favorite-icon {
+        color: rgba(53, 65, 180, 0.8);
       }
     }
   }

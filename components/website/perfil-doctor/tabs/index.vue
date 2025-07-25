@@ -7,6 +7,14 @@ export default {
       type: Object,
       default: () => ({}),
     },
+    searchSpecialtyCode: {
+      type: String,
+      default: null,
+    },
+    searchProcedureCode: {
+      type: String,
+      default: null,
+    },
   },
   data() {
     return {
@@ -70,6 +78,7 @@ export default {
   async created() {
     const token = useCookie("token");
     const config = useRuntimeConfig();
+
     try {
       // Fetch review details
       const reviewResponse = await $fetch(
@@ -112,6 +121,9 @@ export default {
     }
   },
   computed: {
+    isSearchMode() {
+      return this.searchSpecialtyCode || this.searchProcedureCode;
+    },
     defaultService() {
       return this.doctor.services && this.doctor.services.length > 0
         ? this.doctor.services[0]
@@ -348,11 +360,6 @@ export default {
         this.panel = false;
         return;
       }
-      console.log(
-        "Reserving appointment at",
-        this.selectedDay,
-        this.selectedHour
-      );
       this.panel = true;
     },
     selectSpecialty(specialtyCode, specialtyId) {
@@ -453,6 +460,9 @@ export default {
       :getPackagePrice="getPackagePrice"
       :selectProcedure="selectProcedure"
       :specialties="specialties"
+      :searchSpecialtyCode="searchSpecialtyCode"
+      :searchProcedureCode="searchProcedureCode"
+      :isSearchMode="isSearchMode"
     />
 
     <WebsitePerfilDoctorTabsDisponibilidad

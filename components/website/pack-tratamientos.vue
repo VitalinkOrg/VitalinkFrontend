@@ -20,52 +20,120 @@
             @click="emit('close-modal')"
             aria-label="Cerrar modal"
           >
-            <svg
-              width="24"
-              height="24"
-              viewBox="0 0 24 24"
-              fill="none"
-              xmlns="http://www.w3.org/2000/svg"
-              role="img"
-              aria-hidden="true"
-            >
-              <path
-                d="M17 7L7 17M17 17L7 7"
-                stroke="black"
-                stroke-width="2"
-                stroke-linecap="round"
-              />
-            </svg>
+            <AtomsIconsXIcon size="24" />
           </button>
         </div>
 
-        <hr class="modal-divider" />
-
         <div class="modal-tab">
-          <!-- All packages without filtering -->
-          <div v-if="props.doctor">
-            <div
-              v-if="allPackages.length > 0"
-              class="modal-tab__packages"
-              role="region"
-              aria-live="polite"
-            >
+          <!-- Loading state -->
+          <div v-if="!props.doctor || isLoading">
+            <WebsitePerfilDoctorPantallaCarga />
+          </div>
+
+          <!-- Content when doctor is loaded -->
+          <template v-else>
+            <!-- Mostrar mensaje si no hay servicios -->
+            <div v-if="!hasServices" class="no-services-message">
+              <div class="alert alert-warning">
+                <h4>Información de servicios no disponible</h4>
+                <p>
+                  Este doctor aún no tiene servicios configurados en el sistema.
+                </p>
+                <p>
+                  Puedes agendar una cita de valoración para obtener más
+                  información sobre los tratamientos disponibles.
+                </p>
+              </div>
+            </div>
+
+            <!-- Contenido normal cuando hay servicios -->
+            <template v-else>
+              <!-- Specialty badges -->
+              <div class="modal-tab__badges-wrapper">
+                <button
+                  v-for="specialty in specialties()"
+                  :key="specialty.code"
+                  @click="selectSpecialty(specialty.code, specialty.id)"
+                  class="modal-tab__badge"
+                  style="--bs-bg-opacity: 0.07"
+                  :class="{
+                    'modal-tab__badge--active':
+                      selectedSpecialty === specialty.code,
+                  }"
+                >
+                  {{ specialty.name }}
+                </button>
+              </div>
+
+              <!-- Procedure badges (shown when specialty is selected) -->
+              <div class="modal-tab__procedures-wrapper">
+                <button
+                  v-for="procedure in filteredProcedures"
+                  :key="procedure.procedure.code"
+                  @click="
+                    selectProcedure(
+                      procedure.procedure.code,
+                      procedure.procedure.id
+                    )
+                  "
+                  class="modal-tab__procedure-badge"
+                  :class="{
+                    'modal-tab__procedure-badge--active':
+                      selectedProcedure === procedure.procedure.code,
+                  }"
+                >
+                  {{ procedure.procedure.name }}
+                </button>
+              </div>
+
+              <div>
+                <p class="modal-tab__packages-title"></p>
+              </div>
+
+              <!-- All packages for selected procedure -->
+              <div
+                v-if="filteredPackages.length > 0"
+                class="modal-tab__packages"
+              >
+                <WebsitePerfilDoctorTarjetaServicio
+                  v-for="pkg in filteredPackages"
+                  :key="pkg.id"
+                  :pkg="pkg"
+                  :doctor="props.doctor"
+                  :doctor-reviews="doctorReviews()"
+                  :get-package-price="getPackagePrice"
+                  :get-assesment-label="getAssesmentLabel"
+                  :user="user"
+                />
+              </div>
+
+              <div
+                v-else-if="selectedSpecialty && filteredProcedures.length === 0"
+                class="alert alert-info"
+              >
+                No hay procedimientos disponibles para esta especialidad
+              </div>
+              <div
+                v-else-if="selectedProcedure && filteredPackages.length === 0"
+                class="alert alert-info"
+              >
+                No hay paquetes disponibles para este procedimiento
+              </div>
+            </template>
+
+            <!-- Siempre mostrar la cita de valoración al final, independientemente de si hay servicios -->
+            <div v-if="!hasServices" class="modal-tab__packages">
               <WebsitePerfilDoctorTarjetaServicio
-                v-for="pkg in allPackages"
-                :key="pkg.id"
-                :pkg="pkg"
+                :key="1001"
+                :pkg="citaValoracionPackage"
                 :doctor="props.doctor"
                 :doctor-reviews="doctorReviews()"
                 :get-package-price="getPackagePrice"
                 :get-assesment-label="getAssesmentLabel"
+                :user="user"
               />
             </div>
-            <div v-else class="alert alert-info" role="alert">
-              No hay paquetes disponibles
-            </div>
-          </div>
-
-          <WebsitePerfilDoctorPantallaCarga v-else />
+          </template>
         </div>
       </div>
     </div>
@@ -73,11 +141,20 @@
 </template>
 
 <script setup lang="ts">
-import type { AssessmentDetail, Doctor, Package } from "~/types/doctor";
+import type {
+  AssessmentDetail,
+  Doctor,
+  MedicalSpecialty,
+  Package,
+  Procedure,
+} from "~/types/doctor";
 
 const props = defineProps<{
-  doctor: Doctor;
+  doctor: Doctor | null;
   open: boolean;
+  user: Object;
+  specialtyCode?: string;
+  procedureCode?: string;
 }>();
 
 const emit = defineEmits(["close-modal"]);
@@ -94,6 +171,8 @@ const config = useRuntimeConfig();
 const token = useCookie("token");
 const modalTitleId = ref("modal-title");
 
+const isLoading = ref(false);
+
 const selectedSpecialty = ref<string | null>(null);
 const selectedSpecialtyId = ref<number | null>(null);
 const selectedProcedure = ref<string | null>(null);
@@ -108,80 +187,171 @@ const appointment = ref({
   time: "",
 });
 
+const hasServices = computed(() => {
+  return props.doctor?.services && props.doctor.services.length > 0;
+});
+
+const citaValoracionPackage = computed<Package>(() => ({
+  id: 1001,
+  product: {
+    id: 9999,
+    code: "ASSESSMENT_APPOINTMENT",
+    name: "Cita de Valoración",
+    type: "MEDICAL_PRODUCT",
+    description: "Cita de valoración médica inicial",
+    father_code: null,
+    value1: "25000",
+    created_date: new Date().toISOString(),
+    updated_date: null,
+    is_deleted: 0,
+  },
+  reference_price: 25000,
+  discount: 0,
+  discounted_price: 25000,
+  services_offer: {
+    ASSESSMENT_DETAILS: [
+      "MEDICAL_CONSULTATION",
+      "CLINICAL_EVALUATION",
+      "INITIAL_DIAGNOSIS",
+    ],
+  },
+  is_king: 0,
+  observations: "",
+  postoperative_assessments: null,
+}));
+
 const setDefaultSpecialtyAndProcedure = async () => {
+  isLoading.value = true;
   const authHeader = token.value ? { Authorization: token.value } : undefined;
-  const assessmentResponse = await $fetch<{ data: AssessmentDetail[] }>(
-    config.public.API_BASE_URL + "/udc/get_all",
-    {
-      headers: authHeader,
-      params: { type: "ASSESSMENT_DETAIL" },
-    }
+
+  try {
+    const assessmentResponse = await $fetch<{ data: AssessmentDetail[] }>(
+      config.public.API_BASE_URL + "/udc/get_all",
+      {
+        headers: authHeader,
+        params: { type: "ASSESSMENT_DETAIL" },
+      }
+    );
+    assessmentDetails.value = assessmentResponse.data;
+  } catch (error) {
+    console.error("Error loading assessment details:", error);
+  } finally {
+    isLoading.value = false;
+  }
+
+  if (!props.doctor?.services || props.doctor.services.length === 0) return;
+
+  const matchService = props.doctor.services.find(
+    (service) =>
+      service.medical_specialty.code === props.specialtyCode &&
+      service.procedures.some((p) => p.procedure.code === props.procedureCode)
   );
 
-  assessmentDetails.value = assessmentResponse.data;
+  const serviceToUse = matchService || props.doctor.services[0];
+  selectedSpecialty.value = serviceToUse.medical_specialty.code;
+  selectedSpecialtyId.value = serviceToUse.medical_specialty.id;
+  appointment.value.specialty = selectedSpecialty.value;
 
-  if (props.doctor.services && props.doctor.services.length > 0) {
-    selectedSpecialty.value = props.doctor.services[0].medical_specialty.code;
-    selectedSpecialtyId.value = props.doctor.services[0].medical_specialty.id;
-    appointment.value.specialty = selectedSpecialty.value;
-    if (
-      props.doctor.services[0].procedures &&
-      props.doctor.services[0].procedures.length > 0
-    ) {
-      selectedProcedure.value =
-        props.doctor.services[0].procedures[0].procedure.code;
-      selectedProcedureId.value =
-        props.doctor.services[0].procedures[0].procedure.id;
-      appointment.value.service = selectedProcedure.value;
-    }
+  const procedureToUse =
+    serviceToUse.procedures.find(
+      (p) => p.procedure.code === props.procedureCode
+    ) || serviceToUse.procedures[0];
+
+  if (procedureToUse) {
+    selectedProcedure.value = procedureToUse.procedure.code;
+    selectedProcedureId.value = procedureToUse.procedure.id;
+    appointment.value.service = selectedProcedure.value;
   }
 };
 
-const allPackages = computed<Package[]>(() => {
-  let packages: Package[] = [];
+const specialties = (): MedicalSpecialty[] => {
+  if (!props.doctor?.services) return [];
+  return props.doctor.services.map((service) => service.medical_specialty);
+};
 
-  if (props.doctor.services) {
-    props.doctor.services.forEach((service) => {
-      if (service.procedures) {
-        service.procedures.forEach((procedure) => {
-          if (procedure.packages) {
-            packages = [...packages, ...procedure.packages];
-          }
-        });
-      }
-    });
+const selectSpecialty = (specialtyCode: string, specialtyId: number) => {
+  if (!props.doctor?.services) return;
+
+  selectedSpecialty.value = specialtyCode;
+  selectedSpecialtyId.value = specialtyId;
+  selectedProcedure.value = null;
+  appointment.value.specialty = specialtyCode;
+
+  const specialty = props.doctor.services.find(
+    (s) => s.medical_specialty.code === specialtyCode
+  );
+
+  if (specialty?.procedures?.length) {
+    const firstProcedure = specialty.procedures[0];
+    selectedProcedure.value = firstProcedure.procedure.code;
+    selectedProcedureId.value = firstProcedure.procedure.id;
+    appointment.value.service = selectedProcedure.value;
+  }
+};
+
+const filteredProcedures = computed<Procedure[]>(() => {
+  if (!props.doctor?.services?.length) {
+    return [];
   }
 
-  const citaValoracionPackage: Package = {
-    id: 1001,
-    product: {
-      id: 9999,
-      code: "ASSESSMENT_APPOINTMENT",
-      name: "Cita de Valoración",
-      type: "MEDICAL_PRODUCT",
-      description: "Cita de valoración médica inicial",
-      father_code: null,
-      value1: "25000",
-      created_date: new Date().toISOString(),
-      updated_date: null,
-      is_deleted: 0,
-    },
-    reference_price: 25000,
-    discount: 0,
-    discounted_price: 25000,
-    services_offer: {
-      ASSESSMENT_DETAILS: [
-        "MEDICAL_CONSULTATION",
-        "CLINICAL_EVALUATION",
-        "INITIAL_DIAGNOSIS",
-      ],
-    },
-    is_king: 0,
-    observations: "",
-    postoperative_assessments: null,
-  };
+  if (!selectedSpecialty.value && props.doctor.services.length > 0) {
+    const firstServiceProcedures = props.doctor.services[0].procedures || [];
+    return firstServiceProcedures;
+  }
 
-  return [citaValoracionPackage, ...packages];
+  const specialty = props.doctor.services.find(
+    (s) => s.medical_specialty.code === selectedSpecialty.value
+  );
+
+  if (!specialty) {
+    return [];
+  }
+
+  const procedures = specialty.procedures || [];
+  return procedures;
+});
+
+const selectProcedure = (procedureCode: string, procedureId: number) => {
+  selectedProcedure.value = procedureCode;
+  selectedProcedureId.value = procedureId;
+  appointment.value.service = procedureCode;
+};
+
+const filteredPackages = computed<Package[]>(() => {
+  if (!props.doctor) {
+    return [];
+  }
+
+  if (!hasServices.value) {
+    return [citaValoracionPackage.value];
+  }
+
+  const procedures = filteredProcedures.value;
+
+  if (procedures.length === 0) {
+    return [citaValoracionPackage.value];
+  }
+
+  let packages: Package[] = [];
+  let selectedProcedureData = null;
+
+  if (!selectedProcedure.value && procedures.length > 0) {
+    selectedProcedureData = procedures[0];
+    packages = procedures[0].packages || [];
+  } else if (selectedProcedure.value) {
+    selectedProcedureData = procedures.find(
+      (p) => p.procedure.code === selectedProcedure.value
+    );
+
+    if (selectedProcedureData) {
+      packages = selectedProcedureData.packages || [];
+    } else {
+      console.warn("Selected procedure not found in filtered procedures");
+    }
+  }
+
+  const finalPackages = [citaValoracionPackage.value, ...packages];
+  return finalPackages;
 });
 
 const getAssesmentLabel = (assesmentCode: string) => {
@@ -193,17 +363,15 @@ const getAssesmentLabel = (assesmentCode: string) => {
 };
 
 const doctorReviews = (): ProcessedDoctorReview[] => {
-  return (
-    props.doctor.reviews?.map((review) => ({
-      first_name: review.customer.split(" ")[0] || "Anónimo",
-      last_name: review.is_annonymous
-        ? ""
-        : review.customer.split(" ")[1] || "",
-      message: review.comment,
-      pacient_type: "Paciente",
-      score: review.stars_average,
-    })) || []
-  );
+  if (!props.doctor?.reviews) return [];
+
+  return props.doctor.reviews.map((review) => ({
+    first_name: review.customer.split(" ")[0] || "Anónimo",
+    last_name: review.is_annonymous ? "" : review.customer.split(" ")[1] || "",
+    message: review.comment,
+    pacient_type: "Paciente",
+    score: review.stars_average,
+  }));
 };
 
 const getPackagePrice = (pkg: Package) => {
@@ -212,9 +380,31 @@ const getPackagePrice = (pkg: Package) => {
   return price - price * discount;
 };
 
+watch(
+  () => props.doctor,
+  (newDoctor) => {
+    if (newDoctor && props.open) {
+      setDefaultSpecialtyAndProcedure();
+    }
+  },
+  { immediate: true }
+);
+
+watch(
+  () => props.open,
+  (isOpen) => {
+    if (isOpen && props.doctor) {
+      setDefaultSpecialtyAndProcedure();
+    }
+  }
+);
+
 onMounted(() => {
-  modalTitleId.value = `modal-title-${Math.random().toString(36).substr(2, 9)}`;
-  setDefaultSpecialtyAndProcedure();
+  modalTitleId.value = `modal-title-${Math.random().toString(36).substring(2, 11)}`;
+
+  if (props.doctor && props.open) {
+    setDefaultSpecialtyAndProcedure();
+  }
 });
 </script>
 
@@ -233,20 +423,23 @@ onMounted(() => {
 }
 
 .modal {
+  height: 90vh;
+
   &-content {
-    background: white;
+    background: $white;
     border-radius: 16px;
-    max-height: 90vh;
     max-width: 1000px;
+    height: 90vh;
+    width: 100%;
     overflow-y: auto;
     position: relative;
-    width: 90%;
 
     &__header {
       display: flex;
       justify-content: space-between;
       align-items: center;
       padding: 24px;
+      border-bottom: 1px solid #e4e7ec;
     }
 
     &__title {
@@ -268,16 +461,10 @@ onMounted(() => {
     cursor: pointer;
   }
 
-  &-divider {
-    width: 100%;
-    height: 1px;
-    background-color: #e4e7ec;
-    margin: 0;
-    padding: 0;
-  }
-
   &-tab {
     padding: 24px;
+    overflow-y: auto;
+    flex: 1;
 
     &__badges-wrapper {
       display: flex;
@@ -349,7 +536,6 @@ onMounted(() => {
       flex-wrap: nowrap;
       gap: 20px;
       width: 100%;
-      height: 100%;
       align-items: stretch;
       padding-bottom: 10px;
       overflow: auto;
@@ -373,6 +559,39 @@ onMounted(() => {
         flex: 0 0 auto;
         min-width: 280px;
       }
+    }
+  }
+}
+
+.no-services-message {
+  padding: 20px;
+
+  .alert {
+    padding: 20px;
+    border-radius: 8px;
+    border: 1px solid #ffeaa7;
+    background-color: #fff3cd;
+    color: #856404;
+
+    h4 {
+      margin: 0 0 10px 0;
+      font-size: 18px;
+      font-weight: 600;
+    }
+
+    p {
+      margin: 0 0 10px 0;
+      line-height: 1.5;
+
+      &:last-child {
+        margin-bottom: 0;
+      }
+    }
+
+    &.alert-warning {
+      border-color: #ffeaa7;
+      background-color: #fff3cd;
+      color: #856404;
     }
   }
 }

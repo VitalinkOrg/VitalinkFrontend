@@ -1,3 +1,3 @@
 <template>
-  <Icon name="solar:pen-2-linear" />
+  <Icon name="lucide:pen" />
 </template>

@@ -114,7 +114,7 @@ const props = defineProps(["appointment", "open"]);
 
 .profile-section {
   display: flex;
-  justify-content: start;
+  justify-content: flex-start;
   margin-bottom: 20px;
   flex-direction: column;
 }

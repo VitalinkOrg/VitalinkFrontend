@@ -6,6 +6,10 @@ definePageMeta({
 const config = useRuntimeConfig();
 const token = useCookie("token");
 const route = useRoute();
+
+const searchSpecialtyCode = route.query.specialty_code;
+const searchProcedureCode = route.query.procedure_code;
+
 const { data: doctorData, pending } = await useLazyFetch(
   config.public.API_BASE_URL + "/supplier/get",
   {
@@ -40,7 +44,7 @@ const doctor = ref({
     <main class="main-content">
       <div class="main-container">
         <div class="navigation-container">
-          <NuxtLink to="/pacientes/inicio" class="return-link">
+          <NuxtLink to="javascript:history.back()" class="return-link">
             <svg
               width="20"
               height="20"
@@ -145,7 +149,11 @@ const doctor = ref({
                   información relevante y reserva citas fácilmente para tu
                   atención médica personalizada.
                 </p>
-                <WebsitePerfilDoctorTabs :doctor="doctorData" />
+                <WebsitePerfilDoctorTabs
+                  :doctor="doctorData"
+                  :search-specialty-code="searchSpecialtyCode"
+                  :search-procedure-code="searchProcedureCode"
+                />
               </div>
             </div>
           </div>

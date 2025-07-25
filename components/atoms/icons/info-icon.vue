@@ -1,3 +1,3 @@
 <template>
-  <img src="@/src/assets/img-icon-help.svg" alt="Ayuda y Soporte">
+  <Icon name="lucide:info" />
 </template>
