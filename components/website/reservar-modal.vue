@@ -1,656 +1,633 @@
 <template>
-  <div v-if="isOpen" class="modal-overlay z-3">
-    <div
-      class="modal-content packs z-3"
-      :class="{ confirmation: internalCurrentStep === 4 }"
-      style="height: 800px; overflow-y: auto"
-    >
-      <div class="modal-header">
-        <h2>
-          {{
-            internalCurrentStep === 1
-              ? "Packs de tratamientos"
-              : "Solicitar cita de valoración"
-          }}
-        </h2>
-        <button @click="openConfirmationModal">×</button>
-      </div>
-      <div class="modal-body">
-        <WebsiteStepper
-          v-if="internalCurrentStep !== 0 && internalCurrentStep !== 4"
-          :steps="steps"
-          :currentStep="internalCurrentStep"
-        />
-        <!-- Step 1: Display Plans -->
-        <div v-if="internalCurrentStep === 0">
-          <div class="container">
-            <div class="row">
-              <!-- Option 1 -->
-              <div class="col-4">
-                <div class="custom-card">
-                  <div class="card-header text-center">OPCIÓN 1</div>
-                  <div class="card-body">
-                    <h5 class="card-title">19.000 USD</h5>
-                    <p class="card-text">Precio original 28.000 USD</p>
-                    <p class="card-text rating">
-                      <span class="icon">
-                        <img
-                          src="@/src/assets/star.svg"
-                          alt="Busca centro medico"
-                          class="img-fluid"
-                        />
-                      </span>
-                      5.0 <span class="text-muted">(13 Reseñas)</span>
-                    </p>
-                    <ul class="list-group list-group-flush">
-                      <li class="list-group-item">
-                        <span class="icon">
-                          <img
-                            src="@/src/assets/check.svg"
-                            alt="Busca centro medico"
-                            class="img-fluid"
-                          />
-                        </span>
-                        Cita de valoración
-                      </li>
-                      <li class="list-group-item">
-                        <span class="icon">
-                          <img
-                            src="@/src/assets/check.svg"
-                            alt="Busca centro medico"
-                            class="img-fluid"
-                          />
-                        </span>
-                        Medicamentos
-                      </li>
-                      <li class="list-group-item">
-                        <span class="icon">
-                          <img
-                            src="@/src/assets/check.svg"
-                            alt="Busca centro medico"
-                            class="img-fluid"
-                          />
-                        </span>
-                        Cita de seguimiento 1 mes después.
-                      </li>
-                    </ul>
-                    <p class="text-muted">Próxima Disponibilidad:</p>
-                    <p class="card-text availability">
-                      <span class="availability-text">
-                        <span class="icon">
-                          <img
-                            src="@/src/assets/calendar.svg"
-                            alt="Busca centro medico"
-                            class="img-fluid"
-                          />
-                        </span>
-                        19/10/2024
-                      </span>
-                      <span class="time-text">
-                        <span class="icon">
-                          <img
-                            src="@/src/assets/clock.svg"
-                            alt="Busca centro medico"
-                            class="img-fluid"
-                          />
-                        </span>
-                        11:00 am
-                      </span>
-                    </p>
-                    <button
-                      @click="goToStep(1)"
-                      class="btn btn-outline-primary"
-                    >
-                      Cita de valoración
-                    </button>
-                  </div>
-                </div>
-              </div>
-
-              <!-- Option 2 -->
-              <div class="col-4">
-                <div class="custom-card">
-                  <div
-                    class="card-header selected text-center d-flex gap-2 align-items-center justify-content-center"
-                  >
-                    <span>
-                      <img
-                        src="@/src/assets/crown.svg"
-                        alt="Busca centro medico"
-                        class="img-fluid"
-                      />
-                    </span>
-                    <p class="m-0">OPCIÓN 2</p>
-                  </div>
-                  <div class="card-body">
-                    <h5 class="card-title">23.000 USD</h5>
-                    <p class="card-text">Precio original 28.000 USD</p>
-                    <p class="card-text rating">
-                      <span class="icon">
-                        <img
-                          src="@/src/assets/star.svg"
-                          alt="Busca centro medico"
-                          class="img-fluid"
-                        />
-                      </span>
-                      5.0 <span class="text-muted">(13 Reseñas)</span>
-                    </p>
-                    <ul class="list-group list-group-flush">
-                      <li class="list-group-item">
-                        <span class="icon">
-                          <img
-                            src="@/src/assets/check.svg"
-                            alt="Busca centro medico"
-                            class="img-fluid"
-                          />
-                        </span>
-                        Cita de valoración
-                      </li>
-                      <li class="list-group-item">
-                        <span class="icon">
-                          <img
-                            src="@/src/assets/check.svg"
-                            alt="Busca centro medico"
-                            class="img-fluid"
-                          />
-                        </span>
-                        Medicamentos
-                      </li>
-                      <li class="list-group-item">
-                        <span class="icon">
-                          <img
-                            src="@/src/assets/check.svg"
-                            alt="Busca centro medico"
-                            class="img-fluid"
-                          />
-                        </span>
-                        Cita de seguimiento 1 mes después.
-                      </li>
-                    </ul>
-                    <p class="text-muted">Próxima Disponibilidad:</p>
-                    <p class="card-text availability">
-                      <span class="availability-text">
-                        <span class="icon">
-                          <img
-                            src="@/src/assets/calendar.svg"
-                            alt="Busca centro medico"
-                            class="img-fluid"
-                          />
-                        </span>
-                        19/10/2024
-                      </span>
-                      <span class="time-text">
-                        <span class="icon">
-                          <img
-                            src="@/src/assets/clock.svg"
-                            alt="Busca centro medico"
-                            class="img-fluid"
-                          />
-                        </span>
-                        11:00 am
-                      </span>
-                    </p>
-                    <button
-                      @click="goToStep(1)"
-                      class="btn btn-outline-primary"
-                    >
-                      Cita de valoración
-                    </button>
-                  </div>
-                </div>
-              </div>
-
-              <!-- Option 3 -->
-              <div class="col-4">
-                <div class="custom-card">
-                  <div class="card-header text-center">OPCIÓN 3</div>
-                  <div class="card-body">
-                    <h5 class="card-title">26.000 USD</h5>
-                    <p class="card-text">Precio original 28.000 USD</p>
-                    <p class="card-text rating">
-                      <span class="icon">
-                        <img
-                          src="@/src/assets/star.svg"
-                          alt="Busca centro medico"
-                          class="img-fluid"
-                        />
-                      </span>
-                      5.0 <span class="text-muted">(13 Reseñas)</span>
-                    </p>
-                    <ul class="list-group list-group-flush">
-                      <li class="list-group-item">
-                        <span class="icon">
-                          <img
-                            src="@/src/assets/check.svg"
-                            alt="Busca centro medico"
-                            class="img-fluid"
-                          />
-                        </span>
-                        Cita con nutricionista
-                      </li>
-                      <li class="list-group-item">
-                        <span class="icon">
-                          <img
-                            src="@/src/assets/check.svg"
-                            alt="Busca centro medico"
-                            class="img-fluid"
-                          />
-                        </span>
-                        Cita con alergólogo
-                      </li>
-                      <li class="list-group-item">
-                        <span class="icon">
-                          <img
-                            src="@/src/assets/cross.svg"
-                            alt="Busca centro medico"
-                            class="img-fluid"
-                          />
-                        </span>
-                        Cita de seguimiento 1 mes después.
-                      </li>
-                    </ul>
-                    <p class="text-muted">Próxima Disponibilidad:</p>
-                    <p class="card-text availability">
-                      <span class="availability-text">
-                        <span class="icon">
-                          <img
-                            src="@/src/assets/calendar.svg"
-                            alt="Busca centro medico"
-                            class="img-fluid"
-                          />
-                        </span>
-                        19/10/2024
-                      </span>
-                      <span class="time-text">
-                        <span class="icon">
-                          <img
-                            src="@/src/assets/clock.svg"
-                            alt="Busca centro medico"
-                            class="img-fluid"
-                          />
-                        </span>
-                        11:00 am
-                      </span>
-                    </p>
-                    <button
-                      @click="goToStep(1)"
-                      class="btn btn-outline-primary"
-                    >
-                      Cita de valoración
-                    </button>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
+  <Teleport to="body">
+    <div v-if="isOpen" class="modal-overlay">
+      <div
+        class="modal-content packs z-3"
+        :class="{ confirmation: internalCurrentStep === 4 }"
+      >
+        <div class="modal-header">
+          <h2>
+            {{
+              internalCurrentStep === 1
+                ? "Packs de tratamientos"
+                : "Solicitar cita de valoración"
+            }}
+          </h2>
+          <button @click="openConfirmationModal">×</button>
         </div>
-
-        <!-- Step 2: Availability Section -->
-        <div v-if="internalCurrentStep === 1">
-          <div class="card mb-4 rounded-4">
-            <div class="card-body">
-              <!-- Date Selection -->
-              <div class="mb-4">
-                <h4 class="h6 fw-semibold">
-                  Selecciona las fechas de preferencia
-                </h4>
-                <p class="text-muted m-0 mb-3">
-                  Los días y horas que tengas disponibles para que lo tengamos
-                  de referencia para poder concretar una cita con tu médico.
-                </p>
-                <div class="d-flex justify-content-between align-items-center">
-                  <h4 class="h6 fw-semibold mb-3">Seleccione una fecha</h4>
-                  <div
-                    class="calendar-container badge rounded-5 bg-primary text-primary p-2"
-                    style="--bs-bg-opacity: 0.07"
-                  >
-                    <img
-                      src="@/src/assets/calendar.svg"
-                      alt="Busca centro medico"
-                      class="img-fluid text-primary"
-                    />
-                    <div class="custom-select-wrapper">
-                      <select
-                        v-model="selectedMonth"
-                        class="form-select badge bg-transparent border-0 shadow-none text-primary text-left text-start"
-                        style="--bs-bg-opacity: 0.07"
-                        @change="handleMonthChange"
-                      >
-                        <option :value="null" disabled selected>
-                          Seleccione un mes
-                        </option>
-                        <option
-                          v-for="month in months"
-                          :key="month.value"
-                          :value="month.value"
-                        >
-                          {{ month.label }}
-                        </option>
-                      </select>
-                    </div>
-                  </div>
-                </div>
-
-                <div class="d-flex gap-2 overflow-auto pb-2">
-                  <button
-                    v-for="day in availableDays"
-                    :key="day.date"
-                    @click="selectDay(day.date)"
-                    class="btn btn-outline-info d-flex flex-column align-items-center"
-                    :class="{ active: selectedDay === day.date }"
-                    style="
-                      min-width: 60px;
-                      padding: 8px 12px;
-                      border-radius: 8px;
-                    "
-                  >
-                    <span
-                      class="small text-info"
-                      :class="{ 'text-white': selectedDay === day.date }"
-                    >
-                      {{ day.day }}
-                    </span>
-                    <span
-                      class="fw-semibold text-info"
-                      :class="{ 'text-white': selectedDay === day.date }"
-                      >{{ day.number }}
-                    </span>
-                  </button>
-                </div>
-              </div>
-
-              <!-- Time Selection -->
-              <div v-if="selectedDay" class="mt-4">
-                <h4 class="h6 fw-semibold mb-3">Seleccione la hora</h4>
-                <div class="d-flex flex-wrap gap-2">
-                  <button
-                    v-for="(time, index) in availableHours"
-                    :key="index"
-                    @click="selectedHour = time"
-                    class="btn btn-outline-info position-relative hover-info"
-                    :class="{
-                      'active border-info text-white hover-info':
-                        selectedHour === time,
-                    }"
-                    style="border-radius: 8px; padding: 8px 16px"
-                  >
-                    {{ formatTime(time) }}
-                  </button>
-                </div>
-              </div>
-
-              <div v-else class="text-muted mt-4">
-                Por favor seleccione una fecha para ver los horarios disponibles
-              </div>
-
-              <!-- Reservation Button -->
-              <div class="row mt-4">
-                <div class="col-12 d-flex justify-content-between">
-                  <button
-                    class="btn btn-primary w-50"
-                    :disabled="!selectedHour"
-                    @click="reserveAppointment"
-                  >
-                    Reservar Cita de valoración
-                  </button>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-        <div v-if="internalCurrentStep === 2">
-          <div class="card mb-4 rounded-4">
-            <div class="card-body">
-              <h4 class="h6 fw-semibold">
-                Completar Formulario antes de reservar
-              </h4>
-              <p class="text-muted">Agregar Descripción</p>
-              <p class="text-muted">
-                Puedes agregar una descripción sobre la razón de tu reserva,
-                datos importantes que el médico deba tener en cuenta o los
-                síntomas y dolencias.
-              </p>
-              <textarea
-                v-model="description"
-                class="form-control mb-4"
-                rows="3"
-                placeholder="Escribe alguna descripción..."
-              ></textarea>
-
-              <h4 class="h6 fw-semibold">¿Para quién es la cita?</h4>
-              <div class="form-check mb-3">
-                <input
-                  v-model="appointmentFor"
-                  class="form-check-input"
-                  type="radio"
-                  name="appointmentFor"
-                  id="forMe"
-                  value="me"
-                />
-                <label class="form-check-label" for="forMe"> Para mi </label>
-              </div>
-              <div class="form-check mb-4">
-                <input
-                  v-model="appointmentFor"
-                  class="form-check-input"
-                  type="radio"
-                  name="appointmentFor"
-                  id="forSomeoneElse"
-                  value="someoneElse"
-                />
-                <label class="form-check-label" for="forSomeoneElse">
-                  Para otra persona
-                </label>
-              </div>
-
-              <h4 class="h6 fw-semibold">
-                Completa tu información de contacto
-              </h4>
-              <p class="text-muted">
-                Para asegurarnos de que podamos coordinar tu cita, necesitamos
-                tu número de teléfono.
-              </p>
-              <input
-                v-model="phoneNumber"
-                type="tel"
-                class="form-control mb-4"
-                placeholder="Número de Teléfono"
-              />
-
-              <h4 class="h6 fw-semibold">Resumen de pago:</h4>
-              <div class="d-flex justify-content-between mb-2">
-                <span class="text-muted">Precio</span>
-                <span>₡18000</span>
-              </div>
-              <div class="d-flex justify-content-between mb-2">
-                <span class="text-muted">Descuento</span>
-                <span>₡0</span>
-              </div>
-              <div class="d-flex justify-content-between mb-4">
-                <span class="text-muted">Precio Final</span>
-                <span>₡18000</span>
-              </div>
-
-              <div class="row mt-4">
-                <div class="col-12 d-flex justify-content-end">
-                  <button class="btn btn-primary w-50" @click="goToStep(3)">
-                    Continuar
-                  </button>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-        <div v-if="internalCurrentStep === 3">
-          <div class="card mb-4 rounded-4">
-            <div class="card-body">
-              <h4 class="h6 fw-semibold">
-                Revisa los datos antes de confirmar la cita:
-              </h4>
-              <table class="table table-borderless">
-                <tbody>
-                  <tr>
-                    <td><strong>Tipo de servicio:</strong></td>
-                    <td>
-                      {{
-                        this.doctorInfo.services.find(
-                          (service) =>
-                            service.medical_specialty.id ===
-                            this.selectedSpecialtyId
-                        ).medical_specialty.name
-                      }}
-                    </td>
-                  </tr>
-                  <tr>
-                    <td><strong>Fecha de la cita:</strong></td>
-                    <td>{{ formatDate(this.selectedDay) }}</td>
-                  </tr>
-                  <tr>
-                    <td><strong>Hora de la cita:</strong></td>
-                    <td>{{ formatTime(this.selectedHour) }}</td>
-                  </tr>
-                  <tr>
-                    <td><strong>Paciente titular:</strong></td>
-                    <td>{{ this.userInfo.name }}</td>
-                  </tr>
-                  <tr>
-                    <td><strong>Teléfono de Contacto:</strong></td>
-                    <td>{{ this.phoneNumber }}</td>
-                  </tr>
-                  <tr>
-                    <td><strong>Profesional Médico:</strong></td>
-                    <td>{{ this.doctorInfo.name }}</td>
-                  </tr>
-                  <tr>
-                    <td><strong>Procedimiento:</strong></td>
-                    <td>
-                      {{
-                        this.doctorInfo.services
-                          .flatMap((service) => service.procedures)
-                          .find(
-                            (procedure) =>
-                              procedure.procedure.id ===
-                              this.selectedProcedureId
-                          ).procedure.name
-                      }}
-                    </td>
-                  </tr>
-                  <tr>
-                    <td><strong>Costo del servicio:</strong></td>
-                    <td>₡18000</td>
-                  </tr>
-                </tbody>
-              </table>
-
-              <div class="row mt-4">
-                <div class="col-12 d-flex justify-content-between">
-                  <button
-                    class="btn btn-outline-dark me-2 w-50"
-                    @click="goToStep(2)"
-                  >
-                    Volver
-                  </button>
-                  <button
-                    class="btn btn-primary w-50"
-                    @click="confirmReservation"
-                  >
-                    Confirmar
-                  </button>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-        <div v-if="internalCurrentStep === 4">
-          <div class="card mb-4 rounded-4">
-            <div class="card-body">
-              <div class="confirmation-container">
-                <div class="confirmation-content">
-                  <div class="confirmation-header">
-                    <h4 class="confirmation-title text-primary">
-                      ¡Felicitaciones!
-                    </h4>
-                    <p class="confirmation-subtitle">
-                      Te avisaremos cuando tu solicitud<br />de cita sea
-                      aceptada
-                    </p>
-                  </div>
-                  <div class="confirmation-details">
-                    <div class="detail-item">
-                      <span class="detail-label">Tipo de servicio:</span>
-                      <span class="detail-value">
-                        {{
-                          this.doctorInfo.services.find(
-                            (service) =>
-                              service.medical_specialty.id ===
-                              this.selectedSpecialtyId
-                          ).medical_specialty.name
-                        }}</span
-                      >
-                    </div>
-                    <div class="detail-item">
-                      <span class="detail-label">Fecha de la cita:</span>
-                      <span class="detail-value">{{
-                        formatDate(this.selectedDay)
-                      }}</span>
-                    </div>
-                    <div class="detail-item">
-                      <span class="detail-label">Hora de la cita:</span>
-                      <span class="detail-value">{{
-                        formatTime(this.selectedHour)
-                      }}</span>
-                    </div>
-                    <div class="detail-item">
-                      <span class="detail-label">Paciente titular:</span>
-                      <span class="detail-value">{{ this.userInfo.name }}</span>
-                    </div>
-                    <div class="detail-item">
-                      <span class="detail-label">Teléfono de Contacto:</span>
-                      <span class="detail-value">{{ this.phoneNumber }}</span>
-                    </div>
-                    <div class="detail-item">
-                      <span class="detail-label">Profesional Médico:</span>
-                      <span class="detail-value">{{
-                        this.doctorInfo.name
-                      }}</span>
-                    </div>
-                    <div class="detail-item">
-                      <span class="detail-label">Procedimiento:</span>
-                      <span class="detail-value">
-                        {{
-                          this.doctorInfo.services
-                            .flatMap((service) => service.procedures)
-                            .find(
-                              (procedure) =>
-                                procedure.procedure.id ===
-                                this.selectedProcedureId
-                            ).procedure.name
-                        }}</span
-                      >
-                    </div>
-                    <div class="detail-item">
-                      <span class="detail-label">Pago:</span>
-                      <span class="detail-value">Pendiente</span>
-                    </div>
-                    <div class="detail-item">
-                      <span class="detail-label">Monto a Pagar:</span>
-                      <span class="detail-value">₡18000</span>
-                    </div>
-                  </div>
-                  <div class="row mt-4">
-                    <div class="col-12 d-flex justify-content-between">
+        <div class="modal-body">
+          <WebsiteStepper
+            v-if="internalCurrentStep !== 0 && internalCurrentStep !== 4"
+            :steps="steps"
+            :currentStep="internalCurrentStep"
+          />
+          <!-- Step 1: Display Plans -->
+          <div v-if="internalCurrentStep === 0">
+            <div class="container">
+              <div class="row">
+                <!-- Option 1 -->
+                <div class="col-4">
+                  <div class="custom-card">
+                    <div class="card-header text-center">OPCIÓN 1</div>
+                    <div class="card-body">
+                      <h5 class="card-title">19.000 USD</h5>
+                      <p class="card-text">Precio original 28.000 USD</p>
+                      <p class="card-text rating">
+                        <span class="icon">
+                          <img
+                            src="@/src/assets/star.svg"
+                            alt="Busca centro medico"
+                            class="img-fluid"
+                          />
+                        </span>
+                        5.0 <span class="text-muted">(13 Reseñas)</span>
+                      </p>
+                      <ul class="list-group list-group-flush">
+                        <li class="list-group-item">
+                          <span class="icon">
+                            <img
+                              src="@/src/assets/check.svg"
+                              alt="Busca centro medico"
+                              class="img-fluid"
+                            />
+                          </span>
+                          Cita de valoración
+                        </li>
+                        <li class="list-group-item">
+                          <span class="icon">
+                            <img
+                              src="@/src/assets/check.svg"
+                              alt="Busca centro medico"
+                              class="img-fluid"
+                            />
+                          </span>
+                          Medicamentos
+                        </li>
+                        <li class="list-group-item">
+                          <span class="icon">
+                            <img
+                              src="@/src/assets/check.svg"
+                              alt="Busca centro medico"
+                              class="img-fluid"
+                            />
+                          </span>
+                          Cita de seguimiento 1 mes después.
+                        </li>
+                      </ul>
+                      <p class="text-muted">Próxima Disponibilidad:</p>
+                      <p class="card-text availability">
+                        <span class="availability-text">
+                          <span class="icon">
+                            <img
+                              src="@/src/assets/calendar.svg"
+                              alt="Busca centro medico"
+                              class="img-fluid"
+                            />
+                          </span>
+                          19/10/2024
+                        </span>
+                        <span class="time-text">
+                          <span class="icon">
+                            <img
+                              src="@/src/assets/clock.svg"
+                              alt="Busca centro medico"
+                              class="img-fluid"
+                            />
+                          </span>
+                          11:00 am
+                        </span>
+                      </p>
                       <button
-                        class="btn btn-outline-dark me-2 w-50"
                         @click="goToStep(1)"
+                        class="btn btn-outline-primary"
                       >
-                        Descargar comprobante
+                        Cita de valoración
                       </button>
-                      <NuxtLink
-                        class="btn btn-primary w-50"
-                        href="/pacientes/citas"
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Option 2 -->
+                <div class="col-4">
+                  <div class="custom-card">
+                    <div
+                      class="card-header selected text-center d-flex gap-2 align-items-center justify-content-center"
+                    >
+                      <span>
+                        <img
+                          src="@/src/assets/crown.svg"
+                          alt="Busca centro medico"
+                          class="img-fluid"
+                        />
+                      </span>
+                      <p class="m-0">OPCIÓN 2</p>
+                    </div>
+                    <div class="card-body">
+                      <h5 class="card-title">23.000 USD</h5>
+                      <p class="card-text">Precio original 28.000 USD</p>
+                      <p class="card-text rating">
+                        <span class="icon">
+                          <img
+                            src="@/src/assets/star.svg"
+                            alt="Busca centro medico"
+                            class="img-fluid"
+                          />
+                        </span>
+                        5.0 <span class="text-muted">(13 Reseñas)</span>
+                      </p>
+                      <ul class="list-group list-group-flush">
+                        <li class="list-group-item">
+                          <span class="icon">
+                            <img
+                              src="@/src/assets/check.svg"
+                              alt="Busca centro medico"
+                              class="img-fluid"
+                            />
+                          </span>
+                          Cita de valoración
+                        </li>
+                        <li class="list-group-item">
+                          <span class="icon">
+                            <img
+                              src="@/src/assets/check.svg"
+                              alt="Busca centro medico"
+                              class="img-fluid"
+                            />
+                          </span>
+                          Medicamentos
+                        </li>
+                        <li class="list-group-item">
+                          <span class="icon">
+                            <img
+                              src="@/src/assets/check.svg"
+                              alt="Busca centro medico"
+                              class="img-fluid"
+                            />
+                          </span>
+                          Cita de seguimiento 1 mes después.
+                        </li>
+                      </ul>
+                      <p class="text-muted">Próxima Disponibilidad:</p>
+                      <p class="card-text availability">
+                        <span class="availability-text">
+                          <span class="icon">
+                            <img
+                              src="@/src/assets/calendar.svg"
+                              alt="Busca centro medico"
+                              class="img-fluid"
+                            />
+                          </span>
+                          19/10/2024
+                        </span>
+                        <span class="time-text">
+                          <span class="icon">
+                            <img
+                              src="@/src/assets/clock.svg"
+                              alt="Busca centro medico"
+                              class="img-fluid"
+                            />
+                          </span>
+                          11:00 am
+                        </span>
+                      </p>
+                      <button
+                        @click="goToStep(1)"
+                        class="btn btn-outline-primary"
                       >
-                        Ver En Citas
-                      </NuxtLink>
+                        Cita de valoración
+                      </button>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Option 3 -->
+                <div class="col-4">
+                  <div class="custom-card">
+                    <div class="card-header text-center">OPCIÓN 3</div>
+                    <div class="card-body">
+                      <h5 class="card-title">26.000 USD</h5>
+                      <p class="card-text">Precio original 28.000 USD</p>
+                      <p class="card-text rating">
+                        <span class="icon">
+                          <img
+                            src="@/src/assets/star.svg"
+                            alt="Busca centro medico"
+                            class="img-fluid"
+                          />
+                        </span>
+                        5.0 <span class="text-muted">(13 Reseñas)</span>
+                      </p>
+                      <ul class="list-group list-group-flush">
+                        <li class="list-group-item">
+                          <span class="icon">
+                            <img
+                              src="@/src/assets/check.svg"
+                              alt="Busca centro medico"
+                              class="img-fluid"
+                            />
+                          </span>
+                          Cita con nutricionista
+                        </li>
+                        <li class="list-group-item">
+                          <span class="icon">
+                            <img
+                              src="@/src/assets/check.svg"
+                              alt="Busca centro medico"
+                              class="img-fluid"
+                            />
+                          </span>
+                          Cita con alergólogo
+                        </li>
+                        <li class="list-group-item">
+                          <span class="icon">
+                            <img
+                              src="@/src/assets/cross.svg"
+                              alt="Busca centro medico"
+                              class="img-fluid"
+                            />
+                          </span>
+                          Cita de seguimiento 1 mes después.
+                        </li>
+                      </ul>
+                      <p class="text-muted">Próxima Disponibilidad:</p>
+                      <p class="card-text availability">
+                        <span class="availability-text">
+                          <span class="icon">
+                            <img
+                              src="@/src/assets/calendar.svg"
+                              alt="Busca centro medico"
+                              class="img-fluid"
+                            />
+                          </span>
+                          19/10/2024
+                        </span>
+                        <span class="time-text">
+                          <span class="icon">
+                            <img
+                              src="@/src/assets/clock.svg"
+                              alt="Busca centro medico"
+                              class="img-fluid"
+                            />
+                          </span>
+                          11:00 am
+                        </span>
+                      </p>
+                      <button
+                        @click="goToStep(1)"
+                        class="btn btn-outline-primary"
+                      >
+                        Cita de valoración
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Step 2: Availability Section -->
+          <div v-if="internalCurrentStep === 1">
+            <div class="card mb-4 rounded-4">
+              <div class="card-body">
+                <!-- Date Selection -->
+                <div class="mb-4">
+                  <h4 class="h6 fw-semibold">
+                    Selecciona las fechas de preferencia
+                  </h4>
+                  <p class="text-muted m-0 mb-3">
+                    Los días y horas que tengas disponibles para que lo tengamos
+                    de referencia para poder concretar una cita con tu médico.
+                  </p>
+                  <div
+                    class="d-flex justify-content-between align-items-center"
+                  >
+                    <h4 class="h6 fw-semibold mb-3">Seleccione una fecha</h4>
+                    <div
+                      class="calendar-container badge rounded-5 bg-primary text-primary p-2"
+                      style="--bs-bg-opacity: 0.07"
+                    >
+                      <img
+                        src="@/src/assets/calendar.svg"
+                        alt="Busca centro medico"
+                        class="img-fluid text-primary"
+                      />
+                      <div class="custom-select-wrapper">
+                        <select
+                          v-model="selectedMonth"
+                          class="form-select badge bg-transparent border-0 shadow-none text-primary text-left text-start"
+                          style="--bs-bg-opacity: 0.07"
+                          @change="handleMonthChange"
+                        >
+                          <option :value="null" disabled selected>
+                            Seleccione un mes
+                          </option>
+                          <option
+                            v-for="month in months"
+                            :key="month.value"
+                            :value="month.value"
+                          >
+                            {{ month.label }}
+                          </option>
+                        </select>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div class="d-flex gap-2 overflow-auto pb-2">
+                    <button
+                      v-for="day in availableDays"
+                      :key="day.date"
+                      @click="selectDay(day.date)"
+                      class="btn btn-outline-info d-flex flex-column align-items-center"
+                      :class="{ active: localSelectedDay === day.date }"
+                      style="
+                        min-width: 60px;
+                        padding: 8px 12px;
+                        border-radius: 8px;
+                      "
+                    >
+                      <span
+                        class="small text-info"
+                        :class="{ 'text-white': selectedDay === day.date }"
+                      >
+                        {{ day.day }}
+                      </span>
+                      <span
+                        class="fw-semibold text-info"
+                        :class="{ 'text-white': selectedDay === day.date }"
+                        >{{ day.number }}
+                      </span>
+                    </button>
+                  </div>
+                </div>
+
+                <!-- Time Selection -->
+                <div v-if="localSelectedDay" class="mt-4">
+                  <h4 class="h6 fw-semibold mb-3">Seleccione la hora</h4>
+                  <div class="d-flex flex-wrap gap-2">
+                    <button
+                      v-for="(time, index) in availableHours"
+                      :key="index"
+                      @click="localSelectedHour = time"
+                      class="btn btn-outline-info position-relative hover-info"
+                      :class="{
+                        'active border-info text-white hover-info':
+                          localSelectedHour === time,
+                      }"
+                    >
+                      {{ formatTime(time) }}
+                    </button>
+                  </div>
+                </div>
+
+                <div v-else class="text-muted mt-4">
+                  Por favor seleccione una fecha para ver los horarios
+                  disponibles
+                </div>
+
+                <!-- Reservation Button -->
+                <div class="row mt-4">
+                  <div class="col-12 d-flex justify-content-between">
+                    <button
+                      class="btn btn-primary w-50"
+                      :disabled="!localSelectedHour"
+                      @click="reserveAppointment"
+                    >
+                      Reservar Cita de valoración
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div v-if="internalCurrentStep === 2">
+            <div class="card mb-4 rounded-4">
+              <div class="card-body">
+                <h4 class="h6 fw-semibold">
+                  Completar Formulario antes de reservar
+                </h4>
+                <p class="text-muted">Agregar Descripción</p>
+                <p class="text-muted">
+                  Puedes agregar una descripción sobre la razón de tu reserva,
+                  datos importantes que el médico deba tener en cuenta o los
+                  síntomas y dolencias.
+                </p>
+                <textarea
+                  v-model="description"
+                  class="form-control mb-4"
+                  rows="3"
+                  placeholder="Escribe alguna descripción..."
+                ></textarea>
+
+                <h4 class="h6 fw-semibold">¿Para quién es la cita?</h4>
+                <div class="form-check mb-3">
+                  <input
+                    v-model="appointmentFor"
+                    class="form-check-input"
+                    type="radio"
+                    name="appointmentFor"
+                    id="forMe"
+                    value="me"
+                  />
+                  <label class="form-check-label" for="forMe"> Para mi </label>
+                </div>
+                <div class="form-check mb-4">
+                  <input
+                    v-model="appointmentFor"
+                    class="form-check-input"
+                    type="radio"
+                    name="appointmentFor"
+                    id="forSomeoneElse"
+                    value="someoneElse"
+                  />
+                  <label class="form-check-label" for="forSomeoneElse">
+                    Para otra persona
+                  </label>
+                </div>
+
+                <h4 class="h6 fw-semibold">
+                  Completa tu información de contacto
+                </h4>
+                <p class="text-muted">
+                  Para asegurarnos de que podamos coordinar tu cita, necesitamos
+                  tu número de teléfono.
+                </p>
+                <input
+                  v-model="phoneNumber"
+                  type="tel"
+                  class="form-control mb-4"
+                  placeholder="Número de Teléfono"
+                />
+
+                <h4 class="h6 fw-semibold">Resumen de pago:</h4>
+                <div class="d-flex justify-content-between mb-2">
+                  <span class="text-muted">Precio</span>
+                  <span>₡18000</span>
+                </div>
+                <div class="d-flex justify-content-between mb-2">
+                  <span class="text-muted">Descuento</span>
+                  <span>₡0</span>
+                </div>
+                <div class="d-flex justify-content-between mb-4">
+                  <span class="text-muted">Precio Final</span>
+                  <span>₡18000</span>
+                </div>
+
+                <div class="row mt-4">
+                  <div class="col-12 d-flex justify-content-end">
+                    <button
+                      class="btn btn-primary w-50"
+                      @click="continueToStep3"
+                      :disabled="!isStep2Valid"
+                    >
+                      Continuar
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div v-if="internalCurrentStep === 3">
+            <div class="card mb-4 rounded-4">
+              <div class="card-body">
+                <h4 class="h6 fw-semibold">
+                  Revisa los datos antes de confirmar la cita:
+                </h4>
+                <table class="table table-borderless">
+                  <tbody>
+                    <tr>
+                      <td><strong>Tipo de servicio:</strong></td>
+                      <td>{{ getSelectedServiceName }}</td>
+                    </tr>
+                    <tr>
+                      <td><strong>Fecha de la cita:</strong></td>
+                      <td>{{ formatDate(this.localSelectedDay) }}</td>
+                    </tr>
+                    <tr>
+                      <td><strong>Hora de la cita:</strong></td>
+                      <td>{{ formatTime(this.localSelectedHour) }}</td>
+                    </tr>
+                    <tr>
+                      <td><strong>Paciente titular:</strong></td>
+                      <td>{{ this.userInfo?.name || "N/A" }}</td>
+                    </tr>
+                    <tr>
+                      <td><strong>Teléfono de Contacto:</strong></td>
+                      <td>{{ this.phoneNumber }}</td>
+                    </tr>
+                    <tr>
+                      <td><strong>Profesional Médico:</strong></td>
+                      <td>{{ this.doctorInfo?.name || "N/A" }}</td>
+                    </tr>
+                    <tr>
+                      <td><strong>Procedimiento:</strong></td>
+                      <td>{{ getSelectedProcedureName }}</td>
+                    </tr>
+                    <tr>
+                      <td><strong>Costo del servicio:</strong></td>
+                      <td>₡18000</td>
+                    </tr>
+                  </tbody>
+                </table>
+
+                <div class="row mt-4">
+                  <div class="col-12 d-flex justify-content-between">
+                    <button
+                      class="btn btn-outline-dark me-2 w-50"
+                      @click="goToStep(2)"
+                    >
+                      Volver
+                    </button>
+                    <button
+                      class="btn btn-primary w-50"
+                      @click="confirmReservation"
+                    >
+                      Confirmar
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div v-if="internalCurrentStep === 4">
+            <div class="card mb-4 rounded-4">
+              <div class="card-body">
+                <div class="confirmation-container">
+                  <div class="confirmation-content">
+                    <div class="confirmation-header">
+                      <h4 class="confirmation-title text-primary">
+                        ¡Felicitaciones!
+                      </h4>
+                      <p class="confirmation-subtitle">
+                        Te avisaremos cuando tu solicitud<br />de cita sea
+                        aceptada
+                      </p>
+                    </div>
+                    <div class="confirmation-details">
+                      <div class="detail-item">
+                        <span class="detail-label">Tipo de servicio:</span>
+                        <span class="detail-value">{{
+                          getSelectedServiceName
+                        }}</span>
+                      </div>
+                      <div class="detail-item">
+                        <span class="detail-label">Fecha de la cita:</span>
+                        <span class="detail-value">{{
+                          formatDate(this.selectedDay)
+                        }}</span>
+                      </div>
+                      <div class="detail-item">
+                        <span class="detail-label">Hora de la cita:</span>
+                        <span class="detail-value">{{
+                          formatTime(this.selectedHour)
+                        }}</span>
+                      </div>
+                      <div class="detail-item">
+                        <span class="detail-label">Paciente titular:</span>
+                        <span class="detail-value">{{
+                          this.userInfo?.name || "N/A"
+                        }}</span>
+                      </div>
+                      <div class="detail-item">
+                        <span class="detail-label">Teléfono de Contacto:</span>
+                        <span class="detail-value">{{ this.phoneNumber }}</span>
+                      </div>
+                      <div class="detail-item">
+                        <span class="detail-label">Profesional Médico:</span>
+                        <span class="detail-value">{{
+                          this.doctorInfo?.name || "N/A"
+                        }}</span>
+                      </div>
+                      <div class="detail-item">
+                        <span class="detail-label">Procedimiento:</span>
+                        <span class="detail-value">{{
+                          getSelectedProcedureName
+                        }}</span>
+                      </div>
+                      <div class="detail-item">
+                        <span class="detail-label">Pago:</span>
+                        <span class="detail-value">Pendiente</span>
+                      </div>
+                      <div class="detail-item">
+                        <span class="detail-label">Monto a Pagar:</span>
+                        <span class="detail-value">₡18000</span>
+                      </div>
+                    </div>
+                    <div class="row mt-4">
+                      <div class="col-12 d-flex justify-content-between">
+                        <button
+                          class="btn btn-outline-dark me-2 w-50"
+                          @click="goToStep(1)"
+                        >
+                          Descargar comprobante
+                        </button>
+                        <NuxtLink
+                          class="btn btn-primary w-50"
+                          href="/pacientes/citas"
+                        >
+                          Ver En Citas
+                        </NuxtLink>
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -660,12 +637,12 @@
         </div>
       </div>
     </div>
-  </div>
-  <WebsiteReservarCancelModal
-    :isOpen="isConfirmationModalOpen"
-    @close="closeConfirmationModal"
-    @confirm-exit="closeMainModal"
-  />
+    <WebsiteReservarCancelModal
+      :isOpen="isConfirmationModalOpen"
+      @close="closeConfirmationModal"
+      @confirm-exit="closeMainModal"
+    />
+  </Teleport>
 </template>
 
 <script>
@@ -702,18 +679,21 @@ export default {
     isOpen: Boolean,
     currentStep: {
       type: Number,
-      default: 1, // Default value if no prop is passed
+      default: 1,
     },
   },
   data() {
     return {
       isConfirmationModalOpen: false,
       selectedMonth: null,
-      selectedDay: this.selectedDay,
-      selectedHour: this.selectedHour,
+      localSelectedDay: this.selectedDay,
+      localSelectedHour: this.selectedHour,
       availableDays: [],
       availableHours: [],
       steps: ["1", "2", "3"],
+      description: "",
+      appointmentFor: "me",
+      phoneNumber: "",
       months: [
         { value: 0, label: "Enero" },
         { value: 1, label: "Febrero" },
@@ -733,35 +713,93 @@ export default {
         "2025-02-11": ["10:30", "12:00", "15:00"],
         "2025-02-12": ["08:00", "09:30", "11:00", "13:00", "16:00"],
       },
-      internalCurrentStep: this.currentStep, // Initialize with the prop value
+      internalCurrentStep: this.currentStep || 1,
     };
   },
+  computed: {
+    debugButtonDisabled() {
+      const disabled = !this.selectedHour;
+      return disabled;
+    },
+    isStep2Valid() {
+      return this.appointmentFor && this.phoneNumber.trim() !== "";
+    },
+    getSelectedServiceName() {
+      try {
+        if (!this.doctorInfo?.services || !this.selectedSpecialtyId) {
+          return "N/A";
+        }
+        const service = this.doctorInfo.services.find(
+          (service) =>
+            service.medical_specialty?.id === this.selectedSpecialtyId
+        );
+        return service?.medical_specialty?.name || "N/A";
+      } catch (error) {
+        console.error("Error getting service name:", error);
+        return "N/A";
+      }
+    },
+    getSelectedProcedureName() {
+      try {
+        if (!this.doctorInfo?.services || !this.selectedProcedureId) {
+          return "N/A";
+        }
+        const allProcedures = this.doctorInfo.services.flatMap(
+          (service) => service.procedures || []
+        );
+        const procedure = allProcedures.find(
+          (procedure) => procedure.procedure?.id === this.selectedProcedureId
+        );
+        return procedure?.procedure?.name || "N/A";
+      } catch (error) {
+        console.error("Error getting procedure name:", error);
+        return "N/A";
+      }
+    },
+  },
   watch: {
-    // Watch for changes in the prop and update the internal state
-    currentStep(newVal) {
-      this.internalCurrentStep = newVal;
+    currentStep: {
+      handler(newVal) {
+        this.internalCurrentStep = newVal;
+      },
+      immediate: true,
+    },
+    internalCurrentStep(newVal) {
+      console.log("internalCurrentStep changed to:", newVal);
     },
   },
   methods: {
     openConfirmationModal() {
       this.isConfirmationModalOpen = true;
+      this.$emit("close");
     },
     closeConfirmationModal() {
       this.isConfirmationModalOpen = false;
     },
     closeMainModal() {
       this.isConfirmationModalOpen = false;
-      this.internalCurrentStep = 2;
+      this.internalCurrentStep = 1;
       this.$emit("close");
     },
     goToStep(step) {
-      this.internalCurrentStep = step; // Update the internal state
-      this.$emit("update:currentStep", step); // Emit an event to update the prop
+      this.internalCurrentStep = step;
+      this.$emit("update:currentStep", step);
+    },
+    continueToStep3() {
+      if (this.isStep2Valid) {
+        this.$emit("update:selectedDay", this.localSelectedDay);
+        this.$emit("update:selectedHour", this.localSelectedHour);
+        this.goToStep(3);
+      }
     },
     handleMonthChange() {
-      this.selectedDay = null;
-      this.selectedHour = null;
+      this.localSelectedDay = null;
+      this.localSelectedHour = null;
+      this.availableHours = [];
       this.availableDays = this.getAvailableDaysForMonth(this.selectedMonth);
+
+      console.log("Month changed to:", this.selectedMonth);
+      console.log("Available days:", this.availableDays);
     },
     getAvailableDaysForMonth(month) {
       const year = new Date().getFullYear();
@@ -785,51 +823,117 @@ export default {
       return availableDays;
     },
     selectDay(date) {
-      this.selectedDay = date;
+      this.localSelectedDay = date;
+      this.localSelectedHour = null;
       this.availableHours = this.availability[date] || [];
-    },
-    formatTime(time) {
-      const [hours, minutes] = time.split(":");
-      const period = hours >= 12 ? "PM" : "AM";
-      return `${hours % 12 || 12}:${minutes}${period}`;
+      console.log(
+        "Day selected:",
+        date,
+        "Available hours:",
+        this.availableHours
+      );
     },
     reserveAppointment() {
-      if (this.selectedHour) {
+      console.log("HORA: ", this.localSelectedHour, this.localSelectedDay);
+      if (this.localSelectedHour && this.localSelectedDay) {
         console.log(
           "Reserving appointment at",
-          this.selectedDay,
-          this.selectedHour
+          this.localSelectedDay,
+          this.localSelectedHour
         );
-        this.goToStep(2); // Use goToStep to update the step
+        this.goToStep(2);
+      } else {
+        console.log(
+          "Missing selection - Day:",
+          this.localSelectedDay,
+          "Hour:",
+          this.localSelectedHour
+        );
+      }
+    },
+    formatTime(time) {
+      if (!time || typeof time !== "string") {
+        return "N/A";
+      }
+      try {
+        const [hours, minutes] = time.split(":");
+        if (!hours || !minutes) {
+          return "N/A";
+        }
+        const numHours = parseInt(hours, 10);
+        const period = numHours >= 12 ? "PM" : "AM";
+        const displayHours = numHours % 12 || 12;
+        return `${displayHours}:${minutes} ${period}`;
+      } catch (error) {
+        console.error("Error formatting time:", error);
+        return "N/A";
       }
     },
     formatDate(dateString) {
-      if (!dateString) return "";
-      const date = new Date(dateString);
-      return date.toLocaleDateString("es-ES", {
-        weekday: "long",
-        day: "numeric",
-        month: "long",
-      });
+      if (!dateString || typeof dateString !== "string") {
+        return "N/A";
+      }
+      try {
+        const date = new Date(dateString);
+        if (isNaN(date.getTime())) {
+          return "N/A";
+        }
+        return date.toLocaleDateString("es-ES", {
+          weekday: "long",
+          day: "numeric",
+          month: "long",
+        });
+      } catch (error) {
+        console.error("Error formatting date:", error);
+        return "N/A";
+      }
     },
     async confirmReservation() {
+      if (!this.doctorInfo?.id) {
+        console.error("Doctor ID is missing");
+        alert(
+          "Error: Información del doctor no disponible. Por favor, intente nuevamente."
+        );
+        return;
+      }
+
+      if (!this.selectedPackage?.id) {
+        console.error("Package ID is missing");
+        alert(
+          "Error: Información del paquete no disponible. Por favor, intente nuevamente."
+        );
+        return;
+      }
+
+      if (!this.localSelectedDay || !this.localSelectedHour) {
+        console.error("Date or time is missing");
+        console.error("localSelectedDay:", this.localSelectedDay);
+        console.error("localSelectedHour:", this.localSelectedHour);
+        alert(
+          "Error: Fecha u hora no seleccionada. Por favor, complete la información."
+        );
+        return;
+      }
+
       const token = useCookie("token");
       const config = useRuntimeConfig();
       const user_info = useCookie("user_info");
 
       try {
         const payload = {
-          customer_id: "",
-          // is_for_external_user: this.appointmentFor === "someoneElse",
-          // user_description: this.description,
-          supplier_id: this.doctorInfo.id, // Make sure this is defined
-          appointment_date: this.selectedDay,
-          appointment_hour: this.selectedHour,
+          customer_id: user_info.value?.id || "",
+          is_for_external_user: this.appointmentFor === "someoneElse",
+          user_description: this.description || "",
+          supplier_id: this.doctorInfo.id,
+          appointment_date: this.localSelectedDay,
+          appointment_hour: this.localSelectedHour,
           package_id: this.selectedPackage.id,
-          // appointment_status_code: "PENDING",
-          // reservation_type_code: "PRE_RESERVATION",
-          // phone_number_external_user: this.phoneNumber,
+          appointment_status_code: "PENDING",
+          reservation_type_code: "PRE_RESERVATION",
+          phone_number_external_user: this.phoneNumber || "",
         };
+
+        console.log("Sending payload:", payload);
 
         const response = await $fetch(
           config.public.API_BASE_URL + "/appointment/add",
@@ -840,15 +944,31 @@ export default {
           }
         );
 
+        console.log("Appointment created successfully:", response);
         this.goToStep(4);
       } catch (error) {
         console.error("Error creating appointment:", error);
-        // You might want to show an error message to the user here
+
+        let errorMessage =
+          "Error al crear la cita. Por favor, intente nuevamente.";
+
+        if (error.response?.status === 400) {
+          errorMessage =
+            "Datos inválidos. Por favor, verifique la información ingresada.";
+        } else if (error.response?.status === 401) {
+          errorMessage =
+            "Sesión expirada. Por favor, inicie sesión nuevamente.";
+        } else if (error.response?.status === 500) {
+          errorMessage = "Error del servidor. Por favor, intente más tarde.";
+        }
+
+        alert(errorMessage);
       }
     },
   },
 };
 </script>
+
 <style scoped>
 .modal-overlay {
   position: fixed;
@@ -860,6 +980,7 @@ export default {
   display: flex;
   justify-content: center;
   align-items: center;
+  z-index: 2000;
 }
 
 .modal-content {
@@ -868,6 +989,8 @@ export default {
   border-radius: 8px;
   max-width: 900px;
   width: 100%;
+  height: 98vh;
+  overflow-y: auto;
 }
 
 .modal-content.confirmation {
