@@ -22,17 +22,19 @@ export default {
       },
       selectedSpecialty: "",
       loadingProcedures: false,
-      // Removed errorLoadingSpecialties since we don't need it anymore
       errorLoadingProcedures: false,
     };
   },
-  mounted() {
+  async mounted() {
     this.filtersData.disponibilidad = [
       { code: "all", name: "Todos" },
       { code: "weeks", name: "Proximas semanas" },
       { code: "months", name: "Proximos meses" },
       { code: "days", name: "Proximos dias" },
     ];
+
+    // Initialize filters from query parameters
+    await this.initializeFiltersFromQuery();
   },
   watch: {
     async selectedSpecialty(newVal, token) {
@@ -43,16 +45,41 @@ export default {
         this.filtersData.procedimiento = "";
       }
     },
+    // Watch for route changes to update filters
+    "$route.query": {
+      handler: "initializeFiltersFromQuery",
+      immediate: false,
+    },
   },
   methods: {
+    async initializeFiltersFromQuery() {
+      const query = this.$route.query;
+
+      // Set filters from query parameters
+      this.filtersData.procedimiento = query.procedure_code || "";
+      this.selectedSpecialty = query.specialty_code || "";
+      this.filtersData.lugar = query.province || "";
+      this.filtersData.valoracion = query.min_stars || "";
+      this.filtersData.min = query.min_price || "";
+      this.filtersData.max = query.max_price || "";
+      this.filtersData.entity = query.entity_type || "";
+
+      // If there's a specialty selected, load its procedures
+      if (this.selectedSpecialty) {
+        await this.loadProcedures(this.selectedSpecialty);
+      }
+    },
+
     async loadProcedures(specialtyCode) {
       const config = useRuntimeConfig();
       const token = useCookie("token");
       this.loadingProcedures = true;
       this.errorLoadingProcedures = false;
-      this.filtersData.procedimiento = "";
 
-      console.log(this.selectedSpecialty);
+      // Only clear procedure if we're loading a different specialty
+      if (!this.filtersData.procedimiento) {
+        this.filtersData.procedimiento = "";
+      }
 
       try {
         const { data, error } = await useFetch(
@@ -68,6 +95,12 @@ export default {
             code: item.code,
             name: item.name,
           }));
+
+          // After loading procedures, check if we need to restore a procedure from query
+          const queryProcedure = this.$route.query.procedure_code;
+          if (queryProcedure && !this.filtersData.procedimiento) {
+            this.filtersData.procedimiento = queryProcedure;
+          }
         }
       } catch (err) {
         console.error("Error loading procedures:", err);
@@ -76,30 +109,37 @@ export default {
         this.loadingProcedures = false;
       }
     },
+
     searchResults() {
-      this.$router.push({
-        path: "/buscar",
-        query: {
-          ...(this.filtersData.procedimiento && {
-            procedure_code: this.filtersData.procedimiento,
-          }),
-          ...(this.selectedSpecialty && {
-            specialty_code: this.selectedSpecialty,
-          }),
-          ...(this.filtersData.lugar && { province: this.filtersData.lugar }),
-          ...(this.filtersData.valoracion && {
-            min_stars: this.filtersData.valoracion,
-          }),
-          /* ...(this.filtersData.disponibilidad && {
-            disponibilidad: this.filtersData.disponibilidad,
-          }), */
-          ...(this.filtersData.min && { min_price: this.filtersData.min }),
-          ...(this.filtersData.max && { max_price: this.filtersData.max }),
-          ...(this.filtersData.entity && {
-            entity_type: this.filtersData.entity,
-          }),
-        },
-      });
+      const newQuery = {
+        ...(this.filtersData.procedimiento && {
+          procedure_code: this.filtersData.procedimiento,
+        }),
+        ...(this.selectedSpecialty && {
+          specialty_code: this.selectedSpecialty,
+        }),
+        ...(this.filtersData.lugar && { province: this.filtersData.lugar }),
+        ...(this.filtersData.valoracion && {
+          min_stars: this.filtersData.valoracion,
+        }),
+        ...(this.filtersData.min && { min_price: this.filtersData.min }),
+        ...(this.filtersData.max && { max_price: this.filtersData.max }),
+        ...(this.filtersData.entity && {
+          entity_type: this.filtersData.entity,
+        }),
+      };
+
+      // Only navigate if we're not already on the search page with the same query
+      const currentQuery = this.$route.query;
+      const isSameQuery =
+        JSON.stringify(currentQuery) === JSON.stringify(newQuery);
+
+      if (!isSameQuery) {
+        this.$router.push({
+          path: "/buscar",
+          query: newQuery,
+        });
+      }
     },
   },
 };
@@ -120,9 +160,7 @@ export default {
               class="search-form__select"
               v-model="selectedSpecialty"
             >
-              <option value="" disabled selected>
-                Buscar por especialidad
-              </option>
+              <option value="" disabled>Buscar por especialidad</option>
               <option
                 v-for="specialty in specialties"
                 :key="specialty.code"
@@ -149,9 +187,7 @@ export default {
                   !selectedSpecialty
                 "
               >
-                <option value="" disabled selected>
-                  Nombre del procedimiento
-                </option>
+                <option value="" disabled>Nombre del procedimiento</option>
                 <option
                   v-for="procedure in filtersData.procedures"
                   :key="procedure.code"

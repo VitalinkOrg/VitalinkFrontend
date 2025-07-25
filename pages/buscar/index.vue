@@ -30,26 +30,12 @@ export default {
     "max_price",
     "specialty",
     "min_stars",
-    "specialty_code",
-    "procedure_code",
     "lugar",
   ],
   watch: {
     "$route.query.min_stars": {
       handler(oldUrl) {
         this.min_starts = oldUrl;
-        this.search();
-      },
-    },
-    "$route.query.specialty_code": {
-      handler(oldUrl) {
-        this.specialty_code = oldUrl;
-        this.search();
-      },
-    },
-    "$route.query.procedure_code": {
-      handler(oldUrl) {
-        this.procedure_code = oldUrl;
         this.search();
       },
     },
@@ -128,7 +114,6 @@ export default {
       };
 
       try {
-        console.log("Search params:", setup); // Debug log
         const response = await axios.get(
           this.config.public.API_BASE_URL + "/supplier/get_all_main",
           setup
@@ -162,7 +147,7 @@ export default {
           </div>
         </div>
       </section>
-      <div v-if="isLoading">Loading clinicas...</div>
+      <WebsitePerfilDoctorPantallaCarga v-if="isLoading" />
       <div v-else class="container-fluid px-5">
         <section class="pb-5">
           <div class="row">

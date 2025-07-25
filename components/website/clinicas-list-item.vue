@@ -5,6 +5,10 @@ const props = defineProps(["clinica"]);
 const offers = ref([]);
 const config = useRuntimeConfig();
 const router = useRouter();
+const route = useRoute();
+
+const searchProcedureCode = computed(() => route.query.procedure_code);
+const searchSpecialtyCode = computed(() => route.query.specialty_code);
 
 const token = useCookie("token");
 const doctorData = ref(null);
@@ -17,22 +21,20 @@ function goTo(type, id) {
   });
 }
 
-const showPackages = async (doctor) => {
+const showPackages = async ({ medico }) => {
   openPackagesModal.value = true;
   try {
-    console.log({ id: doctor.id });
     loadingPackages.value = true;
-    const { data, pending } = await useLazyFetch(
+    const { data } = await useLazyFetch(
       config.public.API_BASE_URL + "/supplier/get",
       {
         headers: { Authorization: token.value },
-        params: { id: doctor.id },
+        params: { id: medico.id },
         transform: (_doctor) => _doctor.data,
       }
     );
 
     doctorData.value = data.value;
-    console.log("Doctor cargado:", doctorData.value);
   } catch (error) {
     console.error("Error obteniendo datos del doctor", error);
   } finally {
@@ -48,7 +50,14 @@ const closePackagesModal = () => {
 <template>
   <div class="clinic-section">
     <div class="clinic-list-grid">
-      <WebsiteTarjetaMedico :medico="clinica" @show-packages="showPackages" />
+      <WebsiteTarjetaMedico
+        :medico="clinica"
+        :queryParams="{
+          procedure_code: searchProcedureCode,
+          specialty_code: searchSpecialtyCode,
+        }"
+        @show-packages="showPackages"
+      />
     </div>
     <div v-if="panel" class="my-4">
       <p class="text-center text-primary h6 fw-medium fs-4">
@@ -121,9 +130,12 @@ const closePackagesModal = () => {
   <WebsitePackTratamientos
     :doctor="doctorData"
     :open="openPackagesModal"
+    :procedure-code="procedureCode"
+    :specialty-code="specialtyCode"
     @close-modal="closePackagesModal"
   />
 </template>
+
 <style lang="scss" scoped>
 .clinic-section {
   margin-top: 1rem;
