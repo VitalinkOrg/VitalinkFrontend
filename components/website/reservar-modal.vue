@@ -709,10 +709,55 @@ export default {
         { value: 11, label: "Diciembre" },
       ],
       availability: {
+        "2025-01-10": ["09:00", "11:00", "14:00"],
+        "2025-01-15": ["08:30", "10:30"],
+        "2025-01-25": ["09:00", "13:00"],
+
         "2025-02-10": ["09:00", "10:00", "11:00", "14:00"],
         "2025-02-11": ["10:30", "12:00", "15:00"],
         "2025-02-12": ["08:00", "09:30", "11:00", "13:00", "16:00"],
+
+        "2025-03-05": ["08:00", "12:00"],
+        "2025-03-14": ["09:30", "11:00", "14:30"],
+        "2025-03-28": ["10:00", "13:00", "16:00"],
+
+        "2025-04-03": ["09:00", "10:00"],
+        "2025-04-20": ["10:00", "11:30"],
+        "2025-04-29": ["08:00", "13:00", "15:30"],
+
+        "2025-05-06": ["08:30", "10:00"],
+        "2025-05-18": ["09:00", "13:00", "15:00"],
+        "2025-05-25": ["09:00", "11:00", "14:00"],
+
+        "2025-06-08": ["09:00", "10:30"],
+        "2025-06-17": ["11:00", "13:00"],
+        "2025-06-25": ["10:30", "14:00"],
+
+        "2025-07-07": ["08:30", "10:00", "16:00"],
+        "2025-07-15": ["09:00", "12:00"],
+        "2025-07-28": ["10:00", "13:00", "15:00"],
+
+        "2025-08-05": ["09:00", "10:30", "14:00"],
+        "2025-08-12": ["09:00", "11:00", "13:30"],
+        "2025-08-27": ["08:00", "10:00", "12:00"],
+
+        "2025-09-02": ["09:00", "11:30"],
+        "2025-09-13": ["10:00", "13:00"],
+        "2025-09-21": ["07:00", "08:30"],
+
+        "2025-10-06": ["08:00", "09:30"],
+        "2025-10-20": ["10:00", "12:00", "14:00"],
+        "2025-10-30": ["09:00", "10:00", "14:00"],
+
+        "2025-11-01": ["08:30", "11:00"],
+        "2025-11-11": ["09:30", "12:00"],
+        "2025-11-19": ["10:00", "14:00", "16:00"],
+
+        "2025-12-05": ["09:00", "10:30", "12:00"],
+        "2025-12-15": ["08:00", "09:00", "11:00"],
+        "2025-12-24": ["10:00", "11:30", "13:00"],
       },
+
       internalCurrentStep: this.currentStep || 1,
     };
   },
@@ -764,9 +809,7 @@ export default {
       },
       immediate: true,
     },
-    internalCurrentStep(newVal) {
-      console.log("internalCurrentStep changed to:", newVal);
-    },
+    internalCurrentStep(newVal) {},
   },
   methods: {
     openConfirmationModal() {
@@ -797,19 +840,20 @@ export default {
       this.localSelectedHour = null;
       this.availableHours = [];
       this.availableDays = this.getAvailableDaysForMonth(this.selectedMonth);
-
-      console.log("Month changed to:", this.selectedMonth);
-      console.log("Available days:", this.availableDays);
     },
     getAvailableDaysForMonth(month) {
       const year = new Date().getFullYear();
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+
       const daysInMonth = new Date(year, month + 1, 0).getDate();
       const availableDays = [];
 
       for (let day = 1; day <= daysInMonth; day++) {
         const date = new Date(year, month, day);
         const dateString = date.toISOString().split("T")[0];
-        if (this.availability[dateString]) {
+
+        if (date >= today && this.availability[dateString]) {
           availableDays.push({
             date: dateString,
             day: date
@@ -826,29 +870,10 @@ export default {
       this.localSelectedDay = date;
       this.localSelectedHour = null;
       this.availableHours = this.availability[date] || [];
-      console.log(
-        "Day selected:",
-        date,
-        "Available hours:",
-        this.availableHours
-      );
     },
     reserveAppointment() {
-      console.log("HORA: ", this.localSelectedHour, this.localSelectedDay);
       if (this.localSelectedHour && this.localSelectedDay) {
-        console.log(
-          "Reserving appointment at",
-          this.localSelectedDay,
-          this.localSelectedHour
-        );
         this.goToStep(2);
-      } else {
-        console.log(
-          "Missing selection - Day:",
-          this.localSelectedDay,
-          "Hour:",
-          this.localSelectedHour
-        );
       }
     },
     formatTime(time) {
@@ -889,6 +914,11 @@ export default {
       }
     },
     async confirmReservation() {
+      if (!this.isOpen) {
+        console.warn("Modal no abierto. Cancelando POST.");
+        return;
+      }
+
       if (!this.doctorInfo?.id) {
         console.error("Doctor ID is missing");
         alert(
@@ -932,8 +962,6 @@ export default {
           reservation_type_code: "PRE_RESERVATION",
           phone_number_external_user: this.phoneNumber || "",
         };
-
-        console.log("Sending payload:", payload);
 
         const response = await $fetch(
           config.public.API_BASE_URL + "/appointment/add",
