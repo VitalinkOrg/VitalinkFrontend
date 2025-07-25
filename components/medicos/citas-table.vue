@@ -1,6 +1,6 @@
 <script setup>
 import { jsPDF } from "jspdf";
-import { computed, inject, ref } from "vue";
+import { computed, inject, ref, watch } from "vue";
 
 // Define emits
 const emit = defineEmits(["refreshed"]);
@@ -8,12 +8,16 @@ const emit = defineEmits(["refreshed"]);
 // Define props
 const props = defineProps({
   appointments: {
-    type: Object,
-    default: [],
+    type: Array,
+    default: () => [],
   },
   useDropdown: {
     type: Boolean,
     default: false,
+  },
+  itemsPerPage: {
+    type: Number,
+    default: 10,
   },
 });
 
@@ -30,6 +34,9 @@ const selectedAppointments = ref(new Set());
 const allSelected = ref(false);
 const sortColumn = ref(null);
 const sortDirection = ref("asc");
+
+// Pagination data
+const currentPage = ref(1);
 
 // Computed
 const hasAppointments = computed(
@@ -68,21 +75,66 @@ const sortedAppointments = computed(() => {
   });
 });
 
+// Pagination computed properties
+const totalItems = computed(() => sortedAppointments.value.length);
+
+const totalPages = computed(() =>
+  Math.ceil(totalItems.value / props.itemsPerPage)
+);
+
+const paginatedAppointments = computed(() => {
+  const start = (currentPage.value - 1) * props.itemsPerPage;
+  const end = start + props.itemsPerPage;
+  return sortedAppointments.value.slice(start, end);
+});
+
+// Watch for appointments changes to reset pagination
+watch(
+  () => props.appointments,
+  () => {
+    currentPage.value = 1;
+    selectedAppointments.value.clear();
+    allSelected.value = false;
+  }
+);
+
+// Watch for sorting changes to reset pagination
+watch([sortColumn, sortDirection], () => {
+  currentPage.value = 1;
+});
+
 // Methods
 const showUserDetails = (appointment) => {
+  // Cerrar todos los modales primero
+  closeModal();
+  // Abrir el modal específico
   modalData.value = appointment;
   openUserModal.value = true;
 };
 
 const showContactDetails = (appointment) => {
+  // Cerrar todos los modales primero
+  closeModal();
+  // Abrir el modal específico
   modalData.value = appointment;
   openContactModal.value = true;
 };
 
 const showDateDetails = (appointment, step = 1) => {
+  // Cerrar todos los modales primero
+  closeModal();
+  // Abrir el modal específico
   modalData.value = appointment;
-  openDateModal.value = true;
   currentStep.value = step;
+  openDateModal.value = true;
+};
+
+const showDateCancel = (appointment) => {
+  // Cerrar todos los modales primero
+  closeModal();
+  // Abrir el modal específico
+  modalData.value = appointment;
+  openDateCancelModal.value = true;
 };
 
 const statusClass = (status) => {
@@ -101,11 +153,6 @@ const statusClass = (status) => {
   return statusMap[status] || "";
 };
 
-const showDateCancel = (appointment) => {
-  modalData.value = appointment;
-  openDateCancelModal.value = true;
-};
-
 const toggleAppointmentSelection = (appointmentId) => {
   if (selectedAppointments.value.has(appointmentId)) {
     selectedAppointments.value.delete(appointmentId);
@@ -119,7 +166,8 @@ const toggleAllAppointments = () => {
   if (allSelected.value) {
     selectedAppointments.value.clear();
   } else {
-    props.appointments.forEach((appointment) => {
+    // Solo seleccionar los de la página actual
+    paginatedAppointments.value.forEach((appointment) => {
       selectedAppointments.value.add(appointment.id);
     });
   }
@@ -127,9 +175,11 @@ const toggleAllAppointments = () => {
 };
 
 const updateAllSelectedState = () => {
+  // Verificar si todos los elementos de la página actual están seleccionados
+  const currentPageIds = paginatedAppointments.value.map((app) => app.id);
   allSelected.value =
-    hasAppointments.value &&
-    selectedAppointments.value.size === props.appointments.length;
+    currentPageIds.length > 0 &&
+    currentPageIds.every((id) => selectedAppointments.value.has(id));
 };
 
 const sortBy = (column) => {
@@ -194,10 +244,13 @@ const downloadSummary = (appointment) => {
 };
 
 const closeModal = () => {
+  // Asegurarse de cerrar TODOS los modales
   modalData.value = null;
   openUserModal.value = false;
   openDateModal.value = false;
+  openContactModal.value = false;
   openDateCancelModal.value = false;
+  currentStep.value = 1; // Reset step
 };
 
 const handleRefresh = async () => {
@@ -210,6 +263,23 @@ const handleRefresh = async () => {
 const handleAppointmentUpdate = (appointmentData) => {
   emit("refreshed", appointmentData);
 };
+
+// Pagination methods
+const handlePageChange = (page) => {
+  currentPage.value = page;
+  // Limpiar selecciones cuando cambiamos de página
+  selectedAppointments.value.clear();
+  allSelected.value = false;
+};
+
+// Watch para actualizar el estado de "seleccionar todo" cuando cambia la página
+watch(currentPage, () => {
+  updateAllSelectedState();
+});
+
+watch(paginatedAppointments, () => {
+  updateAllSelectedState();
+});
 </script>
 
 <template>
@@ -357,7 +427,10 @@ const handleAppointmentUpdate = (appointmentData) => {
                 </button>
               </th>
 
-              <th scope="col" class="appointments-table__header-cell--center">
+              <th
+                scope="col"
+                class="appointments-table__header-cell appointments-table__header-cell--center"
+              >
                 <span class="appointments-table__header-text"
                   >Acción Principal</span
                 >
@@ -379,7 +452,7 @@ const handleAppointmentUpdate = (appointmentData) => {
 
           <tbody class="appointments-table__body">
             <tr
-              v-for="appointment in sortedAppointments"
+              v-for="appointment in paginatedAppointments"
               :key="appointment.id"
               class="appointments-table__row"
               role="row"
@@ -406,7 +479,7 @@ const handleAppointmentUpdate = (appointmentData) => {
 
               <td class="appointments-table__cell">
                 <span class="appointments-table__patient-name">
-                  {{ appointment.customer.name }}
+                  {{ appointment.customer.name }} {{ appointment.id }}
                 </span>
               </td>
 
@@ -454,7 +527,7 @@ const handleAppointmentUpdate = (appointmentData) => {
                     'PENDING_VALORATION_APPOINTMENT'
                   "
                   class="appointments-table__action-btn appointments-table__action-btn--primary"
-                  @click="showDateDetails(appointment, 2)"
+                  @click="showDateDetails(appointment)"
                   :aria-label="`Confirmar cita de valoración de ${appointment.customer.name}`"
                 >
                   Confirmar
@@ -494,6 +567,17 @@ const handleAppointmentUpdate = (appointmentData) => {
                   Marcar como Concretado
                 </button>
 
+                <button
+                  v-if="
+                    appointment.appointment_status.code ===
+                    'VALUED_VALORATION_APPOINTMENT'
+                  "
+                  class="appointments-table__action-btn appointments-table__action-btn--complete"
+                  @click="showDateDetails(appointment)"
+                  :aria-label="`Marcar como concretado procedimiento de ${appointment.customer.name}`"
+                >
+                  Solicitar procedimiento
+                </button>
                 <span
                   v-if="
                     ![
@@ -501,6 +585,7 @@ const handleAppointmentUpdate = (appointmentData) => {
                       'VALUATION_PENDING_VALORATION_APPOINTMENT',
                       'PENDING_PROCEDURE',
                       'WAITING_PROCEDURE',
+                      'VALUED_VALORATION_APPOINTMENT',
                     ].includes(appointment.appointment_status.code)
                   "
                   class="appointments-table__no-action"
@@ -537,7 +622,7 @@ const handleAppointmentUpdate = (appointmentData) => {
                         role="menuitem"
                         @click="showDateDetails(appointment)"
                       >
-                        <Icon name="fa6-regular:eye" />
+                        <AtomsIconsEyeIcon />
                         Ver más detalles
                       </button>
                     </li>
@@ -556,7 +641,7 @@ const handleAppointmentUpdate = (appointmentData) => {
                         role="menuitem"
                         @click="showDateDetails(appointment, 2)"
                       >
-                        <Icon name="fa6-regular:calendar" />
+                        <AtomsIconsCalendarDaysIcon />
                         Confirmar reserva
                       </button>
                     </li>
@@ -576,8 +661,8 @@ const handleAppointmentUpdate = (appointmentData) => {
                         <Icon
                           :name="
                             appointment.appointment_type == 'pre-reserva'
-                              ? 'fa6-regular:calendar'
-                              : 'fa6-regular:circle-left'
+                              ? 'lucide:square-pen'
+                              : 'lucide:undo-2'
                           "
                         />
                         {{
@@ -594,7 +679,7 @@ const handleAppointmentUpdate = (appointmentData) => {
                         role="menuitem"
                         @click="showUserDetails(appointment)"
                       >
-                        <Icon name="fa6-solid:user" />
+                        <AtomsIconsUserRoundIcon />
                         Perfil del Paciente
                       </button>
                     </li>
@@ -610,7 +695,7 @@ const handleAppointmentUpdate = (appointmentData) => {
                         role="menuitem"
                         @click="showDateCancel(appointment)"
                       >
-                        <Icon name="fa6-regular:circle-xmark" />
+                        <AtomsIconsCircleXIcon />
                         Anular cita
                       </button>
                     </li>
@@ -621,7 +706,7 @@ const handleAppointmentUpdate = (appointmentData) => {
                         role="menuitem"
                         @click="downloadSummary(appointment)"
                       >
-                        <Icon name="fa6-solid:download" />
+                        <AtomsIconsArrowDownToLineIcon />
                         Descargar Resumen
                       </button>
                     </li>
@@ -686,70 +771,19 @@ const handleAppointmentUpdate = (appointmentData) => {
       </div>
     </div>
 
-    <!-- Pagination -->
-    <nav
-      class="appointments-table__pagination"
-      aria-label="Navegación de páginas"
-      v-if="hasAppointments"
-    >
-      <ul class="appointments-table__pagination-list" role="list">
-        <li class="appointments-table__pagination-item">
-          <button
-            class="appointments-table__pagination-btn appointments-table__pagination-btn--prev"
-            @click="getCitas()"
-            aria-label="Página anterior"
-          >
-            <span aria-hidden="true">&laquo;</span>
-            Anterior
-          </button>
-        </li>
+    <MedicosPaginacion
+      v-if="hasAppointments && totalPages > 1"
+      :current-page="currentPage"
+      :total-pages="totalPages"
+      :total-items="totalItems"
+      :items-per-page="itemsPerPage"
+      :show-info="false"
+      @page-changed="handlePageChange"
+    />
 
-        <li class="appointments-table__pagination-item">
-          <button
-            class="appointments-table__pagination-btn appointments-table__pagination-btn--active"
-            @click="getCitas()"
-            aria-label="Página 1, página actual"
-            aria-current="page"
-          >
-            1
-          </button>
-        </li>
-
-        <li class="appointments-table__pagination-item">
-          <button
-            class="appointments-table__pagination-btn"
-            @click="getCitas()"
-            aria-label="Ir a página 2"
-          >
-            2
-          </button>
-        </li>
-
-        <li class="appointments-table__pagination-item">
-          <button
-            class="appointments-table__pagination-btn"
-            @click="getCitas()"
-            aria-label="Ir a página 3"
-          >
-            3
-          </button>
-        </li>
-
-        <li class="appointments-table__pagination-item">
-          <button
-            class="appointments-table__pagination-btn appointments-table__pagination-btn--next"
-            @click="getCitas()"
-            aria-label="Página siguiente"
-          >
-            Siguiente
-            <span aria-hidden="true">&raquo;</span>
-          </button>
-        </li>
-      </ul>
-    </nav>
-
-    <!-- Modals Existentes -->
+    <!-- Modals -->
     <MedicosUserModal
+      v-if="openUserModal"
       :open="openUserModal"
       :appointment="modalData"
       @close-modal="closeModal"
@@ -757,6 +791,7 @@ const handleAppointmentUpdate = (appointmentData) => {
     />
 
     <MedicosCitaModal
+      v-if="openDateModal"
       :open="openDateModal"
       :appointment="modalData"
       v-model:step="currentStep"
@@ -765,6 +800,7 @@ const handleAppointmentUpdate = (appointmentData) => {
     />
 
     <MedicosCitaCancelModal
+      v-if="openDateCancelModal"
       :open="openDateCancelModal"
       :appointment="modalData"
       @close-modal="closeModal"
@@ -772,6 +808,7 @@ const handleAppointmentUpdate = (appointmentData) => {
     />
 
     <MedicosCitaContactModal
+      v-if="openContactModal"
       :open="openContactModal"
       :appointment="modalData"
       @close-modal="closeModal"
@@ -810,6 +847,7 @@ const handleAppointmentUpdate = (appointmentData) => {
     width: 100%;
     border-collapse: collapse;
     font-size: 0.875rem;
+    table-layout: fixed;
   }
 
   // Header
@@ -831,6 +869,34 @@ const handleAppointmentUpdate = (appointmentData) => {
     color: #6d758f;
     border: none;
     background-color: $white;
+
+    &:nth-child(1) {
+      width: 50px;
+    }
+    &:nth-child(2) {
+      width: 170px;
+    }
+    &:nth-child(3) {
+      width: 120px;
+    }
+    &:nth-child(4) {
+      width: 160px;
+    }
+    &:nth-child(5) {
+      width: 120px;
+    }
+    &:nth-child(6) {
+      width: 160px;
+    }
+    &:nth-child(7) {
+      width: 140px;
+    }
+    &:nth-child(8) {
+      width: 80px;
+    }
+    &:nth-child(9) {
+      width: 60px;
+    }
 
     &--center {
       font-weight: 500;
@@ -1146,6 +1212,34 @@ const handleAppointmentUpdate = (appointmentData) => {
     &:focus {
       outline: 2px solid $color-primary;
       outline-offset: 2px;
+    }
+  }
+
+  .dropdown-menu {
+    padding: 0;
+    margin: 0;
+    overflow: hidden;
+  }
+
+  .dropdown-item {
+    @include label-base;
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    font-weight: 400;
+    font-size: 14px;
+    line-height: 20px;
+    padding: 10px 14px;
+    color: #353e5c;
+
+    &:hover {
+      background-color: #f1f3f7;
+    }
+
+    svg {
+      color: #3541b4;
+      width: 16px;
+      height: 16px;
     }
   }
 
