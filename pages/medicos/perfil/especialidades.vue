@@ -129,7 +129,7 @@ const removeService = (index) => {
         >
           <span>{{ specialty }}</span>
           <span class="fw-semibold">
-            <AtomsIconsTimesXIcon />
+            <AtomsIconsXIcon />
           </span>
         </button>
       </div>
@@ -186,7 +186,7 @@ const removeService = (index) => {
         >
           <span>{{ service }}</span>
           <span class="fw-semibold">
-            <AtomsIconsTimesXIcon />
+            <AtomsIconsXIcon />
           </span>
         </button>
       </div>
