@@ -13,7 +13,9 @@
                 : "Solicitar cita de valoración"
             }}
           </h2>
-          <button @click="openConfirmationModal">×</button>
+          <button @click="openConfirmationModal">
+            <AtomsIconsXIcon />
+          </button>
         </div>
         <div class="modal-body">
           <WebsiteStepper
@@ -810,18 +812,53 @@ export default {
       immediate: true,
     },
     internalCurrentStep(newVal) {},
+    // Limpiar datos cuando el modal se cierra
+    isOpen: {
+      handler(newVal) {
+        if (!newVal) {
+          // Cuando el modal se cierra, limpiar los datos después de un pequeño delay
+          // para evitar que se vea el reseteo antes de que el modal se cierre
+          setTimeout(() => {
+            this.resetModalData();
+          }, 300);
+        }
+      },
+      immediate: false,
+    },
   },
   methods: {
+    // CAMBIO PRINCIPAL: Removemos la emisión del evento 'close' aquí
     openConfirmationModal() {
       this.isConfirmationModalOpen = true;
-      this.$emit("close");
+      // NO emitimos 'close' aquí - mantenemos el modal principal abierto
     },
     closeConfirmationModal() {
       this.isConfirmationModalOpen = false;
+      // El modal principal permanece abierto
     },
-    closeMainModal() {
-      this.isConfirmationModalOpen = false;
+    // Método para limpiar todos los datos del formulario
+    resetModalData() {
+      // Resetear datos del formulario
+      this.description = "";
+      this.appointmentFor = "me";
+      this.phoneNumber = "";
+
+      // Resetear selecciones de fecha y hora
+      this.selectedMonth = null;
+      this.localSelectedDay = null;
+      this.localSelectedHour = null;
+      this.availableDays = [];
+      this.availableHours = [];
+
+      // Resetear paso actual
       this.internalCurrentStep = 1;
+
+      // Resetear modal de confirmación
+      this.isConfirmationModalOpen = false;
+    },
+
+    closeMainModal() {
+      this.resetModalData(); // Limpiar todos los datos
       this.$emit("close");
     },
     goToStep(step) {
@@ -936,9 +973,6 @@ export default {
       }
 
       if (!this.localSelectedDay || !this.localSelectedHour) {
-        console.error("Date or time is missing");
-        console.error("localSelectedDay:", this.localSelectedDay);
-        console.error("localSelectedHour:", this.localSelectedHour);
         alert(
           "Error: Fecha u hora no seleccionada. Por favor, complete la información."
         );
@@ -950,6 +984,19 @@ export default {
       const user_info = useCookie("user_info");
 
       try {
+        console.log("Creating appointment with payload:", {
+          customer_id: user_info.value?.id || "",
+          is_for_external_user: this.appointmentFor === "someoneElse",
+          user_description: this.description || "",
+          supplier_id: this.doctorInfo.id,
+          appointment_date: this.localSelectedDay,
+          appointment_hour: this.localSelectedHour,
+          package_id: 1,
+          appointment_status_code: "PENDING",
+          reservation_type_code: "PRE_RESERVATION",
+          phone_number_external_user: this.phoneNumber || "",
+        });
+
         const payload = {
           customer_id: user_info.value?.id || "",
           is_for_external_user: this.appointmentFor === "someoneElse",
@@ -957,7 +1004,7 @@ export default {
           supplier_id: this.doctorInfo.id,
           appointment_date: this.localSelectedDay,
           appointment_hour: this.localSelectedHour,
-          package_id: this.selectedPackage.id,
+          package_id: 1,
           appointment_status_code: "PENDING",
           reservation_type_code: "PRE_RESERVATION",
           phone_number_external_user: this.phoneNumber || "",

@@ -87,11 +87,7 @@
               :key="service"
             >
               <div class="service-card__services-icon-wrapper">
-                <img
-                  src="@/src/assets/check.svg"
-                  alt="Incluido"
-                  class="service-card__services-icon"
-                />
+                <AtomsIconsCheckIcon class="service-card__services-icon" />
               </div>
               <p class="service-card__services-text">
                 {{ getAssesmentLabel(service) }}
@@ -114,7 +110,7 @@
   <WebsiteReservarModal
     :selectedProcedureId="selectedProcedureId"
     :selectedSpecialtyId="selectedSpecialtyId"
-    :userInfo="user"
+    :userInfo="userInfo"
     :doctorInfo="doctor"
     :selectedDay="selectedDay"
     :selectedHour="selectedHour"
@@ -129,7 +125,7 @@
 <script setup>
 import { defineProps, ref } from "vue";
 
-defineProps({
+const props = defineProps({
   pkg: {
     type: Object,
     required: true,
@@ -158,9 +154,17 @@ defineProps({
     type: Object,
     default: null,
   },
-  user: {
+  userInfo: {
     type: Object,
     required: true,
+  },
+  selectedSpecialtyId: {
+    type: Number,
+    default: null,
+  },
+  selectedProcedureId: {
+    type: Number,
+    default: null,
   },
 });
 
@@ -375,11 +379,20 @@ const closeModal = () => {
   }
 
   &__services-icon-wrapper {
-    width: 16px;
-    height: 16px;
+    width: 15px;
+    height: 15px;
     display: flex;
     align-items: center;
+    justify-content: center;
     margin-right: 8px;
+    background-color: #e7f7f8;
+    border-radius: 50%;
+
+    svg {
+      width: 12px;
+      height: 12px;
+      color: #0cadbb;
+    }
   }
 
   &__services-text {

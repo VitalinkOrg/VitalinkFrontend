@@ -1,42 +1,43 @@
 <template>
-  <div v-if="isOpen" class="modal-overlay z-3">
-    <div class="modal-content confirmation">
-      <div class="modal-header">
-        <button @click="closeModal">×</button>
-      </div>
-      <div class="modal-body">
-        <svg
-          xmlns="http://www.w3.org/2000/svg"
-          width="65"
-          height="64"
-          viewBox="0 0 65 64"
-          fill="none"
+  <div v-if="isOpen" class="modal-overlay">
+    <div class="cancel-appointment__dialog">
+      <header class="cancel-appointment__header">
+        <button
+          @click="closeModal"
+          class="cancel-appointment__header--close-button"
         >
-          <path
-            d="M32.4998 34.5883V21.686M32.4998 44.1516V44.265M48.6276 55.0106H16.372C11.9661 55.0106 8.24786 52.066 7.07802 48.0374C6.57865 46.3177 7.19224 44.5264 8.13077 43.0013L24.2586 13.5935C28.0372 7.45322 36.9625 7.45322 40.7411 13.5935L56.8688 43.0013C57.8074 44.5264 58.421 46.3177 57.9216 48.0374C56.7518 52.066 53.0336 55.0106 48.6276 55.0106Z"
-            stroke="#FF2D46"
-            stroke-width="6.33333"
-            stroke-linecap="round"
-            stroke-linejoin="round"
-          />
-        </svg>
-        <h3 class="fw-bold">
-          Seguro que quieres salir del proceso de reserva?
-        </h3>
-        <p>Aun no has solicitado tu cita</p>
-        <div class="d-flex gap-2 justify-content-between">
-          <div class="col">
-            <button class="btn btn-outline-dark w-100 me-2" @click="closeModal">
-              Continuar con reserva
-            </button>
+          <AtomsIconsXIcon size="24" />
+        </button>
+      </header>
+
+      <main class="cancel-appointment__body">
+        <div class="cancel-appointment__content">
+          <div class="cancel-appointment__content--icon">
+            <AtomsIconsTriangleAlertIcon size="64" color="#FF2D46" />
           </div>
-          <div class="col">
-            <button class="btn btn-danger w-100" @click="confirmExit">
-              Salir
-            </button>
-          </div>
+          <h2 class="cancel-appointment__content--title">
+            Seguro que quieres salir del proceso de reserva?
+          </h2>
+          <p class="cancel-appointment__content--subtitle">
+            Aun no has solicitado tu cita
+          </p>
         </div>
-      </div>
+      </main>
+
+      <footer class="cancel-appointment__footer">
+        <button
+          class="cancel-appointment__footer--outline-button"
+          @click="closeModal"
+        >
+          Continuar con reserva
+        </button>
+        <button
+          class="cancel-appointment__footer--filled-danger-button"
+          @click="confirmExit"
+        >
+          Salir
+        </button>
+      </footer>
     </div>
   </div>
 </template>
@@ -57,7 +58,115 @@ export default {
 };
 </script>
 
-<style scoped>
+<style lang="scss" scoped>
+.cancel-appointment {
+  &__dialog {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background-color: white;
+    border-radius: 8px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    width: 90%;
+    max-width: 536px;
+    z-index: 1000;
+  }
+
+  &__header {
+    display: flex;
+    align-items: center;
+    padding: 24px;
+    border-bottom: 1px solid #e4e7ec;
+
+    &--close-button {
+      @include button-base;
+      background-color: transparent;
+      border: none;
+      padding: $spacing-sm;
+      color: #353e5c;
+      transition: all 0.15s ease-in-out;
+      padding: 0;
+      margin-left: auto;
+
+      width: 24px;
+      height: 24px;
+
+      &:hover {
+        color: $black;
+      }
+
+      &:focus-visible {
+        outline: 2px solid $color-primary;
+        outline-offset: 2px;
+      }
+    }
+  }
+
+  &__body {
+    padding: 24px 20px;
+  }
+
+  &__content {
+    padding: 20px;
+
+    &--icon {
+      display: flex;
+      justify-content: center;
+      margin-bottom: 22px;
+    }
+
+    &--subtitle,
+    &--title {
+      @include label-base;
+    }
+
+    &--title {
+      font-weight: 700;
+      font-size: 28px;
+      line-height: 36px;
+      text-align: center;
+      color: #19213d;
+    }
+
+    &--subtitle {
+      font-weight: 500;
+      font-size: 20px;
+      line-height: 29.5px;
+      text-align: center;
+      color: #6d758f;
+    }
+  }
+
+  &__footer {
+    display: flex;
+    align-items: center;
+    border-top: 1px solid #e4e7ec;
+    padding: 24px;
+    gap: 12px;
+
+    &--outline-button,
+    &--filled-danger-button {
+      width: 100%;
+      font-size: 16px;
+      line-height: 24px;
+    }
+
+    &--outline-button {
+      @include outline-button;
+    }
+
+    &--filled-danger-button {
+      @include primary-button;
+      background-color: #ff2d46;
+
+      &:hover {
+        background-color: darken(#ff2d46, 3%);
+      }
+    }
+  }
+}
+
 .modal-overlay {
   position: fixed;
   top: 0;

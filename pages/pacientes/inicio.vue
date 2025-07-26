@@ -1,4 +1,3 @@
-<!-- inicio.vue -->
 <script setup>
 definePageMeta({
   middleware: ["auth-pacientes"],
@@ -71,20 +70,20 @@ const selectDoctor = async ({ medico }) => {
 
 const closePackagesModal = () => {
   openPackagesModal.value = false;
-  router.replace({ query: {} }); // Opcional: limpiar query params
+  router.replace({ query: {} });
 };
 </script>
 
 <template>
   <NuxtLayout name="pacientes-dashboard">
     <div>
-      <header class="dashboard-header">
-        <div class="dashboard-header__container">
-          <h1 class="dashboard-header__title">
-            <span class="dashboard-header__highlight">
+      <header class="hero">
+        <div class="hero__container">
+          <h1 class="hero__title">
+            <span class="hero__greeting">
               {{ genderWelcome }} {{ user_info.name }}
             </span>
-            <span class="dashboard-header__subtitle">
+            <span class="hero__question">
               ¿Qué servicio médico estás buscando?
             </span>
           </h1>
@@ -96,25 +95,49 @@ const closePackagesModal = () => {
         </div>
       </header>
 
-      <main class="dashboard-main">
-        <section class="recommended-section">
-          <div class="recommended-grid">
-            <WebsiteTarjetaMedico
-              v-for="medico in historial"
-              :key="medico.id"
-              :medico="medico"
-              @toggle-favorite="() => {}"
-              @show-packages="selectDoctor"
-            />
-          </div>
-        </section>
+      <main class="content">
+        <div class="content__container">
+          <section class="section">
+            <div class="section__content">
+              <div class="section__header">
+                <h2 class="section__title">Recomendados</h2>
+              </div>
+              <div class="cards-grid">
+                <WebsiteTarjetaMedico
+                  v-for="medico in historial"
+                  :key="medico.id"
+                  :medico="medico"
+                  @toggle-favorite="() => {}"
+                  @show-packages="selectDoctor"
+                />
+              </div>
+            </div>
+          </section>
+
+          <section class="section">
+            <div class="section__content">
+              <div class="section__header">
+                <h2 class="section__title">Más populares</h2>
+              </div>
+              <div class="cards-grid">
+                <WebsiteTarjetaMedico
+                  v-for="medico in historial"
+                  :key="medico.id"
+                  :medico="medico"
+                  @toggle-favorite="() => {}"
+                  @show-packages="selectDoctor"
+                />
+              </div>
+            </div>
+          </section>
+        </div>
       </main>
 
       <WebsitePackTratamientos
         v-if="!loadingPackages && doctorData"
         :doctor="doctorData"
         :open="openPackagesModal"
-        :user="user_info"
+        :user-info="user_info"
         :procedure-code="procedureCode"
         :specialty-code="specialtyCode"
         @close-modal="closePackagesModal"
@@ -124,7 +147,7 @@ const closePackagesModal = () => {
 </template>
 
 <style lang="scss" scoped>
-.dashboard-header {
+.hero {
   background-color: #ebecf7;
   padding: 20px 15px;
 
@@ -171,7 +194,7 @@ const closePackagesModal = () => {
     }
   }
 
-  &__highlight {
+  &__greeting {
     font-family: $font-family-montserrat-alt;
     font-weight: 700;
     font-size: 20px;
@@ -191,8 +214,8 @@ const closePackagesModal = () => {
     }
   }
 
-  &__subtitle {
-    font-family: $font-family-montserrat-alt;
+  &__question {
+    @include label-base;
     font-weight: 500;
     font-size: 16px;
     line-height: 1.2;
@@ -216,7 +239,7 @@ const closePackagesModal = () => {
   }
 }
 
-.dashboard-main {
+.content {
   padding: 15px 10px;
   background-color: #f8f8f8;
 
@@ -231,7 +254,8 @@ const closePackagesModal = () => {
   &__container {
     width: 100%;
     margin: 0 auto;
-    max-width: 100%;
+    max-width: 1310px;
+    padding: 12px 0px;
 
     @include respond-to(md) {
       max-width: 720px;
@@ -251,21 +275,14 @@ const closePackagesModal = () => {
   }
 }
 
-.recommended-section {
-  padding-top: 1rem;
-  padding-bottom: 2rem;
+.section {
   background-color: #f8f8f8;
 
-  @include respond-to(md) {
-    padding-top: 1.5rem;
-    padding-bottom: 3rem;
-  }
-
-  &__intro {
+  &__header {
     margin-bottom: 1rem;
   }
 
-  &__label {
+  &__title {
     @include label-base;
     font-weight: 600;
     font-style: Semi Bold;
@@ -287,7 +304,7 @@ const closePackagesModal = () => {
   }
 }
 
-.recommended-grid {
+.cards-grid {
   display: grid;
   grid-template-columns: 1fr;
   gap: 16px;
@@ -321,7 +338,7 @@ const closePackagesModal = () => {
     padding: 60px 40px;
   }
 
-  &__image {
+  &__media {
     margin-bottom: 20px;
 
     @include respond-to(md) {
@@ -329,7 +346,7 @@ const closePackagesModal = () => {
     }
   }
 
-  &__text {
+  &__content {
     max-width: 400px;
   }
 
@@ -357,7 +374,7 @@ const closePackagesModal = () => {
     }
   }
 
-  &__button {
+  &__action {
     @include button-base;
     background-color: #3541b4;
     color: white;
@@ -373,6 +390,27 @@ const closePackagesModal = () => {
 
     &:hover {
       background-color: darken(#3541b4, 10%);
+    }
+
+    &--secondary {
+      background-color: transparent;
+      color: #3541b4;
+      border: 2px solid #3541b4;
+
+      &:hover {
+        background-color: #3541b4;
+        color: white;
+      }
+    }
+
+    &--large {
+      padding: 16px 32px;
+      font-size: 18px;
+
+      @include respond-to(md) {
+        padding: 20px 40px;
+        font-size: 20px;
+      }
     }
   }
 }

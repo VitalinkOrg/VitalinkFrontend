@@ -1,6 +1,6 @@
 <script>
 import axios from "axios";
-import { ref, onMounted, watch } from "vue";
+import { onMounted, ref } from "vue";
 
 export default {
   props: {
@@ -74,10 +74,8 @@ export default {
 </script>
 
 <template>
-  <button
-    @click="openConfirmationModal"
-    class="btn rounded-5 bg-white border-secondary-subtle shadow-sm mx-1 fw-light"
-  >
+  <button @click="openConfirmationModal" class="filter-trigger">
+    <AtomsIconsListFilterIcon size="20" />
     Más Filtros
   </button>
 
@@ -109,14 +107,15 @@ export default {
         <form @submit.prevent="searchFilters">
           <div class="modal-body">
             <div class="rounded-4 h-100 p-4" style="--bs-bg-opacity: 0.04">
-              <div class="d-flex flex-column gap-2 mb-3">  <div class="d-flex gap-2 align-items-center">
-                  <label class="form-label m-0 w-25">Valoraciones</label> <div  class="w-100">
+              <div class="d-flex flex-column gap-2 mb-3">
+                <div class="d-flex gap-2 align-items-center">
+                  <label class="form-label m-0 w-25">Valoraciones</label>
+                  <div class="w-100">
                     <span
                       v-for="n in 5"
                       :key="n"
                       @click="setRating(n)"
                       style="cursor: pointer"
-                     
                     >
                       <Icon
                         :name="
@@ -128,7 +127,10 @@ export default {
                   </div>
                 </div>
                 <div class="d-flex gap-2 align-items-center">
-                  <label for="placeInput" class="form-label m-0 w-25">Lugar</label> <input
+                  <label for="placeInput" class="form-label m-0 w-25"
+                    >Lugar</label
+                  >
+                  <input
                     type="text"
                     class="form-control"
                     id="placeInput"
@@ -139,7 +141,8 @@ export default {
                 <div class="d-flex gap-2 align-items-center">
                   <label for="disponibilidad" class="form-label m-0 w-25"
                     >Disponibilidad de citas</label
-                  >  <select
+                  >
+                  <select
                     id="disponibilidad"
                     class="form-select"
                     v-model="selectedSpecialty"
@@ -256,6 +259,18 @@ export default {
 </template>
 
 <style lang="scss" scoped>
+.filter-trigger {
+  @include button-base;
+  font-weight: 400;
+  font-size: 14px;
+  line-height: 21px;
+  color: #374151;
+  border-radius: 105.02px;
+  padding: 8.4px 16.8px;
+  background-color: #ffffff;
+  border: 1.05px solid #e5e7eb;
+}
+
 .show {
   display: block;
   background-color: rgba(0, 0, 0, 0.1);
