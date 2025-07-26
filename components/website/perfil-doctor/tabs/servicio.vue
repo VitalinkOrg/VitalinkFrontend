@@ -52,7 +52,9 @@
         :get-assesment-label="getAssesmentLabel"
         :select-package="props.selectPackage"
         :selected-package="pkg"
-        :user="user"
+        :user-info="props.userInfo"
+        :selected-specialty-id="selectedSpecialtyId || 0"
+        :selected-procedure-id="selectedProcedureId || 0"
       />
     </div>
 
@@ -91,7 +93,7 @@ interface ProcessedDoctorReview {
 interface Props {
   doctor: Doctor;
   selectPackage: (selectedPackage: Package) => void;
-  user: Object;
+  userInfo: Object;
   searchSpecialtyCode?: string;
   searchProcedureCode?: string;
   isSearchMode?: boolean;

@@ -463,6 +463,7 @@ export default {
       :searchSpecialtyCode="searchSpecialtyCode"
       :searchProcedureCode="searchProcedureCode"
       :isSearchMode="isSearchMode"
+      :userInfo="user"
     />
 
     <WebsitePerfilDoctorTabsDisponibilidad

@@ -6,6 +6,7 @@ const offers = ref([]);
 const config = useRuntimeConfig();
 const router = useRouter();
 const route = useRoute();
+const user_info = useCookie("user_info");
 
 const searchProcedureCode = computed(() => route.query.procedure_code);
 const searchSpecialtyCode = computed(() => route.query.specialty_code);
@@ -121,17 +122,13 @@ const closePackagesModal = () => {
       </div>
     </div>
   </div>
-  <WebsiteReservarModal
-    :isOpen="panel"
-    :currentStep="0"
-    :offers="offers"
-    @close="panel = false"
-  />
+
   <WebsitePackTratamientos
     :doctor="doctorData"
     :open="openPackagesModal"
     :procedure-code="procedureCode"
     :specialty-code="specialtyCode"
+    :user-info="user_info"
     @close-modal="closePackagesModal"
   />
 </template>

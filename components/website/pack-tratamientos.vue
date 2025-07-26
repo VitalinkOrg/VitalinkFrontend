@@ -103,7 +103,9 @@
                   :doctor-reviews="doctorReviews()"
                   :get-package-price="getPackagePrice"
                   :get-assesment-label="getAssesmentLabel"
-                  :user="user"
+                  :userInfo="userInfo"
+                  :selected-specialty-id="selectedSpecialtyId || 0"
+                  :selected-procedure-id="selectedProcedureId || 0"
                 />
               </div>
 
@@ -130,7 +132,9 @@
                 :doctor-reviews="doctorReviews()"
                 :get-package-price="getPackagePrice"
                 :get-assesment-label="getAssesmentLabel"
-                :user="user"
+                :selected-specialty-id="selectedSpecialtyId || 0"
+                :selected-procedure-id="selectedProcedureId || 0"
+                :userInfo="userInfo"
               />
             </div>
           </template>
@@ -152,7 +156,7 @@ import type {
 const props = defineProps<{
   doctor: Doctor | null;
   open: boolean;
-  user: Object;
+  userInfo: Object;
   specialtyCode?: string;
   procedureCode?: string;
 }>();
