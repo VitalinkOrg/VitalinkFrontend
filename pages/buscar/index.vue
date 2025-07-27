@@ -618,6 +618,7 @@ export default {
 .search-results__map {
   flex: 0 0 33.333333%;
   min-height: 400px;
+  padding: 1.25rem 0 0 0;
 }
 
 @include respond-to-max(md) {
