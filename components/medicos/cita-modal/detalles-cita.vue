@@ -1,3 +1,4 @@
+<!-- components/medicos/cita-modal/detalles-cita.vue -->
 <template>
   <div class="appointment-details">
     <!-- Modal Header -->
@@ -93,6 +94,13 @@
 
             <tr class="appointment-details__table-row">
               <th scope="row" class="appointment-details__table-header">
+                Costo del servicio:
+              </th>
+              <td class="appointment-details__table-data">Ver en plataforma</td>
+            </tr>
+
+            <tr class="appointment-details__table-row">
+              <th scope="row" class="appointment-details__table-header">
                 Motivo:
               </th>
               <td class="appointment-details__table-data">
@@ -137,15 +145,6 @@
             >
               <tr class="appointment-details__table-row">
                 <th scope="row" class="appointment-details__table-header">
-                  Procedimiento:
-                </th>
-                <td class="appointment-details__table-data">
-                  {{ appointment.package?.procedure.name }}
-                </td>
-              </tr>
-
-              <tr class="appointment-details__table-row">
-                <th scope="row" class="appointment-details__table-header">
                   Proforma:
                 </th>
                 <td class="appointment-details__table-data">
@@ -166,7 +165,7 @@
                       @change="$emit('handleProformaUpload', $event)"
                       accept=".pdf,.doc,.docx"
                       :aria-describedby="
-                        proformaFileName
+                        proformaFileName || hasExistingProforma
                           ? 'current-file-info'
                           : 'file-upload-help'
                       "
@@ -207,6 +206,46 @@
                       </button>
                     </div>
 
+                    <div
+                      v-else-if="hasExistingProforma"
+                      class="appointment-details__file-display"
+                      role="group"
+                      aria-labelledby="existing-file-info"
+                    >
+                      <div
+                        id="existing-file-info"
+                        class="appointment-details__file-name"
+                        :aria-label="`Proforma existente: ${appointment.proforma_file_code}`"
+                      >
+                        <AtomsIconsFileTextIcon size="20" aria-hidden="true" />
+                        {{ appointment.proforma_file_code }}
+                        <span
+                          class="appointment-details__file-success-icon"
+                          aria-label="Proforma guardada"
+                        >
+                          <AtomsIconsCircleCheckBigIcon
+                            size="12"
+                            aria-hidden="true"
+                          />
+                        </span>
+                      </div>
+                      <div class="appointment-details__file-actions">
+                        <button
+                          v-if="
+                            !proformaGuardado &&
+                            appointment.appointment_status.code !==
+                              'VALUED_VALORATION_APPOINTMENT'
+                          "
+                          class="appointment-details__file-remove-button"
+                          type="button"
+                          :aria-label="`Eliminar proforma ${appointment.proforma_file_code}`"
+                          @click="removeExistingProforma"
+                        >
+                          <AtomsIconsTrashIcon size="16" aria-hidden="true" />
+                        </button>
+                      </div>
+                    </div>
+
                     <button
                       v-else
                       type="button"
@@ -226,12 +265,17 @@
                 </td>
               </tr>
 
-              <tr class="appointment-details__table-row">
+              <tr>
                 <th scope="row" class="appointment-details__table-header">
-                  Procedimiento:
+                  Valor del procedimiento:
                 </th>
                 <td class="appointment-details__table-data">
-                  {{ appointment.package?.procedure.name }}
+                  <input
+                    type="text"
+                    class="appointment-details__table-data--input"
+                    :value="appointment.price_procedure"
+                    readonly
+                  />
                 </td>
               </tr>
 
@@ -244,17 +288,23 @@
                 <td class="appointment-details__table-data">
                   <textarea
                     id="recommendations-textarea"
-                    :value="description"
+                    :value="
+                      props.appointment.recommendation_post_appointment ||
+                      description
+                    "
                     @input="
                       $emit(
                         'update:description',
                         ($event.target as HTMLInputElement).value
                       )
                     "
-                    class="appointment-details__form-textarea"
+                    class="appointment-details__table-data--input"
                     rows="3"
                     placeholder="Escribe las recomendaciones médicas..."
-                    :disabled="proformaGuardado"
+                    :readonly="
+                      appointment.appointment_status.code ===
+                      'VALUED_VALORATION_APPOINTMENT'
+                    "
                     :aria-describedby="
                       proformaGuardado
                         ? 'recommendations-saved'
@@ -569,7 +619,7 @@
 
 <script lang="ts" setup>
 import type { Appointment, AppointmentStatusCode } from "@/types/appointment";
-import { ref } from "vue";
+import { computed, ref } from "vue";
 
 interface Props {
   appointment: Appointment;
@@ -582,9 +632,12 @@ interface Props {
   creditUsed: boolean;
   errorText?: string;
   closeModal: () => void;
+  existingProformaRemoved?: boolean;
 }
 
-const { appointment, closeModal } = defineProps<Props>();
+const props = defineProps<Props>();
+
+console.log(props.appointment);
 
 const emit = defineEmits([
   "editDateTime",
@@ -599,19 +652,49 @@ const emit = defineEmits([
   "useCredit",
   "update:description",
   "update:qrCodeInput",
+  "notSuitableProcedure",
+  "removeProforma",
+  "removeExistingProforma",
 ]);
 
 const proformaFile = ref<HTMLInputElement | null>(null);
+
+const hasExistingProforma = computed(() => {
+  if (props.existingProformaRemoved) {
+    return false;
+  }
+
+  return !!(
+    props.appointment.proforma_file_code &&
+    props.appointment.proforma_file_code.trim()
+  );
+});
+
+const displayProformaName = computed(() => {
+  if (props.proformaFileName) {
+    return props.proformaFileName;
+  }
+  if (hasExistingProforma.value) {
+    return `${props.appointment.proforma_file_code}`;
+  }
+  return "";
+});
+
 const handleFileUploadClick = () => {
   proformaFile.value?.click();
 };
 
 const removeFile = () => {
-  if (proformaFile.value) {
-    proformaFile.value.value = "";
+  const fileInput = document.getElementById("proforma-file-input");
+  if (fileInput && fileInput instanceof HTMLInputElement) {
+    fileInput.value = "";
   }
 
-  emit("handleProformaUpload", null);
+  emit("removeProforma");
+};
+
+const removeExistingProforma = () => {
+  emit("removeExistingProforma");
 };
 
 const getStatusClass = (status: AppointmentStatusCode) => {
@@ -737,6 +820,11 @@ const getStatusClass = (status: AppointmentStatusCode) => {
     line-height: 20px;
     color: $color-foreground;
     width: 60%;
+
+    &--input {
+      @include input-base;
+      width: 100%;
+    }
   }
 
   &__form-input {
@@ -783,29 +871,25 @@ const getStatusClass = (status: AppointmentStatusCode) => {
     border-radius: 30px;
     padding: 6px 10px;
     white-space: nowrap;
+    color: #19213d;
 
     &--success {
       background-color: $color-success;
-      color: #027a48;
     }
 
     &--warning {
       background-color: $color-warning;
-      color: #dc6803;
     }
 
     &--primary {
       background-color: rgba($color-primary, 0.1);
-      color: $color-primary;
     }
 
     &--cancelled {
       background-color: $color-cancel;
-      color: #b42318;
     }
   }
 
-  // File Upload
   &__file-upload-container {
     display: flex;
     flex-direction: column;
@@ -875,7 +959,6 @@ const getStatusClass = (status: AppointmentStatusCode) => {
     justify-content: center;
   }
 
-  // Buttons
   &__button {
     @include button-base;
 
@@ -924,7 +1007,6 @@ const getStatusClass = (status: AppointmentStatusCode) => {
     }
   }
 
-  // Credit Validation
   &__credit-validation {
     display: flex;
     flex-direction: column;
@@ -937,7 +1019,6 @@ const getStatusClass = (status: AppointmentStatusCode) => {
     gap: $spacing-sm;
   }
 
-  // Alerts
   &__alert {
     padding: 12px 16px;
     border-radius: $border-radius-md;
@@ -960,9 +1041,9 @@ const getStatusClass = (status: AppointmentStatusCode) => {
     }
   }
 
-  // Information Banner
   &__information-banner {
     margin-top: $spacing-md;
+    display: flex;
   }
 
   &__info-alert {
@@ -973,7 +1054,6 @@ const getStatusClass = (status: AppointmentStatusCode) => {
     color: #175cd3;
     border-radius: 16px;
     gap: $spacing-xs;
-    border: 1px solid #b2ddff;
   }
 
   &__info-text {
@@ -986,7 +1066,6 @@ const getStatusClass = (status: AppointmentStatusCode) => {
     flex: 1;
   }
 
-  // Footer Section
   &__footer {
     border-top: 1px solid #e4e7ec;
     background-color: $white;
@@ -1029,7 +1108,6 @@ const getStatusClass = (status: AppointmentStatusCode) => {
     }
   }
 
-  // Save Indicator
   &__save-indicator {
     display: flex;
     align-items: center;
@@ -1083,12 +1161,10 @@ const getStatusClass = (status: AppointmentStatusCode) => {
   }
 }
 
-// Utility Classes
 .visually-hidden {
   @include visually-hidden;
 }
 
-// Responsive Design
 @include respond-to-max(md) {
   .appointment-details {
     max-width: 100%;
@@ -1167,7 +1243,6 @@ const getStatusClass = (status: AppointmentStatusCode) => {
   }
 }
 
-// Focus Management
 .appointment-details {
   &__form-input:focus-visible,
   &__form-textarea:focus-visible {
@@ -1187,7 +1262,6 @@ const getStatusClass = (status: AppointmentStatusCode) => {
   }
 }
 
-// High Contrast Mode Support
 @media (prefers-contrast: high) {
   .appointment-details {
     border: 2px solid $black;
@@ -1206,7 +1280,6 @@ const getStatusClass = (status: AppointmentStatusCode) => {
   }
 }
 
-// Reduced Motion Support
 @media (prefers-reduced-motion: reduce) {
   .appointment-details {
     &__save-indicator {
