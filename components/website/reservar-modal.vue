@@ -5,7 +5,7 @@
         class="modal-content packs z-3"
         :class="{ confirmation: internalCurrentStep === 4 }"
       >
-        <div class="modal-header">
+        <header v-if="internalCurrentStep != 4" class="modal-header">
           <h2>
             {{
               internalCurrentStep === 1
@@ -16,7 +16,7 @@
           <button @click="openConfirmationModal">
             <AtomsIconsXIcon />
           </button>
-        </div>
+        </header>
         <div class="modal-body">
           <WebsiteStepper
             v-if="internalCurrentStep !== 0 && internalCurrentStep !== 4"
@@ -544,7 +544,7 @@
                       class="btn btn-primary w-50"
                       @click="confirmReservation"
                     >
-                      Confirmar
+                      {{ isLoading ? "Procesando..." : "Confirmar" }}
                     </button>
                   </div>
                 </div>
@@ -687,6 +687,7 @@ export default {
   data() {
     return {
       isConfirmationModalOpen: false,
+      isLoading: false,
       selectedMonth: null,
       localSelectedDay: this.selectedDay,
       localSelectedHour: this.selectedHour,
@@ -983,32 +984,29 @@ export default {
       const config = useRuntimeConfig();
       const user_info = useCookie("user_info");
 
+      // ✅ Activar loading
+      this.isLoading = true;
+
       try {
-        console.log("Creating appointment with payload:", {
-          customer_id: user_info.value?.id || "",
-          is_for_external_user: this.appointmentFor === "someoneElse",
-          user_description: this.description || "",
-          supplier_id: this.doctorInfo.id,
-          appointment_date: this.localSelectedDay,
-          appointment_hour: this.localSelectedHour,
-          package_id: 1,
-          appointment_status_code: "PENDING",
-          reservation_type_code: "PRE_RESERVATION",
-          phone_number_external_user: this.phoneNumber || "",
-        });
+        // Formatear la hora correctamente
+        const formattedHour = this.localSelectedHour.includes(":")
+          ? this.localSelectedHour.split(":").length === 2
+            ? `${this.localSelectedHour}:00`
+            : this.localSelectedHour
+          : `${this.localSelectedHour}:00:00`;
 
         const payload = {
           customer_id: user_info.value?.id || "",
-          is_for_external_user: this.appointmentFor === "someoneElse",
-          user_description: this.description || "",
-          supplier_id: this.doctorInfo.id,
           appointment_date: this.localSelectedDay,
-          appointment_hour: this.localSelectedHour,
-          package_id: 1,
-          appointment_status_code: "PENDING",
-          reservation_type_code: "PRE_RESERVATION",
-          phone_number_external_user: this.phoneNumber || "",
+          appointment_hour: formattedHour,
+          supplier_id: this.doctorInfo.id,
+          package_id: 4,
+          user_description: this.description || "Consulta general preventiva.",
+          is_for_external_user: this.appointmentFor === "someoneElse",
+          phone_number_external_user: this.phoneNumber,
         };
+
+        console.log("Payload a enviar:", payload);
 
         const response = await $fetch(
           config.public.API_BASE_URL + "/appointment/add",
@@ -1023,6 +1021,7 @@ export default {
         this.goToStep(4);
       } catch (error) {
         console.error("Error creating appointment:", error);
+        console.error("Payload que causó el error:", payload);
 
         let errorMessage =
           "Error al crear la cita. Por favor, intente nuevamente.";
@@ -1038,7 +1037,26 @@ export default {
         }
 
         alert(errorMessage);
+      } finally {
+        this.isLoading = false;
       }
+    },
+    resetModalData() {
+      this.description = "";
+      this.appointmentFor = "me";
+      this.phoneNumber = "";
+
+      this.selectedMonth = null;
+      this.localSelectedDay = null;
+      this.localSelectedHour = null;
+      this.availableDays = [];
+      this.availableHours = [];
+
+      this.internalCurrentStep = 1;
+
+      this.isConfirmationModalOpen = false;
+
+      this.isLoading = false;
     },
   },
 };

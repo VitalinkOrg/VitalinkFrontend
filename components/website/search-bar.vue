@@ -186,11 +186,7 @@ export default {
 
           <div class="search-form__button-group">
             <button type="submit" class="search-form__submit-button">
-              <Icon
-                name="fa6-solid:magnifying-glass"
-                size="18"
-                class="text-light"
-              />
+              <AtomsIconsSearchIcon size="20" class="text-light" />
             </button>
           </div>
         </form>

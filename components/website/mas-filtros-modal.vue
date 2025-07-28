@@ -17,21 +17,21 @@ export default {
     return {
       open: false,
       specialties: [],
-      rating: ref(0), // Reactive rating value
-      place: ref(""), // Reactive place value
-      autocomplete: null, // Google Maps Autocomplete instance
+      rating: ref(0),
+      place: ref(""),
+      autocomplete: null,
     };
   },
   mounted() {
     this.getSpecialties();
-    this.initAutocomplete(); // Initialize autocomplete
+    this.initAutocomplete();
   },
   watch: {
     place(newVal) {
-      this.filters.lugar = newVal; // Update the prop when place changes
+      this.filters.lugar = newVal;
     },
     rating(newVal) {
-      this.filters.valoracion = newVal; // Update the prop when rating changes
+      this.filters.valoracion = newVal;
     },
   },
   methods: {
@@ -43,8 +43,21 @@ export default {
     },
     async getSpecialties() {
       try {
-        const r = await axios.get(config.public.API_BASE_URL + "/specialties");
-        this.specialties = r.data.data;
+        const config = useRuntimeConfig();
+        const token = useCookie("token");
+
+        const authHeader = token.value
+          ? { Authorization: token.value }
+          : undefined;
+
+        const response = await axios.get(
+          config.public.API_BASE_URL + "/specialties",
+          {
+            headers: authHeader,
+          }
+        );
+
+        this.specialties = response.data.data;
       } catch (e) {
         console.error("Error fetching specialties:", e);
       }
@@ -53,15 +66,15 @@ export default {
       onMounted(() => {
         const input = document.getElementById("placeInput");
         this.autocomplete = new google.maps.places.Autocomplete(input, {
-          fields: ["address_components", "geometry"], // Request specific fields
+          fields: ["address_components", "geometry"],
         });
 
         this.autocomplete.addListener("place_changed", () => {
           const place = this.autocomplete.getPlace();
           if (place.geometry) {
-            this.place = place.formatted_address || input.value; // Update place with formatted address or input value
+            this.place = place.formatted_address || input.value;
           } else {
-            this.place = input.value; // Use entered text if no place found
+            this.place = input.value;
           }
         });
       });
