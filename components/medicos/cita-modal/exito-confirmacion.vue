@@ -6,88 +6,103 @@
         type="button"
         class="success-confirmation__close-button"
         aria-label="Cerrar modal de detalles de la cita"
-        @click="closeModal"
+        @click="$emit('goToStart')"
       >
         <AtomsIconsXIcon width="24" height="24" aria-hidden="true" />
       </button>
     </header>
-    <span
-      v-if="appointment.appointment_type == 'reserva'"
-      class="d-flex justify-content-start"
-    >
-      <img
-        src="@/src/assets/check.svg"
-        width="48"
-        class="mb-3"
-        alt="Vitalink"
-      />
-    </span>
 
-    <h4
-      class="confirmation-title text-primary"
-      :class="
-        appointment.appointment_status.code == 'VALUED_VALORATION_APPOINTMENT'
-          ? 'text-success text-left fw-bold'
-          : 'text-primary text-center'
-      "
-    >
-      {{
-        appointment.appointment_status.code == "PENDING_VALORATION_APPOINTMENT"
-          ? "¡Felicitaciones!"
-          : "¡Bien hecho!"
-      }}
-    </h4>
+    <main class="success-confirmation__body">
+      <span
+        v-if="appointment.appointment_type == 'reserva'"
+        class="d-flex justify-content-start"
+      >
+        <img
+          src="@/src/assets/check.svg"
+          width="48"
+          class="mb-3"
+          alt="Vitalink"
+        />
+      </span>
 
-    <p
-      class="mb-4 text-muted"
-      :class="
-        appointment.appointment_status.code == 'PENDING_VALORATION_APPOINTMENT'
-          ? 'text-center'
-          : 'text-left'
-      "
-    >
-      {{
-        appointment.appointment_status.code == "PENDING_VALORATION_APPOINTMENT"
-          ? "Acabas de confirmar la cita de valoración para tu paciente."
-          : "El cambio de estado de la cita se ha realizado con éxito"
-      }}
-    </p>
+      <h4
+        class="success-confirmation__body--title"
+        :class="
+          appointment.appointment_status.code == 'VALUED_VALORATION_APPOINTMENT'
+            ? 'text-success text-left fw-bold'
+            : 'text-primary text-center'
+        "
+      >
+        {{
+          appointment.appointment_status.code ==
+          "PENDING_VALORATION_APPOINTMENT"
+            ? "¡Felicitaciones!"
+            : "¡Bien hecho!"
+        }}
+      </h4>
 
-    <table class="table table-borderless"></table>
+      <p
+        class="success-confirmation__body--subtitle"
+        :class="
+          appointment.appointment_status.code ==
+          'PENDING_VALORATION_APPOINTMENT'
+            ? 'text-center'
+            : 'text-left'
+        "
+      >
+        {{
+          appointment.appointment_status.code ==
+          "PENDING_VALORATION_APPOINTMENT"
+            ? "Acabas de confirmar la cita de valoración para tu paciente."
+            : "El cambio de estado de la cita se ha realizado con éxito"
+        }}
+      </p>
+
+      <table class="table table-borderless"></table>
+    </main>
 
     <!-- Botones para citas confirmadas -->
-    <div
-      v-if="
-        appointment.appointment_status.code ==
-          'PENDING_VALORATION_APPOINTMENT' ||
-        appointment.appointment_status.code == 'PENDING_PROCEDURE' ||
-        appointment.appointment_status.code == 'WAITING_PROCEDURE'
-      "
-      class="col-12 d-flex justify-content-between gap-2"
-    >
-      <button
-        class="btn btn-outline-dark me-2 text-sm w-50"
-        @click="$emit('goToStart')"
-      >
-        Ir al inicio
-      </button>
-      <button class="btn btn-primary w-50" @click="$emit('viewAppointments')">
-        Ver en Citas
-      </button>
-    </div>
 
-    <!-- Botones para valoración -->
-    <div v-else class="col-12 d-flex justify-content-between gap-2">
-      <button
-        class="btn btn-outline-dark me-2 text-sm w-50"
-        @click="$emit('notSuitableProcedure')"
+    <footer class="success-confirmation__footer">
+      <div
+        v-if="
+          appointment.appointment_status.code ==
+            'PENDING_VALORATION_APPOINTMENT' ||
+          appointment.appointment_status.code == 'PENDING_PROCEDURE' ||
+          appointment.appointment_status.code == 'WAITING_PROCEDURE'
+        "
+        class="col-12 d-flex justify-content-between gap-2"
       >
-        No apto para procedimiento
-      </button>
-      <button class="btn btn-primary w-50" @click="$emit('uploadProforma')">
-        Subir proforma
-      </button>
-    </div>
+        <button
+          class="success-confirmation__footer--button-outline"
+          @click="$emit('goToStart')"
+        >
+          Ir al inicio
+        </button>
+        <button
+          class="success-confirmation__footer--button-primary"
+          @click="$emit('viewAppointments')"
+        >
+          Ver en Citas
+        </button>
+      </div>
+
+      <!-- Botones para valoración -->
+      <div v-else class="col-12 d-flex justify-content-between gap-2">
+        <button
+          class="success-confirmation__footer--button-outline"
+          @click="$emit('notSuitableProcedure')"
+        >
+          No apto para procedimiento
+        </button>
+        <button
+          class="success-confirmation__footer--button-primary"
+          @click="$emit('uploadProforma')"
+        >
+          Subir proforma
+        </button>
+      </div>
+    </footer>
   </div>
 </template>
 
@@ -123,7 +138,6 @@ const emit = defineEmits([
     0px 8px 8px -4px #1018280a,
     0px 20px 24px -4px #1018281a;
 
-  // Header Section
   &__header {
     display: flex;
     align-items: center;
@@ -149,6 +163,7 @@ const emit = defineEmits([
     padding: $spacing-sm;
     color: #353e5c;
     border-radius: 50%;
+    margin-left: auto;
     transition: all 0.15s ease-in-out;
 
     &:hover {
@@ -162,27 +177,53 @@ const emit = defineEmits([
     }
   }
 
-  // Content Section
-  &__content {
-    padding: $spacing-lg;
+  &__body {
+    padding: 24px;
     overflow-y: auto;
     flex: 1;
+
+    &--title {
+      @include label-base;
+      font-family: $font-family-montserrat-alt;
+      font-weight: 700;
+      font-size: 28px;
+      line-height: 29.5px;
+      text-align: center;
+      color: #3541b4;
+    }
+
+    &--subtitle {
+      @include label-base;
+      font-weight: 500;
+      font-size: 18px;
+      line-height: 26px;
+      text-align: center;
+      color: #6d758f;
+    }
   }
-}
 
-.confirmation-title {
-  font-weight: 600;
-}
+  &__footer {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 12px;
+    padding: 24px;
 
-.fw-bold {
-  font-weight: 600;
-}
+    &--button-outline {
+      @include outline-button;
+      font-weight: 600;
+      font-size: 16px;
+      line-height: 24px;
+      width: 100%;
+    }
 
-.text-muted {
-  color: #6c757d;
-}
-
-.table {
-  margin-bottom: 1.5rem;
+    &--button-primary {
+      @include primary-button;
+      font-weight: 600;
+      font-size: 16px;
+      line-height: 24px;
+      width: 100%;
+    }
+  }
 }
 </style>

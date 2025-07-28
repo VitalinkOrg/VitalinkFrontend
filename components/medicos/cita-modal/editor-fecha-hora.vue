@@ -8,7 +8,7 @@
         type="button"
         class="date-time-editor__close-button"
         aria-label="Cerrar modal de detalles de la cita"
-        @click="closeModal"
+        @click="$emit('cancel')"
       >
         <AtomsIconsXIcon width="24" height="24" aria-hidden="true" />
       </button>
@@ -47,7 +47,7 @@
                 locale="es"
               >
                 <template #default="{ inputValue, inputEvents }">
-                  <div class="date-time-editor__button--outline">
+                  <div class="date-time-editor__button--outline-datetime">
                     <AtomsIconsCalendarIcon size="20" />
                     <input
                       :value="
@@ -57,6 +57,7 @@
                       v-on="inputEvents"
                       readonly
                     />
+                    <AtomsIconsChevronDown size="20" />
                   </div>
                 </template>
               </VDatePicker>
@@ -67,9 +68,9 @@
               Hora de la cita:
             </th>
             <td class="date-time-editor__table-data">
-              <div class="dropdown">
+              <div class="date-time-editor__time-dropdown dropdown">
                 <button
-                  class="date-time-editor__button--outline"
+                  class="date-time-editor__button--outline-datetime"
                   type="button"
                   id="timeDropdown"
                   data-bs-toggle="dropdown"
@@ -77,13 +78,11 @@
                   :disabled="!selectedDate"
                 >
                   <div class="d-flex align-items-center gap-2 w-100">
-                    <img
-                      src="@/src/assets/clock.svg"
-                      alt="Busca centro medico"
-                      class="img-fluid"
-                    />
+                    <AtomsIconsClockIcon size="20" class="text-muted" />
                     <p class="m-0">
-                      {{ selectedTime || "Seleccionar hora" }}
+                      {{
+                        selectedTime ? `${selectedTime}hs` : "Seleccionar hora"
+                      }}
                     </p>
                   </div>
                 </button>
@@ -111,14 +110,7 @@
               {{ appointment.package?.procedure.name }}
             </td>
           </tr>
-          <tr class="date-time-editor__table-row">
-            <th scope="row" class="date-time-editor__table-header">
-              Costo del servicio:
-            </th>
-            <td class="date-time-editor__table-data">
-              {{ appointment.price_procedure }}
-            </td>
-          </tr>
+
           <tr class="date-time-editor__table-row">
             <th scope="row" class="date-time-editor__table-header">
               Fecha de solicitud:
@@ -197,7 +189,6 @@ interface Props {
   selectedTime: string;
   availableTimes: string[];
   attrs: Array<{ date: Date; disabled?: boolean }>;
-  closeModal: () => void;
 }
 
 const props = defineProps<Props>();
@@ -399,25 +390,22 @@ const statusClass = (status: AppointmentStatusCode) => {
     border-radius: 30px;
     padding: 6px 10px;
     white-space: nowrap;
+    color: #19213d;
 
     &--success {
       background-color: $color-success;
-      color: #027a48;
     }
 
     &--warning {
       background-color: $color-warning;
-      color: #dc6803;
     }
 
     &--primary {
       background-color: rgba($color-primary, 0.1);
-      color: $color-primary;
     }
 
     &--cancelled {
       background-color: $color-cancel;
-      color: #b42318;
     }
   }
 
@@ -491,6 +479,11 @@ const statusClass = (status: AppointmentStatusCode) => {
     justify-content: center;
   }
 
+  &__time-dropdown {
+    position: relative;
+    width: 100%;
+  }
+
   // Buttons
   &__button {
     @include button-base;
@@ -499,8 +492,13 @@ const statusClass = (status: AppointmentStatusCode) => {
       @include primary-button;
     }
 
+    &--outline-datetime,
     &--outline {
       @include outline-button;
+    }
+
+    &--outline-datetime {
+      width: 100%;
     }
 
     &--danger {
@@ -579,6 +577,7 @@ const statusClass = (status: AppointmentStatusCode) => {
   // Information Banner
   &__information-banner {
     margin-top: $spacing-md;
+    display: flex;
   }
 
   &__info-alert {

@@ -212,7 +212,7 @@
                 </tr>
                 <tr>
                   <td><strong>Costo del servicio:</strong></td>
-                  <td>{{ appointment.price_procedure }}</td>
+                  <td>₡18000</td>
                 </tr>
               </tbody>
             </table>
@@ -387,7 +387,7 @@
                     </td>
                   </tr>
                   <tr class="total">
-                    <td><strong>Total:</strong></td>
+                    <td><strong>Saldo a pagar:</strong></td>
                     <td class="fw-bold">
                       {{
                         appointment.appointment_type.code ==
@@ -395,6 +395,7 @@
                           ? "€" + appointment.price_valoration_appointment
                           : "€" +
                             (appointment.price_procedure -
+                              0 - // Descuento (siempre 0 para MVP)
                               (appointment.appointment_credit
                                 ?.approved_amount || 0))
                       }}
@@ -579,7 +580,7 @@
 <script setup>
 const token = useCookie("token");
 const config = useRuntimeConfig();
-import { ref, defineProps } from "vue";
+import { defineProps, ref } from "vue";
 const props = defineProps(["appointment", "step", "showStatus"]);
 const emit = defineEmits(["refresh"]);
 

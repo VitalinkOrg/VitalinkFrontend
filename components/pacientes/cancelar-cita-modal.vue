@@ -61,7 +61,7 @@
                 </tr>
                 <tr>
                   <td><strong>Costo del servicio:</strong></td>
-                  <td>{{ appointment.cost }}</td>
+                  <td>₡18,000</td>
                 </tr>
               </tbody>
             </table>
@@ -137,7 +137,7 @@
 </template>
 
 <script setup>
-import { ref, watch } from "vue";
+import { ref } from "vue";
 
 const props = defineProps({
   appointment: Object,

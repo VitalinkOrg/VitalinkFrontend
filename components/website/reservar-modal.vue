@@ -828,38 +828,30 @@ export default {
     },
   },
   methods: {
-    // CAMBIO PRINCIPAL: Removemos la emisión del evento 'close' aquí
     openConfirmationModal() {
       this.isConfirmationModalOpen = true;
-      // NO emitimos 'close' aquí - mantenemos el modal principal abierto
     },
     closeConfirmationModal() {
       this.isConfirmationModalOpen = false;
-      // El modal principal permanece abierto
     },
-    // Método para limpiar todos los datos del formulario
     resetModalData() {
-      // Resetear datos del formulario
       this.description = "";
       this.appointmentFor = "me";
       this.phoneNumber = "";
 
-      // Resetear selecciones de fecha y hora
       this.selectedMonth = null;
       this.localSelectedDay = null;
       this.localSelectedHour = null;
       this.availableDays = [];
       this.availableHours = [];
 
-      // Resetear paso actual
       this.internalCurrentStep = 1;
 
-      // Resetear modal de confirmación
       this.isConfirmationModalOpen = false;
     },
 
     closeMainModal() {
-      this.resetModalData(); // Limpiar todos los datos
+      this.resetModalData();
       this.$emit("close");
     },
     goToStep(step) {
@@ -984,11 +976,9 @@ export default {
       const config = useRuntimeConfig();
       const user_info = useCookie("user_info");
 
-      // ✅ Activar loading
       this.isLoading = true;
 
       try {
-        // Formatear la hora correctamente
         const formattedHour = this.localSelectedHour.includes(":")
           ? this.localSelectedHour.split(":").length === 2
             ? `${this.localSelectedHour}:00`
@@ -1005,8 +995,6 @@ export default {
           is_for_external_user: this.appointmentFor === "someoneElse",
           phone_number_external_user: this.phoneNumber,
         };
-
-        console.log("Payload a enviar:", payload);
 
         const response = await $fetch(
           config.public.API_BASE_URL + "/appointment/add",

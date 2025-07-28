@@ -2,10 +2,8 @@
 import { jsPDF } from "jspdf";
 import { computed, inject, ref, watch } from "vue";
 
-// Define emits
 const emit = defineEmits(["refreshed"]);
 
-// Define props
 const props = defineProps({
   appointments: {
     type: Array,
@@ -23,7 +21,6 @@ const props = defineProps({
 
 const refreshAppointments = inject("refreshAppointments");
 
-// Reactive data
 const openUserModal = ref(false);
 const openDateModal = ref(false);
 const openContactModal = ref(false);
@@ -35,10 +32,8 @@ const allSelected = ref(false);
 const sortColumn = ref(null);
 const sortDirection = ref("asc");
 
-// Pagination data
 const currentPage = ref(1);
 
-// Computed
 const hasAppointments = computed(
   () =>
     props.appointments &&
@@ -53,7 +48,6 @@ const sortedAppointments = computed(() => {
     let aValue = a[sortColumn.value];
     let bValue = b[sortColumn.value];
 
-    // Handle nested properties
     if (sortColumn.value === "patient_name") {
       aValue = a.customer?.name || "";
       bValue = b.customer?.name || "";
@@ -75,7 +69,6 @@ const sortedAppointments = computed(() => {
   });
 });
 
-// Pagination computed properties
 const totalItems = computed(() => sortedAppointments.value.length);
 
 const totalPages = computed(() =>
@@ -88,7 +81,6 @@ const paginatedAppointments = computed(() => {
   return sortedAppointments.value.slice(start, end);
 });
 
-// Watch for appointments changes to reset pagination
 watch(
   () => props.appointments,
   () => {
@@ -98,41 +90,31 @@ watch(
   }
 );
 
-// Watch for sorting changes to reset pagination
 watch([sortColumn, sortDirection], () => {
   currentPage.value = 1;
 });
 
-// Methods
 const showUserDetails = (appointment) => {
-  // Cerrar todos los modales primero
   closeModal();
-  // Abrir el modal específico
   modalData.value = appointment;
   openUserModal.value = true;
 };
 
 const showContactDetails = (appointment) => {
-  // Cerrar todos los modales primero
   closeModal();
-  // Abrir el modal específico
   modalData.value = appointment;
   openContactModal.value = true;
 };
 
 const showDateDetails = (appointment, step = 1) => {
-  // Cerrar todos los modales primero
   closeModal();
-  // Abrir el modal específico
   modalData.value = appointment;
   currentStep.value = step;
   openDateModal.value = true;
 };
 
 const showDateCancel = (appointment) => {
-  // Cerrar todos los modales primero
   closeModal();
-  // Abrir el modal específico
   modalData.value = appointment;
   openDateCancelModal.value = true;
 };
@@ -166,7 +148,6 @@ const toggleAllAppointments = () => {
   if (allSelected.value) {
     selectedAppointments.value.clear();
   } else {
-    // Solo seleccionar los de la página actual
     paginatedAppointments.value.forEach((appointment) => {
       selectedAppointments.value.add(appointment.id);
     });
@@ -175,7 +156,6 @@ const toggleAllAppointments = () => {
 };
 
 const updateAllSelectedState = () => {
-  // Verificar si todos los elementos de la página actual están seleccionados
   const currentPageIds = paginatedAppointments.value.map((app) => app.id);
   allSelected.value =
     currentPageIds.length > 0 &&
@@ -244,13 +224,12 @@ const downloadSummary = (appointment) => {
 };
 
 const closeModal = () => {
-  // Asegurarse de cerrar TODOS los modales
   modalData.value = null;
   openUserModal.value = false;
   openDateModal.value = false;
   openContactModal.value = false;
   openDateCancelModal.value = false;
-  currentStep.value = 1; // Reset step
+  currentStep.value = 1;
 };
 
 const handleRefresh = async () => {
@@ -264,15 +243,35 @@ const handleAppointmentUpdate = (appointmentData) => {
   emit("refreshed", appointmentData);
 };
 
-// Pagination methods
+const canRequestProcedure = (appointment) => {
+  if (
+    !appointment.appointment_result ||
+    appointment.appointment_result.code !== "FIT_FOR_PROCEDURE"
+  ) {
+    return false;
+  }
+
+  if (appointment.appointment_type.code === "PROCEDURE_APPOINTMENT") {
+    return false;
+  }
+
+  if (
+    appointment.appointment_credit &&
+    appointment.appointment_credit.credit_status_code === "REQUIRED" &&
+    !appointment.appointment_credit.approved_amount
+  ) {
+    return false;
+  }
+
+  return true;
+};
+
 const handlePageChange = (page) => {
   currentPage.value = page;
-  // Limpiar selecciones cuando cambiamos de página
   selectedAppointments.value.clear();
   allSelected.value = false;
 };
 
-// Watch para actualizar el estado de "seleccionar todo" cuando cambia la página
 watch(currentPage, () => {
   updateAllSelectedState();
 });
@@ -479,7 +478,7 @@ watch(paginatedAppointments, () => {
 
               <td class="appointments-table__cell">
                 <span class="appointments-table__patient-name">
-                  {{ appointment.customer.name }} {{ appointment.id }}
+                  {{ appointment.customer.name }}
                 </span>
               </td>
 
@@ -535,8 +534,10 @@ watch(paginatedAppointments, () => {
 
                 <button
                   v-if="
-                    appointment.appointment_status.code ===
-                    'VALUATION_PENDING_VALORATION_APPOINTMENT'
+                    [
+                      'VALUATION_PENDING_VALORATION_APPOINTMENT',
+                      'CONFIRM_VALIDATION_APPOINTMENT',
+                    ].includes(appointment.appointment_status.code)
                   "
                   class="appointments-table__action-btn appointments-table__action-btn--warning"
                   @click="showDateDetails(appointment)"
@@ -575,6 +576,7 @@ watch(paginatedAppointments, () => {
                   class="appointments-table__action-btn appointments-table__action-btn--complete"
                   @click="showDateDetails(appointment)"
                   :aria-label="`Marcar como concretado procedimiento de ${appointment.customer.name}`"
+                  :disabled="!canRequestProcedure(appointment)"
                 >
                   Solicitar procedimiento
                 </button>
@@ -586,6 +588,7 @@ watch(paginatedAppointments, () => {
                       'PENDING_PROCEDURE',
                       'WAITING_PROCEDURE',
                       'VALUED_VALORATION_APPOINTMENT',
+                      'CONFIRM_VALIDATION_APPOINTMENT',
                     ].includes(appointment.appointment_status.code)
                   "
                   class="appointments-table__no-action"

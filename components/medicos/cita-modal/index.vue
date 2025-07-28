@@ -1,3 +1,4 @@
+<!-- components/medicos/cita-modal/index.vue -->
 <template>
   <Teleport to="body">
     <div
@@ -13,7 +14,7 @@
     >
       <div class="modal__dialog">
         <!-- Step 1: Appointment Details -->
-        <DetallesCita
+        <MedicosCitaModalDetallesCita
           v-if="localStep === 1"
           :appointment="appointment"
           :proforma-file-name="proformaFileName"
@@ -25,6 +26,9 @@
           :credit-used="creditUsed"
           :error-text="errorText"
           :close-modal="closeModal"
+          :file-removed="fileRemoved"
+          :existing-proforma-removed="existingProformaRemoved"
+          @not-suitable-procedure="handleNotSuitableProcedure"
           @edit-date-time="localStep = 6"
           @confirm-reservation="localStep = 2"
           @cancel-appointment="localStep = 4"
@@ -35,12 +39,15 @@
           @handle-proforma-upload="handleProformaUpload"
           @validate-qr-code="validateQRCode"
           @use-credit="useCredit"
+          @remove-proforma="handleRemoveProforma"
+          @remove-existing-proforma="handleRemoveExistingProforma"
         />
 
         <!-- Step 2: Payment Details -->
-        <ConfirmacionReserva
+        <MedicosCitaModalConfirmacionReserva
           v-if="localStep === 2"
           :appointment="appointment"
+          :close-modal="closeModal"
           @cancel="localStep = 1"
           @confirm-appointment="confirmAppointment"
           @confirm-procedure="confirmProcedure"
@@ -49,34 +56,37 @@
         />
 
         <!-- Step 3: Confirmation -->
-        <ExitoConfirmacion
+        <MedicosCitaModalExitoConfirmacion
           v-if="localStep === 3"
           :appointment="appointment"
           @go-to-start="localStep = 1"
           @view-appointments="open = false"
+          :close-modal="closeModal"
           @upload-proforma="handleUploadProforma"
           @not-suitable-procedure="handleNotSuitableProcedure"
         />
 
         <!-- Step 4: Cancellation Confirmation -->
-        <ConfirmacionCancelacion
+        <MedicosCitaModalConfirmacionCancelacion
           v-if="localStep === 4"
           @go-back="localStep = 1"
           @cancel-appointment="cancelAppointment"
         />
 
-        <!-- Step 5: Appointment Details (Alternative view) -->
-        <DetallesAlternativos
+        <!-- Step 5: Appointment Details 
+        <MedicosCitaModalDetallesAlternativos
           v-if="localStep === 5"
           :appointment="appointment"
           :proforma-file-name="proformaFileName"
           :proforma-guardado="proformaGuardado"
           :description="description"
+          :close-modal="closeModal"
           @handle-proforma-upload="handleProformaUpload"
         />
+        -->
 
         <!-- Step 6: Date and Time Editor -->
-        <EditorFechaHora
+        <MedicosCitaModalEditorFechaHora
           v-if="localStep === 6"
           :appointment="appointment"
           :selected-date="selectedDate"
@@ -86,34 +96,41 @@
           @update:selected-date="selectedDate = $event"
           @update:selected-time="selectedTime = $event"
           @cancel="localStep = 1"
-          @save-changes="localStep = 2"
+          @save-changes="handleSaveChanges"
         />
 
-        <!-- Step 7: Valoración Details - Nueva ventana para detalles de valoración -->
-        <DetallesValoracion
+        <!-- Step 7: Valoración Details  -->
+        <MedicosCitaModalDetallesValoracion
           v-if="localStep === 7"
           :appointment="appointment"
           :proforma-file-name="proformaFileName"
           :proforma-guardado="proformaGuardado"
-          :description="description"
+          :description="recommendationPostAppointment"
+          :close-modal="closeModal"
+          :procedure-price="procedurePrice"
+          @go-back="localStep = 1"
           @handle-proforma-upload="handleProformaUpload"
           @save-valoration="handleSaveValoration"
-          @not-suitable-procedure="handleNotSuitableProcedure"
-          @update:description="description = $event"
+          @update:description="recommendationPostAppointment = $event"
+          @update:procedure-price="updateProcedurePrice"
+          @remove-proforma="handleRemoveProforma"
         />
 
         <!-- Step 8: Confirmación de guardado -->
-        <ConfirmacionGuardado
+        <MedicosCitaModalConfirmacionGuardado
           v-if="localStep === 8"
+          :close-modal="closeModal"
+          :is-loading="isLoading"
           @confirm-save="confirmSaveValoration"
           @cancel-save="localStep = 7"
         />
 
         <!-- Step 9: Confirmación "No apto para procedimiento" -->
-        <ConfirmacionNoApto
+        <MedicosCitaModalConfirmacionNoApto
           v-if="localStep === 9"
+          :close-modal="closeModal"
           @confirm-not-suitable="confirmNotSuitable"
-          @cancel="localStep = 7"
+          @cancel="localStep = 3"
         />
 
         <div class="modal__footer modal__footer--center" v-if="errorText">
@@ -125,16 +142,7 @@
 </template>
 
 <script setup>
-import { ref, toRef, watch } from "vue";
-import ConfirmacionCancelacion from "./confirmacion-cancelacion.vue";
-import ConfirmacionGuardado from "./confirmacion-guardado.vue";
-import ConfirmacionNoApto from "./confirmacion-no-apto.vue";
-import ConfirmacionReserva from "./confirmacion-reserva.vue";
-import DetallesAlternativos from "./detalles-alternativos.vue";
-import DetallesCita from "./detalles-cita.vue";
-import DetallesValoracion from "./detalles-valoracion.vue";
-import EditorFechaHora from "./editor-fecha-hora.vue";
-import ExitoConfirmacion from "./exito-confirmacion.vue";
+import { computed, ref, toRef, watch } from "vue";
 
 const config = useRuntimeConfig();
 const token = useCookie("token");
@@ -149,19 +157,109 @@ const creditAmount = ref(0);
 const creditUsed = ref(false);
 const creditId = ref(null);
 const errorText = ref("");
-const description = ref("");
+const recommendationPostAppointment = ref("");
+const existingProformaRemoved = ref(false);
+const fileRemoved = ref(false);
+const procedurePrice = ref("");
+const isLoading = ref(false);
 
-// Mock data for available dates and times
 const availableDates = ref(["2023-10-19", "2023-10-20", "2023-10-21"]);
 const availableTimes = ref([]);
 
-const attrs = ref([
-  {
-    key: "today",
-    dot: true,
-    dates: new Date(),
-  },
-]);
+const timeSlotsByDay = {
+  weekday: [
+    "08:30",
+    "10:00",
+    "10:30",
+    "12:30",
+    "14:00",
+    "15:00",
+    "15:30",
+    "17:00",
+    "17:30",
+  ],
+  saturday: ["08:00", "09:30", "10:00", "10:30", "12:00"],
+};
+
+const getAvailableTimesForDate = (date) => {
+  if (!date) {
+    availableTimes.value = [];
+    return;
+  }
+
+  const dateObj = typeof date === "string" ? new Date(date) : date;
+  const dayOfWeek = dateObj.getDay();
+
+  let baseTimeSlots = [];
+
+  if (dayOfWeek >= 1 && dayOfWeek <= 5) {
+    baseTimeSlots = [...timeSlotsByDay.weekday];
+  } else if (dayOfWeek === 6) {
+    baseTimeSlots = [...timeSlotsByDay.saturday];
+  } else {
+    availableTimes.value = [];
+    return;
+  }
+
+  const occupiedSlots = Math.floor(Math.random() * 3) + 1;
+  const shuffledSlots = [...baseTimeSlots].sort(() => Math.random() - 0.5);
+  const slotsToRemove = shuffledSlots.slice(0, occupiedSlots);
+
+  let availableSlots = baseTimeSlots.filter(
+    (slot) => !slotsToRemove.includes(slot)
+  );
+
+  const now = new Date();
+  const today = now.toISOString().split("T")[0];
+  const selectedDateStr =
+    typeof date === "string" ? date : date.toISOString().split("T")[0];
+
+  if (selectedDateStr === today) {
+    const currentHour = now.getHours();
+    const currentMinutes = now.getMinutes();
+    const currentTimeStr = `${currentHour.toString().padStart(2, "0")}:${Math.floor(currentMinutes / 30) * 30 === 0 ? "00" : "30"}`;
+
+    availableSlots = availableSlots.filter((slot) => slot > currentTimeStr);
+  }
+
+  availableTimes.value = availableSlots;
+};
+
+const attrs = computed(() => {
+  const today = new Date();
+  const attrsArray = [
+    {
+      key: "today",
+      dot: true,
+      dates: new Date(),
+    },
+  ];
+
+  const yesterday = new Date(today);
+  yesterday.setDate(yesterday.getDate() - 1);
+
+  attrsArray.push({
+    key: "disabled-past",
+    dates: { end: yesterday },
+    disabled: true,
+  });
+
+  const endDate = new Date("2025-12-31");
+  const current = new Date(today);
+
+  while (current <= endDate) {
+    if (current.getDay() === 0) {
+      attrsArray.push({
+        key: `sunday-${current.getTime()}`,
+        dates: new Date(current),
+        disabled: true,
+      });
+    }
+    current.setDate(current.getDate() + 1);
+  }
+
+  return attrsArray;
+});
 
 const props = defineProps({
   appointment: Object,
@@ -170,7 +268,6 @@ const props = defineProps({
     type: Number,
     default: 1,
   },
-  // Nueva prop para indicar si se debe abrir directamente en valoración
   openValoration: {
     type: Boolean,
     default: false,
@@ -181,7 +278,6 @@ const emit = defineEmits(["update:step", "close-modal", "refresh"]);
 
 const localStep = ref(props.step);
 
-// Sync cuando prop cambia
 watch(
   () => props.step,
   (newVal) => {
@@ -189,23 +285,21 @@ watch(
   }
 );
 
-// Watch para abrir directamente en valoración
 watch(
   () => props.openValoration,
   (newVal) => {
     if (newVal && props.open) {
-      localStep.value = 7; // Ir directamente a detalles de valoración
+      localStep.value = 7;
     }
   },
   { immediate: true }
 );
 
-// Watch para abrir modal
 watch(
   () => props.open,
   (newVal) => {
     if (newVal && props.openValoration) {
-      localStep.value = 7; // Ir directamente a detalles de valoración
+      localStep.value = 7;
     } else if (newVal) {
       localStep.value = props.step;
     }
@@ -214,48 +308,75 @@ watch(
 
 const step = toRef(props, "step");
 
-const availableTimesByDate = {
-  "2025-04-01": ["09:00", "10:00", "11:00", "15:30"],
-  "2023-10-20": ["10:30", "14:00", "16:00"],
-  "2023-10-21": ["09:30", "11:30", "15:00"],
-};
-
 watch(selectedDate, (newDate) => {
   if (newDate) {
-    const formattedDate = formatDateForLookup(newDate);
-    availableTimes.value = availableTimesByDate[formattedDate] || [];
     selectedTime.value = "";
+    getAvailableTimesForDate(newDate);
   }
 });
 
+const selectDay = (date) => {
+  this.localSelectedDay = date;
+  this.localSelectedHour = null;
+  this.availableHours = this.availability[date] || [];
+};
+
 const formatDateForLookup = (date) => {
-  const d = new Date(date);
-  let month = "" + (d.getMonth() + 1);
-  let day = "" + d.getDate();
-  const year = d.getFullYear();
-
-  if (month.length < 2) month = "0" + month;
-  if (day.length < 2) day = "0" + day;
-
-  return [year, month, day].join("-");
+  return date.includes(":")
+    ? date.split(":").length === 2
+      ? `${date}:00`
+      : date
+    : `${date}:00:00`;
 };
 
 const handleProformaUpload = (event) => {
-  if (event === null) {
-    proformaFileName.value = "";
-    return;
-  }
+  const file = event.target.files[0];
 
-  if (event && event.target && event.target.files) {
-    const file = event.target.files[0];
-    if (file) {
-      proformaFileName.value = file.name;
-    }
-    return;
+  if (file) {
+    proformaFileName.value = file.name;
   }
+};
 
-  if (event && event.name) {
-    proformaFileName.value = event.name;
+const handleRemoveExistingProforma = () => {
+  existingProformaRemoved.value = true;
+
+  fileRemoved.value = true;
+
+  proformaFileName.value = "";
+  proformaGuardado.value = false;
+
+  const fileInput = document.getElementById("proforma-file-input");
+  if (fileInput) {
+    fileInput.value = "";
+  }
+};
+
+const restoreExistingProforma = () => {
+  existingProformaRemoved.value = false;
+  fileRemoved.value = false;
+};
+
+const handleRemoveProforma = () => {
+  proformaFileName.value = "";
+  proformaGuardado.value = false;
+  fileRemoved.value = true;
+
+  const fileInput = document.getElementById("proforma-file-input");
+  if (fileInput) {
+    fileInput.value = "";
+  }
+};
+
+const isValidPrice = (price) => {
+  const priceRegex = /^\d{1,3}(,\d{3})*(\.\d{2})?$|^\d+(\.\d{2})?$/;
+  return priceRegex.test(price.toString());
+};
+
+const updateProcedurePrice = (newPrice) => {
+  procedurePrice.value = newPrice;
+
+  if (newPrice && !isValidPrice(newPrice)) {
+    console.warn("Formato de precio inválido");
   }
 };
 
@@ -275,6 +396,40 @@ const editRecommendations = async () => {
 const saveRecommendations = async () => {
   try {
     proformaGuardado.value = true;
+
+    isLoading.value = true;
+
+    const payload = {
+      price_procedure: procedurePrice.value,
+      recommendation_post_appointment: recommendationPostAppointment.value,
+      appointment_result_code: "FIT_FOR_PROCEDURE",
+      proforma_file_code: "PERSONAL_DOCUMENT____6__DOC__652025134811",
+    };
+
+    if (existingProformaRemoved.value) {
+      payload.remove_existing_proforma = true;
+    }
+
+    const { data, error } = await useFetch(
+      config.public.API_BASE_URL + "/appointment/upload_proforma",
+      {
+        method: "PUT",
+        headers: { Authorization: token.value },
+        params: {
+          id: props.appointment.id,
+        },
+        body: payload,
+      }
+    );
+
+    if (data) {
+      isLoading.value = false;
+      emit("refresh");
+      closeModal();
+    }
+    if (error.value) {
+      console.log(error.value, "data");
+    }
   } catch (error) {
     console.error("Error saving recommendations:", error);
     errorText.value = "Error al guardar los cambios";
@@ -282,76 +437,117 @@ const saveRecommendations = async () => {
 };
 
 const handleUploadProforma = () => {
-  // Flujo automático: ir directamente a detalles de valoración
   localStep.value = 7;
 };
 
 const handleNotSuitableProcedure = () => {
-  // Mostrar confirmación para "No apto para procedimiento"
   localStep.value = 9;
 };
 
 const handleSaveValoration = () => {
-  // Mostrar confirmación antes de guardar
   localStep.value = 8;
 };
 
+const handleSaveChanges = async () => {
+  isLoading.value = true;
+
+  const year = selectedDate.value.getFullYear();
+  const month = String(selectedDate.value.getMonth() + 1).padStart(2, "0");
+  const day = String(selectedDate.value.getDate()).padStart(2, "0");
+
+  const dateString = `${year}-${month}-${day}`;
+
+  const formattedHour = selectedTime.value.includes(":")
+    ? selectedTime.value.split(":").length === 2
+      ? `${selectedTime.value}:00`
+      : selectedTime.value
+    : `${selectedTime.value}:00:00`;
+
+  const payload = {
+    customer_id: props.appointment.customer.id,
+    appointment_date: dateString || props.appointment.appointment_date,
+    appointment_hour: formattedHour || props.appointment.appointment_hour,
+    reservation_type: props.appointment.reservation_type.type,
+    supplier_id: props.appointment.supplier.id,
+  };
+
+  const { data, error } = await useFetch(
+    config.public.API_BASE_URL + "/appointment/edit",
+    {
+      method: "PUT",
+      headers: { Authorization: token.value },
+      params: {
+        id: props.appointment.id,
+      },
+      body: payload,
+    }
+  );
+  if (data) {
+    isLoading.value = false;
+    emit("refresh");
+    localStep.value = 1;
+  }
+  if (error.value) {
+    console.log(error.value, "data");
+  }
+};
+
 const confirmSaveValoration = async () => {
-  try {
-    // Actualizar estado a "Valorado"
-    const { data, error } = await useFetch(
-      config.public.API_BASE_URL + "/appointment/finalize_valoration",
-      {
-        method: "PUT",
-        headers: { Authorization: token.value },
-        params: { id: props.appointment.id },
-        body: {
-          description: description.value,
-          proforma_file: proformaFileName.value,
-          appointment_result_code: "FIT_FOR_PROCEDURE",
-        },
-      }
-    );
+  isLoading.value = true;
 
-    if (data) {
-      // Cambiar estado local
-      props.appointment.appointment_status.code =
-        "VALUED_VALORATION_APPOINTMENT";
-      emit("refresh");
-      // Cerrar modal
-      closeModal();
-    }
+  const payload = {
+    price_procedure: procedurePrice.value,
+    recommendation_post_appointment: recommendationPostAppointment.value,
+    appointment_result_code: "FIT_FOR_PROCEDURE",
+    proforma_file_code: "PERSONAL_DOCUMENT____6__DOC__652025134811",
+  };
 
-    if (error.value) {
-      errorText.value = "Error al guardar la valoración";
+  if (existingProformaRemoved.value) {
+    payload.remove_existing_proforma = true;
+  }
+
+  const { data, error } = await useFetch(
+    config.public.API_BASE_URL + "/appointment/upload_proforma",
+    {
+      method: "PUT",
+      headers: { Authorization: token.value },
+      params: {
+        id: props.appointment.id,
+      },
+      body: payload,
     }
-  } catch (error) {
-    errorText.value = "Error al guardar la valoración";
+  );
+
+  if (data) {
+    isLoading.value = false;
+    emit("refresh");
+    closeModal();
+  }
+  if (error.value) {
+    console.log(error.value, "data");
   }
 };
 
 const confirmNotSuitable = async () => {
   try {
-    // Actualizar estado a "Valorado" como "No apto"
     const { data, error } = await useFetch(
-      config.public.API_BASE_URL + "/appointment/finalize_valoration",
+      config.public.API_BASE_URL + "/appointment/upload_proforma",
       {
         method: "PUT",
         headers: { Authorization: token.value },
         params: { id: props.appointment.id },
         body: {
-          description: "Paciente no apto para procedimiento",
+          recommendation_post_appointment:
+            "Paciente no apto para procedimiento",
           appointment_result_code: "NOT_FIT_FOR_PROCEDURE",
         },
       }
     );
 
     if (data) {
-      // Cambiar estado local
       props.appointment.appointment_status.code =
         "VALUED_VALORATION_APPOINTMENT";
       emit("refresh");
-      // Cerrar modal
       closeModal();
     }
 
@@ -384,27 +580,7 @@ const confirmAppointment = async () => {
 };
 
 const confirmValoration = async () => {
-  const { data, error } = await useFetch(
-    config.public.API_BASE_URL + "/appointment/upload_proforma",
-    {
-      method: "PUT",
-      headers: { Authorization: token.value },
-      params: {
-        id: props.appointment.id,
-      },
-      body: {
-        appointment_result_code: "FIT_FOR_PROCEDURE",
-        proforma_file_code: "PERSONAL_DOCUMENT____6__DOC__652025134811",
-      },
-    }
-  );
-  if (data) {
-    emit("refresh");
-    localStep.value = 3;
-  }
-  if (error.value) {
-    console.log(error.value, "data");
-  }
+  localStep.value = 3;
 };
 
 const confirmProcedure = async () => {
@@ -516,8 +692,6 @@ const useCredit = async () => {
 };
 
 const cancelAppointment = async () => {
-  // Implementation for canceling appointment
-  console.log("Cancelando cita...");
   localStep.value = 3;
 };
 
@@ -527,6 +701,11 @@ const resetSteps = () => {
 
 const closeModal = () => {
   resetSteps();
+  existingProformaRemoved.value = false;
+  fileRemoved.value = false;
+  proformaFileName.value = "";
+  proformaGuardado.value = false;
+
   emit("close-modal");
 };
 </script>
@@ -562,7 +741,6 @@ const closeModal = () => {
   }
 }
 
-// Animation for modal fade
 .modal {
   transition: opacity 0.15s linear;
 }
