@@ -6,18 +6,16 @@ export default {
       type: Array,
       default: () => [],
     },
+    loading: {
+      type: Boolean,
+      default: false,
+    },
     token: String,
   },
   data() {
     return {
       filtersData: {
         procedimiento: "",
-        lugar: "",
-        valoracion: "",
-        disponibilidad: "",
-        entity: "",
-        min: "",
-        max: "",
         procedures: [],
       },
       selectedSpecialty: "",
@@ -26,26 +24,17 @@ export default {
     };
   },
   async mounted() {
-    this.filtersData.disponibilidad = [
-      { code: "all", name: "Todos" },
-      { code: "weeks", name: "Proximas semanas" },
-      { code: "months", name: "Proximos meses" },
-      { code: "days", name: "Proximos dias" },
-    ];
-
-    // Initialize filters from query parameters
     await this.initializeFiltersFromQuery();
   },
   watch: {
-    async selectedSpecialty(newVal, token) {
+    async selectedSpecialty(newVal) {
       if (newVal) {
-        await this.loadProcedures(newVal, token);
+        await this.loadProcedures(newVal);
       } else {
         this.filtersData.procedures = [];
         this.filtersData.procedimiento = "";
       }
     },
-    // Watch for route changes to update filters
     "$route.query": {
       handler: "initializeFiltersFromQuery",
       immediate: false,
@@ -55,16 +44,9 @@ export default {
     async initializeFiltersFromQuery() {
       const query = this.$route.query;
 
-      // Set filters from query parameters
       this.filtersData.procedimiento = query.procedure_code || "";
       this.selectedSpecialty = query.specialty_code || "";
-      this.filtersData.lugar = query.province || "";
-      this.filtersData.valoracion = query.min_stars || "";
-      this.filtersData.min = query.min_price || "";
-      this.filtersData.max = query.max_price || "";
-      this.filtersData.entity = query.entity_type || "";
 
-      // If there's a specialty selected, load its procedures
       if (this.selectedSpecialty) {
         await this.loadProcedures(this.selectedSpecialty);
       }
@@ -76,7 +58,6 @@ export default {
       this.loadingProcedures = true;
       this.errorLoadingProcedures = false;
 
-      // Only clear procedure if we're loading a different specialty
       if (!this.filtersData.procedimiento) {
         this.filtersData.procedimiento = "";
       }
@@ -96,7 +77,6 @@ export default {
             name: item.name,
           }));
 
-          // After loading procedures, check if we need to restore a procedure from query
           const queryProcedure = this.$route.query.procedure_code;
           if (queryProcedure && !this.filtersData.procedimiento) {
             this.filtersData.procedimiento = queryProcedure;
@@ -118,18 +98,8 @@ export default {
         ...(this.selectedSpecialty && {
           specialty_code: this.selectedSpecialty,
         }),
-        ...(this.filtersData.lugar && { province: this.filtersData.lugar }),
-        ...(this.filtersData.valoracion && {
-          min_stars: this.filtersData.valoracion,
-        }),
-        ...(this.filtersData.min && { min_price: this.filtersData.min }),
-        ...(this.filtersData.max && { max_price: this.filtersData.max }),
-        ...(this.filtersData.entity && {
-          entity_type: this.filtersData.entity,
-        }),
       };
 
-      // Only navigate if we're not already on the search page with the same query
       const currentQuery = this.$route.query;
       const isSameQuery =
         JSON.stringify(currentQuery) === JSON.stringify(newQuery);
@@ -139,6 +109,8 @@ export default {
           path: "/buscar",
           query: newQuery,
         });
+      } else {
+        this.$emit("search", newQuery);
       }
     },
   },
@@ -159,6 +131,7 @@ export default {
               id="especialidad"
               class="search-form__select"
               v-model="selectedSpecialty"
+              :disabled="loading"
             >
               <option value="" disabled>Buscar por especialidad</option>
               <option
@@ -173,9 +146,15 @@ export default {
 
           <!-- Procedures Dropdown -->
           <div class="search-form__group">
-            <label for="procedimiento" class="search-form__label"
-              >Procedimiento</label
-            >
+            <div class="search-form__label-container">
+              <label for="procedimiento" class="search-form__label"
+                >Procedimiento</label
+              >
+              <AtomsIconsRefreshCcwIcon
+                v-if="loadingProcedures"
+                class="search-form__loading-icon"
+              />
+            </div>
             <div class="search-form__input-icon-wrapper">
               <select
                 id="procedimiento"
@@ -197,14 +176,10 @@ export default {
                 </option>
               </select>
               <div
-                v-if="loadingProcedures || errorLoadingProcedures"
-                class="search-form__status-message"
-                :class="{
-                  'search-form__status-message--error': errorLoadingProcedures,
-                }"
+                v-if="errorLoadingProcedures"
+                class="search-form__status-message search-form__status-message--error"
               >
-                <span v-if="loadingProcedures">Cargando...</span>
-                <span v-else>Error al cargar</span>
+                <span>Error al cargar</span>
               </div>
             </div>
           </div>
@@ -220,20 +195,6 @@ export default {
           </div>
         </form>
       </div>
-    </div>
-
-    <div class="search-form__filter-display">
-      <button v-if="filtersData.entity" class="search-form__filter-tag">
-        Entidad:
-        {{ filtersData.entity === "doctor" ? "Doctor" : "Hospital" }}
-      </button>
-      <button v-if="filtersData.min" class="search-form__filter-tag">
-        Precio mínimo: {{ filtersData.min }}
-      </button>
-      <button v-if="filtersData.max" class="search-form__filter-tag">
-        Precio máximo: {{ filtersData.max }}
-      </button>
-      <WebsiteMasFiltrosModal :filters="filtersData" />
     </div>
   </div>
 </template>
@@ -287,12 +248,25 @@ export default {
     width: 100%;
   }
 
+  &__label-container {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
   &__label {
     @include label-base;
     font-weight: 500;
     font-size: 14px;
     line-height: 20px;
     color: #344054;
+  }
+
+  &__loading-icon {
+    width: 16px;
+    height: 16px;
+    color: #0cadbb;
+    animation: spin 1s linear infinite;
   }
 
   &__select {
@@ -331,23 +305,14 @@ export default {
       align-self: flex-end;
     }
   }
+}
 
-  &__filter-display {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 10px;
-    justify-content: center;
-    width: 100%;
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
   }
-
-  &__filter-tag {
-    background-color: #f2f4f7;
-    border: none;
-    color: #344054;
-    padding: 6px 12px;
-    border-radius: 999px;
-    font-size: 14px;
-    cursor: default;
+  to {
+    transform: rotate(360deg);
   }
 }
 </style>
