@@ -117,11 +117,9 @@
 
         <div class="medico-card__footer">
           <div class="medico-card__price">
-            <p class="medico-card__price-value">
-              ₡{{ medico.search_reference_price }}
-            </p>
+            <p class="medico-card__price-value">₡{{ displayPrice }}</p>
             <p class="medico-card__price-description">
-              Costo Cita de Valoración
+              {{ priceDescription }}
             </p>
           </div>
 
@@ -148,6 +146,59 @@ const props = defineProps({
 });
 
 const emit = defineEmits(["toggle-favorite", "show-packages"]);
+
+const route = useRoute();
+
+// Check if a procedure was searched
+const searchProcedureCode = computed(() => route.query.procedure_code);
+
+// Get the assessment appointment package price
+const citaValoracionPackage = computed(() => {
+  return {
+    id: 4,
+    product: {
+      id: 9999,
+      code: "ASSESSMENT_APPOINTMENT",
+      name: "Cita de Valoración",
+      type: "MEDICAL_PRODUCT",
+      description: "Cita de valoración médica inicial",
+      father_code: null,
+      value1: "25000",
+      created_date: new Date().toISOString(),
+      updated_date: null,
+      is_deleted: 0,
+    },
+    reference_price: 25000,
+    discount: 0,
+    discounted_price: 25000,
+    services_offer: {
+      ASSESSMENT_DETAILS: [
+        "MEDICAL_CONSULTATION",
+        "CLINICAL_EVALUATION",
+        "INITIAL_DIAGNOSIS",
+      ],
+    },
+    is_king: 0,
+    observations: "",
+    postoperative_assessments: null,
+  };
+});
+
+const displayPrice = computed(() => {
+  if (searchProcedureCode.value) {
+    return citaValoracionPackage.value.discounted_price.toLocaleString();
+  } else {
+    return props.medico.search_reference_price;
+  }
+});
+
+const priceDescription = computed(() => {
+  if (searchProcedureCode.value) {
+    return "Cita de Valoración";
+  } else {
+    return "Costo Cita de Valoración";
+  }
+});
 
 const toggleFavorite = () => {
   emit("toggle-favorite", props.medico.id);

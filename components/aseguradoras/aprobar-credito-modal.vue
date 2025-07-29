@@ -50,7 +50,7 @@
                 </tr>
                 <tr>
                   <td class="text-muted">Monto Solicitado:</td>
-                  <td>${{ credit.requested_amount }}</td>
+                  <td>₡{{ credit.requested_amount }}</td>
                 </tr>
                 <tr>
                   <td class="text-muted">Monto a Aprobar:</td>
@@ -199,7 +199,7 @@
                 </tr>
                 <tr>
                   <td class="text-muted">Monto Aprobado:</td>
-                  <td>${{ approvedAmount }}</td>
+                  <td>₡{{ approvedAmount }}</td>
                 </tr>
                 <tr>
                   <td class="text-muted">Documento:</td>
@@ -265,7 +265,7 @@
 </template>
 
 <script setup>
-import { ref, watch, computed } from "vue";
+import { computed, ref, watch } from "vue";
 const config = useRuntimeConfig();
 const token = useCookie("token");
 const user_info = useCookie("user_info");

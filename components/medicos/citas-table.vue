@@ -520,6 +520,7 @@ watch(paginatedAppointments, () => {
               <td
                 class="appointments-table__cell appointments-table__cell--actions"
               >
+                <!-- 1. Botón Confirmar Cita de Valoración -->
                 <button
                   v-if="
                     appointment.appointment_status.code ===
@@ -532,6 +533,7 @@ watch(paginatedAppointments, () => {
                   Confirmar
                 </button>
 
+                <!-- 2. Botón Valoración -->
                 <button
                   v-if="
                     [
@@ -542,10 +544,15 @@ watch(paginatedAppointments, () => {
                   class="appointments-table__action-btn appointments-table__action-btn--warning"
                   @click="showDateDetails(appointment)"
                   :aria-label="`Realizar valoración de ${appointment.customer.name}`"
+                  :disabled="
+                    appointment.appointment_status.code ===
+                    'VALUED_VALORATION_APPOINTMENT'
+                  "
                 >
                   Valoración
                 </button>
 
+                <!-- 3. Botón Confirmar Procedimiento -->
                 <button
                   v-if="
                     appointment.appointment_status.code === 'PENDING_PROCEDURE'
@@ -557,6 +564,7 @@ watch(paginatedAppointments, () => {
                   Confirmar Procedimiento
                 </button>
 
+                <!-- 4. Botón Marcar como Concretado -->
                 <button
                   v-if="
                     appointment.appointment_status.code === 'WAITING_PROCEDURE'
@@ -568,27 +576,15 @@ watch(paginatedAppointments, () => {
                   Marcar como Concretado
                 </button>
 
-                <button
-                  v-if="
-                    appointment.appointment_status.code ===
-                    'VALUED_VALORATION_APPOINTMENT'
-                  "
-                  class="appointments-table__action-btn appointments-table__action-btn--complete"
-                  @click="showDateDetails(appointment)"
-                  :aria-label="`Marcar como concretado procedimiento de ${appointment.customer.name}`"
-                  :disabled="!canRequestProcedure(appointment)"
-                >
-                  Solicitar procedimiento
-                </button>
+                <!-- 5. Mensaje para estados sin acción -->
                 <span
                   v-if="
                     ![
                       'PENDING_VALORATION_APPOINTMENT',
                       'VALUATION_PENDING_VALORATION_APPOINTMENT',
+                      'CONFIRM_VALIDATION_APPOINTMENT',
                       'PENDING_PROCEDURE',
                       'WAITING_PROCEDURE',
-                      'VALUED_VALORATION_APPOINTMENT',
-                      'CONFIRM_VALIDATION_APPOINTMENT',
                     ].includes(appointment.appointment_status.code)
                   "
                   class="appointments-table__no-action"

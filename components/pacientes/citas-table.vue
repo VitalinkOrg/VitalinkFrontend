@@ -1,5 +1,5 @@
 <template>
-  <div class="card">
+  <div class="appointment-table card">
     <div class="table-responsive" v-if="appointments !== null">
       <table class="table fw-light">
         <thead>
@@ -26,7 +26,7 @@
             <td>{{ appointment.package?.procedure.name }}</td>
             <td>{{ appointment.appointment_qr_code }}</td>
             <td>{{ appointment.reservation_type.name }}</td>
-            <td>
+            <td class="min-w">
               <PacientesPagarCitaModal
                 v-if="
                   (appointment.appointment_status.code !==
@@ -49,7 +49,8 @@
                 @refresh="refreshAppointments"
               />
             </td>
-            <td>
+
+            <td class="min-w">
               <PacientesPagarCitaModal
                 v-if="
                   (appointment.appointment_status.code !==
@@ -140,12 +141,14 @@
 </template>
 
 <script setup>
-import { ref, inject } from "vue";
+import { inject, ref } from "vue";
 const { emit } = defineEmits(["refreshed"]);
 const refreshAppointments = inject("refreshAppointments");
 
 const props = defineProps(["appointments"]);
 const activeAppointment = ref(null);
+
+console.log("appointments: ", props.appointments);
 
 const statusClass = (status) => {
   switch (status) {
@@ -162,6 +165,25 @@ const statusClass = (status) => {
   }
 };
 
+const canRequestProcedure = (appointment) => {
+  if (appointment.appointment_result?.code !== "FIT_FOR_PROCEDURE") {
+    return false;
+  }
+
+  if (appointment.appointment_type?.code === "PROCEDURE_APPOINTMENT") {
+    return false;
+  }
+
+  return true;
+};
+
+const isWaitingCreditResponse = (appointment) => {
+  return (
+    appointment.appointment_credit?.credit_status_code === "REQUIRED" &&
+    !appointment.appointment_credit?.approved_amount
+  );
+};
+
 const openModal = (appointment) => {
   if (appointment.status === "Pendiente") {
     activeAppointment.value = appointment; // Set the active appointment
@@ -172,3 +194,22 @@ const closeModal = () => {
   activeAppointment.value = null; // Reset the active appointment
 };
 </script>
+
+<style lang="scss" scoped>
+.appointment-table {
+  &__button {
+    &--outline {
+      @include outline-button;
+      font-weight: 600;
+      font-size: 12px;
+      line-height: 18px;
+      padding: 8px 16px;
+      width: 100%;
+    }
+  }
+}
+
+.min-w {
+  min-width: 137px;
+}
+</style>

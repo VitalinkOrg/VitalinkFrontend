@@ -1,5 +1,5 @@
 <template>
-  <div>
+  <div class="appointment-pay-modal">
     <!-- Confirmed and not paid -->
     <div
       v-if="
@@ -15,27 +15,48 @@
       <button
         v-if="!showStatus"
         role="button"
-        class="btn btn-outline-dark text-nowrap me-2"
-        @click="open = true"
+        class="appointment-pay-modal__button--outline"
+        @click="handleOpen"
       >
         Pagar ahora
       </button>
       <span
         v-else
         role="button"
-        @click="open = true"
+        @click="handleOpen"
         class="badge rounded-5 text-dark"
         :class="statusClass(appointment.appointment_status.code)"
       >
         {{ appointment.appointment_status.value1 }}
       </span>
     </div>
+
+    <!-- Valorado y apto para procedimiento - Mostrar botón Solicitar procedimiento -->
     <div
       v-if="
-        appointment.appointment_status.code ===
-        'VALUATION_PENDING_VALORATION_APPOINTMENT'
+        appointment.appointment_status.code === 'VALUED_VALORATION_APPOINTMENT'
       "
     >
+      <button
+        v-if="!showStatus"
+        role="button"
+        class="appointment-pay-modal__button--outline"
+        @click="openProcedureModal"
+      >
+        Solicitar procedimiento
+      </button>
+      <span
+        v-else
+        role="button"
+        @click="openProcedureModal"
+        class="badge rounded-5 text-dark"
+        :class="statusClass(appointment.appointment_status.code)"
+      >
+        {{ appointment.appointment_status.value1 }}
+      </span>
+    </div>
+
+    <div v-if="appointment.appointment_status.code === 'PENDING_PROCEDURE'">
       <div v-if="!showStatus" class="d-flex gap-2">
         <img src="@/src/assets/success.svg" class="mr-2" alt="Success" />
         <p class="text-success mb-0">Pagado</p>
@@ -43,7 +64,7 @@
       <span
         v-else
         role="button"
-        @click="open = true"
+        @click="handleOpen"
         class="badge rounded-5 text-dark"
         :class="statusClass(appointment.appointment_status.code)"
       >
@@ -59,7 +80,7 @@
       <span
         v-if="showStatus"
         role="button"
-        @click="open = true"
+        @click="handleOpen"
         class="badge rounded-5 text-dark"
         :class="statusClass(appointment.appointment_status.code)"
       >
@@ -98,15 +119,15 @@
       <button
         v-if="!showStatus"
         role="button"
-        class="btn btn-outline-dark text-nowrap me-2"
-        @click="open = true"
+        class="appointment-pay-modal__button--outline"
+        @click="handleOpen"
       >
         Cancelar cita
       </button>
       <span
         v-else
         role="button"
-        @click="open = true"
+        @click="handleOpen"
         class="badge rounded-5 text-dark"
         :class="statusClass(appointment.appointment_status.code)"
       >
@@ -126,7 +147,33 @@
         {{ appointment.appointment_status.value1 }}
       </span>
     </div>
+
+    <!-- Solicitud de crédito pendiente - Deshabilitar botón -->
+    <div
+      v-else-if="
+        appointment.appointment_credit?.credit_status?.code === 'REQUIRED' &&
+        appointment.appointment_status.code === 'VALUED_VALORATION_APPOINTMENT'
+      "
+    >
+      <button
+        v-if="!showStatus"
+        role="button"
+        class="appointment-pay-modal__button--outline appointment-pay-modal__button--disabled"
+        disabled
+      >
+        Esperando respuesta de crédito
+      </button>
+      <span
+        v-else
+        role="button"
+        class="badge rounded-5 text-dark bg-warning-subtle"
+      >
+        Crédito pendiente
+      </span>
+    </div>
   </div>
+
+  <!-- Modal principal para detalles de cita -->
   <div
     class="modal fade"
     :class="{ show: open }"
@@ -211,7 +258,7 @@
                   <td>{{ appointment.package?.procedure.name }}</td>
                 </tr>
                 <tr>
-                  <td><strong>Costo del servicio:</strong></td>
+                  <td><strong>Monto del procedimiento:</strong></td>
                   <td>₡18000</td>
                 </tr>
               </tbody>
@@ -358,14 +405,14 @@
                       {{
                         appointment.appointment_type.code ==
                         "VALORATION_APPOINTMENT"
-                          ? "€" + appointment.price_valoration_appointment
-                          : "€" + appointment.price_procedure
+                          ? "₡" + appointment.price_valoration_appointment
+                          : "₡" + appointment.price_procedure
                       }}
                     </td>
                   </tr>
                   <tr>
                     <td><strong>Descuento:</strong></td>
-                    <td>€0</td>
+                    <td>₡0</td>
                   </tr>
                   <tr
                     v-if="
@@ -380,9 +427,9 @@
                           "APPROVED" ||
                         appointment.appointment_credit?.credit_status.code ==
                           "APPROVED_PERCENTAGE"
-                          ? "-€" +
+                          ? "-₡" +
                             appointment.appointment_credit?.approved_amount
-                          : "€0"
+                          : "₡0"
                       }}
                     </td>
                   </tr>
@@ -392,8 +439,8 @@
                       {{
                         appointment.appointment_type.code ==
                         "VALORATION_APPOINTMENT"
-                          ? "€" + appointment.price_valoration_appointment
-                          : "€" +
+                          ? "₡" + appointment.price_valoration_appointment
+                          : "₡" +
                             (appointment.price_procedure -
                               0 - // Descuento (siempre 0 para MVP)
                               (appointment.appointment_credit
@@ -476,16 +523,16 @@
               <strong>Costo del servicio:</strong>
               {{
                 appointment.appointment_type.code == "VALORATION_APPOINTMENT"
-                  ? "€18.000"
-                  : "€" + appointment.price_procedure
+                  ? "₡18.000"
+                  : "₡" + appointment.price_procedure
               }}
             </p>
             <p>
               <strong>Monto Pagado:</strong>
               {{
                 appointment.appointment_type.code == "VALORATION_APPOINTMENT"
-                  ? "€18.000"
-                  : "€" + appointment.price_procedure
+                  ? "₡18.000"
+                  : "₡" + appointment.price_procedure
               }}
             </p>
             <div class="col-12 d-flex justify-content-between gap-2">
@@ -575,14 +622,117 @@
       </div>
     </div>
   </div>
+
+  <!-- Modal para Detalles del Procedimiento -->
+  <div
+    class="modal fade"
+    :class="{ show: showProcedureModal }"
+    v-if="showProcedureModal"
+    tabindex="-1"
+    aria-labelledby="procedureModalLabel"
+    aria-hidden="true"
+    style="display: block; background-color: rgba(0, 0, 0, 0.5)"
+  >
+    <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
+      <div class="modal-content">
+        <div
+          class="modal-header border-0 align-items-center d-flex justify-content-between"
+        >
+          <button
+            type="button"
+            class="btn-close btn btn-light me-2"
+            data-bs-dismiss="modal"
+            aria-label="Close"
+            @click="closeProcedureModal"
+          ></button>
+        </div>
+        <div class="modal-body">
+          <h5 class="fw-bold">Detalles del procedimiento</h5>
+          <table class="table table-borderless">
+            <tbody>
+              <tr>
+                <td><strong>Tipo de servicio:</strong></td>
+                <td>Procedimiento médico</td>
+              </tr>
+              <tr>
+                <td><strong>Fecha de la cita:</strong></td>
+                <td>
+                  {{
+                    new Date(appointment.appointment_date).toLocaleDateString()
+                  }}
+                </td>
+              </tr>
+              <tr>
+                <td><strong>Hora de la cita:</strong></td>
+                <td>{{ appointment.appointment_hour }}</td>
+              </tr>
+              <tr>
+                <td><strong>Paciente titular:</strong></td>
+                <td>{{ appointment.customer.name }}</td>
+              </tr>
+              <tr>
+                <td><strong>Teléfono de Contacto:</strong></td>
+                <td>{{ appointment.customer.phone_number }}</td>
+              </tr>
+              <tr>
+                <td><strong>Profesional Médico:</strong></td>
+                <td>{{ appointment.supplier.name }}</td>
+              </tr>
+              <tr>
+                <td><strong>Estado:</strong></td>
+                <td>
+                  <span class="badge rounded-5 text-dark bg-success-subtle">
+                    Valorado
+                  </span>
+                </td>
+              </tr>
+              <tr>
+                <td><strong>Procedimiento:</strong></td>
+                <td>{{ appointment.package?.procedure.name }}</td>
+              </tr>
+              <tr>
+                <td><strong>Monto del procedimiento:</strong></td>
+                <td>₡{{ appointment.price_procedure }}</td>
+              </tr>
+            </tbody>
+          </table>
+
+          <div class="d-flex justify-content-between gap-2 mt-4">
+            <button
+              class="btn btn-outline-primary w-50"
+              @click="reserveProcedure"
+              :disabled="isCreditDisabled"
+            >
+              Reservar el procedimiento
+            </button>
+            <button
+              class="btn btn-primary w-50"
+              @click="requestCredit"
+              :disabled="isCreditDisabled"
+            >
+              Solicitar crédito
+            </button>
+          </div>
+
+          <div v-if="procedureMessage" class="alert alert-info mt-3">
+            {{ procedureMessage }}
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
 </template>
 
 <script setup>
 const token = useCookie("token");
 const config = useRuntimeConfig();
-import { defineProps, ref } from "vue";
+import { computed, defineProps, ref } from "vue";
 const props = defineProps(["appointment", "step", "showStatus"]);
 const emit = defineEmits(["refresh"]);
+
+const handleOpen = () => {
+  open.value = true;
+};
 
 const open = ref(false);
 const step = ref(1);
@@ -592,6 +742,15 @@ const cardNumber = ref("");
 const expiryDate = ref("");
 const cvv = ref("");
 const email = ref("");
+
+const showProcedureModal = ref(false);
+const procedureMessage = ref("");
+
+const isCreditDisabled = computed(() => {
+  return (
+    props.appointment.appointment_credit?.credit_status?.code === "REQUIRED"
+  );
+});
 
 const formatDate = (dateString) => {
   const date = new Date(dateString);
@@ -603,8 +762,85 @@ const formatDate = (dateString) => {
   });
 };
 
+const openProcedureModal = () => {
+  showProcedureModal.value = true;
+};
+
+const closeProcedureModal = () => {
+  showProcedureModal.value = false;
+  procedureMessage.value = "";
+};
+
+const reserveProcedure = async () => {
+  try {
+    const { data, error } = await useFetch(
+      config.public.API_BASE_URL + "/appointment/reserve_procedure",
+      {
+        method: "PUT",
+        headers: { Authorization: token.value },
+        params: {
+          id: props.appointment.id,
+        },
+      }
+    );
+
+    if (data.value) {
+      procedureMessage.value =
+        "Procedimiento reservado exitosamente. El médico confirmará tu reserva.";
+      emit("refresh");
+      setTimeout(() => {
+        closeProcedureModal();
+      }, 2000);
+    }
+
+    if (error.value) {
+      procedureMessage.value =
+        "Error al reservar el procedimiento. Intenta nuevamente.";
+      console.error("Error reserving procedure:", error.value);
+    }
+  } catch (err) {
+    procedureMessage.value =
+      "Error al reservar el procedimiento. Intenta nuevamente.";
+    console.error("Error reserving procedure:", err);
+  }
+};
+
+const requestCredit = async () => {
+  try {
+    const { data, error } = await useFetch(
+      config.public.API_BASE_URL + "/appointmentcredit/add",
+      {
+        method: "POST",
+        headers: { Authorization: token.value },
+        body: {
+          appointment: props.appointment.id,
+          requested_amount: props.appointment.price_procedure,
+        },
+      }
+    );
+
+    if (data.value) {
+      procedureMessage.value =
+        "Solicitud de crédito enviada exitosamente. Esperando respuesta de la asociación solidarista.";
+      emit("refresh");
+      setTimeout(() => {
+        closeProcedureModal();
+      }, 2000);
+    }
+
+    if (error.value) {
+      procedureMessage.value =
+        "Error al solicitar el crédito. Intenta nuevamente.";
+      console.error("Error requesting credit:", error.value);
+    }
+  } catch (err) {
+    procedureMessage.value =
+      "Error al solicitar el crédito. Intenta nuevamente.";
+    console.error("Error requesting credit:", err);
+  }
+};
+
 const processPayment = async () => {
-  // Simulate payment processing
   if (cardName.value && cardNumber.value && expiryDate.value && cvv.value) {
     errorText.value = "";
   } else {
@@ -614,7 +850,6 @@ const processPayment = async () => {
   const { data, error } = await useFetch(
     config.public.API_BASE_URL +
       "/appointment/success_payment_valoration_appointment",
-
     {
       method: "PUT",
       headers: { Authorization: token.value },
@@ -636,7 +871,6 @@ const processPayment = async () => {
 };
 
 const processPaymentProcedure = async () => {
-  // Simulate payment processing
   if (cardName.value && cardNumber.value && expiryDate.value && cvv.value) {
     errorText.value = "";
   } else {
@@ -689,12 +923,23 @@ const statusClass = (status) => {
 
 const cancelAppointment = async () => {
   emit("refresh");
-  // Simulate cancellation
   step.value = 5;
 };
 </script>
 
-<style scoped>
+<style lang="scss" scoped>
+.appointment-pay-modal {
+  &__button {
+    &--outline {
+      @include outline-button;
+      font-weight: 600;
+      font-size: 12px;
+      line-height: 18px;
+      padding: 8px 16px;
+      width: 100%;
+    }
+  }
+}
 .modal-content {
   border-radius: 10px;
 }

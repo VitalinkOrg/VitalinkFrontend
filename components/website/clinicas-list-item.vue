@@ -36,6 +36,7 @@ const showPackages = async ({ medico }) => {
     );
 
     doctorData.value = data.value;
+    console.log("data.value: ", data.value);
   } catch (error) {
     console.error("Error obteniendo datos del doctor", error);
   } finally {
@@ -126,8 +127,8 @@ const closePackagesModal = () => {
   <WebsitePackTratamientos
     :doctor="doctorData"
     :open="openPackagesModal"
-    :procedure-code="procedureCode"
-    :specialty-code="specialtyCode"
+    :procedure-code="searchProcedureCode"
+    :specialty-code="searchSpecialtyCode"
     :user-info="user_info"
     @close-modal="closePackagesModal"
   />
