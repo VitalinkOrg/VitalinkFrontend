@@ -1,4 +1,3 @@
-<!-- components/medicos/cita-modal/detalles-cita.vue -->
 <template>
   <div class="appointment-details">
     <!-- Modal Header -->
@@ -136,6 +135,62 @@
               </td>
             </tr>
 
+            <tr class="appointment-details__table-row--end-row">
+              <th scope="row" class="appointment-details__table-header">
+                Validación de Crédito:
+              </th>
+              <td>
+                <div
+                  v-if="!qrValidated"
+                  class="appointment-details__table-data--qr-wrapper"
+                >
+                  <input
+                    id="qr-code-input"
+                    type="text"
+                    :value="qrCodeInput"
+                    :disabled="
+                      appointment.appointment_status.code ===
+                      'VALUED_VALORATION_APPOINTMENT'
+                    "
+                    @input="
+                      $emit(
+                        'update:qrCodeInput',
+                        ($event.target as HTMLInputElement).value
+                      )
+                    "
+                    placeholder="Escanear código QR"
+                    class="appointment-details__table-data--input"
+                    aria-describedby="qr-input-help"
+                  />
+                  <button
+                    class="appointment-details__button--primary"
+                    @click="handleValidateQrCode"
+                    :disabled="
+                      appointment.appointment_status.code ===
+                      'VALUED_VALORATION_APPOINTMENT'
+                    "
+                  >
+                    Validar QR
+                  </button>
+                </div>
+                <div v-else>
+                  <div class="alert alert-success mb-2">
+                    Crédito pre-aprobado válido: {{ creditAmount }}
+                  </div>
+                  <button
+                    class="btn btn-success"
+                    @click="handleUseCredit"
+                    :disabled="creditUsed"
+                  >
+                    {{ creditUsed ? "Crédito utilizado" : "Usar crédito" }}
+                  </button>
+                </div>
+              </td>
+              <div v-if="errorText" class="alert alert-danger mt-2">
+                {{ errorText }}
+              </div>
+            </tr>
+
             <!-- Sección para valoración -->
             <template
               v-if="
@@ -251,7 +306,11 @@
                       type="button"
                       class="appointment-details__file-upload-button"
                       @click="handleFileUploadClick"
-                      :disabled="proformaGuardado"
+                      :disabled="
+                        proformaGuardado ||
+                        appointment.appointment_status.code ===
+                          'VALUED_VALORATION_APPOINTMENT'
+                      "
                       aria-describedby="file-upload-help"
                     >
                       <AtomsIconsCloudUploadIcon aria-hidden="true" />
@@ -274,7 +333,7 @@
                     type="text"
                     class="appointment-details__table-data--input"
                     :value="appointment.price_procedure"
-                    readonly
+                    disabled
                   />
                 </td>
               </tr>
@@ -301,7 +360,7 @@
                     class="appointment-details__table-data--input"
                     rows="3"
                     placeholder="Escribe las recomendaciones médicas..."
-                    :readonly="
+                    :disabled="
                       appointment.appointment_status.code ===
                       'VALUED_VALORATION_APPOINTMENT'
                     "
@@ -684,6 +743,14 @@ const handleFileUploadClick = () => {
   proformaFile.value?.click();
 };
 
+const handleValidateQrCode = () => {
+  emit("validateQrCode");
+};
+
+const handleUseCredit = () => {
+  emit("useCredit");
+};
+
 const removeFile = () => {
   const fileInput = document.getElementById("proforma-file-input");
   if (fileInput && fileInput instanceof HTMLInputElement) {
@@ -821,6 +888,17 @@ const getStatusClass = (status: AppointmentStatusCode) => {
     color: $color-foreground;
     width: 60%;
 
+    &--qr-wrapper {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin: 12px 0;
+
+      button {
+        text-wrap: nowrap;
+      }
+    }
+
     &--input {
       @include input-base;
       width: 100%;
@@ -833,14 +911,6 @@ const getStatusClass = (status: AppointmentStatusCode) => {
 
     &--qr {
       margin-bottom: $spacing-sm;
-    }
-
-    &:disabled,
-    &[readonly] {
-      background-color: #f9fafb;
-      color: $color-text-muted;
-      cursor: not-allowed;
-      border-color: #e4e7ec;
     }
   }
 
