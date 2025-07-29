@@ -1,4 +1,3 @@
-<!-- pacientes/cita-table.vue -->
 <template>
   <section
     class="appointments-table"
@@ -597,7 +596,7 @@
 </template>
 
 <script setup>
-import { computed, inject, onUnmounted, ref } from "vue";
+import { computed, inject, onMounted, onUnmounted, ref } from "vue";
 
 const { emit } = defineEmits(["refreshed"]);
 const refreshAppointments = inject("refreshAppointments");
@@ -631,13 +630,17 @@ const modalStep = ref(1);
 const openContactModal = (appointment) => {
   selectedAppointment.value = appointment;
   isContactModalOpen.value = true;
-  document.body.style.overflow = "hidden";
+  if (process.client) {
+    document.body.style.overflow = "hidden";
+  }
 };
 
 const closeContactModal = () => {
   isContactModalOpen.value = false;
   selectedAppointment.value = null;
-  document.body.style.overflow = "";
+  if (process.client) {
+    document.body.style.overflow = "";
+  }
 };
 
 const showDateDetails = (appointment, step = 1) => {
@@ -645,13 +648,17 @@ const showDateDetails = (appointment, step = 1) => {
   modalStep.value = step;
 
   showDetailsModal.value = true;
-  document.body.style.overflow = "hidden";
+  if (process.client) {
+    document.body.style.overflow = "hidden";
+  }
 };
 
 const showDateCancel = (appointment) => {
   selectedAppointmentForAction.value = appointment;
   showCancelModal.value = true;
-  document.body.style.overflow = "hidden";
+  if (process.client) {
+    document.body.style.overflow = "hidden";
+  }
 };
 
 const downloadSummary = async (appointment) => {
@@ -682,23 +689,6 @@ const downloadSummary = async (appointment) => {
     console.error("Error al descargar resumen:", error);
     alert("Error al generar el resumen. Por favor, intenta nuevamente.");
   }
-};
-
-const shouldShowPaymentModal = (appointment) => {
-  const paymentStatuses = [
-    "CONFIRM_VALIDATION_APPOINTMENT",
-    "CONFIRM_PROCEDURE",
-    "PENDING_VALORATION_APPOINTMENT",
-  ];
-  return paymentStatuses.includes(appointment.appointment_status?.code);
-};
-
-const shouldShowProcedureModal = (appointment) => {
-  const procedureStatuses = [
-    "VALUED_VALORATION_APPOINTMENT",
-    "PENDING_PROCEDURE",
-  ];
-  return procedureStatuses.includes(appointment.appointment_status?.code);
 };
 
 const getStatusClass = (statusCode) => {
@@ -737,6 +727,8 @@ const generateSummaryData = (appointment) => {
 };
 
 const generateLocalSummary = (data) => {
+  if (!process.client) return;
+
   const content = `
 ==============================================
            RESUMEN DE CITA MÉDICA
@@ -780,6 +772,8 @@ Estado de Pago: ${data.paymentStatus}
 };
 
 const downloadFile = (fileData, filename) => {
+  if (!process.client) return;
+
   const blob = new Blob([fileData], { type: "application/pdf" });
   const url = window.URL.createObjectURL(blob);
   const a = document.createElement("a");
@@ -795,13 +789,17 @@ const closeDetailsModal = () => {
   showDetailsModal.value = false;
   selectedAppointmentForAction.value = null;
   modalStep.value = 1;
-  document.body.style.overflow = "";
+  if (process.client) {
+    document.body.style.overflow = "";
+  }
 };
 
 const closeCancelModal = () => {
   showCancelModal.value = false;
   selectedAppointmentForAction.value = null;
-  document.body.style.overflow = "";
+  if (process.client) {
+    document.body.style.overflow = "";
+  }
 };
 
 const confirmCancelAppointment = async () => {
@@ -923,17 +921,23 @@ const handleKeydown = (event) => {
   }
 };
 
-document.addEventListener("keydown", handleKeydown);
+onMounted(() => {
+  if (process.client) {
+    document.addEventListener("keydown", handleKeydown);
+  }
+});
 
 onUnmounted(() => {
-  document.removeEventListener("keydown", handleKeydown);
+  if (process.client) {
+    document.removeEventListener("keydown", handleKeydown);
 
-  if (
-    isContactModalOpen.value ||
-    showDetailsModal.value ||
-    showCancelModal.value
-  ) {
-    document.body.style.overflow = "";
+    if (
+      isContactModalOpen.value ||
+      showDetailsModal.value ||
+      showCancelModal.value
+    ) {
+      document.body.style.overflow = "";
+    }
   }
 });
 </script>
