@@ -236,7 +236,7 @@ const filteredPackages = computed<Package[]>(() => {
   }
 
   const citaValoracionPackage: Package = {
-    id: 1001,
+    id: 4,
     product: {
       id: 9999,
       code: "ASSESSMENT_APPOINTMENT",

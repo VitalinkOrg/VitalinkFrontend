@@ -25,24 +25,50 @@
         />
       </span>
 
-      <h5 class="reservation-confirmation__body--title">¿Confirmar reserva?</h5>
+      <h5 class="reservation-confirmation__body--title">
+        {{
+          showPaymentWarning
+            ? "¿Continuar sin pago registrado?"
+            : "¿Confirmar reserva?"
+        }}
+      </h5>
 
       <p class="reservation-confirmation__body--text">
         {{
-          appointment.appointment_status.code ==
-            "PENDING_VALORATION_APPOINTMENT" ||
-          appointment.appointment_status.code == "PENDING_PROCEDURE"
-            ? "Con estos cambios el estado de la solicitud de reserva pasará de: Pendiente a Confirmada"
-            : appointment.appointment_status.code == "WAITING_PROCEDURE"
-              ? "Con estos cambios el estado de la solicitud de reserva pasará de: Pendiente a Concretada"
-              : "Con estos cambios el estado de la solicitud de reserva pasará de: Pendiente a Valorada"
+          showPaymentWarning
+            ? "El paciente podrá realizar el pago directamente contigo durante la consulta."
+            : appointment.appointment_status.code ==
+                  "PENDING_VALORATION_APPOINTMENT" ||
+                appointment.appointment_status.code == "PENDING_PROCEDURE"
+              ? "Con estos cambios el estado de la solicitud de reserva pasará de: Pendiente a Confirmada"
+              : appointment.appointment_status.code == "WAITING_PROCEDURE"
+                ? "Con estos cambios el estado de la solicitud de reserva pasará de: Pendiente a Concretada"
+                : "Con estos cambios el estado de la solicitud de reserva pasará de: Pendiente a Valorada"
         }}
       </p>
+
+      <div
+        v-if="showPaymentWarning"
+        class="reservation-confirmation__body--payment-warning-wrapper"
+      >
+        <div class="reservation-confirmation__body--payment-warning-icon">
+          <AtomsIconsTriangleAlertIcon size="24" />
+        </div>
+        <div class="reservation-confirmation__body--payment-warning-content">
+          <p class="reservation-confirmation__body--payment-warning-title">
+            Sin registro de pago
+          </p>
+          <p class="reservation-confirmation__body--payment-warning-text">
+            No tenemos registro del pago del paciente. ¿Desea continuar con la
+            valoración de todas formas?
+          </p>
+        </div>
+      </div>
 
       <p
         v-if="
           appointment.appointment_status.code ==
-          'PENDING_VALORATION_APPOINTMENT'
+            'PENDING_VALORATION_APPOINTMENT' && !showPaymentWarning
         "
         class="reservation-confirmation__body--subtext"
       >
@@ -53,7 +79,7 @@
       <div
         v-if="
           appointment.appointment_status.code ==
-          'PENDING_VALORATION_APPOINTMENT'
+            'PENDING_VALORATION_APPOINTMENT' && !showPaymentWarning
         "
         class="reservation-confirmation__body--warning-wrapper"
       >
@@ -69,18 +95,26 @@
     <footer class="reservation-confirmation__footer">
       <button
         class="reservation-confirmation__footer--button-outline"
-        @click="$emit('cancel')"
+        @click="handleCancel"
       >
-        Cancelar
+        {{ showPaymentWarning ? "No, cancelar" : "Cancelar" }}
       </button>
 
       <button
-        v-if="
+        v-if="showPaymentWarning"
+        class="reservation-confirmation__footer--button-primary"
+        @click="handleContinueWithoutPayment"
+      >
+        Sí, continuar
+      </button>
+
+      <button
+        v-else-if="
           appointment.appointment_status.code ==
           'PENDING_VALORATION_APPOINTMENT'
         "
         class="reservation-confirmation__footer--button-primary"
-        @click="$emit('confirmAppointment')"
+        @click="handleConfirmAppointment"
       >
         Confirmar
       </button>
@@ -105,7 +139,7 @@
         v-else
         aria-label="Confirmar valoración"
         class="reservation-confirmation__footer--button-primary"
-        @click="$emit('confirmValoration')"
+        @click="handleConfirmValoration"
       >
         Confirmar
       </button>
@@ -114,6 +148,8 @@
 </template>
 
 <script setup>
+import { computed, ref } from "vue";
+
 const props = defineProps({
   appointment: Object,
 });
@@ -125,6 +161,58 @@ const emit = defineEmits([
   "finishProcedure",
   "confirmValoration",
 ]);
+
+const showPaymentWarning = ref(false);
+
+const hasPatientPaid = computed(() => {
+  return (
+    props.appointment?.payment_status === "PAID" ||
+    props.appointment?.has_paid === true
+  );
+});
+
+const handleConfirmAppointment = () => {
+  if (
+    props.appointment.appointment_status.code ===
+      "PENDING_VALORATION_APPOINTMENT" &&
+    !hasPatientPaid.value
+  ) {
+    showPaymentWarning.value = true;
+    return;
+  }
+
+  emit("confirmAppointment");
+};
+
+const handleConfirmValoration = () => {
+  if (!hasPatientPaid.value) {
+    showPaymentWarning.value = true;
+    return;
+  }
+
+  emit("confirmValoration");
+};
+
+const handleContinueWithoutPayment = () => {
+  showPaymentWarning.value = false;
+
+  if (
+    props.appointment.appointment_status.code ===
+    "PENDING_VALORATION_APPOINTMENT"
+  ) {
+    emit("confirmAppointment");
+  } else {
+    emit("confirmValoration");
+  }
+};
+
+const handleCancel = () => {
+  if (showPaymentWarning.value) {
+    showPaymentWarning.value = false;
+  } else {
+    emit("cancel");
+  }
+};
 </script>
 
 <style lang="scss" scoped>
@@ -235,6 +323,52 @@ const emit = defineEmits([
       font-size: 14px;
       line-height: 24px;
       color: #dc6803;
+    }
+
+    &--payment-warning-wrapper {
+      display: flex;
+      align-items: flex-start;
+      width: 100%;
+      gap: 12px;
+      padding: 16px;
+      border-radius: 12px;
+      background-color: #fef2f2;
+      border: 1px solid #fecaca;
+      margin-bottom: 8px;
+    }
+
+    &--payment-warning-icon {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      background-color: #fee2e2;
+      color: #dc2626;
+      flex: 0 0 auto;
+    }
+
+    &--payment-warning-content {
+      flex: 1;
+    }
+
+    &--payment-warning-title {
+      @include label-base;
+      font-weight: 600;
+      font-size: 14px;
+      line-height: 20px;
+      color: #dc2626;
+      margin: 0 0 4px 0;
+    }
+
+    &--payment-warning-text {
+      @include label-base;
+      font-weight: 500;
+      font-size: 13px;
+      line-height: 18px;
+      color: #991b1b;
+      margin: 0;
     }
   }
 

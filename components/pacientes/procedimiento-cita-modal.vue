@@ -388,7 +388,7 @@
 <script setup>
 const token = useCookie("token");
 const config = useRuntimeConfig();
-import { ref, defineProps } from "vue";
+import { defineProps, ref } from "vue";
 const props = defineProps(["appointment", "showStatus"]);
 
 const open = ref(false);
@@ -410,7 +410,6 @@ const openModal = () => {
 
 const selectDate = (date) => {
   selectedDate.value = date;
-  // Mock available times based on the selected date
   availableTimes.value = ["09:00", "10:00", "11:00", "15:30"];
 };
 
@@ -419,21 +418,49 @@ const selectTime = (time) => {
 };
 
 const confirmReservation = async () => {
+  console.log("Appointment", props.appointment.appointment_status.code);
+
   const { data, error } = await useFetch(
     config.public.API_BASE_URL + "/appointment/reserve_procedure",
     {
       method: "PUT",
-      headers: { Authorization: token.value },
+      headers: {
+        Authorization: token.value,
+      },
       params: {
         id: props.appointment.id,
       },
+      onResponse: (ctx) => {
+        console.log("Response status:", ctx.response.status);
+        console.log("Response data:", ctx.data);
+      },
+      onResponseError: (ctx) => {
+        console.log("HTTP Error:", ctx.response.status, ctx.response._data);
+      },
     }
   );
-  if (data) {
-    step.value = 6;
-  }
+
   if (error.value) {
-    console.log(error.value, "data");
+    console.log("Error en la solicitud:", error.value);
+    alert("No se pudo reservar el procedimiento. Verifica los requisitos.");
+    return;
+  }
+
+  if (data.value) {
+    const response = data.value;
+
+    if (response.success === false) {
+      console.log("Backend dice que falló:", response);
+      alert(
+        `Error: ${response.message || "No se pudo reservar el procedimiento."}`
+      );
+      return;
+    }
+
+    step.value = 6;
+  } else {
+    console.log("No hubo respuesta del servidor");
+    alert("No se recibió respuesta del servidor.");
   }
 };
 

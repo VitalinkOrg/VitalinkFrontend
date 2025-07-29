@@ -126,7 +126,7 @@
             <!-- Siempre mostrar la cita de valoración al final, independientemente de si hay servicios -->
             <div v-if="!hasServices" class="modal-tab__packages">
               <WebsitePerfilDoctorTarjetaServicio
-                :key="1001"
+                :key="`assessment-${citaValoracionPackage.id}`"
                 :pkg="citaValoracionPackage"
                 :doctor="props.doctor"
                 :doctor-reviews="doctorReviews()"
@@ -195,34 +195,51 @@ const hasServices = computed(() => {
   return props.doctor?.services && props.doctor.services.length > 0;
 });
 
-const citaValoracionPackage = computed<Package>(() => ({
-  id: 1001,
-  product: {
-    id: 9999,
-    code: "ASSESSMENT_APPOINTMENT",
-    name: "Cita de Valoración",
-    type: "MEDICAL_PRODUCT",
-    description: "Cita de valoración médica inicial",
-    father_code: null,
-    value1: "25000",
-    created_date: new Date().toISOString(),
-    updated_date: null,
-    is_deleted: 0,
-  },
-  reference_price: 25000,
-  discount: 0,
-  discounted_price: 25000,
-  services_offer: {
-    ASSESSMENT_DETAILS: [
-      "MEDICAL_CONSULTATION",
-      "CLINICAL_EVALUATION",
-      "INITIAL_DIAGNOSIS",
-    ],
-  },
-  is_king: 0,
-  observations: "",
-  postoperative_assessments: null,
-}));
+const citaValoracionPackage = computed<Package>(() => {
+  let packageId = 4;
+
+  if (selectedProcedureId.value && props.doctor?.services) {
+    const selectedProcedureData = filteredProcedures.value.find(
+      (p) => p.procedure.id === selectedProcedureId.value
+    );
+
+    if (
+      selectedProcedureData?.packages &&
+      selectedProcedureData.packages.length > 0
+    ) {
+      packageId = selectedProcedureData.packages[0].id;
+    }
+  }
+
+  return {
+    id: packageId,
+    product: {
+      id: 9999,
+      code: "ASSESSMENT_APPOINTMENT",
+      name: "Cita de Valoración",
+      type: "MEDICAL_PRODUCT",
+      description: "Cita de valoración médica inicial",
+      father_code: null,
+      value1: "25000",
+      created_date: new Date().toISOString(),
+      updated_date: null,
+      is_deleted: 0,
+    },
+    reference_price: 25000,
+    discount: 0,
+    discounted_price: 25000,
+    services_offer: {
+      ASSESSMENT_DETAILS: [
+        "MEDICAL_CONSULTATION",
+        "CLINICAL_EVALUATION",
+        "INITIAL_DIAGNOSIS",
+      ],
+    },
+    is_king: 0,
+    observations: "",
+    postoperative_assessments: null,
+  };
+});
 
 const setDefaultSpecialtyAndProcedure = async () => {
   isLoading.value = true;

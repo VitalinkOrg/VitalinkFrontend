@@ -1,8 +1,7 @@
 <script setup>
-import { ref, computed, watch } from "vue";
 import { useRefreshToken } from "#imports";
+import { computed, ref, watch } from "vue";
 
-// Define page meta with middleware
 definePageMeta({
   middleware: "auth-pacientes",
 });
@@ -11,18 +10,15 @@ const config = useRuntimeConfig();
 const token = useCookie("token");
 const user_info = useCookie("user_info");
 const loading = ref(false);
-const isRefreshing = ref(false); // Separate loading state for refresh
-const previousAppointments = ref([]); // Initialize previous data store
+const isRefreshing = ref(false);
+const previousAppointments = ref([]);
 
-// First declare appointmentsResponse
 const appointmentsResponse = ref(null);
 
-// Then declare appointmentsData as computed
 const appointmentsData = computed(() => {
   return appointmentsResponse.value || previousAppointments.value;
 });
 
-// Original useFetch remains unchanged
 const { data: fetchedData } = await useFetch(
   config.public.API_BASE_URL + "/appointment/get_all",
   {
@@ -34,14 +30,12 @@ const { data: fetchedData } = await useFetch(
   }
 );
 
-// Initialize data
 if (fetchedData.value) {
   appointmentsResponse.value = fetchedData.value;
-  previousAppointments.value = fetchedData.value; // Store initial data
+  previousAppointments.value = fetchedData.value;
   useRefreshToken();
 }
 
-// Create refresh function
 const fetchAppointments = async (isRefresh = false) => {
   if (isRefresh) {
     isRefreshing.value = true;
@@ -57,13 +51,11 @@ const fetchAppointments = async (isRefresh = false) => {
         params: { customer_id: user_info.id },
         transform: (_appointments) => _appointments.data,
         server: false,
-        // Add a unique key to prevent caching during refresh
         key: isRefresh ? `appointments-${Date.now()}` : "appointments",
       }
     );
 
     if (data.value) {
-      // Store previous data before updating
       if (appointmentsResponse.value) {
         previousAppointments.value = appointmentsResponse.value;
       }
@@ -79,7 +71,6 @@ const fetchAppointments = async (isRefresh = false) => {
   }
 };
 
-// Watch for changes and store previous data
 watch(
   appointmentsResponse,
   (newVal, oldVal) => {
@@ -90,28 +81,22 @@ watch(
   { deep: true }
 );
 
-// Initial fetch
 fetchAppointments();
 
-// Refresh function to expose (optimized for smooth refresh)
 const refreshAppointments = async () => {
-  await fetchAppointments(true); // Pass true to indicate this is a refresh
+  await fetchAppointments(true);
 };
 
-// Provide the refresh function to child components
 provide("refreshAppointments", refreshAppointments);
 
-// Refs for state management
 const tab = ref(1);
 const sort = ref(false);
-const filteredAppointments = ref([]); // Store filtered results
+const filteredAppointments = ref([]);
 
-// Computed property for current display data
 const displayAppointments = computed(() => {
   const sourceData = appointmentsData.value || [];
   let filtered = [...sourceData];
 
-  // Apply current filter based on active tab
   if (tab.value === 2) {
     filtered = filtered.filter(
       (appointment) => appointment.type === "Procedimiento"
@@ -121,23 +106,18 @@ const displayAppointments = computed(() => {
       (appointment) => appointment.type === "Valoración"
     );
   }
-  // tab.value === 1 shows all appointments (no filter)
 
   return filtered;
 });
 
-// Fixed filter function
 const applyFilter = (typeFilter, tabNumber) => {
   tab.value = tabNumber;
-  // The filtering will be handled by the computed property
 };
 
-// Handle refresh events from child components
 const handleRefresh = async () => {
   await refreshAppointments();
 };
 
-// Expose handler for child components
 provide("handleRefresh", handleRefresh);
 </script>
 

@@ -1,5 +1,5 @@
 <script setup>
-import { ref, computed, inject } from "vue";
+import { computed, inject, ref } from "vue";
 
 const emit = defineEmits(["refreshed"]);
 const refreshAppointments = inject("refreshAppointments");
@@ -29,6 +29,10 @@ const statusClass = computed(() => {
     );
   };
 });
+
+function isRequested(code) {
+  return code !== "REQUIRED";
+}
 
 function showCreditDetails(voucher) {
   modalData.value = voucher;
@@ -66,7 +70,7 @@ function toggleExpand(voucherId) {
             <tr>
               <td>{{ voucher.appointment.customer.name }}</td>
               <td>{{ voucher.appointment.package.procedure.name }}</td>
-              <td>${{ voucher.requested_amount }}</td>
+              <td>₡{{ voucher.requested_amount }}</td>
               <td>
                 <span
                   class="badge rounded-5 text-dark"
@@ -79,6 +83,7 @@ function toggleExpand(voucherId) {
                 <button
                   @click="showCreditDetails(voucher)"
                   class="btn btn-outline-secondary me-2"
+                  :disabled="isRequested(voucher.credit_status.code)"
                 >
                   Ver Detalles
                 </button>

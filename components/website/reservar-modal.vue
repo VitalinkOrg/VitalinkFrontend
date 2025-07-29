@@ -575,7 +575,7 @@
                       <div class="detail-item">
                         <span class="detail-label">Fecha de la cita:</span>
                         <span class="detail-value">{{
-                          formatDate(this.selectedDay)
+                          formatDate(this.localSelectedDay)
                         }}</span>
                       </div>
                       <div class="detail-item">
@@ -897,6 +897,7 @@ export default {
       return availableDays;
     },
     selectDay(date) {
+      console.log({ selectedProcedureId: this.selectedProcedureId });
       this.localSelectedDay = date;
       this.localSelectedHour = null;
       this.availableHours = this.availability[date] || [];
@@ -929,10 +930,13 @@ export default {
         return "N/A";
       }
       try {
-        const date = new Date(dateString);
+        const [year, month, day] = dateString.split("-");
+        const date = new Date(year, month - 1, day);
+
         if (isNaN(date.getTime())) {
           return "N/A";
         }
+
         return date.toLocaleDateString("es-ES", {
           weekday: "long",
           day: "numeric",
@@ -985,15 +989,18 @@ export default {
             : this.localSelectedHour
           : `${this.localSelectedHour}:00:00`;
 
+        console.log({ payload: this.selectedPackage.id });
+
         const payload = {
           customer_id: user_info.value?.id || "",
           appointment_date: this.localSelectedDay,
           appointment_hour: formattedHour,
           supplier_id: this.doctorInfo.id,
-          package_id: 4,
+          package_id: this.selectedPackage.id,
           user_description: this.description || "Consulta general preventiva.",
           is_for_external_user: this.appointmentFor === "someoneElse",
           phone_number_external_user: this.phoneNumber,
+          procedure_id: this.selectedProcedureId,
         };
 
         const response = await $fetch(

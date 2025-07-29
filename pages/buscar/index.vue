@@ -1,283 +1,275 @@
-<script>
+<!-- pages/buscar/index.vue -->
+<script setup>
 definePageMeta({
   middleware: ["auth-pacientes"],
 });
+
 import axios from "axios";
 
-export default {
-  data() {
-    return {
-      clinicas: [],
-      specialties: [],
-      procedures: [],
-      isLoading: true,
-      isSpecialtiesLoading: true,
-      filter_query: this.$route.query.filter_name,
-      insurance: this.$route.query.insurance,
-      entity_type: this.$route.query.entity_type,
-      min_price: this.$route.query.min_price,
-      max_price: this.$route.query.max_price,
-      specialty: this.$route.query.specialty,
-      specialty_code: this.$route.query.specialty_code || "",
-      procedure_code: this.$route.query.procedure_code || "",
-      isMapVisible: false,
-      config: {},
-      token: "",
-      filtersData: {
-        procedimiento: "",
-        lugar: "",
-        valoracion: "",
-        disponibilidad: "",
-        entity: "",
-        min: "",
-        max: "",
-        procedures: [],
-      },
-    };
-  },
-  computed: {
-    currentProcedureName() {
-      if (!this.procedure_code || !this.procedures.length) return null;
-      const procedure = this.procedures.find(
-        (p) => p.code === this.procedure_code
-      );
-      return procedure ? procedure.name : null;
-    },
+const config = useRuntimeConfig();
+const token = useCookie("token");
+const route = useRoute();
+const router = useRouter();
 
-    currentSpecialtyName() {
-      if (!this.specialty_code || !this.specialties.length) return null;
-      const specialty = this.specialties.find(
-        (s) => s.code === this.specialty_code
-      );
-      return specialty ? specialty.name : null;
-    },
+const clinicas = ref([]);
+const specialties = ref([]);
+const procedures = ref([]);
+const isLoading = ref(true);
+const isSpecialtiesLoading = ref(true);
+const isMapVisible = ref(false);
 
-    searchDisplayText() {
-      return this.currentProcedureName || this.currentSpecialtyName;
-    },
-  },
-  watchQuery: [
-    "filter_name",
-    "insurance",
-    "entity_type",
-    "min_price",
-    "max_price",
-    "specialty",
-    "specialty_code",
-    "procedure_code",
-    "min_stars",
-    "lugar",
-    "timestamp",
-  ],
-  watch: {
-    "$route.query.min_stars": {
-      handler(newVal) {
-        this.min_stars = newVal;
-        this.search();
-      },
-    },
-    "$route.query.min_price": {
-      handler(newVal) {
-        this.min_price = newVal;
-        this.search();
-      },
-    },
-    "$route.query.max_price": {
-      handler(newVal) {
-        this.max_price = newVal;
-        this.search();
-      },
-    },
-    "$route.query.specialty_code": {
-      handler(newVal) {
-        this.specialty_code = newVal;
-        // ✅ Cargar procedures cuando cambie specialty_code
-        if (newVal) {
-          this.loadProcedures(newVal);
-        } else {
-          this.procedures = []; // Limpiar procedures si no hay specialty
-        }
-        this.search();
-      },
-    },
-    "$route.query.procedure_code": {
-      handler(newVal) {
-        this.procedure_code = newVal;
-        this.search();
-      },
-    },
-    "$route.query": {
-      handler(newQuery, oldQuery) {
-        this.initializeFiltersFromQuery();
+const filter_query = ref(route.query.filter_name || "");
+const insurance = ref(route.query.insurance || "");
+const entity_type = ref(route.query.entity_type || "");
+const min_price = ref(route.query.min_price || "");
+const max_price = ref(route.query.max_price || "");
+const specialty = ref(route.query.specialty || "");
+const specialty_code = ref(route.query.specialty_code || "");
+const procedure_code = ref(route.query.procedure_code || "");
+const min_stars = ref(route.query.min_stars || "");
+const lugar = ref(route.query.lugar || "");
 
-        if (
-          newQuery.specialty_code !== oldQuery?.specialty_code ||
-          newQuery.procedure_code !== oldQuery?.procedure_code ||
-          newQuery.timestamp !== oldQuery?.timestamp
-        ) {
-          this.search();
-        }
-      },
-      deep: true,
-    },
-  },
-  async created() {
-    this.config = useRuntimeConfig();
-    this.token = useCookie("token").value;
+const filtersData = ref({
+  procedimiento: "",
+  lugar: "",
+  valoracion: "",
+  disponibilidad: "",
+  entity: "",
+  min: "",
+  max: "",
+  procedures: [],
+});
 
-    this.filter_query = this.$route.query.filter_name || "";
-    this.insurance = this.$route.query.insurance || "";
-    this.entity_type = this.$route.query.entity_type || "";
-    this.min_price = this.$route.query.min_price || "";
-    this.max_price = this.$route.query.max_price || "";
-    this.specialty = this.$route.query.specialty || "";
-    this.min_stars = this.$route.query.min_stars || "";
-    this.specialty_code = this.$route.query.specialty_code || "";
-    this.procedure_code = this.$route.query.procedure_code || "";
-    this.lugar = this.$route.query.lugar || "";
+const currentProcedureName = computed(() => {
+  if (!procedure_code.value || !procedures.value.length) return null;
+  const procedure = procedures.value.find(
+    (p) => p.code === procedure_code.value
+  );
+  return procedure ? procedure.name : null;
+});
 
-    await this.initializeFiltersFromQuery();
+const currentSpecialtyName = computed(() => {
+  if (!specialty_code.value || !specialties.value.length) return null;
+  const specialty = specialties.value.find(
+    (s) => s.code === specialty_code.value
+  );
+  return specialty ? specialty.name : null;
+});
 
-    await this.loadSpecialties();
+const searchDisplayText = computed(() => {
+  return currentProcedureName.value || currentSpecialtyName.value;
+});
 
-    // ✅ Mejorado: Cargar procedures si hay specialty_code
-    if (this.specialty_code) {
-      await this.loadProcedures(this.specialty_code);
-    }
+const initializeFiltersFromQuery = async () => {
+  const query = route.query;
 
-    this.search();
-  },
-  methods: {
-    async initializeFiltersFromQuery() {
-      const query = this.$route.query;
+  filtersData.value.procedimiento = query.procedure_code || "";
+  filtersData.value.lugar = query.province || "";
+  filtersData.value.valoracion = query.min_stars || "";
+  filtersData.value.min = query.min_price || "";
+  filtersData.value.max = query.max_price || "";
+  filtersData.value.entity = query.entity_type || "";
 
-      this.filtersData.procedimiento = query.procedure_code || "";
-      this.filtersData.lugar = query.province || "";
-      this.filtersData.valoracion = query.min_stars || "";
-      this.filtersData.min = query.min_price || "";
-      this.filtersData.max = query.max_price || "";
-      this.filtersData.entity = query.entity_type || "";
+  specialty_code.value = query.specialty_code || "";
+  procedure_code.value = query.procedure_code || "";
 
-      this.specialty_code = query.specialty_code || "";
-      this.procedure_code = query.procedure_code || "";
-
-      if (!this.filtersData.disponibilidad.length) {
-        this.filtersData.disponibilidad = [
-          { code: "all", name: "Todos" },
-          { code: "weeks", name: "Proximas semanas" },
-          { code: "months", name: "Proximos meses" },
-          { code: "days", name: "Proximos dias" },
-        ];
-      }
-    },
-
-    async loadSpecialties() {
-      this.isSpecialtiesLoading = true;
-      try {
-        const response = await axios.get(
-          this.config.public.API_BASE_URL +
-            "/udc/get_all?type=MEDICAL_SPECIALTY",
-          {
-            headers: { Authorization: useCookie("token").value },
-          }
-        );
-        this.specialties = response.data.data.map((item) => ({
-          code: item.code,
-          name: item.name,
-        }));
-      } catch (error) {
-        console.error("Error loading specialties:", error);
-      } finally {
-        this.isSpecialtiesLoading = false;
-      }
-    },
-
-    async loadProcedures(specialtyCode) {
-      if (!specialtyCode) {
-        this.procedures = [];
-        return;
-      }
-
-      try {
-        const response = await axios.get(
-          `${this.config.public.API_BASE_URL}/udc/get_all?father_code=${specialtyCode}&type=MEDICAL_PROCEDURE`,
-          {
-            headers: { Authorization: useCookie("token").value },
-          }
-        );
-
-        if (response.data?.data) {
-          this.procedures = response.data.data.map((item) => ({
-            code: item.code,
-            name: item.name,
-          }));
-        } else {
-          this.procedures = [];
-        }
-      } catch (error) {
-        console.error("Error loading procedures:", error);
-        this.procedures = [];
-      }
-    },
-
-    async search() {
-      this.isLoading = true;
-      this.clinicas = [];
-
-      const params = {};
-
-      if (this.filter_query) params.filter_name = this.filter_query;
-      if (this.procedure_code) params.procedure_code = this.procedure_code;
-      if (this.min_stars) params.min_stars = this.min_stars;
-      if (this.min_price) params.min_price = this.min_price;
-      if (this.max_price) params.max_price = this.max_price;
-      if (this.lugar) params.lugar = this.lugar;
-      if (this.specialty_code) params.specialty_code = this.specialty_code;
-
-      const setup = {
-        params,
-        headers: { Authorization: useCookie("token").value },
-      };
-
-      try {
-        const response = await axios.get(
-          this.config.public.API_BASE_URL + "/supplier/get_all_main",
-          setup
-        );
-        this.clinicas = response.data.data;
-      } catch (e) {
-        console.error("❌ Error en búsqueda:", e);
-      } finally {
-        this.isLoading = false;
-      }
-    },
-
-    onFiltersChange(newFilters) {
-      this.filtersData = { ...this.filtersData, ...newFilters };
-
-      const newQuery = {
-        ...this.$route.query,
-        ...(this.filtersData.procedimiento && {
-          procedure_code: this.filtersData.procedimiento,
-        }),
-        ...(this.filtersData.lugar && { province: this.filtersData.lugar }),
-        ...(this.filtersData.valoracion && {
-          min_stars: this.filtersData.valoracion,
-        }),
-        ...(this.filtersData.min && { min_price: this.filtersData.min }),
-        ...(this.filtersData.max && { max_price: this.filtersData.max }),
-        ...(this.filtersData.entity && {
-          entity_type: this.filtersData.entity,
-        }),
-      };
-
-      this.$router.push({
-        path: "/buscar",
-        query: newQuery,
-      });
-    },
-  },
+  if (!filtersData.value.disponibilidad.length) {
+    filtersData.value.disponibilidad = [
+      { code: "all", name: "Todos" },
+      { code: "weeks", name: "Proximas semanas" },
+      { code: "months", name: "Proximos meses" },
+      { code: "days", name: "Proximos dias" },
+    ];
+  }
 };
+
+const loadSpecialties = async () => {
+  isSpecialtiesLoading.value = true;
+  try {
+    const response = await axios.get(
+      config.public.API_BASE_URL + "/udc/get_all?type=MEDICAL_SPECIALTY",
+      {
+        headers: { Authorization: token.value },
+      }
+    );
+    specialties.value = response.data.data.map((item) => ({
+      code: item.code,
+      name: item.name,
+    }));
+  } catch (error) {
+    console.error("Error loading specialties:", error);
+  } finally {
+    isSpecialtiesLoading.value = false;
+  }
+};
+
+const loadProcedures = async (specialtyCode) => {
+  if (!specialtyCode) {
+    procedures.value = [];
+    return;
+  }
+
+  try {
+    const response = await axios.get(
+      `${config.public.API_BASE_URL}/udc/get_all?father_code=${specialtyCode}&type=MEDICAL_PROCEDURE`,
+      {
+        headers: { Authorization: token.value },
+      }
+    );
+
+    if (response.data?.data) {
+      procedures.value = response.data.data.map((item) => ({
+        code: item.code,
+        name: item.name,
+      }));
+    } else {
+      procedures.value = [];
+    }
+  } catch (error) {
+    console.error("Error loading procedures:", error);
+    procedures.value = [];
+  }
+};
+
+const search = async () => {
+  isLoading.value = true;
+  clinicas.value = [];
+
+  const params = {};
+
+  if (filter_query.value) params.filter_name = filter_query.value;
+  if (procedure_code.value) params.procedure_code = procedure_code.value;
+  if (min_stars.value) params.min_stars = min_stars.value;
+  if (min_price.value) params.min_price = min_price.value;
+  if (max_price.value) params.max_price = max_price.value;
+  if (lugar.value) params.lugar = lugar.value;
+  if (specialty_code.value) params.specialty_code = specialty_code.value;
+
+  const setup = {
+    params,
+    headers: { Authorization: token.value },
+  };
+
+  try {
+    const response = await axios.get(
+      config.public.API_BASE_URL + "/supplier/get_all_main",
+      setup
+    );
+    clinicas.value = response.data.data;
+  } catch (e) {
+    console.error("❌ Error en búsqueda:", e);
+  } finally {
+    isLoading.value = false;
+  }
+};
+
+const onFiltersChange = (newFilters) => {
+  filtersData.value = { ...filtersData.value, ...newFilters };
+
+  const newQuery = {
+    ...route.query,
+    ...(filtersData.value.procedimiento && {
+      procedure_code: filtersData.value.procedimiento,
+    }),
+    ...(filtersData.value.lugar && { province: filtersData.value.lugar }),
+    ...(filtersData.value.valoracion && {
+      min_stars: filtersData.value.valoracion,
+    }),
+    ...(filtersData.value.min && { min_price: filtersData.value.min }),
+    ...(filtersData.value.max && { max_price: filtersData.value.max }),
+    ...(filtersData.value.entity && {
+      entity_type: filtersData.value.entity,
+    }),
+  };
+
+  router.push({
+    path: "/buscar",
+    query: newQuery,
+  });
+};
+
+watch(
+  () => route.query.min_stars,
+  (newVal) => {
+    min_stars.value = newVal;
+    search();
+  }
+);
+
+watch(
+  () => route.query.min_price,
+  (newVal) => {
+    min_price.value = newVal;
+    search();
+  }
+);
+
+watch(
+  () => route.query.max_price,
+  (newVal) => {
+    max_price.value = newVal;
+    search();
+  }
+);
+
+watch(
+  () => route.query.specialty_code,
+  (newVal) => {
+    specialty_code.value = newVal;
+    if (newVal) {
+      loadProcedures(newVal);
+    } else {
+      procedures.value = [];
+    }
+    search();
+  }
+);
+
+watch(
+  () => route.query.procedure_code,
+  (newVal) => {
+    procedure_code.value = newVal;
+    search();
+  }
+);
+
+watch(
+  () => route.query,
+  (newQuery, oldQuery) => {
+    initializeFiltersFromQuery();
+
+    if (
+      newQuery.specialty_code !== oldQuery?.specialty_code ||
+      newQuery.procedure_code !== oldQuery?.procedure_code ||
+      newQuery.timestamp !== oldQuery?.timestamp
+    ) {
+      search();
+    }
+  },
+  { deep: true }
+);
+
+onMounted(async () => {
+  filter_query.value = route.query.filter_name || "";
+  insurance.value = route.query.insurance || "";
+  entity_type.value = route.query.entity_type || "";
+  min_price.value = route.query.min_price || "";
+  max_price.value = route.query.max_price || "";
+  specialty.value = route.query.specialty || "";
+  min_stars.value = route.query.min_stars || "";
+  specialty_code.value = route.query.specialty_code || "";
+  procedure_code.value = route.query.procedure_code || "";
+  lugar.value = route.query.lugar || "";
+
+  await initializeFiltersFromQuery();
+  await loadSpecialties();
+
+  if (specialty_code.value) {
+    await loadProcedures(specialty_code.value);
+  }
+
+  search();
+});
 </script>
 
 <template>
