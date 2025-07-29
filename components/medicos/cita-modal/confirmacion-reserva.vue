@@ -174,7 +174,7 @@ const hasPatientPaid = computed(() => {
 const handleConfirmAppointment = () => {
   if (
     props.appointment.appointment_status.code ===
-      "PENDING_VALORATION_APPOINTMENT" &&
+      "CONFIRM_VALIDATION_APPOINTMENT" &&
     !hasPatientPaid.value
   ) {
     showPaymentWarning.value = true;

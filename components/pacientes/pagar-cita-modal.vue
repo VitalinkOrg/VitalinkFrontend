@@ -1,6 +1,5 @@
 <template>
   <div class="appointment-pay-modal">
-    <!-- Confirmed and not paid -->
     <div
       v-if="
         (appointment.appointment_status.code ===
@@ -24,14 +23,13 @@
         v-else
         role="button"
         @click="handleOpen"
-        class="badge rounded-5 text-dark"
+        class="appointment-pay-modal__status"
         :class="statusClass(appointment.appointment_status.code)"
       >
         {{ appointment.appointment_status.value1 }}
       </span>
     </div>
 
-    <!-- Valorado y apto para procedimiento - Mostrar botón Solicitar procedimiento -->
     <div
       v-if="
         appointment.appointment_status.code === 'VALUED_VALORATION_APPOINTMENT'
@@ -49,23 +47,28 @@
         v-else
         role="button"
         @click="openProcedureModal"
-        class="badge rounded-5 text-dark"
+        class="appointment-pay-modal__status"
         :class="statusClass(appointment.appointment_status.code)"
       >
         {{ appointment.appointment_status.value1 }}
       </span>
     </div>
 
-    <div v-if="appointment.appointment_status.code === 'PENDING_PROCEDURE'">
-      <div v-if="!showStatus" class="d-flex gap-2">
+    <div v-if="shouldShowPaidStatus()">
+      <div
+        v-if="!showStatus"
+        role="button"
+        class="appointment-pay-modal__button-item"
+        @click="handleOpen"
+      >
         <img src="@/src/assets/success.svg" class="mr-2" alt="Success" />
         <p class="text-success mb-0">Pagado</p>
       </div>
       <span
         v-else
-        role="button"
         @click="handleOpen"
-        class="badge rounded-5 text-dark"
+        role="button"
+        class="appointment-pay-modal__status"
         :class="statusClass(appointment.appointment_status.code)"
       >
         {{ appointment.appointment_status.value1 }}
@@ -81,14 +84,13 @@
         v-if="showStatus"
         role="button"
         @click="handleOpen"
-        class="badge rounded-5 text-dark"
+        class="appointment-pay-modal__status"
         :class="statusClass(appointment.appointment_status.code)"
       >
         {{ appointment.appointment_status.value1 }}
       </span>
     </div>
 
-    <!-- Paid -->
     <div
       v-else-if="
         appointment.payment_status.code === 'PAYMENT_STATUS_PAID_PROCEDURE'
@@ -102,14 +104,13 @@
       <span
         v-else
         role="button"
-        class="badge rounded-5 text-dark"
+        class="appointment-pay-modal__status"
         :class="statusClass(appointment.appointment_status.code)"
       >
         {{ appointment.appointment_status.value1 }}
       </span>
     </div>
 
-    <!-- Pending -->
     <div
       v-else-if="
         appointment.appointment_status?.code ===
@@ -128,27 +129,25 @@
         v-else
         role="button"
         @click="handleOpen"
-        class="badge rounded-5 text-dark"
+        class="appointment-pay-modal__status"
         :class="statusClass(appointment.appointment_status.code)"
       >
         {{ appointment.appointment_status.value1 }}
       </span>
     </div>
-    <!-- Cancelled -->
     <div
       v-else-if="appointment.appointment_status.code === 'CANCEL_APPOINTMENT'"
     >
       <span
         v-if="showStatus"
         role="button"
-        class="badge rounded-5 text-dark"
+        class="appointment-pay-modal__status"
         :class="statusClass(appointment.appointment_status.code)"
       >
         {{ appointment.appointment_status.value1 }}
       </span>
     </div>
 
-    <!-- Solicitud de crédito pendiente - Deshabilitar botón -->
     <div
       v-else-if="
         appointment.appointment_credit?.credit_status?.code === 'REQUIRED' &&
@@ -163,17 +162,12 @@
       >
         Esperando respuesta de crédito
       </button>
-      <span
-        v-else
-        role="button"
-        class="badge rounded-5 text-dark bg-warning-subtle"
-      >
+      <span v-else role="button" class="appointment-pay-modal__status--warning">
         Crédito pendiente
       </span>
     </div>
   </div>
 
-  <!-- Modal principal para detalles de cita -->
   <div
     class="modal fade"
     :class="{ show: open }"
@@ -197,7 +191,6 @@
           ></button>
         </div>
         <div class="modal-body">
-          <!-- Step 1: Appointment Details -->
           <div v-if="step === 1">
             <h5 class="fw-bold">
               Detalles de
@@ -246,7 +239,7 @@
                   <td><strong>Estado:</strong></td>
                   <td>
                     <span
-                      class="badge rounded-5 text-dark"
+                      class="appointment-pay-modal__status"
                       :class="statusClass(appointment.appointment_status.code)"
                     >
                       {{ appointment.appointment_status.value1 }}
@@ -323,7 +316,6 @@
             </div>
           </div>
 
-          <!-- Step 2: Payment Details -->
           <div v-if="step === 2">
             <div class="d-flex flex-column">
               <img
@@ -336,7 +328,6 @@
             </div>
             <p class="text-muted">Rellena los datos de tu tarjeta.</p>
             <form>
-              <!-- Nombre de tarjeta and Vence on the same row -->
               <div class="row mb-3">
                 <div class="col-8">
                   <label for="cardName" class="form-label">Nombre</label>
@@ -358,7 +349,6 @@
                 </div>
               </div>
 
-              <!-- Número de tarjeta and CVV on the same row -->
               <div class="row mb-3">
                 <div class="col-8">
                   <label for="cardNumber" class="form-label"
@@ -382,7 +372,6 @@
                 </div>
               </div>
 
-              <!-- Correo electrónico takes a whole row -->
               <div class="row mb-3">
                 <div class="col-12">
                   <label for="email" class="form-label"
@@ -478,7 +467,6 @@
             </form>
           </div>
 
-          <!-- Step 3: Confirmation -->
           <div v-if="step === 3">
             <img
               src="@/src/assets/check.svg"
@@ -548,7 +536,6 @@
             </div>
           </div>
 
-          <!-- Step 4: Cancellation Confirmation -->
           <div v-if="step === 4">
             <h5 class="fw-bold">¿Seguro que quieres cancelar esta cita?</h5>
             <p class="text-muted">
@@ -597,7 +584,7 @@
                   <td><strong>Estado:</strong></td>
                   <td>
                     <span
-                      class="badge rounded-5 text-dark"
+                      class="appointment-pay-modal__status"
                       :class="statusClass('Cancelada')"
                     >
                       Cancelada
@@ -623,7 +610,6 @@
     </div>
   </div>
 
-  <!-- Modal para Detalles del Procedimiento -->
   <div
     class="modal fade"
     :class="{ show: showProcedureModal }"
@@ -681,9 +667,7 @@
               <tr>
                 <td><strong>Estado:</strong></td>
                 <td>
-                  <span class="badge rounded-5 text-dark bg-success-subtle">
-                    Valorado
-                  </span>
+                  <span class="appointment-pay-modal__status"> Valorado </span>
                 </td>
               </tr>
               <tr>
@@ -805,6 +789,16 @@ const reserveProcedure = async () => {
   }
 };
 
+const shouldShowPaidStatus = () => {
+  return (
+    props.appointment.appointment_status.code ===
+      "VALUATION_PENDING_VALORATION_APPOINTMENT" ||
+    props.appointment.payment_status?.code ===
+      "PAYMENT_STATUS_PAID_PROCEDURE" ||
+    props.appointment.appointment_status.code === "CONCRETED_APPOINTMENT"
+  );
+};
+
 const requestCredit = async () => {
   try {
     const { data, error } = await useFetch(
@@ -899,26 +893,19 @@ const processPaymentProcedure = async () => {
 };
 
 const statusClass = (status) => {
-  switch (status) {
-    case "CANCEL_APPOINTMENT":
-      return "bg-danger-subtle";
-    case "PENDING_VALORATION_APPOINTMENT":
-      return "bg-warning-subtle";
-    case "PENDING_PROCEDURE":
-      return "bg-warning-subtle";
-    case "CONFIRM_PROCEDURE":
-      return "bg-primary-subtle";
-    case "CONCRETED_APPOINTMENT":
-      return "bg-primary-subtle";
-    case "VALUED_VALORATION_APPOINTMENT":
-      return "bg-success-subtle";
-    case "CONFIRM_VALIDATION_APPOINTMENT":
-      return "bg-success-subtle";
-    case "VALUATION_PENDING_VALORATION_APPOINTMENT":
-      return "bg-primary-subtle";
-    default:
-      return "";
-  }
+  const statusMap = {
+    CANCEL_APPOINTMENT: "appointment-pay-modal__status--cancelled",
+    PENDING_VALORATION_APPOINTMENT: "appointment-pay-modal__status--warning",
+    PENDING_PROCEDURE: "appointment-pay-modal__status--warning",
+    CONFIRM_PROCEDURE: "appointment-pay-modal__status--primary",
+    CONCRETED_APPOINTMENT: "appointment-pay-modal__status--primary",
+    VALUED_VALORATION_APPOINTMENT: "appointment-pay-modal__status--success",
+    CONFIRM_VALIDATION_APPOINTMENT: "appointment-pay-modal__status--success",
+    VALUATION_PENDING_VALORATION_APPOINTMENT:
+      "appointment-pay-modal__status--primary",
+    WAITING_PROCEDURE: "appointment-pay-modal__status--warning",
+  };
+  return statusMap[status] || "";
 };
 
 const cancelAppointment = async () => {
@@ -938,6 +925,46 @@ const cancelAppointment = async () => {
       padding: 8px 16px;
       width: 100%;
     }
+  }
+
+  &__status {
+    display: block;
+    width: 100%;
+    text-align: center;
+    text-wrap: nowrap;
+    font-family: $font-family-main;
+    font-weight: 500;
+    font-style: Light;
+    font-size: 12px;
+    color: #19213d;
+    line-height: 18px;
+    letter-spacing: 0px;
+    border-radius: 30px;
+    padding: 6px 10px;
+    width: 100%;
+
+    &--success {
+      background-color: #d3f2dd;
+    }
+
+    &--warning {
+      background-color: #faedbf;
+    }
+
+    &--primary {
+      background-color: rgba(#3541b4, 0.1);
+    }
+
+    &--cancelled {
+      background-color: #fac6d0;
+    }
+  }
+
+  &__button-item {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 8px;
   }
 }
 .modal-content {

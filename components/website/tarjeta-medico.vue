@@ -163,14 +163,14 @@ const citaValoracionPackage = computed(() => {
       type: "MEDICAL_PRODUCT",
       description: "Cita de valoración médica inicial",
       father_code: null,
-      value1: "25000",
+      value1: "18000",
       created_date: new Date().toISOString(),
       updated_date: null,
       is_deleted: 0,
     },
-    reference_price: 25000,
+    reference_price: 18000,
     discount: 0,
-    discounted_price: 25000,
+    discounted_price: 18000,
     services_offer: {
       ASSESSMENT_DETAILS: [
         "MEDICAL_CONSULTATION",
