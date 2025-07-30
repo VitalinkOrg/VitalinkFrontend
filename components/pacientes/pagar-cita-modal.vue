@@ -4,10 +4,15 @@
       v-if="
         (appointment.appointment_status.code ===
           'CONFIRM_VALIDATION_APPOINTMENT' &&
-          appointment.payment_status.code ===
-            'PAYMENT_STATUS_NOT_PAID_VALORATION_APPOINTMENT') ||
+          (appointment.payment_status.code ===
+            'PAYMENT_STATUS_NOT_PAID_VALORATION_APPOINTMENT' ||
+            appointment.payment_status.code ===
+              'PAYMENT_STATUS_NOT_PAID_PROCEDURE')) ||
         (appointment.appointment_status.code === 'CONFIRM_PROCEDURE' &&
           appointment.payment_status.code ===
+            'PAYMENT_STATUS_NOT_PAID_PROCEDURE') ||
+        (appointment.appointment_status?.code === 'PENDING_PROCEDURE' &&
+          appointment.payment_status?.code ===
             'PAYMENT_STATUS_NOT_PAID_PROCEDURE')
       "
     >
@@ -113,8 +118,7 @@
 
     <div
       v-else-if="
-        appointment.appointment_status?.code ===
-        'PENDING_VALORATION_APPOINTMENT'
+        appointment.appointment_status.code === 'PENDING_VALORATION_APPOINTMENT'
       "
     >
       <button
@@ -264,6 +268,9 @@
                     'PAYMENT_STATUS_NOT_PAID_VALORATION_APPOINTMENT') ||
                 (appointment.appointment_status.code === 'CONFIRM_PROCEDURE' &&
                   appointment.payment_status.code ===
+                    'PAYMENT_STATUS_NOT_PAID_PROCEDURE') ||
+                (appointment.appointment_status?.code === 'PENDING_PROCEDURE' &&
+                  appointment.payment_status?.code ===
                     'PAYMENT_STATUS_NOT_PAID_PROCEDURE')
               "
               class="mb-3"
@@ -301,11 +308,17 @@
                 v-if="
                   (appointment.appointment_status.code ===
                     'CONFIRM_VALIDATION_APPOINTMENT' &&
-                    appointment.payment_status.code ===
-                      'PAYMENT_STATUS_NOT_PAID_VALORATION_APPOINTMENT') ||
+                    (appointment.payment_status.code ===
+                      'PAYMENT_STATUS_NOT_PAID_VALORATION_APPOINTMENT' ||
+                      appointment.payment_status.code ===
+                        'PAYMENT_STATUS_NOT_PAID_PROCEDURE')) ||
                   (appointment.appointment_status.code ===
                     'CONFIRM_PROCEDURE' &&
                     appointment.payment_status.code ===
+                      'PAYMENT_STATUS_NOT_PAID_PROCEDURE') ||
+                  (appointment.appointment_status?.code ===
+                    'PENDING_PROCEDURE' &&
+                    appointment.payment_status?.code ===
                       'PAYMENT_STATUS_NOT_PAID_PROCEDURE')
                 "
                 class="btn btn-primary w-50"
@@ -425,16 +438,7 @@
                   <tr class="total">
                     <td><strong>Saldo a pagar:</strong></td>
                     <td class="fw-bold">
-                      {{
-                        appointment.appointment_type.code ==
-                        "VALORATION_APPOINTMENT"
-                          ? "₡" + appointment.price_valoration_appointment
-                          : "₡" +
-                            (appointment.price_procedure -
-                              0 - // Descuento (siempre 0 para MVP)
-                              (appointment.appointment_credit
-                                ?.approved_amount || 0))
-                      }}
+                      {{ "₡" + balanceToPay(appointment) }}
                     </td>
                   </tr>
                 </tbody>
@@ -456,12 +460,20 @@
                 </button>
                 <button
                   v-else-if="
-                    appointment.appointment_status.code === 'CONFIRM_PROCEDURE'
+                    appointment.appointment_status.code ===
+                      'CONFIRM_PROCEDURE' ||
+                    appointment.appointment_status.code === 'PENDING_PROCEDURE'
                   "
                   class="btn btn-primary w-50"
                   @click.prevent="processPaymentProcedure"
                 >
                   Pagar
+                </button>
+                <button
+                  v-if="balanceToPay(appointment) === 0"
+                  class="btn btn-primary w-50"
+                >
+                  Confirmar Reserva
                 </button>
               </div>
             </form>
@@ -508,18 +520,19 @@
               >{{ appointment.package?.procedure.name }}
             </p>
             <p>
-              <strong>Costo del servicio:</strong>
+              <strong>Subtotal:</strong>
               {{
                 appointment.appointment_type.code == "VALORATION_APPOINTMENT"
-                  ? "₡18.000"
+                  ? "₡" + appointment.price_valoration_appointment
                   : "₡" + appointment.price_procedure
               }}
             </p>
+
             <p>
               <strong>Monto Pagado:</strong>
               {{
                 appointment.appointment_type.code == "VALORATION_APPOINTMENT"
-                  ? "₡18.000"
+                  ? "₡" + appointment.price_valoration_appointment
                   : "₡" + appointment.price_procedure
               }}
             </p>
@@ -714,6 +727,8 @@ import { computed, defineProps, ref } from "vue";
 const props = defineProps(["appointment", "step", "showStatus"]);
 const emit = defineEmits(["refresh"]);
 
+console.log("PAgar Modal: ", props.appointment);
+
 const handleOpen = () => {
   open.value = true;
 };
@@ -753,6 +768,17 @@ const openProcedureModal = () => {
 const closeProcedureModal = () => {
   showProcedureModal.value = false;
   procedureMessage.value = "";
+};
+
+const balanceToPay = (appointment) => {
+  if (appointment.appointment_type.code == "VALORATION_APPOINTMENT") {
+    return appointment.price_valoration_appointment;
+  }
+  return (
+    appointment.price_procedure -
+    0 - // Descuento (siempre 0 para MVP)
+    (appointment.appointment_credit?.approved_amount || 0)
+  );
 };
 
 const reserveProcedure = async () => {
@@ -885,6 +911,7 @@ const processPaymentProcedure = async () => {
     }
   );
   if (data) {
+    emit("refresh");
     step.value = 3;
   }
   if (error.value) {
