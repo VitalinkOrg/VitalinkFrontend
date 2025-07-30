@@ -144,7 +144,7 @@
               </th>
               <td>
                 <div
-                  v-if="!qrValidated"
+                  v-if="!qrValidated && !creditAlreadyBeenUsed"
                   class="appointment-details__table-data--qr-wrapper"
                 >
                   <input
@@ -153,9 +153,7 @@
                     :value="qrCodeInput"
                     :disabled="
                       appointment.appointment_status.code ===
-                        'VALUED_VALORATION_APPOINTMENT' ||
-                      appointment.appointment_status.code ===
-                        'CONCRETED_APPOINTMENT'
+                      'VALUED_VALORATION_APPOINTMENT'
                     "
                     @input="
                       $emit(
@@ -172,9 +170,7 @@
                     @click="handleValidateQrCode"
                     :disabled="
                       appointment.appointment_status.code ===
-                        'VALUED_VALORATION_APPOINTMENT' ||
-                      appointment.appointment_status.code ===
-                        'CONCRETED_APPOINTMENT'
+                      'VALUED_VALORATION_APPOINTMENT'
                     "
                   >
                     Validar QR
@@ -182,21 +178,26 @@
                 </div>
                 <div v-else>
                   <div class="alert alert-success mb-2">
-                    <p>Crédito pre-aprobado válido: {{ creditAmount }}</p>
+                    <p>Crédito pre-aprobado válido: ₡ {{ creditAmount }}</p>
                     <p>
                       Saldo pendiente:
                       {{
-                        Number(props.appointment.price_procedure) -
-                        props.appointment.appointment_credit.approved_amount
+                        "₡" +
+                        (Number(props.appointment.price_procedure) -
+                          props.appointment.appointment_credit.approved_amount)
                       }}
                     </p>
                   </div>
                   <button
                     class="btn btn-success"
                     @click="handleUseCredit"
-                    :disabled="creditUsed"
+                    :disabled="creditUsed || creditAlreadyBeenUsed"
                   >
-                    {{ creditUsed ? "Crédito utilizado" : "Usar crédito" }}
+                    {{
+                      creditUsed || creditAlreadyBeenUsed
+                        ? "Crédito utilizado"
+                        : "Usar crédito"
+                    }}
                   </button>
                 </div>
               </td>
@@ -209,8 +210,7 @@
             <template
               v-if="
                 appointment.appointment_status.code ==
-                  'VALUED_VALORATION_APPOINTMENT' ||
-                appointment.appointment_status.code === 'CONCRETED_APPOINTMENT'
+                'VALUED_VALORATION_APPOINTMENT'
               "
             >
               <tr class="appointment-details__table-row">
@@ -304,9 +304,7 @@
                           v-if="
                             !proformaGuardado &&
                             appointment.appointment_status.code !==
-                              'VALUED_VALORATION_APPOINTMENT' &&
-                            appointment.appointment_status.code !==
-                              'CONCRETED_APPOINTMENT'
+                              'VALUED_VALORATION_APPOINTMENT'
                           "
                           class="appointment-details__file-remove-button"
                           type="button"
@@ -379,9 +377,7 @@
                     placeholder="Escribe las recomendaciones médicas..."
                     :disabled="
                       appointment.appointment_status.code ===
-                        'VALUED_VALORATION_APPOINTMENT' ||
-                      appointment.appointment_status.code ===
-                        'CONCRETED_APPOINTMENT'
+                      'VALUED_VALORATION_APPOINTMENT'
                     "
                     :aria-describedby="
                       proformaGuardado
@@ -407,10 +403,7 @@
       </section>
 
       <div
-        v-if="
-          appointment.appointment_type.code !== 'VALORATION_APPOINTMENT' &&
-          appointment.appointment_status.code !== 'CONCRETED_APPOINTMENT'
-        "
+        v-if="appointment.appointment_type.code !== 'VALORATION_APPOINTMENT'"
         class="appointment-details__information-banner"
       >
         <div
@@ -477,8 +470,7 @@
           class="appointment-details__action-subgroup"
           v-if="
             appointment.appointment_status.code !==
-              'VALUED_VALORATION_APPOINTMENT' &&
-            appointment.appointment_status.code !== 'CONCRETED_APPOINTMENT'
+            'VALUED_VALORATION_APPOINTMENT'
           "
         >
           <button
@@ -523,8 +515,7 @@
           class="appointment-details__action-group"
           v-if="
             appointment.appointment_status.code ==
-              'VALUED_VALORATION_APPOINTMENT' ||
-            appointment.appointment_status.code === 'CONCRETED_APPOINTMENT'
+            'VALUED_VALORATION_APPOINTMENT'
           "
         >
           <div
@@ -645,7 +636,13 @@ const emit = defineEmits([
 const proformaFile = ref<HTMLInputElement | null>(null);
 const outstandingBalance = ref<number>(0);
 
-console.log(props.appointment);
+const creditAlreadyBeenUsed = computed(() => {
+  if (props.appointment.appointment_credit.already_been_used) {
+    return true;
+  }
+
+  return false;
+});
 
 const setOutstandingBalance = computed(() => {
   return (

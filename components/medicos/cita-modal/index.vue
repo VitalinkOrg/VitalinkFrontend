@@ -28,6 +28,7 @@
           :close-modal="closeModal"
           :file-removed="fileRemoved"
           :existing-proforma-removed="existingProformaRemoved"
+          @update:qr-code-input="qrCodeInput = $event"
           @not-suitable-procedure="handleNotSuitableProcedure"
           @edit-date-time="localStep = 6"
           @confirm-reservation="localStep = 2"
@@ -180,6 +181,13 @@ const timeSlotsByDay = {
     "17:30",
   ],
   saturday: ["08:00", "09:30", "10:00", "10:30", "12:00"],
+};
+
+const handleUpdateQRCode = (newValue) => {
+  qrCodeInput.value = newValue;
+
+  qrValidated.value = false;
+  errorText.value = "";
 };
 
 const getAvailableTimesForDate = (date) => {
@@ -621,7 +629,6 @@ const finishProcedure = async () => {
   );
   if (data) {
     emit("refresh");
-    localStep.value = 3;
   }
   if (error.value) {
     console.log(error.value, "data");
@@ -691,6 +698,7 @@ const useCredit = async () => {
     }
 
     creditUsed.value = true;
+    emit("refresh");
   } catch (err) {
     errorText.value = err.message;
   }

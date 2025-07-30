@@ -17,23 +17,31 @@
       "
     >
       <button
-        v-if="!showStatus"
-        role="button"
-        class="appointment-pay-modal__button--outline"
-        @click="handleOpen"
-      >
-        {{
+        v-if="
+          !showStatus &&
           Number(appointment.price_procedure) -
             Number(
               appointment.appointment_credit
                 ? appointment.appointment_credit.approved_amount
                 : 0
-            ) ===
-          0
-            ? "Confirmar procedimiento"
-            : "Pagar ahora"
-        }}
+            ) !==
+            0
+        "
+        role="button"
+        class="appointment-pay-modal__button--outline"
+        @click="handleOpen"
+      >
+        <span> Pagar ahora </span>
       </button>
+      <div
+        v-else-if="!showStatus"
+        role="button"
+        class="appointment-pay-modal__button-item"
+        @click="handleOpen"
+      >
+        <img src="@/src/assets/success.svg" class="mr-2" alt="Success" />
+        <p class="text-success mb-0">Pagado</p>
+      </div>
       <span
         v-else
         role="button"
@@ -50,16 +58,9 @@
         appointment.appointment_status.code === 'VALUED_VALORATION_APPOINTMENT'
       "
     >
-      <button
-        v-if="!showStatus"
-        role="button"
-        class="appointment-pay-modal__button--outline"
-        @click="openProcedureModal"
-      >
-        Solicitar procedimiento
-      </button>
+      —
       <span
-        v-else
+        v-if="!showStatus"
         role="button"
         @click="openProcedureModal"
         class="appointment-pay-modal__status"
@@ -286,9 +287,9 @@
                   <td><strong>Crédito aprobado:</strong></td>
                   <td>
                     {{
-                      "₡" + appointment.appointment_credit
-                        ? appointment.appointment_credit.approved_amount
-                        : 0
+                      appointment.appointment_credit
+                        ? "₡" + appointment.appointment_credit.approved_amount
+                        : "₡" + "0.00"
                     }}
                   </td>
                 </tr>
@@ -355,24 +356,17 @@
               </button>
 
               <div
+                class="button-next"
                 v-if="
                   Number(appointment.price_procedure) -
                     Number(
                       appointment.appointment_credit
                         ? appointment.appointment_credit.approved_amount
                         : 0
-                    ) ===
+                    ) !==
                   0
                 "
               >
-                <button
-                  class="btn btn-primary w-100"
-                  @click="processPaymentProcedure"
-                >
-                  Confirmar Reserva
-                </button>
-              </div>
-              <div v-else class="button-next">
                 <button
                   v-if="
                     (appointment.appointment_status.code ===
@@ -766,14 +760,14 @@
 
           <div class="d-flex justify-content-between gap-2 mt-4">
             <button
-              class="btn btn-outline-primary w-50"
+              class="btn btn-outline-primary w-100"
               @click="reserveProcedure"
               :disabled="isCreditDisabled"
             >
               Reservar el procedimiento
             </button>
             <button
-              class="btn btn-primary w-50"
+              class="btn btn-primary w-100"
               @click="requestCredit"
               :disabled="isCreditDisabled"
             >
@@ -796,9 +790,6 @@ const config = useRuntimeConfig();
 import { computed, defineProps, ref } from "vue";
 const props = defineProps(["appointment", "step", "showStatus"]);
 const emit = defineEmits(["refresh"]);
-
-console.log("Pagar Modal: ", props.appointment);
-console.log("Status: ", props.appointment.appointment_status);
 
 const handleOpen = () => {
   open.value = true;

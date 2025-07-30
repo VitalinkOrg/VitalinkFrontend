@@ -5,7 +5,7 @@
         type="button"
         class="confirmation-not-suitable__close-button"
         aria-label="Cerrar modal de detalles de la cita"
-        @click="$emit('cancel')"
+        @click="closeModal"
       >
         <AtomsIconsXIcon width="24" height="24" aria-hidden="true" />
       </button>
@@ -41,6 +41,7 @@
 
 <script setup>
 const emit = defineEmits(["confirmNotSuitable", "cancel"]);
+const props = defineProps(["closeModal"]);
 </script>
 
 <style lang="scss" scoped>
