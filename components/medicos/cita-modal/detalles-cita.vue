@@ -671,6 +671,7 @@ const handleUseCredit = () => {
 };
 
 const hasCredit = computed(() => {
+  console.log("Credito: ", props.appointment.appointment_credit);
   if (!props.appointment.appointment_credit) {
     return false;
   }

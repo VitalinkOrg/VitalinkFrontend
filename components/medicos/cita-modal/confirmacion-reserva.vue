@@ -5,7 +5,7 @@
         type="button"
         class="reservation-confirmation__close-button"
         aria-label="Cerrar modal de detalles de cita"
-        @click="$emit('cancel')"
+        @click="closeModal"
       >
         <AtomsIconsXIcon width="24" height="24" aria-hidden="true" />
       </button>
@@ -192,6 +192,7 @@ import { computed, ref } from "vue";
 
 const props = defineProps({
   appointment: Object,
+  closeModal: Function,
 });
 
 const emit = defineEmits([
@@ -214,8 +215,10 @@ const hasPatientPaid = computed(() => {
 
 const handleConfirmAppointment = () => {
   if (
-    props.appointment.appointment_status.code === "PENDING_PROCEDURE" &&
-    !hasPatientPaid.value
+    props.appointment.appointment_status.code === "PENDING_PROCEDURE" ||
+    (props.appointment.appointment_status.code ===
+      "CONFIRM_VALIDATION_APPOINTMENT" &&
+      !hasPatientPaid.value)
   ) {
     showPaymentWarning.value = true;
     return;
@@ -225,12 +228,29 @@ const handleConfirmAppointment = () => {
 };
 
 const handleConfirmValoration = () => {
+  if (
+    props.appointment.appointment_status.code ===
+      "CONFIRM_VALIDATION_APPOINTMENT" &&
+    !hasPatientPaid.value
+  ) {
+    showPaymentWarning.value = true;
+    return;
+  }
+
   emit("confirmValoration");
 };
-console.log(props.appointment);
 
 const handleContinueWithoutPayment = () => {
-  emit("confirmProcedure");
+  if (props.appointment.appointment_status.code === "PENDING_PROCEDURE") {
+    emit("confirmProcedure");
+  }
+
+  if (
+    props.appointment.appointment_status.code ===
+    "CONFIRM_VALIDATION_APPOINTMENT"
+  ) {
+    emit("confirmValoration");
+  }
 };
 
 const handleCancel = () => {
