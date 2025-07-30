@@ -65,7 +65,8 @@
                   "PENDING_VALORATION_APPOINTMENT" ||
                 appointment.appointment_status.code == "PENDING_PROCEDURE"
               ? "Con estos cambios el estado de la solicitud de valoración pasará de: Pendiente a Confirmada"
-              : appointment.appointment_status.code == "WAITING_PROCEDURE"
+              : appointment.appointment_status.code == "WAITING_PROCEDURE" ||
+                  appointment.appointment_status.code == "CONFIRM_PROCEDURE"
                 ? "Con estos cambios el estado de la solicitud de valoración pasará de: Pendiente a Concretada"
                 : "Con estos cambios el estado de la solicitud de valoración pasará de: Pendiente a Valorada"
         }}
@@ -79,7 +80,8 @@
                   "PENDING_VALORATION_APPOINTMENT" ||
                 appointment.appointment_status.code == "PENDING_PROCEDURE"
               ? "Con estos cambios el estado de la solicitud de valoración pasará de: Pendiente a Confirmada"
-              : appointment.appointment_status.code == "WAITING_PROCEDURE"
+              : appointment.appointment_status.code == "WAITING_PROCEDURE" ||
+                  appointment.appointment_status.code == "CONFIRM_PROCEDURE"
                 ? "Con estos cambios el estado de la solicitud de reserva pasará de: Pendiente a Concretada"
                 : "Con estos cambios el estado de la solicitud de reserva pasará de: Pendiente a Valorada"
         }}
@@ -167,7 +169,10 @@
       </button>
 
       <button
-        v-else-if="appointment.appointment_status.code == 'WAITING_PROCEDURE'"
+        v-else-if="
+          appointment.appointment_status.code == 'WAITING_PROCEDURE' ||
+          appointment.appointment_status.code == 'CONFIRM_PROCEDURE'
+        "
         aria-label="Finalizar procedimiento"
         class="reservation-confirmation__footer--button-primary"
         @click="$emit('finishProcedure')"

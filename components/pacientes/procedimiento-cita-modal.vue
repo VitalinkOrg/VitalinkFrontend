@@ -146,7 +146,7 @@
             >
               <button
                 v-if="canRequestProcedure()"
-                class="btn btn-outline-dark w-50"
+                class="btn btn-outline-dark w-100"
                 @click="step = 4"
               >
                 Reservar el procedimiento
@@ -154,7 +154,7 @@
 
               <button
                 v-if="canRequestCredit()"
-                class="btn btn-primary w-50"
+                class="btn btn-primary w-100"
                 @click="step = 2"
               >
                 Solicitar crédito
