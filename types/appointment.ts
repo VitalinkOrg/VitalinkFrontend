@@ -244,7 +244,7 @@ export interface Appointment {
   appointment_type: AppointmentType;
   price_procedure: string;
   price_valoration_appointment: string;
-  appointment_credit: string | null;
+  appointment_credit: any | null;
   created_date: string;
   updated_date: string;
 }

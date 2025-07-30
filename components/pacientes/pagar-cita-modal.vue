@@ -22,7 +22,17 @@
         class="appointment-pay-modal__button--outline"
         @click="handleOpen"
       >
-        Pagar ahora
+        {{
+          Number(appointment.price_procedure) -
+            Number(
+              appointment.appointment_credit
+                ? appointment.appointment_credit.approved_amount
+                : 0
+            ) ===
+          0
+            ? "Confirmar procedimiento"
+            : "Pagar ahora"
+        }}
       </button>
       <span
         v-else
@@ -211,7 +221,14 @@
               <tbody>
                 <tr>
                   <td><strong>Tipo de servicio:</strong></td>
-                  <td>Cita de valoración</td>
+                  <td>
+                    {{
+                      appointment.appointment_type.code ===
+                      "PROCEDURE_APPOINTMENT"
+                        ? "Cita de procedimiento"
+                        : "Cita de valoración"
+                    }}
+                  </td>
                 </tr>
                 <tr>
                   <td><strong>Fecha de la cita:</strong></td>
@@ -256,7 +273,39 @@
                 </tr>
                 <tr>
                   <td><strong>Monto del procedimiento:</strong></td>
-                  <td>₡18000</td>
+                  <td>
+                    {{
+                      appointment.appointment_type.code ===
+                      "PROCEDURE_APPOINTMENT"
+                        ? "₡" + appointment.price_procedure
+                        : "₡" + appointment.price_valoration_appointment
+                    }}
+                  </td>
+                </tr>
+                <tr v-if="appointment.appointment_credit">
+                  <td><strong>Crédito aprobado:</strong></td>
+                  <td>
+                    {{
+                      "₡" + appointment.appointment_credit
+                        ? appointment.appointment_credit.approved_amount
+                        : 0
+                    }}
+                  </td>
+                </tr>
+                <tr v-if="appointment.appointment_credit">
+                  <td><strong>Saldo pendiente:</strong></td>
+                  <td v-if="appointment.appointment_credit">
+                    {{
+                      "₡" +
+                      (Number(appointment.price_procedure) -
+                        Number(
+                          appointment.appointment_credit
+                            ? appointment.appointment_credit.approved_amount
+                            : 0
+                        )) +
+                      ".00"
+                    }}
+                  </td>
                 </tr>
               </tbody>
             </table>
@@ -304,28 +353,49 @@
               <button class="btn btn-outline-dark w-50" @click="step = 4">
                 Anular cita
               </button>
-              <button
+
+              <div
                 v-if="
-                  (appointment.appointment_status.code ===
-                    'CONFIRM_VALIDATION_APPOINTMENT' &&
-                    (appointment.payment_status.code ===
-                      'PAYMENT_STATUS_NOT_PAID_VALORATION_APPOINTMENT' ||
-                      appointment.payment_status.code ===
-                        'PAYMENT_STATUS_NOT_PAID_PROCEDURE')) ||
-                  (appointment.appointment_status.code ===
-                    'CONFIRM_PROCEDURE' &&
-                    appointment.payment_status.code ===
-                      'PAYMENT_STATUS_NOT_PAID_PROCEDURE') ||
-                  (appointment.appointment_status?.code ===
-                    'PENDING_PROCEDURE' &&
-                    appointment.payment_status?.code ===
-                      'PAYMENT_STATUS_NOT_PAID_PROCEDURE')
+                  Number(appointment.price_procedure) -
+                    Number(
+                      appointment.appointment_credit
+                        ? appointment.appointment_credit.approved_amount
+                        : 0
+                    ) ===
+                  0
                 "
-                class="btn btn-primary w-50"
-                @click="step = 2"
               >
-                Continuar
-              </button>
+                <button
+                  class="btn btn-primary w-100"
+                  @click="processPaymentProcedure"
+                >
+                  Confirmar Reserva
+                </button>
+              </div>
+              <div v-else class="button-next">
+                <button
+                  v-if="
+                    (appointment.appointment_status.code ===
+                      'CONFIRM_VALIDATION_APPOINTMENT' &&
+                      (appointment.payment_status.code ===
+                        'PAYMENT_STATUS_NOT_PAID_VALORATION_APPOINTMENT' ||
+                        appointment.payment_status.code ===
+                          'PAYMENT_STATUS_NOT_PAID_PROCEDURE')) ||
+                    (appointment.appointment_status.code ===
+                      'CONFIRM_PROCEDURE' &&
+                      appointment.payment_status.code ===
+                        'PAYMENT_STATUS_NOT_PAID_PROCEDURE') ||
+                    (appointment.appointment_status?.code ===
+                      'PENDING_PROCEDURE' &&
+                      appointment.payment_status?.code ===
+                        'PAYMENT_STATUS_NOT_PAID_PROCEDURE')
+                  "
+                  class="btn btn-primary w-50"
+                  @click="step = 2"
+                >
+                  Continuar
+                </button>
+              </div>
             </div>
           </div>
 
@@ -727,7 +797,8 @@ import { computed, defineProps, ref } from "vue";
 const props = defineProps(["appointment", "step", "showStatus"]);
 const emit = defineEmits(["refresh"]);
 
-console.log("PAgar Modal: ", props.appointment);
+console.log("Pagar Modal: ", props.appointment);
+console.log("Status: ", props.appointment.appointment_status);
 
 const handleOpen = () => {
   open.value = true;
@@ -1008,5 +1079,9 @@ const cancelAppointment = async () => {
 }
 .total {
   border-top: 1px solid #e1e4ed;
+}
+
+.button-next {
+  width: 100%;
 }
 </style>

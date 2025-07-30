@@ -152,10 +152,9 @@ const route = useRoute();
 // Check if a procedure was searched
 const searchProcedureCode = computed(() => route.query.procedure_code);
 
-// Get the assessment appointment package price
 const citaValoracionPackage = computed(() => {
   return {
-    id: 4,
+    id: 0,
     product: {
       id: 9999,
       code: "ASSESSMENT_APPOINTMENT",

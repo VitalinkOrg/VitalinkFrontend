@@ -36,7 +36,6 @@ const showPackages = async ({ medico }) => {
     );
 
     doctorData.value = data.value;
-    console.log("data.value: ", data.value);
   } catch (error) {
     console.error("Error obteniendo datos del doctor", error);
   } finally {
