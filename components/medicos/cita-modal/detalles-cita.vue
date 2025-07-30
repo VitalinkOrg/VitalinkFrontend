@@ -120,7 +120,7 @@
               </td>
             </tr>
 
-            <tr class="appointment-details__table-row--end-row">
+            <tr class="appointment-details__table-row">
               <th scope="row" class="appointment-details__table-header">
                 Estado de la cita:
               </th>
@@ -135,7 +135,10 @@
               </td>
             </tr>
 
-            <tr class="appointment-details__table-row--end-row">
+            <tr
+              v-if="hasCredit"
+              class="appointment-details__table-row--end-row"
+            >
               <th scope="row" class="appointment-details__table-header">
                 Validación de Crédito:
               </th>
@@ -150,7 +153,9 @@
                     :value="qrCodeInput"
                     :disabled="
                       appointment.appointment_status.code ===
-                      'VALUED_VALORATION_APPOINTMENT'
+                        'VALUED_VALORATION_APPOINTMENT' ||
+                      appointment.appointment_status.code ===
+                        'CONCRETED_APPOINTMENT'
                     "
                     @input="
                       $emit(
@@ -167,7 +172,9 @@
                     @click="handleValidateQrCode"
                     :disabled="
                       appointment.appointment_status.code ===
-                      'VALUED_VALORATION_APPOINTMENT'
+                        'VALUED_VALORATION_APPOINTMENT' ||
+                      appointment.appointment_status.code ===
+                        'CONCRETED_APPOINTMENT'
                     "
                   >
                     Validar QR
@@ -195,7 +202,8 @@
             <template
               v-if="
                 appointment.appointment_status.code ==
-                'VALUED_VALORATION_APPOINTMENT'
+                  'VALUED_VALORATION_APPOINTMENT' ||
+                appointment.appointment_status.code === 'CONCRETED_APPOINTMENT'
               "
             >
               <tr class="appointment-details__table-row">
@@ -289,7 +297,9 @@
                           v-if="
                             !proformaGuardado &&
                             appointment.appointment_status.code !==
-                              'VALUED_VALORATION_APPOINTMENT'
+                              'VALUED_VALORATION_APPOINTMENT' &&
+                            appointment.appointment_status.code !==
+                              'CONCRETED_APPOINTMENT'
                           "
                           class="appointment-details__file-remove-button"
                           type="button"
@@ -362,7 +372,9 @@
                     placeholder="Escribe las recomendaciones médicas..."
                     :disabled="
                       appointment.appointment_status.code ===
-                      'VALUED_VALORATION_APPOINTMENT'
+                        'VALUED_VALORATION_APPOINTMENT' ||
+                      appointment.appointment_status.code ===
+                        'CONCRETED_APPOINTMENT'
                     "
                     :aria-describedby="
                       proformaGuardado
@@ -383,108 +395,15 @@
                 </td>
               </tr>
             </template>
-
-            <!-- Sección para validación de crédito -->
-            <tr
-              v-if="appointment.appointment_status.code == 'WAITING_PROCEDURE'"
-              class="appointment-details__table-row"
-            >
-              <th scope="row" class="appointment-details__table-header">
-                Validación de Crédito:
-              </th>
-              <td class="appointment-details__table-data">
-                <div
-                  v-if="!qrValidated"
-                  class="appointment-details__credit-validation"
-                  role="group"
-                  aria-labelledby="qr-validation-heading"
-                >
-                  <h3 id="qr-validation-heading" class="visually-hidden">
-                    Validación de código QR
-                  </h3>
-
-                  <label for="qr-code-input" class="visually-hidden">
-                    Código QR para validación de crédito
-                  </label>
-                  <input
-                    id="qr-code-input"
-                    type="text"
-                    :value="qrCodeInput"
-                    @input="
-                      $emit(
-                        'update:qrCodeInput',
-                        ($event.target as HTMLInputElement).value
-                      )
-                    "
-                    placeholder="Escanear código QR"
-                    class="appointment-details__form-input appointment-details__form-input--qr"
-                    aria-describedby="qr-input-help"
-                  />
-                  <div id="qr-input-help" class="visually-hidden">
-                    Ingrese o escanee el código QR para validar el crédito
-                    pre-aprobado
-                  </div>
-
-                  <button
-                    type="button"
-                    class="appointment-details__button appointment-details__button--primary"
-                    @click="$emit('validateQrCode')"
-                    :disabled="!qrCodeInput"
-                    :aria-describedby="
-                      !qrCodeInput ? 'validate-disabled-help' : undefined
-                    "
-                  >
-                    Validar QR
-                  </button>
-                  <div
-                    v-if="!qrCodeInput"
-                    id="validate-disabled-help"
-                    class="visually-hidden"
-                  >
-                    Ingrese un código QR para habilitar la validación
-                  </div>
-                </div>
-
-                <div
-                  v-else
-                  class="appointment-details__credit-information"
-                  role="region"
-                  aria-labelledby="credit-info-heading"
-                >
-                  <h3 id="credit-info-heading" class="visually-hidden">
-                    Información de crédito validado
-                  </h3>
-
-                  <div
-                    class="appointment-details__alert appointment-details__alert--success"
-                    role="status"
-                    aria-live="polite"
-                  >
-                    Crédito pre-aprobado válido: {{ creditAmount }}
-                  </div>
-
-                  <button
-                    type="button"
-                    class="appointment-details__button appointment-details__button--success"
-                    @click="$emit('useCredit')"
-                    :disabled="creditUsed"
-                    :aria-label="
-                      creditUsed
-                        ? 'Crédito ya utilizado'
-                        : 'Usar crédito pre-aprobado'
-                    "
-                  >
-                    {{ creditUsed ? "Crédito utilizado" : "Usar crédito" }}
-                  </button>
-                </div>
-              </td>
-            </tr>
           </tbody>
         </table>
       </section>
 
       <div
-        v-if="appointment.appointment_type.code !== 'VALORATION_APPOINTMENT'"
+        v-if="
+          appointment.appointment_type.code !== 'VALORATION_APPOINTMENT' &&
+          appointment.appointment_status.code !== 'CONCRETED_APPOINTMENT'
+        "
         class="appointment-details__information-banner"
       >
         <div
@@ -551,7 +470,8 @@
           class="appointment-details__action-subgroup"
           v-if="
             appointment.appointment_status.code !==
-            'VALUED_VALORATION_APPOINTMENT'
+              'VALUED_VALORATION_APPOINTMENT' &&
+            appointment.appointment_status.code !== 'CONCRETED_APPOINTMENT'
           "
         >
           <button
@@ -596,7 +516,8 @@
           class="appointment-details__action-group"
           v-if="
             appointment.appointment_status.code ==
-            'VALUED_VALORATION_APPOINTMENT'
+              'VALUED_VALORATION_APPOINTMENT' ||
+            appointment.appointment_status.code === 'CONCRETED_APPOINTMENT'
           "
         >
           <div
@@ -696,8 +617,6 @@ interface Props {
 
 const props = defineProps<Props>();
 
-console.log(props.appointment);
-
 const emit = defineEmits([
   "editDateTime",
   "confirmReservation",
@@ -750,6 +669,17 @@ const handleValidateQrCode = () => {
 const handleUseCredit = () => {
   emit("useCredit");
 };
+
+const hasCredit = computed(() => {
+  if (!props.appointment.appointment_credit) {
+    return false;
+  }
+
+  if (props.appointment.appointment_credit) {
+  }
+
+  return true;
+});
 
 const removeFile = () => {
   const fileInput = document.getElementById("proforma-file-input");

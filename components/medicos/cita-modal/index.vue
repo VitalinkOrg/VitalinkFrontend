@@ -48,6 +48,7 @@
           v-if="localStep === 2"
           :appointment="appointment"
           :close-modal="closeModal"
+          :is-loading="isLoading"
           @cancel="localStep = 1"
           @confirm-appointment="confirmAppointment"
           @confirm-procedure="confirmProcedure"
@@ -560,6 +561,7 @@ const confirmNotSuitable = async () => {
 };
 
 const confirmAppointment = async () => {
+  isLoading.value = true;
   const { data, error } = await useFetch(
     config.public.API_BASE_URL + "/appointment/confirm_valoration_appointment",
     {
@@ -571,6 +573,7 @@ const confirmAppointment = async () => {
     }
   );
   if (data) {
+    isLoading.value = false;
     emit("refresh");
     localStep.value = 3;
   }
@@ -584,6 +587,7 @@ const confirmValoration = async () => {
 };
 
 const confirmProcedure = async () => {
+  isLoading.value = true;
   const { data, error } = await useFetch(
     config.public.API_BASE_URL + "/appointment/confirm_procedure",
     {
@@ -595,6 +599,7 @@ const confirmProcedure = async () => {
     }
   );
   if (data) {
+    isLoading.value = false;
     emit("refresh");
     localStep.value = 3;
   }

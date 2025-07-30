@@ -25,22 +25,60 @@
         />
       </span>
 
-      <h5 class="reservation-confirmation__body--title">
+      <h5
+        v-if="
+          appointment.appointment_status.code ===
+            'PENDING_VALORATION_APPOINTMENT' ||
+          appointment.appointment_status.code ===
+            'CONFIRM_VALIDATION_APPOINTMENT'
+        "
+        class="reservation-confirmation__body--title"
+      >
         {{
           showPaymentWarning
             ? "¿Continuar sin pago registrado?"
+            : "¿Confirmar valoración?"
+        }}
+      </h5>
+
+      <h5 v-else class="reservation-confirmation__body--title">
+        {{
+          showPaymentWarning
+            ? "Confirmar reserva sin pago registrado?"
             : "¿Confirmar reserva?"
         }}
       </h5>
 
-      <p class="reservation-confirmation__body--text">
+      <p
+        class="reservation-confirmation__body--text"
+        v-if="
+          appointment.appointment_status.code ===
+            'PENDING_VALORATION_APPOINTMENT' ||
+          appointment.appointment_status.code ===
+            'CONFIRM_VALIDATION_APPOINTMENT'
+        "
+      >
         {{
           showPaymentWarning
             ? "El paciente podrá realizar el pago directamente contigo durante la consulta."
             : appointment.appointment_status.code ==
                   "PENDING_VALORATION_APPOINTMENT" ||
                 appointment.appointment_status.code == "PENDING_PROCEDURE"
-              ? "Con estos cambios el estado de la solicitud de reserva pasará de: Pendiente a Confirmada"
+              ? "Con estos cambios el estado de la solicitud de valoración pasará de: Pendiente a Confirmada"
+              : appointment.appointment_status.code == "WAITING_PROCEDURE"
+                ? "Con estos cambios el estado de la solicitud de valoración pasará de: Pendiente a Concretada"
+                : "Con estos cambios el estado de la solicitud de valoración pasará de: Pendiente a Valorada"
+        }}
+      </p>
+
+      <p v-else class="reservation-confirmation__body--text">
+        {{
+          showPaymentWarning
+            ? "El paciente podrá realizar el pago directamente contigo durante la consulta."
+            : appointment.appointment_status.code ==
+                  "PENDING_VALORATION_APPOINTMENT" ||
+                appointment.appointment_status.code == "PENDING_PROCEDURE"
+              ? "Con estos cambios el estado de la solicitud de valoración pasará de: Pendiente a Confirmada"
               : appointment.appointment_status.code == "WAITING_PROCEDURE"
                 ? "Con estos cambios el estado de la solicitud de reserva pasará de: Pendiente a Concretada"
                 : "Con estos cambios el estado de la solicitud de reserva pasará de: Pendiente a Valorada"
@@ -51,9 +89,6 @@
         v-if="showPaymentWarning"
         class="reservation-confirmation__body--payment-warning-wrapper"
       >
-        <div class="reservation-confirmation__body--payment-warning-icon">
-          <AtomsIconsTriangleAlertIcon size="24" />
-        </div>
         <div class="reservation-confirmation__body--payment-warning-content">
           <p class="reservation-confirmation__body--payment-warning-title">
             Sin registro de pago
@@ -95,6 +130,7 @@
     <footer class="reservation-confirmation__footer">
       <button
         class="reservation-confirmation__footer--button-outline"
+        :disabled="isLoading"
         @click="handleCancel"
       >
         {{ showPaymentWarning ? "No, cancelar" : "Cancelar" }}
@@ -103,9 +139,10 @@
       <button
         v-if="showPaymentWarning"
         class="reservation-confirmation__footer--button-primary"
+        :disabled="isLoading"
         @click="handleContinueWithoutPayment"
       >
-        Sí, continuar
+        {{ isLoading ? "Guardando" : "Sí, continuar" }}
       </button>
 
       <button
@@ -113,6 +150,7 @@
           appointment.appointment_status.code ==
           'PENDING_VALORATION_APPOINTMENT'
         "
+        aria-label="Valoración pendiente"
         class="reservation-confirmation__footer--button-primary"
         @click="handleConfirmAppointment"
       >
@@ -121,14 +159,16 @@
 
       <button
         v-else-if="appointment.appointment_status.code == 'PENDING_PROCEDURE'"
+        aria-label="Procedimiento pendiente"
         class="reservation-confirmation__footer--button-primary"
-        @click="$emit('confirmProcedure')"
+        @click="handleConfirmAppointment"
       >
         Confirmar
       </button>
 
       <button
         v-else-if="appointment.appointment_status.code == 'WAITING_PROCEDURE'"
+        aria-label="Finalizar procedimiento"
         class="reservation-confirmation__footer--button-primary"
         @click="$emit('finishProcedure')"
       >
@@ -160,21 +200,21 @@ const emit = defineEmits([
   "confirmProcedure",
   "finishProcedure",
   "confirmValoration",
+  "isLoading",
 ]);
 
 const showPaymentWarning = ref(false);
 
 const hasPatientPaid = computed(() => {
   return (
-    props.appointment?.payment_status === "PAID" ||
+    props.appointment?.payment_status === "PAYMENT_STATUS_NOT_PAID_PROCEDURE" ||
     props.appointment?.has_paid === true
   );
 });
 
 const handleConfirmAppointment = () => {
   if (
-    props.appointment.appointment_status.code ===
-      "CONFIRM_VALIDATION_APPOINTMENT" &&
+    props.appointment.appointment_status.code === "PENDING_PROCEDURE" &&
     !hasPatientPaid.value
   ) {
     showPaymentWarning.value = true;
@@ -185,25 +225,12 @@ const handleConfirmAppointment = () => {
 };
 
 const handleConfirmValoration = () => {
-  if (!hasPatientPaid.value) {
-    showPaymentWarning.value = true;
-    return;
-  }
-
   emit("confirmValoration");
 };
+console.log(props.appointment);
 
 const handleContinueWithoutPayment = () => {
-  showPaymentWarning.value = false;
-
-  if (
-    props.appointment.appointment_status.code ===
-    "PENDING_VALORATION_APPOINTMENT"
-  ) {
-    emit("confirmAppointment");
-  } else {
-    emit("confirmValoration");
-  }
+  emit("confirmProcedure");
 };
 
 const handleCancel = () => {
@@ -345,7 +372,7 @@ const handleCancel = () => {
       height: 40px;
       border-radius: 50%;
       background-color: #fee2e2;
-      color: #dc2626;
+      color: #dc6803;
       flex: 0 0 auto;
     }
 
@@ -358,7 +385,7 @@ const handleCancel = () => {
       font-weight: 600;
       font-size: 14px;
       line-height: 20px;
-      color: #dc2626;
+      color: #dc6803;
       margin: 0 0 4px 0;
     }
 
@@ -367,7 +394,7 @@ const handleCancel = () => {
       font-weight: 500;
       font-size: 13px;
       line-height: 18px;
-      color: #991b1b;
+      color: #dc6803;
       margin: 0;
     }
   }

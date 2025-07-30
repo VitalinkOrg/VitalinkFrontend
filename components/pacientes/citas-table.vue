@@ -294,16 +294,7 @@
               </td>
               <td class="appointments-table__cell">
                 <PacientesPagarCitaModal
-                  v-if="
-                    (appointment.appointment_status?.code !==
-                      'VALUED_VALORATION_APPOINTMENT' &&
-                      appointment.appointment_status?.code !==
-                        'PENDING_PROCEDURE') ||
-                    (appointment.appointment_status?.code ===
-                      'CONFIRM_PROCEDURE' &&
-                      appointment.payment_status?.code ===
-                        'PAYMENT_STATUS_NOT_PAID_PROCEDURE')
-                  "
+                  v-if="showPaymentModal(appointment)"
                   :appointment="appointment"
                   :showStatus="true"
                   @refresh="refreshAppointments"
@@ -317,16 +308,7 @@
               </td>
               <td class="appointments-table__cell--center">
                 <PacientesPagarCitaModal
-                  v-if="
-                    (appointment.appointment_status?.code !==
-                      'VALUED_VALORATION_APPOINTMENT' &&
-                      appointment.appointment_status?.code !==
-                        'PENDING_PROCEDURE') ||
-                    (appointment.appointment_status?.code ===
-                      'CONFIRM_PROCEDURE' &&
-                      appointment.payment_status?.code ===
-                        'PAYMENT_STATUS_NOT_PAID_PROCEDURE')
-                  "
+                  v-if="showPaymentModal(appointment)"
                   :appointment="appointment"
                   :showStatus="false"
                   @refresh="refreshAppointments"
@@ -919,6 +901,39 @@ const handleKeydown = (event) => {
       closeCancelModal();
     }
   }
+};
+
+const showPaymentModal = (appointment) => {
+  console.log(appointment);
+
+  if (
+    appointment.appointment_status?.code === "PENDING_PROCEDURE" &&
+    appointment.payment_status?.code === "PAYMENT_STATUS_NOT_PAID_PROCEDURE"
+  ) {
+    return true;
+  }
+
+  if (
+    appointment.appointment_status?.code === "PENDING_VALORATION_APPOINTMENT"
+  ) {
+    return true;
+  }
+
+  if (
+    appointment.appointment_status?.code !== "VALUED_VALORATION_APPOINTMENT" &&
+    appointment.appointment_status?.code !== "PENDING_PROCEDURE"
+  ) {
+    return true;
+  }
+
+  if (
+    appointment.appointment_status?.code === "CONFIRM_PROCEDURE" &&
+    appointment.payment_status?.code === "PAYMENT_STATUS_NOT_PAID_PROCEDURE"
+  ) {
+    return true;
+  }
+
+  return false;
 };
 
 onMounted(() => {
