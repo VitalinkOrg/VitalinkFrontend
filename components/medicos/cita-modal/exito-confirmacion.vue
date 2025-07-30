@@ -6,7 +6,7 @@
         type="button"
         class="success-confirmation__close-button"
         aria-label="Cerrar modal de detalles de la cita"
-        @click="$emit('goToStart')"
+        @click="closeModal"
       >
         <AtomsIconsXIcon width="24" height="24" aria-hidden="true" />
       </button>
@@ -69,7 +69,9 @@
           appointment.appointment_status.code ==
             'PENDING_VALORATION_APPOINTMENT' ||
           appointment.appointment_status.code == 'PENDING_PROCEDURE' ||
-          appointment.appointment_status.code == 'WAITING_PROCEDURE'
+          appointment.appointment_status.code == 'WAITING_PROCEDURE' ||
+          appointment.appointment_status.code == 'CONFIRM_PROCEDURE' ||
+          appointment.appointment_status.code == 'CONCRETED_APPOINTMENT'
         "
         class="col-12 d-flex justify-content-between gap-2"
       >
@@ -109,6 +111,7 @@
 <script setup>
 const props = defineProps({
   appointment: Object,
+  closeModal: Function,
 });
 
 const emit = defineEmits([

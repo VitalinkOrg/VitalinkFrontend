@@ -61,6 +61,7 @@
         <MedicosCitaModalExitoConfirmacion
           v-if="localStep === 3"
           :appointment="appointment"
+          :is-loading="isLoading"
           @go-to-start="localStep = 1"
           @view-appointments="open = false"
           :close-modal="closeModal"
@@ -71,6 +72,7 @@
         <!-- Step 4: Cancellation Confirmation -->
         <MedicosCitaModalConfirmacionCancelacion
           v-if="localStep === 4"
+          :is-loading="isLoading"
           @go-back="localStep = 1"
           @cancel-appointment="cancelAppointment"
         />
@@ -617,6 +619,7 @@ const confirmProcedure = async () => {
 };
 
 const finishProcedure = async () => {
+  isLoading.value = true;
   const { data, error } = await useFetch(
     config.public.API_BASE_URL + "/appointment/set_procedure_realized",
     {
@@ -628,7 +631,9 @@ const finishProcedure = async () => {
     }
   );
   if (data) {
+    isLoading.value = false;
     emit("refresh");
+    localStep.value = 3;
   }
   if (error.value) {
     console.log(error.value, "data");

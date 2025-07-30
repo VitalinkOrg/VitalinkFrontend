@@ -351,7 +351,7 @@
               "
               class="d-flex justify-content-between gap-2"
             >
-              <button class="btn btn-outline-dark w-50" @click="step = 4">
+              <button class="btn btn-outline-dark w-100" @click="step = 4">
                 Anular cita
               </button>
 
