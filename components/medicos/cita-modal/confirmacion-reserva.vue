@@ -41,6 +41,21 @@
         }}
       </h5>
 
+      <h5
+        v-else-if="
+          appointment.appointment_status.code == 'WAITING_PROCEDURE' ||
+          appointment.appointment_status.code == 'CONFIRM_PROCEDURE' ||
+          appointment.appointment_status.code == 'CONCRETED_APPOINTMENT'
+        "
+        class="reservation-confirmation__body--title"
+      >
+        {{
+          showPaymentWarning
+            ? "Confirmar reserva sin pago registrado?"
+            : "¿Confirmar procedimiento?"
+        }}
+      </h5>
+
       <h5 v-else class="reservation-confirmation__body--title">
         {{
           showPaymentWarning
@@ -84,7 +99,7 @@
               : appointment.appointment_status.code == "WAITING_PROCEDURE" ||
                   appointment.appointment_status.code == "CONFIRM_PROCEDURE" ||
                   appointment.appointment_status.code == "CONCRETED_APPOINTMENT"
-                ? "Con estos cambios el estado de la solicitud de reserva pasará de: Pendiente a Concretada"
+                ? "Con estos cambios el estado de la solicitud de procedimiento pasará de: Pendiente a Concretada"
                 : "Con estos cambios el estado de la solicitud de reserva pasará de: Pendiente a Valorada"
         }}
       </p>
@@ -165,10 +180,11 @@
       <button
         v-else-if="appointment.appointment_status.code == 'PENDING_PROCEDURE'"
         aria-label="Procedimiento pendiente"
+        :disabled="isLoading"
         class="reservation-confirmation__footer--button-primary"
         @click="handleConfirmAppointment"
       >
-        Confirmar
+        {{ isLoading ? "Procesando..." : "Confirmar" }}
       </button>
 
       <button
@@ -180,7 +196,7 @@
         aria-label="Finalizar procedimiento"
         class="reservation-confirmation__footer--button-primary"
         :disabled="isLoading"
-        @click="$emit('finishProcedure')"
+        @click="handleFinishProcedure"
       >
         {{ isLoading ? "Procesando..." : "Confirmar" }}
       </button>
@@ -226,16 +242,37 @@ const hasPatientPaid = computed(() => {
 
 const handleConfirmAppointment = () => {
   if (
-    props.appointment.appointment_status.code === "PENDING_PROCEDURE" ||
-    (props.appointment.appointment_status.code ===
+    props.appointment.appointment_status.code ===
       "CONFIRM_VALIDATION_APPOINTMENT" &&
-      !hasPatientPaid.value)
+    !hasPatientPaid.value
   ) {
     showPaymentWarning.value = true;
     return;
   }
 
-  emit("confirmAppointment");
+  if (
+    props.appointment.appointment_status.code ===
+      "CONFIRM_VALIDATION_APPOINTMENT" ||
+    props.appointment.appointment_status.code ===
+      "PENDING_VALORATION_APPOINTMENT"
+  ) {
+    emit("confirmAppointment");
+    return;
+  }
+
+  if (props.appointment.appointment_status.code === "PENDING_PROCEDURE") {
+    emit("confirmProcedure");
+    return;
+  }
+};
+
+const handleFinishProcedure = () => {
+  if (props.appointment.appointment_status.code === "CONFIRM_PROCEDURE") {
+    showPaymentWarning.value = true;
+    return;
+  }
+
+  emit("confirmProcedure");
 };
 
 const handleConfirmValoration = () => {
@@ -252,8 +289,9 @@ const handleConfirmValoration = () => {
 };
 
 const handleContinueWithoutPayment = () => {
-  if (props.appointment.appointment_status.code === "PENDING_PROCEDURE") {
+  if (props.appointment.appointment_status.code === "CONFIRM_PROCEDURE") {
     emit("confirmProcedure");
+    return;
   }
 
   if (
@@ -261,6 +299,7 @@ const handleContinueWithoutPayment = () => {
     "CONFIRM_VALIDATION_APPOINTMENT"
   ) {
     emit("confirmValoration");
+    return;
   }
 };
 

@@ -10,9 +10,6 @@
               'PAYMENT_STATUS_NOT_PAID_PROCEDURE')) ||
         (appointment.appointment_status.code === 'CONFIRM_PROCEDURE' &&
           appointment.payment_status.code ===
-            'PAYMENT_STATUS_NOT_PAID_PROCEDURE') ||
-        (appointment.appointment_status?.code === 'PENDING_PROCEDURE' &&
-          appointment.payment_status?.code ===
             'PAYMENT_STATUS_NOT_PAID_PROCEDURE')
       "
     >
@@ -55,12 +52,15 @@
 
     <div
       v-if="
-        appointment.appointment_status.code === 'VALUED_VALORATION_APPOINTMENT'
+        appointment.appointment_status.code ===
+          'VALUED_VALORATION_APPOINTMENT' ||
+        (appointment.appointment_status?.code === 'PENDING_PROCEDURE' &&
+          appointment.payment_status?.code ===
+            'PAYMENT_STATUS_NOT_PAID_PROCEDURE')
       "
     >
-      —
       <span
-        v-if="!showStatus"
+        v-if="showStatus"
         role="button"
         @click="openProcedureModal"
         class="appointment-pay-modal__status"
@@ -68,6 +68,7 @@
       >
         {{ appointment.appointment_status.value1 }}
       </span>
+      <span v-else> — </span>
     </div>
 
     <div v-if="shouldShowPaidStatus()">
@@ -356,7 +357,6 @@
               </button>
 
               <div
-                class="button-next"
                 v-if="
                   Number(appointment.price_procedure) -
                     Number(
@@ -365,6 +365,17 @@
                         : 0
                     ) !==
                   0
+                "
+                :class="
+                  Number(appointment.price_procedure) -
+                    Number(
+                      appointment.appointment_credit
+                        ? appointment.appointment_credit.approved_amount
+                        : 0
+                    ) !==
+                  0
+                    ? 'w-100'
+                    : ''
                 "
               >
                 <button
@@ -384,7 +395,7 @@
                       appointment.payment_status?.code ===
                         'PAYMENT_STATUS_NOT_PAID_PROCEDURE')
                   "
-                  class="btn btn-primary w-50"
+                  class="btn btn-primary w-100"
                   @click="step = 2"
                 >
                   Continuar
