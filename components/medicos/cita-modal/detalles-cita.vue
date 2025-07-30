@@ -136,7 +136,11 @@
             </tr>
 
             <tr
-              v-if="hasCredit"
+              v-if="
+                hasCredit &&
+                (appointment.appointment_status.code == 'CONFIRM_PROCEDURE' ||
+                  appointment.appointment_status.code == 'WAITING_PROCEDURE')
+              "
               class="appointment-details__table-row--end-row"
             >
               <th scope="row" class="appointment-details__table-header">
@@ -151,10 +155,6 @@
                     id="qr-code-input"
                     type="text"
                     :value="qrCodeInput"
-                    :disabled="
-                      appointment.appointment_status.code ===
-                      'VALUED_VALORATION_APPOINTMENT'
-                    "
                     @input="
                       $emit(
                         'update:qrCodeInput',
@@ -168,10 +168,6 @@
                   <button
                     class="appointment-details__button--primary"
                     @click="handleValidateQrCode"
-                    :disabled="
-                      appointment.appointment_status.code ===
-                      'VALUED_VALORATION_APPOINTMENT'
-                    "
                   >
                     Validar QR
                   </button>

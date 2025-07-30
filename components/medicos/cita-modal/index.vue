@@ -288,6 +288,7 @@ const props = defineProps({
 const emit = defineEmits(["update:step", "close-modal", "refresh"]);
 
 const localStep = ref(props.step);
+console.log(props.appointment);
 
 watch(
   () => props.step,
