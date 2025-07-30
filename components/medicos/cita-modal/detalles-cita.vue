@@ -182,7 +182,14 @@
                 </div>
                 <div v-else>
                   <div class="alert alert-success mb-2">
-                    Crédito pre-aprobado válido: {{ creditAmount }}
+                    <p>Crédito pre-aprobado válido: {{ creditAmount }}</p>
+                    <p>
+                      Saldo pendiente:
+                      {{
+                        Number(props.appointment.price_procedure) -
+                        props.appointment.appointment_credit.approved_amount
+                      }}
+                    </p>
                   </div>
                   <button
                     class="btn btn-success"
@@ -636,6 +643,16 @@ const emit = defineEmits([
 ]);
 
 const proformaFile = ref<HTMLInputElement | null>(null);
+const outstandingBalance = ref<number>(0);
+
+console.log(props.appointment);
+
+const setOutstandingBalance = computed(() => {
+  return (
+    Number(props.appointment.price_procedure) -
+    props.appointment.appointment_credit.approved_amount
+  );
+});
 
 const hasExistingProforma = computed(() => {
   if (props.existingProformaRemoved) {
