@@ -235,8 +235,27 @@ const filteredPackages = computed<Package[]>(() => {
     packages = procedure?.packages || [];
   }
 
-  const citaValoracionPackage: Package = {
-    id: 4,
+  return [citaValoracionPackage.value, ...packages];
+});
+
+const citaValoracionPackage = computed<Package>(() => {
+  let packageId = 0;
+
+  if (selectedProcedureId.value && props.doctor?.services) {
+    const selectedProcedureData = filteredProcedures.value.find(
+      (p) => p.procedure.id === selectedProcedureId.value
+    );
+
+    if (
+      selectedProcedureData?.packages &&
+      selectedProcedureData.packages.length > 0
+    ) {
+      packageId = selectedProcedureData.packages[0].id;
+    }
+  }
+
+  return {
+    id: packageId,
     product: {
       id: 9999,
       code: "ASSESSMENT_APPOINTMENT",
@@ -263,8 +282,6 @@ const filteredPackages = computed<Package[]>(() => {
     observations: "",
     postoperative_assessments: null,
   };
-
-  return [citaValoracionPackage, ...packages];
 });
 
 const getAssesmentLabel = (assesmentCode: string) => {

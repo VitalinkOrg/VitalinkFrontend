@@ -196,7 +196,7 @@ const hasServices = computed(() => {
 });
 
 const citaValoracionPackage = computed<Package>(() => {
-  let packageId = 4;
+  let packageId = 0;
 
   if (selectedProcedureId.value && props.doctor?.services) {
     const selectedProcedureData = filteredProcedures.value.find(

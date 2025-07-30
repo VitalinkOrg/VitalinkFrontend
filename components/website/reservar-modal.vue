@@ -537,12 +537,14 @@
                     <button
                       class="btn btn-outline-dark me-2 w-50"
                       @click="goToStep(2)"
+                      :disabled="isLoading"
                     >
                       Volver
                     </button>
                     <button
                       class="btn btn-primary w-50"
                       @click="confirmReservation"
+                      :disabled="isLoading"
                     >
                       {{ isLoading ? "Procesando..." : "Confirmar" }}
                     </button>
@@ -897,7 +899,6 @@ export default {
       return availableDays;
     },
     selectDay(date) {
-      console.log({ selectedProcedureId: this.selectedProcedureId });
       this.localSelectedDay = date;
       this.localSelectedHour = null;
       this.availableHours = this.availability[date] || [];
@@ -989,8 +990,6 @@ export default {
             : this.localSelectedHour
           : `${this.localSelectedHour}:00:00`;
 
-        console.log({ payload: this.selectedPackage.id });
-
         const payload = {
           customer_id: user_info.value?.id || "",
           appointment_date: this.localSelectedDay,
@@ -1012,7 +1011,6 @@ export default {
           }
         );
 
-        console.log("Appointment created successfully:", response);
         this.goToStep(4);
       } catch (error) {
         console.error("Error creating appointment:", error);
