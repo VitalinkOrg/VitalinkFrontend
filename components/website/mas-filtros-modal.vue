@@ -438,20 +438,10 @@ defineExpose({
   background-color: #ffffff;
   border: 1px solid #e5e7eb;
   cursor: pointer;
-  transition: all 0.2s ease;
 
-  &:hover {
-    background-color: #f9fafb;
-    border-color: #d1d5db;
-  }
-
-  &:focus {
-    outline: 2px solid #3b82f6;
-    outline-offset: 2px;
-  }
-
-  &:active {
-    transform: translateY(1px);
+  &:focus-visible {
+    outline: none;
+    box-shadow: 0 0 0 2px rgba($color-primary, 0.5);
   }
 }
 
