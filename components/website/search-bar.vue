@@ -100,6 +100,11 @@ export default {
         }),
       };
 
+      if (Object.keys(newQuery).length === 0) {
+        this.$router.push({ path: "/buscar" });
+        return;
+      }
+
       const currentQuery = this.$route.query;
       const isSameQuery =
         JSON.stringify(currentQuery) === JSON.stringify(newQuery);
