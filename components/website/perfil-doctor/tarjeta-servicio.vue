@@ -1,6 +1,6 @@
 <template>
-  <div class="service-card">
-    <div class="service-card__wrapper" :class="{ selected: pkg.is_king }">
+  <div class="service-card" :class="{ 'service-card--king': pkg.is_king }">
+    <div class="service-card__wrapper">
       <div
         v-if="pkg.product.name === 'Cita de Valoración'"
         class="service-card__legend"
@@ -9,7 +9,6 @@
       </div>
 
       <div class="service-card__header">
-        {{ pkg.product.name }}
         <span v-if="pkg.is_king">
           <img
             src="@/src/assets/crown.svg"
@@ -17,10 +16,18 @@
             class="img-fluid"
           />
         </span>
+        {{ pkg.product.name }}
       </div>
 
       <div class="service-card__body">
-        <h5 class="service-card__price">₡{{ getPackagePrice(pkg) }}</h5>
+        <h5 class="service-card__price">
+          ₡{{
+            getPackagePrice(pkg).toLocaleString("es-CR", {
+              minimumFractionDigits: 2,
+              maximumFractionDigits: 2,
+            })
+          }}
+        </h5>
 
         <p class="service-card__monthly-payment">
           Cuotas mensuales desde ₡{{ getMonthlyPayment(pkg) }}
@@ -222,6 +229,9 @@ const closeModal = () => {
   }
 
   &__header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
     font-weight: 600;
     font-size: 16px;
     line-height: 22px;
@@ -234,6 +244,18 @@ const closeModal = () => {
       #f8faff 65.03%,
       rgba(248, 250, 255, 0.1) 112.13%
     );
+
+    span {
+      display: flex;
+      align-items: center;
+    }
+
+    img {
+      width: 24px;
+      height: 24px;
+      flex-shrink: 0;
+      object-fit: contain;
+    }
   }
 
   &__body {
@@ -407,6 +429,22 @@ const closeModal = () => {
     width: 100%;
     font-weight: 600;
     font-size: 14px;
+    &--primary {
+      @include primary-button;
+    }
+  }
+}
+
+.service-card {
+  &--king {
+    border: 2px solid #3541b4;
+
+    .service-card__header {
+      color: #3541b4;
+    }
+    .service-card__assessment-appointment-button {
+      @include primary-button;
+    }
   }
 }
 </style>
