@@ -1,4 +1,3 @@
-<!-- page/medicos/citas.vue -->
 <script setup>
 import { useRefreshToken } from "#imports";
 import { jsPDF } from "jspdf";
@@ -16,10 +15,8 @@ const tab = ref(1);
 const searchQuery = ref("");
 const sortOption = ref("date");
 
-// Multiple status selection
 const selectedStatuses = ref(new Set(["Todos"]));
 
-// Status mapping
 const statusMapping = {
   Pendiente: "Pendiente",
   Completada: "Concretado",
@@ -27,20 +24,16 @@ const statusMapping = {
   Todos: "Todos",
 };
 
-// Enhanced loading states
 const loading = ref(false);
 const isRefreshing = ref(false);
 const previousAppointments = ref([]);
 
-// First declare appointmentsResponse
 const allAppointmentsData = ref(null);
 
-// Then declare computed property for appointments data
 const appointmentsData = computed(() => {
   return allAppointmentsData.value || previousAppointments.value;
 });
 
-// Determine URL based on role
 let url;
 if (role.value == "R_HOS") {
   url = "/hospital_dashboard/history_appointments";
@@ -48,7 +41,6 @@ if (role.value == "R_HOS") {
   url = "/doctor_dashboard/history_appointments";
 }
 
-// Original useFetch for initial data load
 const { data: appointmentsResponse } = await useFetch(
   config.public.API_BASE_URL + "/appointment/get_all",
   {
@@ -57,14 +49,12 @@ const { data: appointmentsResponse } = await useFetch(
   }
 );
 
-// Initialize data
 if (appointmentsResponse.value) {
   allAppointmentsData.value = appointmentsResponse.value;
   previousAppointments.value = appointmentsResponse.value;
   useRefreshToken();
 }
 
-// Create refresh function
 const fetchAppointments = async (isRefresh = false) => {
   if (isRefresh) {
     isRefreshing.value = true;
@@ -99,7 +89,6 @@ const fetchAppointments = async (isRefresh = false) => {
   }
 };
 
-// Watch for changes and store previous data
 watch(
   allAppointmentsData,
   (newVal, oldVal) => {
@@ -110,36 +99,30 @@ watch(
   { deep: true }
 );
 
-// Refresh function to expose
 const refreshAppointments = async () => {
   await fetchAppointments(true);
 };
 
 provide("refreshAppointments", refreshAppointments);
 
-// Handle refresh events from child components
 const handleRefresh = async () => {
   await refreshAppointments();
 };
 
 provide("handleRefresh", handleRefresh);
 
-// Computed property for all appointments
 const allAppointments = computed(() => {
   return appointmentsData.value || [];
 });
 
-// Computed property for filtered appointments - MEJORADO
 const filteredAppointments = computed(() => {
   let filtered = allAppointments.value;
 
-  // Apply status filter - multiple selection
   if (!selectedStatuses.value.has("Todos")) {
     const mappedStatuses = Array.from(selectedStatuses.value).map(
       (status) => statusMapping[status]
     );
     filtered = filtered.filter((appointment) => {
-      // Verificar diferentes posibles campos de estado
       const appointmentStatus =
         appointment.status ||
         appointment.appointment_status?.name ||
@@ -150,11 +133,9 @@ const filteredAppointments = computed(() => {
     });
   }
 
-  // Apply search filter - MEJORADO
   if (searchQuery.value) {
     const query = searchQuery.value.toLowerCase();
     filtered = filtered.filter((appointment) => {
-      // Buscar en múltiples campos posibles
       const patientName =
         appointment.patient_name ||
         appointment.customer?.name ||
@@ -183,7 +164,6 @@ const filteredAppointments = computed(() => {
     });
   }
 
-  // Apply sorting
   filtered = [...filtered].sort((a, b) => {
     if (sortOption.value === "date" || sortOption.value === "fecha") {
       const dateA = new Date(a.date || a.appointment_date || "");
@@ -212,7 +192,6 @@ const filteredAppointments = computed(() => {
   return filtered;
 });
 
-// Status filter functions
 const toggleStatusFilter = (status) => {
   const newSelectedStatuses = new Set(selectedStatuses.value);
 
@@ -269,7 +248,6 @@ const downloadAllAppointments = () => {
   const margin = 15;
   let yPosition = 20;
 
-  // Add title
   doc.setFontSize(18);
   doc.setFont("helvetica", "bold");
   doc.text("Reporte de Citas Médicas", pageWidth / 2, yPosition, {
@@ -277,7 +255,6 @@ const downloadAllAppointments = () => {
   });
   yPosition += 10;
 
-  // Add date
   doc.setFontSize(10);
   doc.setFont("helvetica", "normal");
   doc.text(
@@ -288,36 +265,30 @@ const downloadAllAppointments = () => {
   );
   yPosition += 15;
 
-  // Table headers
   doc.setFontSize(12);
   doc.setFont("helvetica", "bold");
   const headers = ["Paciente", "Fecha", "Hora", "Servicio", "Tipo", "Estado"];
   const columnWidths = [40, 30, 25, 45, 25, 25];
   let xPosition = margin;
 
-  // Draw headers
   headers.forEach((header, i) => {
     doc.text(header, xPosition, yPosition);
     xPosition += columnWidths[i];
   });
   yPosition += 8;
 
-  // Draw line under headers
   doc.line(margin, yPosition, pageWidth - margin, yPosition);
   yPosition += 10;
 
-  // Table content - MEJORADO para usar datos reales de la API
   doc.setFontSize(10);
   doc.setFont("helvetica", "normal");
 
   allAppointments.value.forEach((appointment, index) => {
-    // Check if we need a new page
     if (yPosition > 270) {
       doc.addPage();
       yPosition = 20;
     }
 
-    // Extraer datos con fallbacks
     const patientName =
       appointment.patient_name ||
       appointment.customer?.name ||
@@ -365,16 +336,14 @@ const downloadAllAppointments = () => {
 
     yPosition += 8;
 
-    // Add light gray line between rows
     if (index < allAppointments.value.length - 1) {
       doc.setDrawColor(220, 220, 220);
       doc.line(margin, yPosition - 2, pageWidth - margin, yPosition - 2);
-      doc.setDrawColor(0, 0, 0); // Reset to black
+      doc.setDrawColor(0, 0, 0);
       yPosition += 4;
     }
   });
 
-  // Footer
   doc.setFontSize(8);
   doc.setTextColor(100);
   doc.text(`Total citas: ${allAppointments.value.length}`, margin, 280);
@@ -382,7 +351,6 @@ const downloadAllAppointments = () => {
     align: "center",
   });
 
-  // Save the PDF
   doc.save(`Reporte_Citas_${new Date().toISOString().slice(0, 10)}.pdf`);
 };
 
@@ -828,13 +796,6 @@ provide("refreshAppointments", refreshAppointments);
 }
 
 .visually-hidden {
-  position: absolute;
-  width: 1px;
-  height: 1px;
-  padding: 0;
-  margin: -1px;
-  overflow: hidden;
-  clip: rect(0 0 0 0);
-  border: 0;
+  @include visually-hidden;
 }
 </style>
