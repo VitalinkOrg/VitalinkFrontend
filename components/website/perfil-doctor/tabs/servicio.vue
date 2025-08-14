@@ -129,7 +129,6 @@ const setDefaultSpecialtyAndProcedure = async () => {
 
   assessmentDetails.value = assessmentResponse.data;
 
-  // Initialize based on search parameters or defaults
   if (props.searchSpecialtyCode) {
     const specialty = props.doctor.services?.find(
       (s) => s.medical_specialty.code === props.searchSpecialtyCode
@@ -139,7 +138,6 @@ const setDefaultSpecialtyAndProcedure = async () => {
       selectedSpecialtyId.value = specialty.medical_specialty.id;
       appointment.value.specialty = selectedSpecialty.value;
 
-      // If we also have a procedure code from search
       if (props.searchProcedureCode) {
         const procedure = specialty.procedures?.find(
           (p) => p.procedure.code === props.searchProcedureCode
@@ -150,14 +148,12 @@ const setDefaultSpecialtyAndProcedure = async () => {
           appointment.value.service = selectedProcedure.value;
         }
       } else if (specialty.procedures && specialty.procedures.length > 0) {
-        // Default to first procedure if no specific procedure searched
         selectedProcedure.value = specialty.procedures[0].procedure.code;
         selectedProcedureId.value = specialty.procedures[0].procedure.id;
         appointment.value.service = selectedProcedure.value;
       }
     }
   } else if (props.doctor.services && props.doctor.services.length > 0) {
-    // Default behavior - use first available specialty and procedure
     selectedSpecialty.value = props.doctor.services[0].medical_specialty.code;
     selectedSpecialtyId.value = props.doctor.services[0].medical_specialty.id;
     appointment.value.specialty = selectedSpecialty.value;

@@ -1,407 +1,439 @@
-<script>
-import { useCookie } from "nuxt/app";
+<script setup>
+import { useCookie, useRuntimeConfig } from "nuxt/app";
+import { computed, onMounted, reactive, ref, watch } from "vue";
 
-export default {
-  props: {
-    doctor: {
-      type: Object,
-      default: () => ({}),
-    },
-    searchSpecialtyCode: {
-      type: String,
-      default: null,
-    },
-    searchProcedureCode: {
-      type: String,
-      default: null,
-    },
+const props = defineProps({
+  doctor: {
+    type: Object,
+    default: () => ({}),
   },
-  data() {
-    return {
-      panel: false,
-      user: useCookie("user_info"),
-      tab: 1,
-      appointment: {
-        specialty: "",
-        service: "",
-        location: "",
-        type: "",
-        date: "",
-        time: "",
-      },
-      result: null,
-      open: false,
-      errorText: "",
-      selectedMonth: null,
-      selectedDay: null,
-      selectedHour: null,
-      availableDays: [],
-      availableHours: [],
-      months: [
-        { value: 0, label: "Enero" },
-        { value: 1, label: "Febrero" },
-        { value: 2, label: "Marzo" },
-        { value: 3, label: "Abril" },
-        { value: 4, label: "Mayo" },
-        { value: 5, label: "Junio" },
-        { value: 6, label: "Julio" },
-        { value: 7, label: "Agosto" },
-        { value: 8, label: "Septiembre" },
-        { value: 9, label: "Octubre" },
-        { value: 10, label: "Noviembre" },
-        { value: 11, label: "Diciembre" },
+  searchSpecialtyCode: {
+    type: String,
+    default: null,
+  },
+  searchProcedureCode: {
+    type: String,
+    default: null,
+  },
+});
+
+const panel = ref(false);
+const user = useCookie("user_info");
+const tab = ref(1);
+const appointment = reactive({
+  specialty: "",
+  service: "",
+  location: "",
+  type: "",
+  date: "",
+  time: "",
+});
+const result = ref(null);
+const open = ref(false);
+const errorText = ref("");
+const selectedMonth = ref(null);
+const selectedDay = ref(null);
+const selectedHour = ref(null);
+const availableDays = ref([]);
+const availableHours = ref([]);
+const breadcumCitaValoracion = ref(1);
+const selectedSpecialty = ref(null);
+const selectedSpecialtyId = ref(null);
+const selectedPackage = ref(null);
+const selectedProcedure = ref(null);
+const selectedProcedureId = ref(null);
+const reviewDetails = ref([]);
+const assessmentDetails = ref([]);
+
+const selectedSpecialtyName = computed(() => {
+  if (!selectedSpecialty.value || !props.doctor.services) return "";
+
+  const service = props.doctor.services.find(
+    (s) => s.medical_specialty.code === selectedSpecialty.value
+  );
+  return service ? service.medical_specialty.name : selectedSpecialty.value;
+});
+
+const selectedProcedureName = computed(() => {
+  if (!selectedProcedure.value || !props.doctor.services) return "";
+
+  for (const service of props.doctor.services) {
+    const procedure = service.procedures?.find(
+      (p) => p.procedure.code === selectedProcedure.value
+    );
+    if (procedure) {
+      return procedure.procedure.name;
+    }
+  }
+  return selectedProcedure.value;
+});
+
+const months = ref([
+  { value: 0, label: "Enero" },
+  { value: 1, label: "Febrero" },
+  { value: 2, label: "Marzo" },
+  { value: 3, label: "Abril" },
+  { value: 4, label: "Mayo" },
+  { value: 5, label: "Junio" },
+  { value: 6, label: "Julio" },
+  { value: 7, label: "Agosto" },
+  { value: 8, label: "Septiembre" },
+  { value: 9, label: "Octubre" },
+  { value: 10, label: "Noviembre" },
+  { value: 11, label: "Diciembre" },
+]);
+
+const weekdayMap = ref({
+  Monday: "Lun",
+  Tuesday: "Mar",
+  Wednesday: "Mié",
+  Thursday: "Jue",
+  Friday: "Vie",
+  Saturday: "Sáb",
+  Sunday: "Dom",
+});
+
+watch(selectedMonth, (newMonth) => {
+  handleMonthChange();
+});
+
+const isSearchMode = computed(() => {
+  return props.searchSpecialtyCode || props.searchProcedureCode;
+});
+
+const defaultService = computed(() => {
+  return props.doctor.services && props.doctor.services.length > 0
+    ? props.doctor.services[0]
+    : null;
+});
+
+const defaultProcedure = computed(() => {
+  if (!defaultService.value) return null;
+  return defaultService.value.procedures &&
+    defaultService.value.procedures.length > 0
+    ? defaultService.value.procedures[0]
+    : null;
+});
+
+const doctorReviews = computed(() => {
+  return (
+    props.doctor.reviews?.map((review) => ({
+      first_name: review.customer.split(" ")[0] || "Anónimo",
+      last_name: review.is_annonymous
+        ? ""
+        : review.customer.split(" ")[1] || "",
+      message: review.comment,
+      pacient_type: "Paciente",
+      score: review.stars_average,
+    })) || []
+  );
+});
+
+const reviewSummary = computed(() => {
+  return props.doctor.review_details_summary || [];
+});
+
+const availability = computed(() => {
+  const availabilityMap = {};
+
+  if (!props.doctor.availabilities) return availabilityMap;
+
+  const today = new Date();
+  const endDate = new Date();
+  endDate.setDate(today.getDate() + 30);
+
+  props.doctor.availabilities.forEach((avail) => {
+    const currentDate = new Date(today);
+    while (currentDate <= endDate) {
+      const weekdayName = currentDate.toLocaleDateString("en-US", {
+        weekday: "long",
+      });
+
+      if (weekdayName === avail.weekday) {
+        const dateStr = currentDate.toISOString().split("T")[0];
+        const fromHour = avail.from_hour.substring(0, 5);
+
+        if (!availabilityMap[dateStr]) {
+          availabilityMap[dateStr] = [];
+        }
+
+        availabilityMap[dateStr].push(fromHour);
+      }
+      currentDate.setDate(currentDate.getDate() + 1);
+    }
+  });
+
+  return availabilityMap;
+});
+
+const specialties = computed(() => {
+  return (
+    props.doctor.services?.map((service) => service.medical_specialty) || []
+  );
+});
+
+const filteredProcedures = computed(() => {
+  if (
+    !selectedSpecialty.value &&
+    props.doctor.services &&
+    props.doctor.services.length > 0
+  ) {
+    selectedSpecialty.value = props.doctor.services[0].medical_specialty.code;
+    appointment.specialty = selectedSpecialty.value;
+    return props.doctor.services[0].procedures;
+  }
+
+  const specialty = props.doctor.services.find(
+    (s) => s.medical_specialty.code === selectedSpecialty.value
+  );
+
+  return specialty?.procedures || [];
+});
+
+const filteredPackages = computed(() => {
+  let packages = [];
+
+  if (
+    !selectedProcedure.value &&
+    filteredProcedures.value &&
+    filteredProcedures.value.length > 0
+  ) {
+    selectedProcedure.value = filteredProcedures.value[0].procedure.code;
+    selectedProcedureId.value = filteredProcedures.value[0].procedure.id;
+    appointment.service = selectedProcedure.value;
+    packages = filteredProcedures.value[0].packages || [];
+  } else {
+    const procedure = filteredProcedures.value.find(
+      (p) => p.procedure.code === selectedProcedure.value
+    );
+    packages = procedure?.packages || [];
+  }
+
+  const citaValoracionPackage = {
+    id: "cita-valoracion",
+    product: {
+      id: 9999,
+      code: "ASSESSMENT_APPOINTMENT",
+      name: "Cita de Valoración",
+      type: "MEDICAL_PRODUCT",
+      description: "Cita de valoración médica inicial",
+      father_code: null,
+      value1: "18000",
+      created_date: new Date().toISOString(),
+      updated_date: null,
+      is_deleted: 0,
+    },
+    reference_price: 18000,
+    discount: 0,
+    discounted_price: 18000,
+    services_offer: {
+      ASSESSMENT_DETAILS: [
+        "MEDICAL_CONSULTATION",
+        "CLINICAL_EVALUATION",
+        "INITIAL_DIAGNOSIS",
       ],
-      breadcumCitaValoracion: 1,
-      selectedSpecialty: null,
-      selectedSpecialtyId: null,
-      selectedPackage: null,
-      selectedProcedure: null,
-      selectedProcedureId: null,
-      reviewDetails: [],
-      assessmentDetails: [],
-      weekdayMap: {
-        Monday: "Lun",
-        Tuesday: "Mar",
-        Wednesday: "Mié",
-        Thursday: "Jue",
-        Friday: "Vie",
-        Saturday: "Sáb",
-        Sunday: "Dom",
-      },
-    };
-  },
-  watch: {
-    selectedMonth(newMonth) {
-      this.handleMonthChange();
     },
-  },
-  async created() {
-    const token = useCookie("token");
-    const config = useRuntimeConfig();
+    is_king: 0,
+    observations: "",
+    postoperative_assessments: null,
+  };
 
-    try {
-      // Fetch review details
-      const reviewResponse = await $fetch(
-        config.public.API_BASE_URL + "/udc/get_all",
-        {
-          headers: { Authorization: token.value },
-          params: { type: "REVIEW" },
-        }
-      );
-      this.reviewDetails = reviewResponse.data;
+  return [citaValoracionPackage, ...packages];
+});
 
-      // Fetch assessment details
-      const assessmentResponse = await $fetch(
-        config.public.API_BASE_URL + "/udc/get_all",
-        {
-          headers: { Authorization: token.value },
-          params: { type: "ASSESSMENT_DETAIL" },
-        }
-      );
-      this.assessmentDetails = assessmentResponse.data;
-
-      // Set default specialty and procedure
-      if (this.doctor.services && this.doctor.services.length > 0) {
-        this.selectedSpecialty = this.doctor.services[0].medical_specialty.code;
-        this.selectedSpecialtyId = this.doctor.services[0].medical_specialty.id;
-        this.appointment.specialty = this.selectedSpecialty;
-        if (
-          this.doctor.services[0].procedures &&
-          this.doctor.services[0].procedures.length > 0
-        ) {
-          this.selectedProcedure =
-            this.doctor.services[0].procedures[0].procedure.code;
-          this.selectedProcedureId =
-            this.doctor.services[0].procedures[0].procedure.id;
-          this.appointment.service = this.selectedProcedure;
-        }
-      }
-    } catch (error) {
-      console.error("Error fetching details:", error);
-    }
-  },
-  computed: {
-    isSearchMode() {
-      return this.searchSpecialtyCode || this.searchProcedureCode;
-    },
-    defaultService() {
-      return this.doctor.services && this.doctor.services.length > 0
-        ? this.doctor.services[0]
-        : null;
-    },
-    defaultProcedure() {
-      if (!this.defaultService) return null;
-      return this.defaultService.procedures &&
-        this.defaultService.procedures.length > 0
-        ? this.defaultService.procedures[0]
-        : null;
-    },
-    doctorReviews() {
-      return (
-        this.doctor.reviews?.map((review) => ({
-          first_name: review.customer.split(" ")[0] || "Anónimo",
-          last_name: review.is_annonymous
-            ? ""
-            : review.customer.split(" ")[1] || "",
-          message: review.comment,
-          pacient_type: "Paciente",
-          score: review.stars_average,
-        })) || []
-      );
-    },
-    reviewSummary() {
-      return this.doctor.review_details_summary || [];
-    },
-    availability() {
-      const availabilityMap = {};
-
-      if (!this.doctor.availabilities) return availabilityMap;
-
-      const today = new Date();
-      const endDate = new Date();
-      endDate.setDate(today.getDate() + 30);
-
-      this.doctor.availabilities.forEach((avail) => {
-        const currentDate = new Date(today);
-        while (currentDate <= endDate) {
-          const weekdayName = currentDate.toLocaleDateString("en-US", {
-            weekday: "long",
-          });
-
-          if (weekdayName === avail.weekday) {
-            const dateStr = currentDate.toISOString().split("T")[0];
-            const fromHour = avail.from_hour.substring(0, 5);
-
-            if (!availabilityMap[dateStr]) {
-              availabilityMap[dateStr] = [];
-            }
-
-            availabilityMap[dateStr].push(fromHour);
-          }
-          currentDate.setDate(currentDate.getDate() + 1);
-        }
-      });
-
-      return availabilityMap;
-    },
-    specialties() {
-      return (
-        this.doctor.services?.map((service) => service.medical_specialty) || []
-      );
-    },
-    filteredProcedures() {
-      if (
-        !this.selectedSpecialty &&
-        this.doctor.services &&
-        this.doctor.services.length > 0
-      ) {
-        this.selectedSpecialty = this.doctor.services[0].medical_specialty.code;
-        this.appointment.specialty = this.selectedSpecialty;
-        return this.doctor.services[0].procedures;
-      }
-
-      const specialty = this.doctor.services.find(
-        (s) => s.medical_specialty.code === this.selectedSpecialty
-      );
-
-      return specialty?.procedures || [];
-    },
-    filteredPackages() {
-      let packages = [];
-
-      if (
-        !this.selectedProcedure &&
-        this.filteredProcedures &&
-        this.filteredProcedures.length > 0
-      ) {
-        this.selectedProcedure = this.filteredProcedures[0].procedure.code;
-        this.selectedProcedureId = this.filteredProcedures[0].procedure.id;
-        this.appointment.service = this.selectedProcedure;
-        packages = this.filteredProcedures[0].packages || [];
-      } else {
-        const procedure = this.filteredProcedures.find(
-          (p) => p.procedure.code === this.selectedProcedure
-        );
-        packages = procedure?.packages || [];
-      }
-
-      const citaValoracionPackage = {
-        id: "cita-valoracion",
-        product: {
-          id: 9999,
-          code: "ASSESSMENT_APPOINTMENT",
-          name: "Cita de Valoración",
-          type: "MEDICAL_PRODUCT",
-          description: "Cita de valoración médica inicial",
-          father_code: null,
-          value1: "18000",
-          created_date: new Date().toISOString(),
-          updated_date: null,
-          is_deleted: 0,
-        },
-        reference_price: 18000,
-        discount: 0,
-        discounted_price: 18000,
-        services_offer: {
-          ASSESSMENT_DETAILS: [
-            "MEDICAL_CONSULTATION",
-            "CLINICAL_EVALUATION",
-            "INITIAL_DIAGNOSIS",
-          ],
-        },
-        is_king: 0,
-        observations: "",
-        postoperative_assessments: null,
-      };
-
-      return [citaValoracionPackage, ...packages];
-    },
-  },
-  methods: {
-    search() {
-      let filter = this.doctor.services;
-      filter = filter.filter((item) => {
-        return (
-          item.medical_specialty.code === this.appointment.specialty &&
-          item.procedures.some(
-            (p) => p.procedure.code === this.appointment.service
-          ) &&
-          this.doctor.locations.some(
-            (l) => l.name === this.appointment.location
-          )
-        );
-      });
-      if (filter.length === 0) {
-        this.errorText = "No hay disponibilidad para esta cita";
-      } else {
-        this.errorText = "";
-      }
-      return (this.result = filter[0]);
-    },
-    getReviewLabel(reviewCode) {
-      if (!this.reviewDetails) return reviewCode;
-      const detail = this.reviewDetails.find(
-        (item) => item.code === reviewCode
-      );
-      return detail ? detail.name : reviewCode;
-    },
-    getAssesmentLabel(assesmentCode) {
-      if (!this.assessmentDetails) return assesmentCode;
-      const detail = this.assessmentDetails.find(
-        (item) => item.code === assesmentCode
-      );
-      return detail ? detail.name : assesmentCode;
-    },
-    calculateAverageRating() {
-      if (!this.doctor.reviews || this.doctor.reviews.length === 0) {
-        return 0; // Return 0 if no reviews
-      }
-
-      const sum = this.doctor.reviews.reduce(
-        (total, review) => total + review.stars_average,
-        0
-      );
-      const average = sum / this.doctor.reviews.length;
-      return Math.round(average * 10) / 10;
-    },
-    selectDay(date) {
-      this.selectedDay = date;
-      this.availableHours = this.availability[date] || [];
-      this.selectedHour = null;
-    },
-    selectHour(time) {
-      this.selectedHour = time;
-    },
-    handleMonthChange() {
-      this.selectedDay = null;
-      this.selectedHour = null;
-      this.availableDays = this.getAvailableDaysForMonth(this.selectedMonth);
-      this.availableHours = [];
-    },
-    getAvailableDaysForMonth(month) {
-      if (month === null) return [];
-
-      const year = new Date().getFullYear();
-      const daysInMonth = new Date(year, month + 1, 0).getDate();
-      const availableDays = [];
-
-      for (let day = 1; day <= daysInMonth; day++) {
-        const date = new Date(year, month, day);
-        const dateStr = date.toISOString().split("T")[0];
-
-        if (
-          this.availability[dateStr] &&
-          this.availability[dateStr].length > 0
-        ) {
-          const weekdayName = date.toLocaleDateString("en-US", {
-            weekday: "long",
-          });
-
-          availableDays.push({
-            date: dateStr,
-            day: this.weekdayMap[weekdayName] || weekdayName.slice(0, 3),
-            number: date.getDate(),
-          });
-        }
-      }
-
-      return availableDays;
-    },
-    formatTime(time) {
-      const [hours, minutes] = time.split(":");
-      const period = hours >= 12 ? "PM" : "AM";
-      return `${hours % 12 || 12}:${minutes}${period}`;
-    },
-    closeModal() {
-      this.open = false;
-    },
-    reserveAppointment() {
-      if (this.panel) {
-        this.panel = false;
-        return;
-      }
-      this.panel = true;
-    },
-    selectSpecialty(specialtyCode, specialtyId) {
-      this.selectedSpecialty = specialtyCode;
-      this.selectedSpecialtyId = specialtyId;
-      this.selectedProcedure = null;
-      this.appointment.specialty = specialtyCode;
-
-      const specialty = this.doctor.services.find(
-        (s) => s.medical_specialty.code === specialtyCode
-      );
-      if (
-        specialty &&
-        specialty.procedures &&
-        specialty.procedures.length > 0
-      ) {
-        this.selectedProcedure = specialty.procedures[0].procedure.code;
-        this.selectedProcedureId = specialty.procedures[0].procedure.id;
-        this.appointment.service = this.selectedProcedure;
-      }
-    },
-    selectPackage(selectedPackage) {
-      this.selectedPackage = selectedPackage;
-      this.tab = 2;
-    },
-    selectProcedure(procedureCode, procedureId) {
-      this.selectedProcedure = procedureCode;
-      this.selectedProcedureId = procedureId;
-      this.appointment.service = procedureCode;
-    },
-    getPackagePrice(pkg) {
-      const price = parseFloat(pkg.product.value1);
-      const discount = pkg.discount / 100;
-      return price - price * discount;
-    },
-  },
-  mounted() {
-    if (this.selectedMonth !== null) {
-      this.availableDays = this.getAvailableDaysForMonth(this.selectedMonth);
-    }
-  },
+const search = () => {
+  let filter = props.doctor.services;
+  filter = filter.filter((item) => {
+    return (
+      item.medical_specialty.code === appointment.specialty &&
+      item.procedures.some((p) => p.procedure.code === appointment.service) &&
+      props.doctor.locations.some((l) => l.name === appointment.location)
+    );
+  });
+  if (filter.length === 0) {
+    errorText.value = "No hay disponibilidad para esta cita";
+  } else {
+    errorText.value = "";
+  }
+  return (result.value = filter[0]);
 };
+
+const getReviewLabel = (reviewCode) => {
+  if (!reviewDetails.value) return reviewCode;
+  const detail = reviewDetails.value.find((item) => item.code === reviewCode);
+  return detail ? detail.name : reviewCode;
+};
+
+const getAssesmentLabel = (assesmentCode) => {
+  if (!assessmentDetails.value) return assesmentCode;
+  const detail = assessmentDetails.value.find(
+    (item) => item.code === assesmentCode
+  );
+  return detail ? detail.name : assesmentCode;
+};
+
+const calculateAverageRating = () => {
+  if (!props.doctor.reviews || props.doctor.reviews.length === 0) {
+    return 0;
+  }
+
+  const sum = props.doctor.reviews.reduce(
+    (total, review) => total + review.stars_average,
+    0
+  );
+  const average = sum / props.doctor.reviews.length;
+  return Math.round(average * 10) / 10;
+};
+
+const selectDay = (date) => {
+  selectedDay.value = date;
+  availableHours.value = availability.value[date] || [];
+  selectedHour.value = null;
+};
+
+const selectHour = (time) => {
+  selectedHour.value = time;
+};
+
+const handleMonthChange = () => {
+  selectedDay.value = null;
+  selectedHour.value = null;
+  availableDays.value = getAvailableDaysForMonth(selectedMonth.value);
+  availableHours.value = [];
+};
+
+const getAvailableDaysForMonth = (month) => {
+  if (month === null) return [];
+
+  const year = new Date().getFullYear();
+  const daysInMonth = new Date(year, month + 1, 0).getDate();
+  const availableDaysArray = [];
+
+  for (let day = 1; day <= daysInMonth; day++) {
+    const date = new Date(year, month, day);
+    const dateStr = date.toISOString().split("T")[0];
+
+    if (availability.value[dateStr] && availability.value[dateStr].length > 0) {
+      const weekdayName = date.toLocaleDateString("en-US", {
+        weekday: "long",
+      });
+
+      availableDaysArray.push({
+        date: dateStr,
+        day: weekdayMap.value[weekdayName] || weekdayName.slice(0, 3),
+        number: date.getDate(),
+      });
+    }
+  }
+
+  return availableDaysArray;
+};
+
+const formatTime = (time) => {
+  const [hours, minutes] = time.split(":");
+  const period = hours >= 12 ? "PM" : "AM";
+  return `${hours % 12 || 12}:${minutes}${period}`;
+};
+
+const closeModal = () => {
+  open.value = false;
+};
+
+const reserveAppointment = () => {
+  if (panel.value) {
+    panel.value = false;
+    return;
+  }
+  panel.value = true;
+};
+
+const selectSpecialty = (specialtyCode, specialtyId) => {
+  selectedSpecialty.value = specialtyCode;
+  selectedSpecialtyId.value = specialtyId;
+  selectedProcedure.value = null;
+  appointment.specialty = specialtyCode;
+
+  const specialty = props.doctor.services.find(
+    (s) => s.medical_specialty.code === specialtyCode
+  );
+  if (specialty && specialty.procedures && specialty.procedures.length > 0) {
+    selectedProcedure.value = specialty.procedures[0].procedure.code;
+    selectedProcedureId.value = specialty.procedures[0].procedure.id;
+    appointment.service = selectedProcedure.value;
+  }
+};
+
+const selectPackage = (selectedPkg) => {
+  selectedPackage.value = selectedPkg;
+  tab.value = 2;
+};
+
+const selectProcedure = (procedureCode, procedureId) => {
+  selectedProcedure.value = procedureCode;
+  selectedProcedureId.value = procedureId;
+  appointment.service = procedureCode;
+};
+
+const getPackagePrice = (pkg) => {
+  const price = parseFloat(pkg.product.value1);
+  const discount = pkg.discount / 100;
+  return price - price * discount;
+};
+
+const initializeDefaults = () => {
+  if (props.doctor.services && props.doctor.services.length > 0) {
+    selectedSpecialty.value = props.doctor.services[0].medical_specialty.code;
+    selectedSpecialtyId.value = props.doctor.services[0].medical_specialty.id;
+    appointment.specialty = selectedSpecialty.value;
+    if (
+      props.doctor.services[0].procedures &&
+      props.doctor.services[0].procedures.length > 0
+    ) {
+      selectedProcedure.value =
+        props.doctor.services[0].procedures[0].procedure.code;
+      selectedProcedureId.value =
+        props.doctor.services[0].procedures[0].procedure.id;
+      appointment.service = selectedProcedure.value;
+    }
+  }
+};
+
+const loadApiData = async () => {
+  const token = useCookie("token");
+  const config = useRuntimeConfig();
+
+  try {
+    const reviewResponse = await $fetch(
+      config.public.API_BASE_URL + "/udc/get_all",
+      {
+        headers: { Authorization: token.value },
+        params: { type: "REVIEW" },
+      }
+    );
+    reviewDetails.value = reviewResponse.data;
+
+    const assessmentResponse = await $fetch(
+      config.public.API_BASE_URL + "/udc/get_all",
+      {
+        headers: { Authorization: token.value },
+        params: { type: "ASSESSMENT_DETAIL" },
+      }
+    );
+    assessmentDetails.value = assessmentResponse.data;
+  } catch (error) {
+    console.error("Error fetching details:", error);
+  }
+};
+
+initializeDefaults();
+
+onMounted(() => {
+  if (selectedMonth.value !== null) {
+    availableDays.value = getAvailableDaysForMonth(selectedMonth.value);
+  }
+
+  loadApiData();
+});
 </script>
 
 <template>
@@ -451,8 +483,8 @@ export default {
       :doctor="doctor"
       :selectSpecialty="selectSpecialty"
       :selectedSpecialty="selectedSpecialty"
-      :filteredProcedures="filteredProcedures"
       :selectedProcedure="selectedProcedure"
+      :filteredProcedures="filteredProcedures"
       :filteredPackages="filteredPackages"
       :selectPackage="selectPackage"
       :getAssesmentLabel="getAssesmentLabel"
@@ -473,6 +505,8 @@ export default {
       :selected-hour="selectedHour"
       :available-days="availableDays"
       :selected-month="selectedMonth"
+      :selectedSpecialty="selectedSpecialtyName"
+      :selectedProcedure="selectedProcedureName"
       :months="months"
       :availability="availability"
       :format-time="formatTime"
