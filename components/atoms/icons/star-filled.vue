@@ -1,3 +1,3 @@
 <template>
-  <Icon name="fluent:star-12-filled" />
+  <Icon name="material-symbols-light:star" />
 </template>
