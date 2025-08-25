@@ -1,4 +1,4 @@
-interface IdType {
+export interface IdType {
   id: number;
   code: string;
   name: string;
@@ -11,7 +11,7 @@ interface IdType {
   is_deleted: number;
 }
 
-interface Customer {
+export interface Customer {
   id: string;
   card_id: string;
   name: string;
@@ -45,7 +45,7 @@ interface Customer {
   id_type: IdType;
 }
 
-interface LegalRepresentative {
+export interface LegalRepresentative {
   id: string;
   card_id: string;
   name: string;
@@ -79,7 +79,7 @@ interface LegalRepresentative {
   id_type: IdType;
 }
 
-interface Supplier {
+export interface Supplier {
   id: number;
   card_id: string;
   num_medical_enrollment: string | null;
@@ -114,7 +114,7 @@ interface Supplier {
   id_type: IdType;
 }
 
-interface Product {
+export interface Product {
   id: number;
   code: string;
   name: string;
@@ -127,7 +127,7 @@ interface Product {
   is_deleted: number;
 }
 
-interface Procedure {
+export interface Procedure {
   id: number;
   code: string;
   name: string;
@@ -140,11 +140,11 @@ interface Procedure {
   is_deleted: number;
 }
 
-interface ServicesOffer {
+export interface ServicesOffer {
   ASSESSMENT_DETAILS: string[];
 }
 
-interface Package {
+export interface Package {
   id: number;
   discount: string;
   postoperative_assessments: string | null;
@@ -156,6 +156,19 @@ interface Package {
   updated_date: string;
   product: Product;
   procedure: Procedure;
+}
+
+export interface ProcedureItem {
+  procedure: Procedure;
+  packages: Package[];
+}
+
+export interface Service {
+  id: number;
+  medical_specialty: {
+    medical_specialty: IdType;
+  };
+  procedures: ProcedureItem[];
 }
 
 interface ReservationType {
@@ -182,7 +195,7 @@ export type AppointmentStatusCode =
   | "VALUATION_PENDING_VALORATION_APPOINTMENT"
   | "WAITING_PROCEDURE";
 
-interface AppointmentStatus {
+export interface AppointmentStatus {
   id: number;
   code: AppointmentStatusCode;
   name: string;
@@ -195,7 +208,7 @@ interface AppointmentStatus {
   is_deleted: number;
 }
 
-interface PaymentStatus {
+export interface PaymentStatus {
   id: number;
   code: string;
   name: string;
@@ -208,7 +221,7 @@ interface PaymentStatus {
   is_deleted: number;
 }
 
-interface AppointmentType {
+export interface AppointmentType {
   id: number;
   code: string;
   name: string;
@@ -240,11 +253,24 @@ export interface Appointment {
   appointment_status: AppointmentStatus;
   payment_status: PaymentStatus;
   payment_method: string | null;
-  appointment_result: string | null;
+  appointment_result: AppointmentResult | null;
   appointment_type: AppointmentType;
   price_procedure: string;
   price_valoration_appointment: string;
   appointment_credit: any | null;
   created_date: string;
   updated_date: string;
+}
+
+export interface AppointmentResult {
+  id: number;
+  code: string;
+  name: string;
+  type: string;
+  description: string;
+  father_code: string | null;
+  value1: string | null;
+  created_date: string;
+  updated_date: string | null;
+  is_deleted: number;
 }
