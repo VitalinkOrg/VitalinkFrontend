@@ -1,60 +1,55 @@
 <template>
-  <div v-if="isOpen" class="modal-overlay">
-    <div class="cancel-appointment__dialog">
-      <header class="cancel-appointment__header">
-        <button
-          @click="closeModal"
-          class="cancel-appointment__header--close-button"
-        >
-          <AtomsIconsXIcon size="24" />
-        </button>
-      </header>
-
-      <main class="cancel-appointment__body">
-        <div class="cancel-appointment__content">
-          <div class="cancel-appointment__content--icon">
-            <AtomsIconsTriangleAlertIcon size="64" color="#FF2D46" />
-          </div>
-          <h2 class="cancel-appointment__content--title">
-            Seguro que quieres salir del proceso de reserva?
-          </h2>
-          <p class="cancel-appointment__content--subtitle">
-            Aun no has solicitado tu cita
-          </p>
+  <AtomsModalBase :is-open="isOpen" size="small" @close="handleCloseModal">
+    <main class="cancel-appointment__body">
+      <div class="cancel-appointment__content">
+        <div class="cancel-appointment__content--icon">
+          <AtomsIconsTriangleAlertIcon size="64" color="#FF2D46" />
         </div>
-      </main>
+        <h2 class="cancel-appointment__content--title">
+          Seguro que quieres salir del proceso de reserva?
+        </h2>
+        <p class="cancel-appointment__content--subtitle">
+          Aun no has solicitado tu cita
+        </p>
+      </div>
+    </main>
 
-      <footer class="cancel-appointment__footer">
-        <button
-          class="cancel-appointment__footer--outline-button"
-          @click="closeModal"
-        >
-          Continuar con reserva
-        </button>
-        <button
-          class="cancel-appointment__footer--filled-danger-button"
-          @click="confirmExit"
-        >
-          Salir
-        </button>
-      </footer>
-    </div>
-  </div>
+    <footer class="cancel-appointment__footer">
+      <button
+        class="cancel-appointment__footer--outline-button"
+        @click="handleCloseModal"
+      >
+        Continuar con reserva
+      </button>
+      <button
+        class="cancel-appointment__footer--filled-danger-button"
+        @click="handleConfirmCloseModal"
+      >
+        Salir
+      </button>
+    </footer>
+  </AtomsModalBase>
 </template>
 
-<script>
-export default {
-  props: {
-    isOpen: Boolean,
-  },
-  methods: {
-    closeModal() {
-      this.$emit("close");
-    },
-    confirmExit() {
-      this.$emit("confirm-exit");
-    },
-  },
+<script lang="ts" setup>
+interface Props {
+  isOpen: boolean;
+}
+
+interface Emits {
+  (e: "confirm-close-modal"): void;
+  (e: "close-modal"): void;
+}
+
+defineProps<Props>();
+const emit = defineEmits<Emits>();
+
+const handleCloseModal = () => {
+  emit("close-modal");
+};
+
+const handleConfirmCloseModal = () => {
+  emit("confirm-close-modal");
 };
 </script>
 
