@@ -166,7 +166,6 @@ const handleSubmit = async (): Promise<void> => {
   isLoading.value = true;
 
   try {
-    // Simular envío de reseña con setTimeout
     await new Promise((resolve) => {
       setTimeout(() => {
         const reviewData = {
@@ -182,18 +181,15 @@ const handleSubmit = async (): Promise<void> => {
 
         console.log("submit-reviews", reviewData);
         resolve(true);
-      }, 2500); // Simular 2.5 segundos de espera
+      }, 2500);
     });
 
-    // Resetear formulario
     resetForm();
 
-    // Cerrar modal y abrir el de éxito
     handleCloseModal("leaveReview");
     handleOpenModal("leaveReviewSuccess");
   } catch (error) {
     console.error("Error al enviar reseña:", error);
-    // Aquí podrías mostrar un mensaje de error al usuario
   } finally {
     isLoading.value = false;
   }
@@ -228,7 +224,6 @@ const isModalOpen = computed({
   },
 });
 
-// Resetear formulario cuando se abre el modal
 watch(
   () => props.isOpen,
   (newValue) => {
