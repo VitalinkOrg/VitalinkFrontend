@@ -58,23 +58,25 @@
           </div>
 
           <div class="availability-tab__days-container">
-            <button
-              v-for="day in availableDays"
-              :key="day.date"
-              @click="selectDay(day.date)"
-              class="availability-tab__day-button"
-              :class="{
-                'availability-tab__day-button--active':
-                  selectedDay === day.date,
-              }"
-            >
-              <span class="availability-tab__day-number">
-                {{ day.number }}
-              </span>
-              <span class="availability-tab__day-label">
-                {{ day.day }}
-              </span>
-            </button>
+            <div class="availability-tab__days-wrapper">
+              <button
+                v-for="day in availableDays"
+                :key="day.date"
+                @click="selectDay(day.date)"
+                class="availability-tab__day-button"
+                :class="{
+                  'availability-tab__day-button--active':
+                    selectedDay === day.date,
+                }"
+              >
+                <span class="availability-tab__day-number">
+                  {{ day.number }}
+                </span>
+                <span class="availability-tab__day-label">
+                  {{ day.day }}
+                </span>
+              </button>
+            </div>
           </div>
         </div>
 
@@ -105,30 +107,39 @@
       </div>
     </div>
     <div class="availability-tab__reservation-wrapper">
-      <button
-        class="availability-tab__reservation-button"
-        :disabled="!selectedHour"
-        @click="reserveAppointment()"
-      >
-        Reservar Cita de valoración
-      </button>
+      <WebsiteReservarCitaValoracion
+        :selected-day="selectedDay"
+        :selected-hour="selectedHour"
+        :current-step="2"
+        :supplier-id="supplierId"
+        :supplier-name="supplierName"
+        :customer-id="customer.id"
+        :customer-name="customer.name"
+        :customer-phone="customer.phone_number"
+      />
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
+import type { Customer } from "~/types/appointment";
+
 const props = defineProps<{
   selectedSpecialty: string;
   selectedProcedure: string;
-  selectedDay: string | null;
+  selectedDay: string;
   availableHours: string[];
-  selectedHour: string | null;
+  selectedHour: string;
   availableDays: Array<{ date: string; day: string; number: number }>;
   selectedMonth: number | null;
   months: Array<{ value: number; label: string }>;
   formatTime: (time: string) => string;
   reserveAppointment: () => void;
   availability: Record<string, string[]>;
+  supplierId: number;
+  supplierName: string;
+  customer: Customer;
+  selectedPackage?: any;
 }>();
 
 const emit = defineEmits<{
@@ -459,11 +470,19 @@ watch(
     }
   }
 
+  &__days-wrapper {
+    display: flex;
+    gap: 8px;
+    flex-wrap: nowrap;
+    width: max-content;
+  }
+
   &__day-button {
     display: flex;
     flex-direction: column;
     align-items: center;
     min-width: 60px;
+    flex-shrink: 0;
     padding: 16px;
     border-radius: 15px;
     border: 1px solid #e1e4ed;

@@ -103,13 +103,20 @@
           </ul>
         </div>
 
-        <button
+        <WebsiteReservarCitaValoracion
           v-if="pkg.product.name === 'Cita de Valoración'"
-          class="service-card__assessment-appointment-button"
-          @click="openModal()"
-        >
-          Cita de valoración
-        </button>
+          :selected-day="selectedDay"
+          :selected-hour="selectedHour"
+          :current-step="1"
+          :supplier-id="doctor.id"
+          :supplier-name="doctor.name"
+          :customer-id="userInfo.id"
+          :customer-name="userInfo.name"
+          :customer-phone="userInfo.phone_number"
+          :selected-package="pkg"
+          :services="doctor.services"
+          :selected-procedure-id="selectedProcedureId"
+        />
       </div>
     </div>
   </div>
@@ -173,6 +180,14 @@ const props = defineProps({
     type: Number,
     default: null,
   },
+  selectedDay: {
+    type: String,
+    default: null,
+  },
+  selectedHour: {
+    type: String,
+    default: null,
+  },
 });
 
 const currentModalStep = ref(1);
@@ -188,11 +203,6 @@ const getMonthlyPayment = (pkg) => {
 
   const monthlyPayment = (price / 12) * 1.1;
   return Math.round(monthlyPayment).toLocaleString();
-};
-
-const openModal = () => {
-  isOpenModal.value = true;
-  currentModalStep.value = 1;
 };
 
 const closeModal = () => {
