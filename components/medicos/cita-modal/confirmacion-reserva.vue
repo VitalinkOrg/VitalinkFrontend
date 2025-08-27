@@ -267,12 +267,18 @@ const handleConfirmAppointment = () => {
 };
 
 const handleFinishProcedure = () => {
-  if (props.appointment.appointment_status.code === "CONFIRM_PROCEDURE") {
+  if (
+    props.appointment.appointment_status.code === "CONFIRM_PROCEDURE" &&
+    (props.appointment.payment_status.code ===
+      "PAYMENT_STATUS_NOT_PAID_PROCEDURE" ||
+      props.appointment.payment_status.code ===
+        "PAYMENT_STATUS_NOT_PAID_VALORATION_APPOINTMENT")
+  ) {
     showPaymentWarning.value = true;
     return;
   }
 
-  emit("confirmProcedure");
+  emit("finishProcedure");
 };
 
 const handleConfirmValoration = () => {
