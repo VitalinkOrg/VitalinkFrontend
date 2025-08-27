@@ -165,9 +165,7 @@ export interface ProcedureItem {
 
 export interface Service {
   id: number;
-  medical_specialty: {
-    medical_specialty: IdType;
-  };
+  medical_specialty: IdType;
   procedures: ProcedureItem[];
 }
 
