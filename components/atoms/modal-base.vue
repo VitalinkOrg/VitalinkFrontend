@@ -6,6 +6,7 @@
         class="modal"
         @click="handleBackdropClick"
         @keydown.esc="closeModal"
+        :id="modalId"
         :style="{ zIndex: modalZIndex }"
         tabindex="-1"
         role="dialog"
@@ -335,6 +336,10 @@ onMounted(() => {
 
 onUnmounted(() => {
   document.removeEventListener("keydown", trapFocus);
+});
+
+defineExpose({
+  modalId,
 });
 </script>
 
