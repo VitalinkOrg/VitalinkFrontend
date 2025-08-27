@@ -330,6 +330,8 @@ const doctor = ref({
 
       .details-column {
         flex: 1;
+        min-width: 0;
+        overflow: hidden;
 
         .details-card {
           background-color: #ffffff;
