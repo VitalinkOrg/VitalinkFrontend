@@ -101,20 +101,6 @@ const isSearchMode = computed(() => {
   return props.searchSpecialtyCode || props.searchProcedureCode;
 });
 
-const defaultService = computed(() => {
-  return props.doctor.services && props.doctor.services.length > 0
-    ? props.doctor.services[0]
-    : null;
-});
-
-const defaultProcedure = computed(() => {
-  if (!defaultService.value) return null;
-  return defaultService.value.procedures &&
-    defaultService.value.procedures.length > 0
-    ? defaultService.value.procedures[0]
-    : null;
-});
-
 const doctorReviews = computed(() => {
   return (
     props.doctor.reviews?.map((review) => ({
@@ -127,10 +113,6 @@ const doctorReviews = computed(() => {
       score: review.stars_average,
     })) || []
   );
-});
-
-const reviewSummary = computed(() => {
-  return props.doctor.review_details_summary || [];
 });
 
 const availability = computed(() => {
@@ -241,48 +223,12 @@ const filteredPackages = computed(() => {
   return [citaValoracionPackage, ...packages];
 });
 
-const search = () => {
-  let filter = props.doctor.services;
-  filter = filter.filter((item) => {
-    return (
-      item.medical_specialty.code === appointment.specialty &&
-      item.procedures.some((p) => p.procedure.code === appointment.service) &&
-      props.doctor.locations.some((l) => l.name === appointment.location)
-    );
-  });
-  if (filter.length === 0) {
-    errorText.value = "No hay disponibilidad para esta cita";
-  } else {
-    errorText.value = "";
-  }
-  return (result.value = filter[0]);
-};
-
-const getReviewLabel = (reviewCode) => {
-  if (!reviewDetails.value) return reviewCode;
-  const detail = reviewDetails.value.find((item) => item.code === reviewCode);
-  return detail ? detail.name : reviewCode;
-};
-
 const getAssesmentLabel = (assesmentCode) => {
   if (!assessmentDetails.value) return assesmentCode;
   const detail = assessmentDetails.value.find(
     (item) => item.code === assesmentCode
   );
   return detail ? detail.name : assesmentCode;
-};
-
-const calculateAverageRating = () => {
-  if (!props.doctor.reviews || props.doctor.reviews.length === 0) {
-    return 0;
-  }
-
-  const sum = props.doctor.reviews.reduce(
-    (total, review) => total + review.stars_average,
-    0
-  );
-  const average = sum / props.doctor.reviews.length;
-  return Math.round(average * 10) / 10;
 };
 
 const selectDay = (date) => {
@@ -500,6 +446,8 @@ onMounted(() => {
 
     <WebsitePerfilDoctorTabsDisponibilidad
       v-if="tab === 2"
+      :supplier-id="doctor.id"
+      :supplier-name="doctor.name"
       :selected-day="selectedDay"
       :available-hours="availableHours"
       :selected-hour="selectedHour"
@@ -507,7 +455,9 @@ onMounted(() => {
       :selected-month="selectedMonth"
       :selectedSpecialty="selectedSpecialtyName"
       :selectedProcedure="selectedProcedureName"
+      :selected-package="selectedPackage"
       :months="months"
+      :customer="user"
       :availability="availability"
       :format-time="formatTime"
       :reserve-appointment="reserveAppointment"
@@ -621,7 +571,6 @@ onMounted(() => {
   margin: 0;
   padding: 0;
   overflow-x: auto;
-
   -webkit-overflow-scrolling: touch;
 
   @include respond-to-max(sm) {
@@ -678,209 +627,5 @@ onMounted(() => {
     font-weight: 600;
     border-bottom-color: #0cadbb;
   }
-
-  &__icon {
-    font-size: 18px;
-
-    @include respond-to-max(sm) {
-      font-size: 14px;
-    }
-  }
-
-  &__text {
-    white-space: nowrap;
-
-    @include respond-to-max(sm) {
-      font-size: 10px;
-    }
-  }
-}
-
-.day-container {
-  display: flex;
-  /* margin-top: 20px; */
-}
-
-.day {
-  width: 41px;
-  height: 40px;
-  text-align: center;
-  line-height: 40px;
-  background-color: #f0f0f0;
-  border-radius: 5px;
-  margin: 10px;
-}
-
-.day-active {
-  background-color: #007bff;
-  color: white;
-}
-
-.hour {
-  width: auto;
-  height: 40px;
-  text-align: center;
-  line-height: 40px;
-  background-color: #f0f0f0;
-  border-radius: 5px;
-  margin: 10px;
-}
-
-.hour > span {
-  padding: 16px;
-}
-
-.custom-card {
-  border: 1px solid var(--Gray-Scale-300, #f1f3f7);
-  background: var(--Gray-Scale-White, #fff);
-  box-shadow: 0px 2px 8px 0px rgba(0, 0, 0, 0.08);
-}
-
-.custom-card .card-header {
-  font-weight: bold;
-  padding: 15px;
-  background: linear-gradient(
-    188deg,
-    #f8faff 65.03%,
-    rgba(248, 250, 255, 0.1) 112.13%
-  );
-  border: none;
-}
-
-.custom-card .card-header.selected {
-  background: linear-gradient(
-    180deg,
-    #fffcf5 70.16%,
-    rgba(255, 252, 245, 0.05) 100%
-  );
-}
-
-.custom-card .card-body {
-  padding: 20px;
-}
-
-.custom-card .card-title {
-  font-size: 1.5em;
-  margin-bottom: 10px;
-}
-
-.custom-card .card-text {
-  margin-bottom: 10px;
-}
-
-.custom-card .list-group-item {
-  border: none;
-  padding-left: 0;
-  padding-right: 0;
-}
-
-.custom-card .btn {
-  width: 100%;
-  margin-top: 15px;
-}
-
-.custom-card .rating .icon {
-  color: #ffc107;
-}
-
-.custom-card .icon {
-  margin-right: 5px;
-}
-
-.availability {
-  display: flex;
-  justify-content: space-around;
-  align-items: center;
-}
-
-.availability .availability-text,
-.availability .time-text {
-  display: flex;
-  align-items: center;
-}
-
-.availability .icon {
-  margin-right: 5px;
-}
-
-.btn-outline-primary {
-  border-color: #dee2e6;
-  color: #6c757d;
-}
-
-.btn-outline-primary:hover {
-  border-color: #0d6efd;
-  background-color: rgba(13, 110, 253, 0.05);
-}
-
-.btn-outline-primary.active {
-  background-color: rgba(13, 110, 253, 0.1);
-  border-color: #0d6efd;
-  color: #0d6efd;
-}
-
-.btn-outline-primary.active span {
-  color: #0d6efd;
-}
-
-.day-container {
-  display: flex;
-  gap: 0.5rem;
-  overflow-x: auto;
-  padding-bottom: 0.5rem;
-}
-
-.day-container::-webkit-scrollbar {
-  height: 4px;
-}
-
-.day-container::-webkit-scrollbar-track {
-  background: #f1f1f1;
-}
-
-.day-container::-webkit-scrollbar-thumb {
-  background: #888;
-  border-radius: 4px;
-}
-
-.day-container::-webkit-scrollbar-thumb:hover {
-  background: #555;
-}
-
-.btn-outline-info:hover .text-info {
-  color: white !important;
-}
-
-.hover-info:hover {
-  color: white !important;
-}
-
-/* Ensure text is white when active (selected) */
-.active .text-info {
-  color: white !important;
-}
-
-select {
-  appearance: none; /* Remove default arrow */
-  -webkit-appearance: none; /* For Safari */
-  -moz-appearance: none; /* For Firefox */
-  background-image: none; /* Remove any background image */
-  padding-right: 1rem; /* Add padding to prevent text overlap */
-}
-
-/* Optional: Add a custom arrow if needed */
-.custom-select-wrapper {
-  position: relative;
-  display: inline-block;
-}
-
-.custom-select-wrapper::after {
-  content: ""; /* Custom arrow */
-  position: absolute;
-  right: 0.5rem;
-  top: 50%;
-  transform: translateY(-50%);
-  pointer-events: none; /* Ensure clicks go to the select element */
-  color: #000; /* Arrow color */
 }
 </style>
