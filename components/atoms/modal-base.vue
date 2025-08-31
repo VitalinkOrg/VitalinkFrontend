@@ -82,7 +82,14 @@
 interface Props {
   isOpen: boolean;
   title?: string;
-  size?: "extra-small" | "small" | "medium" | "large" | "fullscreen" | "custom";
+  size?:
+    | "extra-small"
+    | "small"
+    | "medium"
+    | "large"
+    | "extra-large"
+    | "fullscreen"
+    | "custom";
   width?: string | number;
   maxWidth?: string | number;
   height?: string | number;
@@ -390,6 +397,10 @@ $modal-padding: 1.5rem;
 
     &--large {
       @include modal-size(718px);
+    }
+
+    &--extra-large {
+      @include modal-size(1000px);
     }
 
     &--fullscreen {
