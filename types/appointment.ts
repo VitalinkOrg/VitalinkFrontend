@@ -1,18 +1,8 @@
-export interface IdType {
-  id: number;
-  code: string;
-  name: string;
-  type: string;
-  description: string | null;
-  father_code: string | null;
-  value1: string | null;
-  created_date: string;
-  updated_date: string | null;
-  is_deleted: number;
-}
+import type { IdType, Package } from "~/types";
+import type { Supplier } from "./supplier";
 
 export interface Customer {
-  id: string;
+  id: number;
   card_id: string;
   name: string;
   email: string;
@@ -43,130 +33,10 @@ export interface Customer {
   updated_at: string;
   verified_at: string | null;
   id_type: IdType;
-}
-
-export interface LegalRepresentative {
-  id: string;
-  card_id: string;
-  name: string;
-  email: string;
-  user_name: string;
-  phone_number: string;
-  gender: string | null;
-  birth_date: string | null;
-  country_iso_code: string;
-  province: string;
-  address: string;
-  city_name: string;
-  postal_code: string;
-  role_code: string;
-  is_deleted: number;
-  is_active_from_email: number;
-  account_status: string;
-  fail_login_number: number;
-  forgot_password_token: string | null;
-  active_register_token: string | null;
-  latitude: string | null;
-  longitude: string | null;
-  code_contract: string | null;
-  language: string;
-  profile_picture_url: string | null;
-  last_login_at: string;
-  login_ip_address: string;
-  created_at: string;
-  updated_at: string;
-  verified_at: string | null;
-  id_type: IdType;
-}
-
-export interface Supplier {
-  id: number;
-  card_id: string;
-  num_medical_enrollment: string | null;
-  name: string;
-  phone_number: string;
-  email: string;
-  country_iso_code: string;
-  province: string;
-  city_name: string;
-  postal_code: string;
-  profile_picture_url: string | null;
-  description: string;
-  address: string;
-  street_number: string | null;
-  floor: string | null;
-  door_number: string | null;
-  latitude: string;
-  longitude: string;
-  experience_years: number | null;
-  patients_number: number | null;
-  is_hospital: boolean;
-  our_history: string;
-  mission: string;
-  vision: string;
-  code_card_id_file: string | null;
-  code_medical_license_file: string | null;
-  gender: string | null;
-  is_deleted: number;
-  created_date: string;
-  updated_date: string;
-  legal_representative: LegalRepresentative;
-  id_type: IdType;
-}
-
-export interface Product {
-  id: number;
-  code: string;
-  name: string;
-  type: string;
-  description: string;
-  father_code: string;
-  value1: string;
-  created_date: string;
-  updated_date: string | null;
-  is_deleted: number;
-}
-
-export interface Procedure {
-  id: number;
-  code: string;
-  name: string;
-  type: string;
-  description: string | null;
-  father_code: string;
-  value1: string | null;
-  created_date: string;
-  updated_date: string | null;
-  is_deleted: number;
 }
 
 export interface ServicesOffer {
   ASSESSMENT_DETAILS: string[];
-}
-
-export interface Package {
-  id: number;
-  discount: string;
-  postoperative_assessments: string | null;
-  services_offer: ServicesOffer;
-  is_king: number;
-  observations: string;
-  is_deleted: number;
-  created_date: string;
-  updated_date: string;
-  product: Product;
-  procedure: Procedure;
-}
-
-export interface ProcedureItem {
-  procedure: Procedure;
-  packages: Package[];
-}
-
-export interface Service {
-  id: number;
-  medical_specialty: IdType;
-  procedures: ProcedureItem[];
 }
 
 interface ReservationType {

@@ -138,3 +138,68 @@ export interface ApiResponse<T = any> {
   message?: string;
   data?: T;
 }
+
+export interface IdType {
+  id: number;
+  code: string;
+  name: string;
+  type: string;
+  description: string | null;
+  father_code: string | null;
+  value1: string | null;
+  created_date: string;
+  updated_date: string | null;
+  is_deleted: number;
+}
+
+export interface Procedures {
+  procedure: Procedure;
+  packages: Package[];
+}
+
+export interface Procedure {
+  id: number;
+  code: string;
+  name: string;
+  type: string;
+  father_code: string | null;
+  value1: string | null;
+  created_date: string;
+  updated_date: string | null;
+  is_deleted: number;
+}
+
+export interface Package {
+  id: number;
+  product: Product;
+  reference_price: number;
+  discount: number;
+  discounted_price: number;
+  services_offer: {
+    ASSESSMENT_DETAILS: string[];
+  };
+  is_king: 0 | 1;
+  observations: string;
+  postoperative_assessments: number | null;
+  is_deleted: 0 | 1;
+  created_date: string;
+  updated_date: string | null;
+  procedure?: Procedure;
+}
+
+export interface Product {
+  id: number;
+  code: string;
+  name: string;
+  type: string;
+  description: string;
+  father_code: string | null;
+  value1: string;
+  value2: string | null;
+  created_date: string;
+  updated_date: string | null;
+  is_deleted: 0 | 1;
+}
+
+export * from "./appointment";
+export * from "./supplier";
