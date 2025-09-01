@@ -155,11 +155,11 @@
 </template>
 
 <script lang="ts" setup>
-import { useCurrency } from "~/composables/useCurrency";
+import { useFormat } from "~/composables/useFormat";
 import type { ModalName } from "~/types";
 import type { Appointment } from "~/types/appointment";
 
-const { formatCurrency } = useCurrency();
+const { formatCurrency } = useFormat();
 
 const token = useCookie("token");
 const config = useRuntimeConfig();

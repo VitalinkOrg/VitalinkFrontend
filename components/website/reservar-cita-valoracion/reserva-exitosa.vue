@@ -79,7 +79,7 @@
               Costo del servicio:
             </td>
             <td class="successful-reservation__table--value">
-              {{ formatCurrency(18000, 0) }}
+              {{ formatCurrency(18000, { decimalPlaces: 0 }) }}
             </td>
           </tr>
         </tbody>
@@ -107,13 +107,13 @@
 </template>
 
 <script lang="ts" setup>
-import { useCurrency } from "~/composables/useCurrency";
-import type { Service } from "~/types/appointment";
+import { useFormat } from "~/composables/useFormat";
+import type { Service } from "~/types";
 
 const route = useRoute();
 const router = useRouter();
 
-const { formatCurrency } = useCurrency();
+const { formatCurrency } = useFormat();
 
 interface Props {
   isOpen: boolean;

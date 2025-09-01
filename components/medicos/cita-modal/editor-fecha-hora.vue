@@ -107,7 +107,7 @@
               Procedimiento:
             </th>
             <td class="date-time-editor__table-data">
-              {{ appointment.package?.procedure.name }}
+              {{ appointment.package?.procedure?.name }}
             </td>
           </tr>
 

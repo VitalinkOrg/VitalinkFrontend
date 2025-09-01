@@ -26,8 +26,12 @@
               <input
                 type="text"
                 class="apply-credit-modal__input"
-                :value="formatCurrency(appointment.price_procedure, 0)"
-                :placeholder="formatCurrency(0, 0)"
+                :value="
+                  formatCurrency(appointment.price_procedure, {
+                    decimalPlaces: 0,
+                  })
+                "
+                :placeholder="formatCurrency(0, { decimalPlaces: 0 })"
                 disabled
               />
             </td>
@@ -45,7 +49,11 @@
                     'apply-credit-modal__input--error': validationError,
                     'apply-credit-modal__input--disabled': isLoading,
                   }"
-                  :placeholder="formatCurrency(appointment.price_procedure, 0)"
+                  :placeholder="
+                    formatCurrency(appointment.price_procedure, {
+                      decimalPlaces: 0,
+                    })
+                  "
                   v-model="requestedAmountDisplay"
                   :disabled="isLoading"
                   @input="handleInput"
@@ -56,7 +64,11 @@
                 <small v-if="!validationError" class="apply-credit-modal__info">
                   <AtomsIconsInfoIcon size="12" />
                   El monto debe ser igual o menor a
-                  {{ formatCurrency(appointment.price_procedure, 0) }}
+                  {{
+                    formatCurrency(appointment.price_procedure, {
+                      decimalPlaces: 0,
+                    })
+                  }}
                 </small>
                 <small v-else class="apply-credit-modal__error">
                   <AtomsIconsAlertIcon size="12" />
@@ -93,11 +105,11 @@
 </template>
 
 <script lang="ts" setup>
-import { useCurrency } from "~/composables/useCurrency";
+import { useFormat } from "~/composables/useFormat";
 import type { ModalName } from "~/types";
 import type { Appointment } from "~/types/appointment";
 
-const { formatCurrency } = useCurrency();
+const { formatCurrency } = useFormat();
 
 const token = useCookie("token");
 const config = useRuntimeConfig();
@@ -153,12 +165,14 @@ const handleInput = (event: Event) => {
 
   requestedAmount.value = amount;
 
-  requestedAmountDisplay.value = formatCurrency(amount, 0);
+  requestedAmountDisplay.value = formatCurrency(amount, { decimalPlaces: 0 });
 };
 
 const handleBlur = () => {
   if (requestedAmount.value !== null) {
-    requestedAmountDisplay.value = formatCurrency(requestedAmount.value, 0);
+    requestedAmountDisplay.value = formatCurrency(requestedAmount.value, {
+      decimalPlaces: 0,
+    });
   }
   validateAmount();
 };

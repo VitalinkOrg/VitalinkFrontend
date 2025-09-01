@@ -83,7 +83,7 @@
               Procedimiento:
             </td>
             <td class="payment-successes-modal__table--value">
-              {{ appointment.package.procedure.name }}
+              {{ appointment.package?.procedure?.name }}
             </td>
           </tr>
           <tr>
@@ -91,7 +91,7 @@
             <td class="payment-successes-modal__table--value">
               {{
                 appointment.appointment_type.code === "VALORATION_APPOINTMENT"
-                  ? formatCurrency("18000")
+                  ? formatCurrency(18000)
                   : formatCurrency(appointment.price_procedure)
               }}
             </td>
@@ -116,11 +116,11 @@
 </template>
 
 <script lang="ts" setup>
-import { useCurrency } from "~/composables/useCurrency";
+import { useFormat } from "~/composables/useFormat";
 import type { ModalName } from "~/types";
 import type { Appointment } from "~/types/appointment";
 
-const { formatCurrency } = useCurrency();
+const { formatCurrency } = useFormat();
 
 interface Props {
   appointment: Appointment;

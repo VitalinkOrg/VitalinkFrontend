@@ -88,7 +88,7 @@
             <td
               class="reservation-confirmation__table-cell reservation-confirmation__table-cell--value"
             >
-              {{ formatCurrency(18000, 0) }}
+              {{ formatCurrency(18000, { decimalPlaces: 0 }) }}
             </td>
           </tr>
         </tbody>
@@ -98,16 +98,16 @@
 </template>
 
 <script lang="ts" setup>
-import { useCurrency } from "~/composables/useCurrency";
-import type { Package, Service } from "~/types/appointment";
+import { useFormat } from "~/composables/useFormat";
+import type { Package, Service } from "~/types/";
 
-const { formatCurrency } = useCurrency();
+const { formatCurrency } = useFormat();
 
 interface Props {
   selectedDay: string | null;
   selectedHour: string | null;
   supplierId: number;
-  customerId: string;
+  customerId: number;
   customerName: string;
   customerPhone?: string;
   userDescription: string;

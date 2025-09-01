@@ -2,29 +2,31 @@
   <div class="profile-tab">
     <div class="profile-section">
       <h5 class="profile-section__title">Descripción</h5>
-      <p class="profile-section__content">{{ doctor.description }}</p>
+      <p class="profile-section__content">{{ supplier.description }}</p>
     </div>
 
-    <div class="profile-section" v-if="doctor.our_history">
+    <div class="profile-section" v-if="supplier.our_history">
       <h5 class="profile-section__title">Nuestra historia</h5>
-      <p class="profile-section__content">{{ doctor.our_history }}</p>
+      <p class="profile-section__content">{{ supplier.our_history }}</p>
     </div>
 
-    <div class="profile-section" v-if="doctor.mission">
+    <div class="profile-section" v-if="supplier.mission">
       <h5 class="profile-section__title">Misión</h5>
-      <p class="profile-section__content">{{ doctor.mission }}</p>
+      <p class="profile-section__content">{{ supplier.mission }}</p>
     </div>
 
-    <div class="profile-section" v-if="doctor.vision">
+    <div class="profile-section" v-if="supplier.vision">
       <h5 class="profile-section__title">Visión</h5>
-      <p class="profile-section__content">{{ doctor.vision }}</p>
+      <p class="profile-section__content">{{ supplier.vision }}</p>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
+import type { Supplier } from "~/types";
+
 defineProps<{
-  doctor: any;
+  supplier: Supplier;
 }>();
 </script>
 

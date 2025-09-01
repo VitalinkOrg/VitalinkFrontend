@@ -55,7 +55,7 @@
       <tr>
         <td class="appointment-table__label">Procedimiento:</td>
         <td class="appointment-table__value">
-          {{ appointment.package?.procedure.name }}
+          {{ appointment.package?.procedure?.name }}
         </td>
       </tr>
 
@@ -124,7 +124,7 @@
       >
         <td class="appointment-table__label">Procedimiento:</td>
         <td class="appointment-table__value">
-          {{ appointment.package?.procedure.name }}
+          {{ appointment.package?.procedure?.name }}
         </td>
       </tr>
 

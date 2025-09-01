@@ -57,11 +57,11 @@
 
       <WebsiteReservarCitaValoracionConfirmacionReserva
         v-if="internalCurrentStep === 3"
-        :selected-day="localSelectedDay"
-        :selected-hour="localSelectedHour"
+        :selected-day="localSelectedDay ?? selectedDay"
+        :selected-hour="localSelectedHour ?? selectedHour"
         :supplier-id="supplierId"
-        :customer-id="customerId"
-        :customer-name="customerName"
+        :customer-id="customerId ?? 0"
+        :customer-name="customerName ?? ''"
         :customer-phone="alternativePhoneNumber ?? phoneNumber"
         :user-description="userDescription"
         :selected-procedure-id="selectedProcedureId"
@@ -104,15 +104,15 @@
 
   <WebsiteReservarCitaValoracionReservaExitosa
     :is-open="isOpenSuccessModal"
-    @close-modal="closeSuccessModal"
-    :selected-day="localSelectedDay"
-    :selected-hour="localSelectedHour"
+    :selected-day="localSelectedDay ?? selectedDay"
+    :selected-hour="localSelectedHour ?? selectedHour"
     :supplier-id="supplierId"
     :supplier-name="supplierName"
-    :customer-name="customerName"
+    :customer-name="customerName ?? ''"
     :customer-phone="alternativePhoneNumber ?? phoneNumber"
     :selected-procedure-id="selectedProcedureId"
     :services="services"
+    @close-modal="closeSuccessModal"
   />
 
   <WebsiteReservarCancelModal
@@ -123,8 +123,7 @@
 </template>
 
 <script lang="ts" setup>
-import type { ApiResponse } from "~/types";
-import type { Package, Service } from "~/types/appointment";
+import type { ApiResponse, Package, Service } from "~/types";
 
 import { useErrorHandler } from "~/composables/useErrorHandler";
 
@@ -134,16 +133,14 @@ const config = useRuntimeConfig();
 const token = useCookie("token");
 
 interface Props {
-  selectedDay?: string;
-  selectedHour?: string;
+  selectedDay: string | null;
+  selectedHour: string | null;
   currentStep: number;
   supplierId: number;
   supplierName: string;
-  customerId: string;
+  customerId: number;
   customerName: string;
-  customerPhone?: string;
-  procedureId?: number;
-  procedureName?: string;
+  customerPhone: string;
   serviceCost?: number;
   selectedProcedureId?: number;
   selectedPackage?: Package;
@@ -240,8 +237,8 @@ const setAlternativePhoneNumber = (phone: string): void => {
 const handleConfirmReservation = async () => {
   const payload = {
     customer_id: props.customerId,
-    appointment_date: localSelectedDay.value,
-    appointment_hour: localSelectedHour.value,
+    appointment_date: localSelectedDay.value ?? props.selectedDay,
+    appointment_hour: localSelectedHour.value ?? props.selectedHour,
     supplier_id: props.supplierId,
     package_id: props.selectedPackage?.id,
     user_description: userDescription.value,
@@ -250,8 +247,6 @@ const handleConfirmReservation = async () => {
       alternativePhoneNumber.value ?? phoneNumber.value,
     procedure_id: props.selectedProcedureId,
   };
-
-  console.log({ payload });
 
   const { error } = await withErrorHandling(
     $fetch<ApiResponse>(config.public.API_BASE_URL + "/appointment/add", {
