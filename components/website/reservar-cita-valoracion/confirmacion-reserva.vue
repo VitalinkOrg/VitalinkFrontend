@@ -107,7 +107,7 @@ interface Props {
   selectedDay: string | null;
   selectedHour: string | null;
   supplierId: number;
-  customerId: number;
+  customerId: string;
   customerName: string;
   customerPhone?: string;
   userDescription: string;

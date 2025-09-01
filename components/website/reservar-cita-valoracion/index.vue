@@ -60,7 +60,7 @@
         :selected-day="localSelectedDay ?? selectedDay"
         :selected-hour="localSelectedHour ?? selectedHour"
         :supplier-id="supplierId"
-        :customer-id="customerId ?? 0"
+        :customer-id="customerId ?? ''"
         :customer-name="customerName ?? ''"
         :customer-phone="alternativePhoneNumber ?? phoneNumber"
         :user-description="userDescription"
@@ -108,7 +108,7 @@
     :selected-hour="localSelectedHour ?? selectedHour"
     :supplier-id="supplierId"
     :supplier-name="supplierName"
-    :customer-name="customerName ?? ''"
+    :customer-name="customerName"
     :customer-phone="alternativePhoneNumber ?? phoneNumber"
     :selected-procedure-id="selectedProcedureId"
     :services="services"
@@ -138,7 +138,7 @@ interface Props {
   currentStep: number;
   supplierId: number;
   supplierName: string;
-  customerId: number;
+  customerId: string;
   customerName: string;
   customerPhone: string;
   serviceCost?: number;
