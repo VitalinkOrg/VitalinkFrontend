@@ -1,317 +1,287 @@
-<template>
-  <div class="service-tab">
-    <p class="service-tab__title">Servicios disponibles</p>
-
-    <!-- Specialty badges -->
-    <div class="service-tab__badges-wrapper">
-      <button
-        v-for="specialty in specialties()"
-        :key="specialty.code"
-        @click="selectSpecialty(specialty.code, specialty.id)"
-        class="service-tab__badge"
-        style="--bs-bg-opacity: 0.07"
-        :class="{
-          'service-tab__badge--active': selectedSpecialty === specialty.code,
-        }"
-      >
-        {{ specialty.name }}
-      </button>
-    </div>
-
-    <!-- Procedure badges (shown when specialty is selected) -->
-    <div class="service-tab__procedures-wrapper">
-      <button
-        v-for="procedure in filteredProcedures"
-        :key="procedure.procedure.code"
-        @click="
-          selectProcedure(procedure.procedure.code, procedure.procedure.id)
-        "
-        class="service-tab__procedure-badge"
-        :class="{
-          'service-tab__procedure-badge--active':
-            selectedProcedure === procedure.procedure.code,
-        }"
-      >
-        {{ procedure.procedure.name }}
-      </button>
-    </div>
-
-    <div>
-      <p class="service-tab__packages-title"></p>
-    </div>
-
-    <!-- All packages for selected procedure -->
-    <div v-if="filteredPackages.length > 0" class="service-tab__packages">
-      <WebsitePerfilDoctorTarjetaServicio
-        v-for="pkg in filteredPackages"
-        :key="pkg.id"
-        :pkg="pkg"
-        :doctor="props.doctor"
-        :doctor-reviews="doctorReviews()"
-        :get-package-price="getPackagePrice"
-        :get-assesment-label="getAssesmentLabel"
-        :select-package="props.selectPackage"
-        :selected-package="pkg"
-        :user-info="props.userInfo"
-        :selected-specialty-id="selectedSpecialtyId || 0"
-        :selected-procedure-id="selectedProcedureId || 0"
-      />
-    </div>
-
-    <div
-      v-else-if="selectedSpecialty && filteredProcedures.length === 0"
-      class="alert alert-info"
-    >
-      No hay procedimientos disponibles para esta especialidad
-    </div>
-    <div
-      v-else-if="selectedProcedure && filteredPackages.length === 0"
-      class="alert alert-info"
-    >
-      No hay paquetes disponibles para este procedimiento
-    </div>
-  </div>
-</template>
-
-<script setup lang="ts">
+<script lang="ts" setup>
 import type {
   AssessmentDetail,
-  Doctor,
+  Customer,
   MedicalSpecialty,
   Package,
-  Procedure,
-} from "~/types/doctor";
+  Procedures,
+  Supplier,
+} from "~/types";
 
-interface ProcessedDoctorReview {
+interface Props {
+  supplier?: Supplier | Partial<Supplier> | null;
+  selectPackage: (selectedPackage: Package) => void;
+  customer?: Customer | null;
+  searchSpecialtyCode?: string | null;
+  searchProcedureCode?: string | null;
+  isSearchMode?: boolean;
+  selectedSpecialty?: string | null;
+  selectedProcedure?: string | null;
+  filteredProcedures?: Procedures[];
+  filteredPackages?: Package[];
+  selectSpecialty?: (code: string, id: number) => void;
+  selectProcedure?: (code: string, id: number) => void;
+  specialties?: MedicalSpecialty[];
+  getAssessmentLabel: (code: string) => string;
+  assessmentDetails?: AssessmentDetail[];
+}
+
+const props = withDefaults(defineProps<Props>(), {
+  supplier: null,
+  customer: null,
+  searchSpecialtyCode: null,
+  searchProcedureCode: null,
+  isSearchMode: false,
+  selectedSpecialty: null,
+  selectedProcedure: null,
+  filteredProcedures: () => [],
+  filteredPackages: () => [],
+  selectSpecialty: undefined,
+  selectProcedure: undefined,
+  specialties: () => [],
+  assessmentDetails: () => [],
+});
+
+const { createAssessmentPackage } = useAssessmentPackage();
+const { formatCurrency } = useFormat();
+
+const currentSupplier = computed<Supplier | Partial<Supplier> | null>(() => {
+  return props.supplier || null;
+});
+
+const supplierServices = computed(() => {
+  const services = currentSupplier.value?.services;
+  return Array.isArray(services) ? services : [];
+});
+
+const hasServices = computed<boolean>(() => {
+  return supplierServices.value.length > 0;
+});
+
+const availableSpecialties = computed<MedicalSpecialty[]>(() => {
+  if (props.specialties && props.specialties.length > 0) {
+    return props.specialties;
+  }
+  return supplierServices.value
+    .map((service) => service.medical_specialty)
+    .filter(
+      (specialty): specialty is MedicalSpecialty => specialty !== undefined
+    );
+});
+
+const currentFilteredProcedures = computed<Procedures[]>(() => {
+  if (props.filteredProcedures && props.filteredProcedures.length > 0) {
+    return props.filteredProcedures;
+  }
+
+  if (!props.selectedSpecialty || !hasServices.value) return [];
+
+  const specialty = supplierServices.value.find(
+    (s) => s.medical_specialty?.code === props.selectedSpecialty
+  );
+
+  return Array.isArray(specialty?.procedures) ? specialty.procedures : [];
+});
+
+const currentFilteredPackages = computed<Package[]>(() => {
+  if (props.filteredPackages && props.filteredPackages.length > 0) {
+    return props.filteredPackages;
+  }
+
+  let packages: Package[] = [];
+
+  if (!props.selectedProcedure && currentFilteredProcedures.value.length > 0) {
+    const firstProcedure = currentFilteredProcedures.value[0];
+    if (firstProcedure?.procedure && Array.isArray(firstProcedure.packages)) {
+      packages = firstProcedure.packages;
+    }
+  } else {
+    const procedure = currentFilteredProcedures.value.find(
+      (p) => p.procedure?.code === props.selectedProcedure
+    );
+    packages = Array.isArray(procedure?.packages) ? procedure.packages : [];
+  }
+
+  try {
+    const assessmentPackage = createCitaValoracionPackage();
+    return [assessmentPackage, ...packages];
+  } catch (error) {
+    console.error("Error creating assessment package:", error);
+    return packages;
+  }
+});
+
+const handleSelectSpecialty = (
+  specialtyCode: string,
+  specialtyId: number
+): void => {
+  if (props.selectSpecialty) {
+    props.selectSpecialty(specialtyCode, specialtyId);
+  }
+};
+
+const handleSelectProcedure = (
+  procedureCode: string,
+  procedureId: number
+): void => {
+  if (props.selectProcedure) {
+    props.selectProcedure(procedureCode, procedureId);
+  }
+};
+
+const createCitaValoracionPackage = (): Package => {
+  let referencePrice = 18000;
+
+  if (props.selectedProcedure) {
+    const selectedProcedureData = currentFilteredProcedures.value.find(
+      (p) => p.procedure?.code === props.selectedProcedure
+    );
+
+    const firstPackage = selectedProcedureData?.packages?.[0];
+    if (firstPackage?.reference_price) {
+      referencePrice = firstPackage.reference_price;
+    }
+  }
+
+  return createAssessmentPackage(referencePrice, 0);
+};
+
+const supplierReviews = (): {
   first_name: string;
   last_name: string;
   message: string;
   pacient_type: string;
   score: number;
-}
+}[] => {
+  const reviews = currentSupplier.value?.reviews;
+  if (!Array.isArray(reviews)) return [];
 
-interface Props {
-  doctor: Doctor;
-  selectPackage: (selectedPackage: Package) => void;
-  userInfo: Object;
-  searchSpecialtyCode?: string;
-  searchProcedureCode?: string;
-  isSearchMode?: boolean;
-}
-
-const props = defineProps<Props>();
-const config = useRuntimeConfig();
-const token = useCookie("token");
-
-const selectedSpecialty = ref<string | null>(null);
-const selectedSpecialtyId = ref<number | null>(null);
-const selectedProcedure = ref<string | null>(null);
-const assessmentDetails = ref<AssessmentDetail[]>([]);
-const selectedProcedureId = ref<number | null>(null);
-const appointment = ref({
-  specialty: "",
-  service: "",
-  location: "",
-  type: "",
-  date: "",
-  time: "",
-});
-
-const setDefaultSpecialtyAndProcedure = async () => {
-  const authHeader = token.value ? { Authorization: token.value } : undefined;
-  const assessmentResponse = await $fetch<{ data: AssessmentDetail[] }>(
-    config.public.API_BASE_URL + "/udc/get_all",
-    {
-      headers: authHeader,
-      params: { type: "ASSESSMENT_DETAIL" },
-    }
-  );
-
-  assessmentDetails.value = assessmentResponse.data;
-
-  if (props.searchSpecialtyCode) {
-    const specialty = props.doctor.services?.find(
-      (s) => s.medical_specialty.code === props.searchSpecialtyCode
-    );
-    if (specialty) {
-      selectedSpecialty.value = specialty.medical_specialty.code;
-      selectedSpecialtyId.value = specialty.medical_specialty.id;
-      appointment.value.specialty = selectedSpecialty.value;
-
-      if (props.searchProcedureCode) {
-        const procedure = specialty.procedures?.find(
-          (p) => p.procedure.code === props.searchProcedureCode
-        );
-        if (procedure) {
-          selectedProcedure.value = procedure.procedure.code;
-          selectedProcedureId.value = procedure.procedure.id;
-          appointment.value.service = selectedProcedure.value;
-        }
-      } else if (specialty.procedures && specialty.procedures.length > 0) {
-        selectedProcedure.value = specialty.procedures[0].procedure.code;
-        selectedProcedureId.value = specialty.procedures[0].procedure.id;
-        appointment.value.service = selectedProcedure.value;
-      }
-    }
-  } else if (props.doctor.services && props.doctor.services.length > 0) {
-    selectedSpecialty.value = props.doctor.services[0].medical_specialty.code;
-    selectedSpecialtyId.value = props.doctor.services[0].medical_specialty.id;
-    appointment.value.specialty = selectedSpecialty.value;
-    if (
-      props.doctor.services[0].procedures &&
-      props.doctor.services[0].procedures.length > 0
-    ) {
-      selectedProcedure.value =
-        props.doctor.services[0].procedures[0].procedure.code;
-      selectedProcedureId.value =
-        props.doctor.services[0].procedures[0].procedure.id;
-      appointment.value.service = selectedProcedure.value;
-    }
-  }
-};
-
-const specialties = (): MedicalSpecialty[] => {
-  return (
-    props.doctor.services?.map((service) => service.medical_specialty) || []
-  );
-};
-
-const selectSpecialty = (specialtyCode: string, specialtyId: number) => {
-  selectedSpecialty.value = specialtyCode;
-  selectedSpecialtyId.value = specialtyId;
-  selectedProcedure.value = null;
-  appointment.value.specialty = specialtyCode;
-
-  const specialty = props.doctor.services.find(
-    (s) => s.medical_specialty.code === specialtyCode
-  );
-  if (specialty && specialty.procedures && specialty.procedures.length > 0) {
-    selectedProcedure.value = specialty.procedures[0].procedure.code;
-    selectedProcedureId.value = specialty.procedures[0].procedure.id;
-    appointment.value.service = selectedProcedure.value;
-  }
-};
-
-const filteredProcedures = computed<Procedure[]>((): Procedure[] => {
-  if (
-    !selectedSpecialty.value &&
-    props.doctor.services &&
-    props.doctor.services.length > 0
-  ) {
-    selectedSpecialty.value = props.doctor.services[0].medical_specialty.code;
-    appointment.value.specialty = selectedSpecialty.value;
-    return props.doctor.services[0].procedures || [];
-  }
-
-  const specialty = props.doctor.services.find(
-    (s) => s.medical_specialty.code === selectedSpecialty.value
-  );
-
-  return specialty?.procedures || [];
-});
-
-const selectProcedure = (procedureCode: string, procedureId: number) => {
-  selectedProcedure.value = procedureCode;
-  selectedProcedureId.value = procedureId;
-  appointment.value.service = procedureCode;
-};
-
-const filteredPackages = computed<Package[]>(() => {
-  let packages = [];
-
-  if (!selectedProcedure.value && filteredProcedures.value.length > 0) {
-    selectedProcedure.value = filteredProcedures.value[0].procedure.code;
-    selectedProcedureId.value = filteredProcedures.value[0].procedure.id;
-    appointment.value.service = selectedProcedure.value;
-    packages = filteredProcedures.value[0].packages || [];
-  } else {
-    const procedure = filteredProcedures.value.find(
-      (p) => p.procedure.code === selectedProcedure.value
-    );
-    packages = procedure?.packages || [];
-  }
-
-  return [citaValoracionPackage.value, ...packages];
-});
-
-const citaValoracionPackage = computed<Package>(() => {
-  let packageId = 0;
-
-  if (selectedProcedureId.value && props.doctor?.services) {
-    const selectedProcedureData = filteredProcedures.value.find(
-      (p) => p.procedure.id === selectedProcedureId.value
-    );
-
-    if (
-      selectedProcedureData?.packages &&
-      selectedProcedureData.packages.length > 0
-    ) {
-      packageId = selectedProcedureData.packages[0].id;
-    }
-  }
-
-  return {
-    id: packageId,
-    product: {
-      id: 9999,
-      code: "ASSESSMENT_APPOINTMENT",
-      name: "Cita de Valoración",
-      type: "MEDICAL_PRODUCT",
-      description: "Cita de valoración médica inicial",
-      father_code: null,
-      value1: "18000",
-      created_date: new Date().toISOString(),
-      updated_date: null,
-      is_deleted: 0,
-    },
-    reference_price: 18000,
-    discount: 0,
-    discounted_price: 18000,
-    services_offer: {
-      ASSESSMENT_DETAILS: [
-        "MEDICAL_CONSULTATION",
-        "CLINICAL_EVALUATION",
-        "INITIAL_DIAGNOSIS",
-      ],
-    },
-    is_king: 0,
-    observations: "",
-    postoperative_assessments: null,
-  };
-});
-
-const getAssesmentLabel = (assesmentCode: string) => {
-  if (!assessmentDetails.value) return assesmentCode;
-  const detail = assessmentDetails.value.find(
-    (item) => item.code === assesmentCode
-  );
-  return detail ? detail.name : assesmentCode;
-};
-
-const doctorReviews = (): ProcessedDoctorReview[] => {
-  return (
-    props.doctor.reviews?.map((review) => ({
-      first_name: review.customer.split(" ")[0] || "Anónimo",
-      last_name: review.is_annonymous
-        ? ""
-        : review.customer.split(" ")[1] || "",
-      message: review.comment,
+  return reviews.map((review) => {
+    const customerParts = review.customer
+      ? review.customer.split(" ")
+      : ["Anónimo"];
+    return {
+      first_name: customerParts[0] || "Anónimo",
+      last_name: review.is_annonymous ? "" : customerParts[1] || "",
+      message: review.comment || "",
       pacient_type: "Paciente",
-      score: review.stars_average,
-    })) || []
-  );
+      score: review.stars_average || 0,
+    };
+  });
 };
 
-const getPackagePrice = (pkg: Package) => {
+const getPackagePrice = (pkg: Package): number => {
+  if (!pkg?.product?.value1) return 0;
   const price = parseFloat(pkg.product.value1);
-  const discount = pkg.discount / 100;
+  const discount = (pkg.discount || 0) / 100;
   return price - price * discount;
 };
 
-onMounted(() => {
-  setDefaultSpecialtyAndProcedure();
+const formatPackagePrice = (pkg: Package): string => {
+  const price = getPackagePrice(pkg);
+  return formatCurrency(price);
+};
+
+const selectedSpecialityId = computed(() => {
+  return props.supplier
+    ? props.supplier.services?.find(
+        (s) => s.medical_specialty?.code === props.selectedSpecialty
+      )?.medical_specialty?.id || 0
+    : 0;
+});
+
+const selectedProcedureId = computed(() => {
+  return props.selectedProcedure
+    ? currentFilteredProcedures.value.find(
+        (p) => p.procedure?.code === props.selectedProcedure
+      )?.procedure?.id || 0
+    : 0;
+});
+
+const selectedProcedureName = computed(() => {
+  return props.selectedProcedure
+    ? currentFilteredProcedures.value.find(
+        (p) => p.procedure?.code === props.selectedProcedure
+      )?.procedure?.name || ""
+    : "";
 });
 </script>
+
+<template>
+  <div class="service-tab">
+    <p class="service-tab__title">Servicios disponibles</p>
+
+    <div v-if="!currentSupplier" class="empty-state">
+      <p>No se encontró información del proveedor médico.</p>
+    </div>
+
+    <div v-else-if="!hasServices" class="empty-state">
+      <p>Este proveedor no tiene servicios disponibles.</p>
+    </div>
+
+    <template v-else>
+      <div class="service-tab__badges-wrapper">
+        <button
+          v-for="specialty in availableSpecialties"
+          :key="specialty.code || specialty.id"
+          @click="handleSelectSpecialty(specialty.code, specialty.id)"
+          class="service-tab__badge"
+          style="--bs-bg-opacity: 0.07"
+          :class="{
+            'service-tab__badge--active':
+              props.selectedSpecialty === specialty.code,
+          }"
+        >
+          {{ specialty.name || "Sin nombre" }}
+        </button>
+      </div>
+
+      <div
+        v-if="currentFilteredProcedures.length > 0"
+        class="service-tab__procedures-wrapper"
+      >
+        <button
+          v-for="procedure in currentFilteredProcedures"
+          :key="procedure.procedure?.code || procedure.procedure?.id"
+          @click="
+            handleSelectProcedure(
+              procedure.procedure?.code || '',
+              procedure.procedure?.id || 0
+            )
+          "
+          class="service-tab__procedure-badge"
+          :class="{
+            'service-tab__procedure-badge--active':
+              props.selectedProcedure === procedure.procedure?.code,
+          }"
+        >
+          {{ procedure.procedure?.name || "Procedimiento sin nombre" }}
+        </button>
+      </div>
+
+      <div
+        v-if="currentFilteredPackages.length > 0"
+        class="service-tab__packages"
+      >
+        <WebsitePerfilDoctorTarjetaServicio
+          v-for="pkg in currentFilteredPackages"
+          :key="pkg.id || Math.random()"
+          :pkg="pkg"
+          :supplier="currentSupplier"
+          :supplier-reviews="supplierReviews()"
+          :get-package-price="formatPackagePrice"
+          :get-assessment-label="props.getAssessmentLabel"
+          :customer="props.customer"
+          :selected-specialty-id="selectedSpecialityId"
+          :selected-procedure-id="selectedProcedureId"
+          :procedure-name="selectedProcedureName"
+          :select-package="props.selectPackage"
+          :selected-package="pkg"
+        />
+      </div>
+    </template>
+  </div>
+</template>
 
 <style lang="scss" scoped>
 .service-tab {
@@ -361,6 +331,7 @@ onMounted(() => {
     display: flex;
     flex-wrap: wrap;
     gap: 10px;
+    margin-bottom: 16px;
 
     @include respond-to-max(sm) {
       gap: $spacing-xs;
@@ -407,6 +378,12 @@ onMounted(() => {
     line-height: 24px;
     color: #6d758f;
     margin-top: 12px;
+  }
+}
+
+.button {
+  &--outline {
+    @include outline-button;
   }
 }
 </style>

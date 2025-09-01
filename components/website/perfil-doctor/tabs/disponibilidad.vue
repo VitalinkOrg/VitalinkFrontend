@@ -8,7 +8,7 @@
           <AtomsIconsXIcon size="16" />
         </span>
         <span class="availability-tab__badge">
-          {{ selectedProcedure }}
+          {{ selectedProcedureName }}
           <AtomsIconsXIcon size="16" />
         </span>
       </div>
@@ -62,7 +62,7 @@
               <button
                 v-for="day in availableDays"
                 :key="day.date"
-                @click="selectDay(day.date)"
+                @click="setSelectedDay(day.date)"
                 class="availability-tab__day-button"
                 :class="{
                   'availability-tab__day-button--active':
@@ -90,7 +90,7 @@
             <button
               v-for="(time, index) in availableHours"
               :key="index"
-              @click="selectHour(time)"
+              @click="setSelectedHour(time)"
               class="availability-tab__hour-button"
               :class="{
                 'availability-tab__hour-button--active': selectedHour === time,
@@ -111,56 +111,72 @@
         :selected-day="selectedDay"
         :selected-hour="selectedHour"
         :current-step="2"
-        :supplier-id="supplierId"
-        :supplier-name="supplierName"
-        :customer-id="customer.id"
-        :customer-name="customer.name"
-        :customer-phone="customer.phone_number"
+        :supplier-id="supplier?.id ?? 0"
+        :supplier-name="supplier?.name ?? ''"
+        :customer-id="customer?.id ?? ''"
+        :customer-name="customer?.name || ''"
+        :customer-phone="customer?.phone_number || ''"
+        :selected-package="selectedPackage"
+        :selected-procedure-id="selectedProcedureId ?? 0"
+        :services="supplier?.services"
       />
     </div>
   </div>
 </template>
 
-<script setup lang="ts">
-import type { Customer } from "~/types/appointment";
+<script lang="ts" setup>
+import { computed, onMounted, ref } from "vue";
+import { useFormat } from "~/composables/useFormat";
+import type { Customer, Supplier } from "~/types";
 
-const props = defineProps<{
-  selectedSpecialty: string;
-  selectedProcedure: string;
-  selectedDay: string;
-  availableHours: string[];
-  selectedHour: string;
-  availableDays: Array<{ date: string; day: string; number: number }>;
-  selectedMonth: number | null;
-  months: Array<{ value: number; label: string }>;
-  formatTime: (time: string) => string;
+interface Month {
+  value: number;
+  label: string;
+}
+
+interface AvailableDay {
+  date: string;
+  day: string;
+  number: number;
+}
+
+interface Props {
+  selectedSpecialty: string | null;
+  selectedProcedureName: string | null;
+  selectedProcedureId: number | null;
   reserveAppointment: () => void;
-  availability: Record<string, string[]>;
-  supplierId: number;
-  supplierName: string;
-  customer: Customer;
+  supplier: Supplier | Partial<Supplier> | null;
+  customer: Customer | null;
   selectedPackage?: any;
-}>();
+}
 
-const emit = defineEmits<{
-  (e: "update:selectedDay", value: string | null): void;
-  (e: "update:selectedMonth", value: number | null): void;
-  (e: "update:selectedHour", value: string | null): void;
-  (
-    e: "update:availableDays",
-    value: Array<{ date: string; day: string; number: number }>
-  ): void;
-}>();
+const props = defineProps<Props>();
 
-const isDropdownOpen = ref(false);
+const { formatTime } = useFormat();
 
-const selectedMonthLabel = computed(() => {
-  if (props.selectedMonth === null) return null;
-  const month = props.months.find((m) => m.value === props.selectedMonth);
-  return month ? month.label : null;
-});
+const selectedMonth = ref<number | null>(null);
+const selectedDay = ref<string | null>(null);
+const selectedHour = ref<string | null>(null);
+const availableHours = ref<string[]>([]);
+const availableDays = ref<AvailableDay[]>([]);
+const isDropdownOpen = ref<boolean>(false);
 
-const weekdayMap = {
+const months = ref<Month[]>([
+  { value: 0, label: "Enero" },
+  { value: 1, label: "Febrero" },
+  { value: 2, label: "Marzo" },
+  { value: 3, label: "Abril" },
+  { value: 4, label: "Mayo" },
+  { value: 5, label: "Junio" },
+  { value: 6, label: "Julio" },
+  { value: 7, label: "Agosto" },
+  { value: 8, label: "Septiembre" },
+  { value: 9, label: "Octubre" },
+  { value: 10, label: "Noviembre" },
+  { value: 11, label: "Diciembre" },
+]);
+
+const weekdayMap: Record<string, string> = {
   Monday: "Lun",
   Tuesday: "Mar",
   Wednesday: "Mié",
@@ -170,85 +186,113 @@ const weekdayMap = {
   Sunday: "Dom",
 } as const;
 
-const toggleDropdown = () => {
+const selectedMonthLabel = computed<string | null>(() => {
+  if (selectedMonth.value === null) return null;
+  const month = months.value.find((m) => m.value === selectedMonth.value);
+  return month ? month.label : null;
+});
+
+const availability = computed<Record<string, string[]>>(() => {
+  const availabilityMap: Record<string, string[]> = {};
+
+  if (!props.supplier?.availabilities) return availabilityMap;
+
+  const today = new Date();
+  const endDate = new Date();
+  endDate.setDate(today.getDate() + 30);
+
+  props.supplier.availabilities.forEach((avail) => {
+    const currentDate = new Date(today);
+    while (currentDate <= endDate) {
+      const weekdayName = currentDate.toLocaleDateString("en-US", {
+        weekday: "long",
+      });
+
+      if (weekdayName === avail.weekday) {
+        const dateStr = currentDate.toISOString().split("T")[0];
+        const fromHour = avail.from_hour.substring(0, 5);
+
+        if (!availabilityMap[dateStr]) {
+          availabilityMap[dateStr] = [];
+        }
+
+        availabilityMap[dateStr].push(fromHour);
+      }
+      currentDate.setDate(currentDate.getDate() + 1);
+    }
+  });
+
+  return availabilityMap;
+});
+
+const toggleDropdown = (): void => {
   isDropdownOpen.value = !isDropdownOpen.value;
 };
 
-const handleMonthSelect = (month: { value: number; label: string }) => {
-  emit("update:selectedMonth", month.value);
-  emit("update:selectedDay", null);
-  emit("update:selectedHour", null);
+const closeDropdown = (): void => {
   isDropdownOpen.value = false;
 };
 
-const closeDropdown = () => {
-  isDropdownOpen.value = false;
+const handleMonthSelect = (month: Month): void => {
+  selectedMonth.value = month.value;
+  handleMonthChange();
+  closeDropdown();
 };
 
-const handleMonthChange = (event: Event) => {
-  const target = event.target as HTMLSelectElement;
-  const value = target.value;
-  const monthValue = value ? parseInt(value) : null;
-
-  emit("update:selectedMonth", monthValue);
-  emit("update:selectedDay", null);
-  emit("update:selectedHour", null);
+const handleMonthChange = (): void => {
+  selectedDay.value = null;
+  selectedHour.value = null;
+  availableDays.value = getAvailableDaysForMonth(selectedMonth.value);
+  availableHours.value = [];
 };
 
-const selectDay = (date: string) => {
-  emit("update:selectedDay", date);
-  emit("update:selectedHour", null);
-};
-
-const selectHour = (time: string) => {
-  emit("update:selectedHour", time);
-};
-
-type Weekday = keyof typeof weekdayMap;
-
-function getAvailableDaysForMonth(month: number | null) {
+const getAvailableDaysForMonth = (month: number | null): AvailableDay[] => {
   if (month === null) return [];
 
   const year = new Date().getFullYear();
   const daysInMonth = new Date(year, month + 1, 0).getDate();
-  const availableDays = [];
+  const availableDaysArray: AvailableDay[] = [];
 
   for (let day = 1; day <= daysInMonth; day++) {
     const date = new Date(year, month, day);
     const dateStr = date.toISOString().split("T")[0];
 
-    if (props.availability[dateStr] && props.availability[dateStr].length > 0) {
-      const weekday = date.toLocaleDateString("en-US", {
+    if (availability.value[dateStr] && availability.value[dateStr].length > 0) {
+      const weekdayName = date.toLocaleDateString("en-US", {
         weekday: "long",
-      }) as Weekday;
+      });
 
-      availableDays.push({
+      availableDaysArray.push({
         date: dateStr,
-        day: weekdayMap[weekday],
+        day: weekdayMap[weekdayName] || weekdayName.slice(0, 3),
         number: date.getDate(),
       });
     }
   }
 
-  return availableDays;
-}
+  return availableDaysArray;
+};
+
+const setSelectedDay = (date: string): void => {
+  if (!date) return;
+
+  selectedDay.value = date;
+  availableHours.value = availability.value[date] || [];
+  selectedHour.value = null;
+};
+
+const setSelectedHour = (hour: string): void => {
+  selectedHour.value = hour;
+};
 
 onMounted(() => {
-  document.addEventListener("click", (event) => {
+  document.addEventListener("click", (event: Event) => {
     const dropdown = document.querySelector(".availability-tab__dropdown");
     if (dropdown && !dropdown.contains(event.target as Node)) {
       closeDropdown();
     }
   });
 });
-
-watch(
-  () => props.selectedMonth,
-  (newMonth) => {
-    const availableDays = getAvailableDaysForMonth(newMonth);
-    emit("update:availableDays", availableDays);
-  }
-);
 </script>
 
 <style lang="scss" scoped>

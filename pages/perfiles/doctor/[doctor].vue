@@ -1,4 +1,12 @@
-<script setup>
+<script setup lang="ts">
+import type { Supplier } from "~/types";
+
+interface SupplierResponse {
+  success: boolean;
+  data?: Supplier;
+  message?: string;
+}
+
 definePageMeta({
   middleware: ["auth-pacientes"],
 });
@@ -7,36 +15,122 @@ const config = useRuntimeConfig();
 const token = useCookie("token");
 const route = useRoute();
 
-const searchSpecialtyCode = route.query.specialty_code;
-const searchProcedureCode = route.query.procedure_code;
+const { withErrorHandling } = useErrorHandler();
 
-const { data: doctorData, pending } = await useLazyFetch(
-  config.public.API_BASE_URL + "/supplier/get",
-  {
-    headers: { Authorization: token.value },
-    params: {
-      id: route.params.doctor,
-    },
-    transform: (_doctor) => _doctor.data,
-  }
-);
+const supplierId = route.params.doctor as string | undefined;
+const searchSpecialtyCode = route.query.specialty_code as string | undefined;
+const searchProcedureCode = route.query.procedure_code as string | undefined;
 
-const isModalOpen = ref(false);
+const isModalOpen = ref<boolean>(false);
+const supplierData = ref<Supplier | null>(null);
+const isLoading = ref<boolean>(false);
+const error = ref<string | null>(null);
 
-const openModal = () => {
+const openModal = (): void => {
   isModalOpen.value = true;
 };
 
-const closeModal = () => {
+const closeModal = (): void => {
   isModalOpen.value = false;
 };
 
-const doctor = ref({
-  servicesResult: [
-    { doctor_service_id: 1, specialty: "Cardiology" },
-    { doctor_service_id: 2, specialty: "Internal Medicine" },
+const fetchSupplierData = async (): Promise<void> => {
+  if (!supplierId) {
+    error.value = "ID del proveedor no encontrado";
+    return;
+  }
+
+  if (!token.value) {
+    error.value = "Token de autorización requerido";
+    return;
+  }
+
+  const supplierOperation = $fetch<SupplierResponse>(
+    config.public.API_BASE_URL + "/supplier/get",
+    {
+      headers: { Authorization: token.value },
+      params: {
+        id: supplierId,
+      },
+    }
+  );
+
+  const { data, error: fetchError } = await withErrorHandling(
+    supplierOperation,
+    isLoading,
+    {
+      customMessage: "Error al cargar los datos del proveedor médico",
+      redirectOn401: true,
+      logError: true,
+    }
+  );
+
+  if (fetchError) {
+    error.value = fetchError;
+    return;
+  }
+
+  if (data?.data) {
+    supplierData.value = data.data;
+    error.value = null;
+  } else {
+    error.value = "No se encontraron datos del proveedor";
+  }
+};
+
+// Mock supplier for fallback (remove when real API is working)
+const mockSupplier = ref<Partial<Supplier>>({
+  services: [
+    {
+      id: 1,
+      medical_specialty: {
+        id: 1,
+        code: "CARDIOLOGY",
+        name: "Cardiología",
+        type: "specialty",
+        description: null,
+        father_code: null,
+        value1: null,
+        created_date: new Date().toISOString(),
+        updated_date: null,
+        is_deleted: 0,
+      },
+      procedures: [],
+    },
+    {
+      id: 2,
+      medical_specialty: {
+        id: 2,
+        code: "INTERNAL_MEDICINE",
+        name: "Medicina Interna",
+        type: "specialty",
+        description: null,
+        father_code: null,
+        value1: null,
+        created_date: new Date().toISOString(),
+        updated_date: null,
+        is_deleted: 0,
+      },
+      procedures: [],
+    },
   ],
 });
+
+const currentSupplier = computed<Supplier | Partial<Supplier> | null>(() => {
+  return supplierData.value || mockSupplier.value || null;
+});
+
+const hasSupplierData = computed<boolean>(() => {
+  return !!(
+    currentSupplier.value?.id || currentSupplier.value?.services?.length
+  );
+});
+
+const supplierName = computed<string>(() => {
+  return currentSupplier.value?.name || "Proveedor médico";
+});
+
+await fetchSupplierData();
 </script>
 
 <template>
@@ -63,7 +157,6 @@ const doctor = ref({
             Volver
           </NuxtLink>
 
-          <!-- Breadcrumb -->
           <div class="breadcrumb-container">
             <nav aria-label="breadcrumb">
               <ol class="breadcrumb-list">
@@ -129,14 +222,26 @@ const doctor = ref({
           </div>
         </div>
 
-        <!-- Loading -->
-        <WebsitePerfilDoctorPantallaCarga v-if="pending" />
+        <div v-if="error && !isLoading" class="error-container">
+          <div class="error-card">
+            <h3 class="error-title">Error al cargar el perfil</h3>
+            <p class="error-message">{{ error }}</p>
+            <button
+              @click="fetchSupplierData"
+              class="retry-button"
+              :disabled="isLoading"
+            >
+              {{ isLoading ? "Cargando..." : "Reintentar" }}
+            </button>
+          </div>
+        </div>
 
-        <!-- Main content -->
-        <div v-else class="content-wrapper">
+        <WebsitePerfilDoctorPantallaCarga v-else-if="isLoading" />
+
+        <div v-else-if="hasSupplierData" class="content-wrapper">
           <WebsitePerfilDoctorBarraLateralDoctor
-            :doctor-data="doctorData"
-            :doctor="doctor"
+            :supplier-data="currentSupplier"
+            :supplier="currentSupplier"
             @open-modal="openModal"
           />
 
@@ -150,12 +255,24 @@ const doctor = ref({
                   atención médica personalizada.
                 </p>
                 <WebsitePerfilDoctorTabs
-                  :doctor="doctorData"
+                  :supplier="currentSupplier"
                   :search-specialty-code="searchSpecialtyCode"
                   :search-procedure-code="searchProcedureCode"
                 />
               </div>
             </div>
+          </div>
+        </div>
+
+        <div v-else class="empty-state">
+          <div class="empty-card">
+            <h3 class="empty-title">No se encontraron datos</h3>
+            <p class="empty-message">
+              No se pudieron cargar los datos del proveedor médico.
+            </p>
+            <button @click="fetchSupplierData" class="retry-button">
+              Reintentar
+            </button>
           </div>
         </div>
       </div>

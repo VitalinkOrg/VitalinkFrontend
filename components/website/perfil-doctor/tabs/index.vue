@@ -1,291 +1,176 @@
-<script setup>
-import { useCookie, useRuntimeConfig } from "nuxt/app";
-import { computed, onMounted, reactive, ref, watch } from "vue";
+<script lang="ts" setup>
+import type {
+  AssessmentDetail,
+  Customer,
+  MedicalSpecialty,
+  Package,
+  Procedures,
+  ReviewDetail,
+  Service,
+  Supplier,
+} from "~/types";
 
-const props = defineProps({
-  doctor: {
-    type: Object,
-    default: () => ({}),
-  },
-  searchSpecialtyCode: {
-    type: String,
-    default: null,
-  },
-  searchProcedureCode: {
-    type: String,
-    default: null,
-  },
+interface Props {
+  supplier?: Supplier | Partial<Supplier> | null;
+  searchSpecialtyCode?: string | null;
+  searchProcedureCode?: string | null;
+}
+
+interface AppointmentForm {
+  specialty: string | null;
+  service: string | null;
+  location: string | null;
+  type: string | null;
+  date: string | null;
+  time: string | null;
+}
+
+const props = defineProps<Props>();
+
+const { createAssessmentPackage } = useAssessmentPackage();
+const { withErrorHandling } = useErrorHandler();
+
+const panel = ref<boolean>(false);
+const user = useCookie<Customer>("user_info");
+const tab = ref<number>(1);
+const appointment = reactive<AppointmentForm>({
+  specialty: null,
+  service: null,
+  location: null,
+  type: null,
+  date: null,
+  time: null,
+});
+const result = ref<any>(null);
+const open = ref<boolean>(false);
+const selectedSpecialty = ref<string | null>(null);
+const selectedSpecialtyId = ref<number | null>(null);
+const selectedPackage = ref<Package | null>(null);
+const selectedProcedure = ref<string | null>(null);
+const selectedProcedureId = ref<number | null>(null);
+const reviewDetails = ref<ReviewDetail[]>([]);
+const assessmentDetails = ref<AssessmentDetail[]>([]);
+const isLoadingData = ref<boolean>(false);
+
+const currentSupplier = computed<Supplier | Partial<Supplier> | null>(() => {
+  return props.supplier || null;
 });
 
-const panel = ref(false);
-const user = useCookie("user_info");
-const tab = ref(1);
-const appointment = reactive({
-  specialty: "",
-  service: "",
-  location: "",
-  type: "",
-  date: "",
-  time: "",
+const supplierServices = computed<Service[]>(() => {
+  const services = currentSupplier.value?.services;
+  return Array.isArray(services) ? services : [];
 });
-const result = ref(null);
-const open = ref(false);
-const errorText = ref("");
-const selectedMonth = ref(null);
-const selectedDay = ref(null);
-const selectedHour = ref(null);
-const availableDays = ref([]);
-const availableHours = ref([]);
-const breadcumCitaValoracion = ref(1);
-const selectedSpecialty = ref(null);
-const selectedSpecialtyId = ref(null);
-const selectedPackage = ref(null);
-const selectedProcedure = ref(null);
-const selectedProcedureId = ref(null);
-const reviewDetails = ref([]);
-const assessmentDetails = ref([]);
 
-const selectedSpecialtyName = computed(() => {
-  if (!selectedSpecialty.value || !props.doctor.services) return "";
+const hasServices = computed<boolean>(() => {
+  return supplierServices.value.length > 0;
+});
 
-  const service = props.doctor.services.find(
-    (s) => s.medical_specialty.code === selectedSpecialty.value
+const selectedSpecialtyName = computed<string>(() => {
+  if (!selectedSpecialty.value || !hasServices.value) return "";
+
+  const service = supplierServices.value.find(
+    (s) => s.medical_specialty?.code === selectedSpecialty.value
   );
-  return service ? service.medical_specialty.name : selectedSpecialty.value;
+  return service?.medical_specialty?.name || selectedSpecialty.value;
 });
 
-const selectedProcedureName = computed(() => {
-  if (!selectedProcedure.value || !props.doctor.services) return "";
+const selectedProcedureName = computed<string>(() => {
+  if (!selectedProcedure.value || !hasServices.value) return "";
 
-  for (const service of props.doctor.services) {
-    const procedure = service.procedures?.find(
-      (p) => p.procedure.code === selectedProcedure.value
+  for (const service of supplierServices.value) {
+    if (!service.procedures || !Array.isArray(service.procedures)) continue;
+
+    const procedure = service.procedures.find(
+      (p) => p.procedure?.code === selectedProcedure.value
     );
-    if (procedure) {
+    if (procedure?.procedure?.name) {
       return procedure.procedure.name;
     }
   }
   return selectedProcedure.value;
 });
 
-const months = ref([
-  { value: 0, label: "Enero" },
-  { value: 1, label: "Febrero" },
-  { value: 2, label: "Marzo" },
-  { value: 3, label: "Abril" },
-  { value: 4, label: "Mayo" },
-  { value: 5, label: "Junio" },
-  { value: 6, label: "Julio" },
-  { value: 7, label: "Agosto" },
-  { value: 8, label: "Septiembre" },
-  { value: 9, label: "Octubre" },
-  { value: 10, label: "Noviembre" },
-  { value: 11, label: "Diciembre" },
-]);
-
-const weekdayMap = ref({
-  Monday: "Lun",
-  Tuesday: "Mar",
-  Wednesday: "Mié",
-  Thursday: "Jue",
-  Friday: "Vie",
-  Saturday: "Sáb",
-  Sunday: "Dom",
+const isSearchMode = computed<boolean>(() => {
+  return Boolean(props.searchSpecialtyCode || props.searchProcedureCode);
 });
 
-watch(selectedMonth, (newMonth) => {
-  handleMonthChange();
+const specialties = computed<MedicalSpecialty[]>(() => {
+  return supplierServices.value
+    .map((service) => service.medical_specialty)
+    .filter(
+      (specialty): specialty is MedicalSpecialty => specialty !== undefined
+    );
 });
 
-const isSearchMode = computed(() => {
-  return props.searchSpecialtyCode || props.searchProcedureCode;
-});
-
-const doctorReviews = computed(() => {
-  return (
-    props.doctor.reviews?.map((review) => ({
-      first_name: review.customer.split(" ")[0] || "Anónimo",
-      last_name: review.is_annonymous
-        ? ""
-        : review.customer.split(" ")[1] || "",
-      message: review.comment,
-      pacient_type: "Paciente",
-      score: review.stars_average,
-    })) || []
-  );
-});
-
-const availability = computed(() => {
-  const availabilityMap = {};
-
-  if (!props.doctor.availabilities) return availabilityMap;
-
-  const today = new Date();
-  const endDate = new Date();
-  endDate.setDate(today.getDate() + 30);
-
-  props.doctor.availabilities.forEach((avail) => {
-    const currentDate = new Date(today);
-    while (currentDate <= endDate) {
-      const weekdayName = currentDate.toLocaleDateString("en-US", {
-        weekday: "long",
-      });
-
-      if (weekdayName === avail.weekday) {
-        const dateStr = currentDate.toISOString().split("T")[0];
-        const fromHour = avail.from_hour.substring(0, 5);
-
-        if (!availabilityMap[dateStr]) {
-          availabilityMap[dateStr] = [];
-        }
-
-        availabilityMap[dateStr].push(fromHour);
-      }
-      currentDate.setDate(currentDate.getDate() + 1);
+const filteredProcedures = computed<Procedures[]>(() => {
+  if (!selectedSpecialty.value && hasServices.value) {
+    const firstService = supplierServices.value[0];
+    if (firstService?.medical_specialty?.code) {
+      selectedSpecialty.value = firstService.medical_specialty.code;
+      appointment.specialty = selectedSpecialty.value;
+      return Array.isArray(firstService.procedures)
+        ? firstService.procedures
+        : [];
     }
-  });
-
-  return availabilityMap;
-});
-
-const specialties = computed(() => {
-  return (
-    props.doctor.services?.map((service) => service.medical_specialty) || []
-  );
-});
-
-const filteredProcedures = computed(() => {
-  if (
-    !selectedSpecialty.value &&
-    props.doctor.services &&
-    props.doctor.services.length > 0
-  ) {
-    selectedSpecialty.value = props.doctor.services[0].medical_specialty.code;
-    appointment.specialty = selectedSpecialty.value;
-    return props.doctor.services[0].procedures;
   }
 
-  const specialty = props.doctor.services.find(
-    (s) => s.medical_specialty.code === selectedSpecialty.value
+  const specialty = supplierServices.value.find(
+    (s) => s.medical_specialty?.code === selectedSpecialty.value
   );
 
-  return specialty?.procedures || [];
+  return Array.isArray(specialty?.procedures) ? specialty.procedures : [];
 });
 
-const filteredPackages = computed(() => {
-  let packages = [];
+const filteredPackages = computed<Package[]>(() => {
+  let packages: Package[] = [];
 
-  if (
-    !selectedProcedure.value &&
-    filteredProcedures.value &&
-    filteredProcedures.value.length > 0
-  ) {
-    selectedProcedure.value = filteredProcedures.value[0].procedure.code;
-    selectedProcedureId.value = filteredProcedures.value[0].procedure.id;
-    appointment.service = selectedProcedure.value;
-    packages = filteredProcedures.value[0].packages || [];
+  if (!selectedProcedure.value && filteredProcedures.value.length > 0) {
+    const firstProcedure = filteredProcedures.value[0];
+    if (firstProcedure?.procedure) {
+      selectedProcedure.value = firstProcedure.procedure.code;
+      selectedProcedureId.value = firstProcedure.procedure.id;
+      appointment.service = selectedProcedure.value;
+      packages = Array.isArray(firstProcedure.packages)
+        ? firstProcedure.packages
+        : [];
+    }
   } else {
     const procedure = filteredProcedures.value.find(
-      (p) => p.procedure.code === selectedProcedure.value
+      (p) => p.procedure?.code === selectedProcedure.value
     );
-    packages = procedure?.packages || [];
+    packages = Array.isArray(procedure?.packages) ? procedure.packages : [];
   }
 
-  const citaValoracionPackage = {
-    id: "cita-valoracion",
-    product: {
-      id: 9999,
-      code: "ASSESSMENT_APPOINTMENT",
-      name: "Cita de Valoración",
-      type: "MEDICAL_PRODUCT",
-      description: "Cita de valoración médica inicial",
-      father_code: null,
-      value1: "18000",
-      created_date: new Date().toISOString(),
-      updated_date: null,
-      is_deleted: 0,
-    },
-    reference_price: 18000,
-    discount: 0,
-    discounted_price: 18000,
-    services_offer: {
-      ASSESSMENT_DETAILS: [
-        "MEDICAL_CONSULTATION",
-        "CLINICAL_EVALUATION",
-        "INITIAL_DIAGNOSIS",
-      ],
-    },
-    is_king: 0,
-    observations: "",
-    postoperative_assessments: null,
-  };
+  try {
+    const packageId = packages.length > 0 ? packages[0].id : 0;
 
-  return [citaValoracionPackage, ...packages];
+    const assessmentPackage = createAssessmentPackage(18000, 0, packageId);
+
+    return [assessmentPackage, ...packages];
+  } catch (error) {
+    console.error("Error creating assessment package:", error);
+    return packages;
+  }
 });
 
-const getAssesmentLabel = (assesmentCode) => {
-  if (!assessmentDetails.value) return assesmentCode;
-  const detail = assessmentDetails.value.find(
-    (item) => item.code === assesmentCode
-  );
-  return detail ? detail.name : assesmentCode;
-};
+console.log("filteredPackages: ", filteredPackages.value);
 
-const selectDay = (date) => {
-  selectedDay.value = date;
-  availableHours.value = availability.value[date] || [];
-  selectedHour.value = null;
-};
-
-const selectHour = (time) => {
-  selectedHour.value = time;
-};
-
-const handleMonthChange = () => {
-  selectedDay.value = null;
-  selectedHour.value = null;
-  availableDays.value = getAvailableDaysForMonth(selectedMonth.value);
-  availableHours.value = [];
-};
-
-const getAvailableDaysForMonth = (month) => {
-  if (month === null) return [];
-
-  const year = new Date().getFullYear();
-  const daysInMonth = new Date(year, month + 1, 0).getDate();
-  const availableDaysArray = [];
-
-  for (let day = 1; day <= daysInMonth; day++) {
-    const date = new Date(year, month, day);
-    const dateStr = date.toISOString().split("T")[0];
-
-    if (availability.value[dateStr] && availability.value[dateStr].length > 0) {
-      const weekdayName = date.toLocaleDateString("en-US", {
-        weekday: "long",
-      });
-
-      availableDaysArray.push({
-        date: dateStr,
-        day: weekdayMap.value[weekdayName] || weekdayName.slice(0, 3),
-        number: date.getDate(),
-      });
-    }
+const getAssessmentLabel = (assessmentCode: string): string => {
+  if (!assessmentCode || !Array.isArray(assessmentDetails.value)) {
+    return assessmentCode || "Código desconocido";
   }
 
-  return availableDaysArray;
+  const detail = assessmentDetails.value.find(
+    (item) => item?.code === assessmentCode
+  );
+  return detail?.name || assessmentCode;
 };
 
-const formatTime = (time) => {
-  const [hours, minutes] = time.split(":");
-  const period = hours >= 12 ? "PM" : "AM";
-  return `${hours % 12 || 12}:${minutes}${period}`;
-};
-
-const closeModal = () => {
+const closeModal = (): void => {
   open.value = false;
 };
 
-const reserveAppointment = () => {
+const reserveAppointment = (): void => {
   if (panel.value) {
     panel.value = false;
     return;
@@ -293,93 +178,240 @@ const reserveAppointment = () => {
   panel.value = true;
 };
 
-const selectSpecialty = (specialtyCode, specialtyId) => {
+const selectSpecialty = (specialtyCode: string, specialtyId: number): void => {
+  if (!specialtyCode || !specialtyId) {
+    console.warn("Invalid specialty selection parameters");
+    return;
+  }
+
   selectedSpecialty.value = specialtyCode;
   selectedSpecialtyId.value = specialtyId;
   selectedProcedure.value = null;
+  selectedProcedureId.value = null;
   appointment.specialty = specialtyCode;
 
-  const specialty = props.doctor.services.find(
-    (s) => s.medical_specialty.code === specialtyCode
+  const specialty = supplierServices.value.find(
+    (s) => s.medical_specialty?.code === specialtyCode
   );
-  if (specialty && specialty.procedures && specialty.procedures.length > 0) {
-    selectedProcedure.value = specialty.procedures[0].procedure.code;
-    selectedProcedureId.value = specialty.procedures[0].procedure.id;
-    appointment.service = selectedProcedure.value;
-  }
-};
 
-const selectPackage = (selectedPkg) => {
-  selectedPackage.value = selectedPkg;
-  tab.value = 2;
-};
-
-const selectProcedure = (procedureCode, procedureId) => {
-  selectedProcedure.value = procedureCode;
-  selectedProcedureId.value = procedureId;
-  appointment.service = procedureCode;
-};
-
-const getPackagePrice = (pkg) => {
-  const price = parseFloat(pkg.product.value1);
-  const discount = pkg.discount / 100;
-  return price - price * discount;
-};
-
-const initializeDefaults = () => {
-  if (props.doctor.services && props.doctor.services.length > 0) {
-    selectedSpecialty.value = props.doctor.services[0].medical_specialty.code;
-    selectedSpecialtyId.value = props.doctor.services[0].medical_specialty.id;
-    appointment.specialty = selectedSpecialty.value;
-    if (
-      props.doctor.services[0].procedures &&
-      props.doctor.services[0].procedures.length > 0
-    ) {
-      selectedProcedure.value =
-        props.doctor.services[0].procedures[0].procedure.code;
-      selectedProcedureId.value =
-        props.doctor.services[0].procedures[0].procedure.id;
-      appointment.service = selectedProcedure.value;
+  if (
+    specialty?.procedures &&
+    Array.isArray(specialty.procedures) &&
+    specialty.procedures.length > 0
+  ) {
+    const firstProcedure = specialty.procedures[0];
+    if (firstProcedure?.procedure) {
+      selectedProcedure.value = firstProcedure.procedure.code;
+      selectedProcedureId.value = firstProcedure.procedure.id;
+      appointment.service = firstProcedure.procedure.code;
     }
   }
 };
 
-const loadApiData = async () => {
-  const token = useCookie("token");
+const selectPackage = (selectedPkg: Package): void => {
+  if (!selectedPkg) {
+    console.warn("Invalid package selection");
+    return;
+  }
+
+  selectedPackage.value = selectedPkg;
+  tab.value = 2;
+};
+
+const selectPackageAutomatically = (packages: Package[]): void => {
+  if (!Array.isArray(packages) || packages.length === 0) return;
+
+  const nonAssessmentPackage = packages.find(
+    (pkg) => pkg.product?.name !== "Cita de Valoración"
+  );
+
+  selectedPackage.value = nonAssessmentPackage || packages[0];
+};
+
+const selectProcedure = (procedureCode: string, procedureId: number): void => {
+  if (!procedureCode || !procedureId) {
+    console.warn("Invalid procedure selection parameters");
+    return;
+  }
+
+  selectedProcedure.value = procedureCode;
+  selectedProcedureId.value = procedureId;
+  selectedPackage.value = null;
+  appointment.service = procedureCode;
+
+  nextTick(() => {
+    if (filteredPackages.value.length > 0) {
+      selectPackageAutomatically(filteredPackages.value);
+    }
+  });
+};
+
+const initializeDefaults = (): void => {
+  if (!hasServices.value) return;
+
+  if (isSearchMode.value) return;
+
+  const firstService = supplierServices.value[0];
+  if (!firstService?.medical_specialty) return;
+
+  selectedSpecialty.value = firstService.medical_specialty.code;
+  selectedSpecialtyId.value = firstService.medical_specialty.id;
+  appointment.specialty = firstService.medical_specialty.code;
+
+  if (
+    Array.isArray(firstService.procedures) &&
+    firstService.procedures.length > 0
+  ) {
+    const firstProcedure = firstService.procedures[0];
+    if (firstProcedure?.procedure) {
+      selectedProcedure.value = firstProcedure.procedure.code;
+      selectedProcedureId.value = firstProcedure.procedure.id;
+      appointment.service = firstProcedure.procedure.code;
+    }
+  }
+
+  nextTick(() => {
+    if (filteredPackages.value.length > 0 && !selectedPackage.value) {
+      selectPackageAutomatically(filteredPackages.value);
+    }
+  });
+};
+
+const loadAssessmentDetails = async (): Promise<void> => {
+  const token = useCookie<string>("token");
   const config = useRuntimeConfig();
 
-  try {
-    const reviewResponse = await $fetch(
-      config.public.API_BASE_URL + "/udc/get_all",
-      {
-        headers: { Authorization: token.value },
-        params: { type: "REVIEW" },
-      }
-    );
-    reviewDetails.value = reviewResponse.data;
+  if (!token.value) {
+    console.warn("No authorization token available");
+    return;
+  }
 
-    const assessmentResponse = await $fetch(
-      config.public.API_BASE_URL + "/udc/get_all",
-      {
-        headers: { Authorization: token.value },
-        params: { type: "ASSESSMENT_DETAIL" },
-      }
-    );
-    assessmentDetails.value = assessmentResponse.data;
-  } catch (error) {
-    console.error("Error fetching details:", error);
+  const assessmentOperation = $fetch<{ data: AssessmentDetail[] }>(
+    config.public.API_BASE_URL + "/udc/get_all",
+    {
+      headers: { Authorization: token.value },
+      params: { type: "ASSESSMENT_DETAIL" },
+    }
+  );
+
+  const { data: assessmentData, error: assessmentError } =
+    await withErrorHandling(assessmentOperation, isLoadingData, {
+      customMessage: "Error al cargar detalles de evaluación",
+    });
+
+  if (assessmentData?.data && Array.isArray(assessmentData.data)) {
+    assessmentDetails.value = assessmentData.data;
+  }
+
+  if (assessmentError) {
+    console.error("Assessment details loading error:", assessmentError);
   }
 };
 
-initializeDefaults();
+const loadApiData = async (): Promise<void> => {
+  const token = useCookie<string>("token");
+  const config = useRuntimeConfig();
 
-onMounted(() => {
-  if (selectedMonth.value !== null) {
-    availableDays.value = getAvailableDaysForMonth(selectedMonth.value);
+  if (!token.value) {
+    console.warn("No authorization token available");
+    return;
   }
 
+  const reviewOperation = $fetch<{ data: ReviewDetail[] }>(
+    config.public.API_BASE_URL + "/udc/get_all",
+    {
+      headers: { Authorization: token.value },
+      params: { type: "REVIEW" },
+    }
+  );
+
+  const { data: reviewData, error: reviewError } = await withErrorHandling(
+    reviewOperation,
+    isLoadingData,
+    { customMessage: "Error al cargar detalles de reseñas" }
+  );
+
+  if (reviewData?.data && Array.isArray(reviewData.data)) {
+    reviewDetails.value = reviewData.data;
+  }
+
+  if (reviewError) {
+    console.error("Review details loading error:", reviewError);
+  }
+
+  await loadAssessmentDetails();
+};
+
+watch(
+  () => currentSupplier.value,
+  (newSupplier) => {
+    if (newSupplier && hasServices.value) {
+      initializeDefaults();
+      nextTick(() => {
+        if (filteredPackages.value.length > 0 && !selectedPackage.value) {
+          selectPackageAutomatically(filteredPackages.value);
+        }
+      });
+    }
+  },
+  { immediate: true }
+);
+
+onMounted(() => {
   loadApiData();
 });
+
+watch(
+  [() => props.searchSpecialtyCode, () => props.searchProcedureCode],
+  ([newSpecialtyCode, newProcedureCode]) => {
+    if (!hasServices.value || !isSearchMode.value) return;
+
+    const validSpecialty = supplierServices.value.find(
+      (s) => s.medical_specialty?.code === newSpecialtyCode
+    );
+
+    if (validSpecialty && newSpecialtyCode) {
+      selectedSpecialty.value = newSpecialtyCode;
+      selectedSpecialtyId.value = validSpecialty.medical_specialty?.id || null;
+      appointment.specialty = newSpecialtyCode;
+
+      if (newProcedureCode && Array.isArray(validSpecialty.procedures)) {
+        const validProcedure = validSpecialty.procedures.find(
+          (p) => p.procedure?.code === newProcedureCode
+        );
+
+        if (validProcedure && validProcedure.procedure) {
+          selectedProcedure.value = newProcedureCode;
+          selectedProcedureId.value = validProcedure.procedure.id;
+          appointment.service = newProcedureCode;
+        } else {
+          const firstProcedure = validSpecialty.procedures[0];
+          if (firstProcedure?.procedure) {
+            selectedProcedure.value = firstProcedure.procedure.code;
+            selectedProcedureId.value = firstProcedure.procedure.id;
+            appointment.service = firstProcedure.procedure.code;
+          }
+        }
+      } else {
+        const firstProcedure = validSpecialty.procedures[0];
+        if (firstProcedure?.procedure) {
+          selectedProcedure.value = firstProcedure.procedure.code;
+          selectedProcedureId.value = firstProcedure.procedure.id;
+          appointment.service = firstProcedure.procedure.code;
+        }
+      }
+
+      nextTick(() => {
+        if (filteredPackages.value.length > 0 && !selectedPackage.value) {
+          selectPackageAutomatically(filteredPackages.value);
+        }
+      });
+    } else {
+      initializeDefaults();
+    }
+  },
+  { immediate: true }
+);
 </script>
 
 <template>
@@ -398,6 +430,7 @@ onMounted(() => {
         class="tab-item__link"
         :class="{ 'tab-item__link--active': tab === 2 }"
         @click="tab = 2"
+        :disabled="!selectedPackage"
       >
         Disponibilidad
       </button>
@@ -414,7 +447,7 @@ onMounted(() => {
     <li class="tab-item">
       <button
         class="tab-item__link"
-        :class="{ 'tab-item__link--active': tab === 5 }"
+        :class="{ 'tab-item__link--active': tab === 4 }"
         @click="tab = 4"
       >
         Perfil
@@ -423,124 +456,64 @@ onMounted(() => {
   </ul>
 
   <section class="tabs-content">
-    <!-- Servicios Tab -->
+    <div v-if="isLoadingData" class="loading-container">
+      <p>Cargando información...</p>
+    </div>
+
+    <div v-else-if="!currentSupplier" class="empty-state">
+      <p>No se encontró información del proveedor médico.</p>
+    </div>
+
     <WebsitePerfilDoctorTabsServicio
-      v-if="tab === 1"
-      :doctor="doctor"
-      :selectSpecialty="selectSpecialty"
-      :selectedSpecialty="selectedSpecialty"
-      :selectedProcedure="selectedProcedure"
-      :filteredProcedures="filteredProcedures"
-      :filteredPackages="filteredPackages"
-      :selectPackage="selectPackage"
-      :getAssesmentLabel="getAssesmentLabel"
-      :doctorReviews="doctorReviews"
-      :getPackagePrice="getPackagePrice"
-      :selectProcedure="selectProcedure"
+      v-else-if="tab === 1 && hasServices"
+      :supplier="currentSupplier"
+      :select-specialty="selectSpecialty"
+      :selected-specialty="selectedSpecialty"
+      :selected-procedure="selectedProcedure"
+      :filtered-procedures="filteredProcedures"
+      :filtered-packages="filteredPackages"
+      :select-package="selectPackage"
+      :get-assessment-label="getAssessmentLabel"
+      :select-procedure="selectProcedure"
       :specialties="specialties"
-      :searchSpecialtyCode="searchSpecialtyCode"
-      :searchProcedureCode="searchProcedureCode"
-      :isSearchMode="isSearchMode"
-      :userInfo="user"
+      :search-specialty-code="searchSpecialtyCode"
+      :search-procedure-code="searchProcedureCode"
+      :is-search-mode="isSearchMode"
+      :customer="user"
+      :assessment-details="assessmentDetails"
     />
+
+    <div v-else-if="tab === 1 && !hasServices" class="empty-state">
+      <p>Este proveedor no tiene servicios disponibles.</p>
+    </div>
 
     <WebsitePerfilDoctorTabsDisponibilidad
-      v-if="tab === 2"
-      :supplier-id="doctor.id"
-      :supplier-name="doctor.name"
-      :selected-day="selectedDay"
-      :available-hours="availableHours"
-      :selected-hour="selectedHour"
-      :available-days="availableDays"
-      :selected-month="selectedMonth"
-      :selectedSpecialty="selectedSpecialtyName"
-      :selectedProcedure="selectedProcedureName"
+      v-if="tab === 2 && selectedPackage"
+      :supplier="currentSupplier"
+      :selected-specialty="selectedSpecialtyName"
+      :selected-procedure-id="selectedProcedureId"
+      :selected-procedure-name="selectedProcedureName"
       :selected-package="selectedPackage"
-      :months="months"
       :customer="user"
-      :availability="availability"
-      :format-time="formatTime"
       :reserve-appointment="reserveAppointment"
-      @update:selected-day="selectDay"
-      @update:selected-month="
-        selectedMonth = $event;
-        handleMonthChange();
-      "
-      @update:selected-hour="selectHour"
     />
 
-    <!-- Ubicación Tab -->
-    <WebsitePerfilDoctorTabsUbicacion v-if="tab === 3" :doctor="doctor" />
-
-    <!-- Perfil Tab -->
-    <WebsitePerfilDoctorTabsPerfil v-if="tab === 4" :doctor="doctor" />
-  </section>
-
-  <!-- modals -->
-  <div>
-    <div
-      class="modal fade"
-      id="modalCitaValoracion"
-      tabindex="-1"
-      aria-labelledby="exampleModalLabel"
-      aria-hidden="true"
-    >
-      <div class="modal-dialog">
-        <div class="modal-content">
-          <div class="modal-header">
-            <h5 class="modal-title" id="exampleModalLabel">Título del Modal</h5>
-            <button
-              type="button"
-              class="btn-close"
-              data-bs-dismiss="modal"
-              aria-label="Close"
-            ></button>
-          </div>
-
-          <!-- modal content -->
-          <div class="modal-body">
-            <nav aria-label="breadcrumb">
-              <ol class="breadcrumb">
-                <li
-                  :class="{ active: breadcumCitaValoracion == 1 }"
-                  class="breadcrumb-item"
-                  aria-current="page"
-                >
-                  1
-                </li>
-                <li
-                  :class="{ active: breadcumCitaValoracion == 2 }"
-                  class="breadcrumb-item active"
-                  aria-current="page"
-                >
-                  2
-                </li>
-                <li
-                  :class="{ active: breadcumCitaValoracion == 3 }"
-                  class="breadcrumb-item active"
-                  aria-current="page"
-                >
-                  3
-                </li>
-              </ol>
-            </nav>
-          </div>
-          <div class="modal-footer">
-            <button
-              type="button"
-              class="btn btn-secondary"
-              data-bs-dismiss="modal"
-            >
-              Cerrar
-            </button>
-            <button type="button" class="btn btn-primary">
-              Guardar cambios
-            </button>
-          </div>
-        </div>
-      </div>
+    <div v-else-if="tab === 2 && !selectedPackage" class="empty-state">
+      <p>
+        Primero selecciona un paquete de servicios en la pestaña "Servicios".
+      </p>
     </div>
-  </div>
+
+    <WebsitePerfilDoctorTabsUbicacion
+      v-if="tab === 3"
+      :supplier="currentSupplier"
+    />
+
+    <WebsitePerfilDoctorTabsPerfil
+      v-if="tab === 4"
+      :supplier="currentSupplier"
+    />
+  </section>
 
   <WebsiteConfirmationCitaModal
     :open="open"
@@ -548,20 +521,29 @@ onMounted(() => {
     :result="result"
     @close-modal="closeModal"
   />
-  <WebsiteReservarModal
-    :selectedProcedureId="selectedProcedureId"
-    :selectedSpecialtyId="selectedSpecialtyId"
-    :userInfo="user"
-    :doctorInfo="doctor"
-    :selectedDay="selectedDay"
-    :selectedHour="selectedHour"
-    :selectedPackage="selectedPackage"
-    :isOpen="panel"
-    :currentStep="2"
-    :offers="offers"
-    @close="panel = false"
-  />
 </template>
+
+<style scoped>
+.loading-container,
+.empty-state {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 200px;
+  padding: 2rem;
+  text-align: center;
+}
+
+.empty-state p {
+  color: #6b7280;
+  font-size: 1rem;
+}
+
+.tab-item__link:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+</style>
 
 <style lang="scss" scoped>
 .tabs-container {
@@ -627,5 +609,25 @@ onMounted(() => {
     font-weight: 600;
     border-bottom-color: #0cadbb;
   }
+}
+
+.loading-container,
+.empty-state {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 200px;
+  padding: 2rem;
+  text-align: center;
+}
+
+.empty-state p {
+  color: #6b7280;
+  font-size: 1rem;
+}
+
+.tab-item__link:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
 }
 </style>

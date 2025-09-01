@@ -7,19 +7,19 @@
           <AtomsIconsMapPointerIcon />
         </span>
         <span class="location-tab__address-text">
-          {{ supplier.address }}, {{ supplier.city_name }},
-          {{ supplier.country_iso_code }}
+          {{ supplier?.address }}, {{ supplier?.city_name }},
+          {{ supplier?.country_iso_code }}
         </span>
       </p>
       <div class="location-tab__contact">
         <a
-          :href="`tel:${supplier.phone_number}`"
+          :href="`tel:${supplier?.phone_number}`"
           class="contact-button contact-button--phone"
         >
           <span><AtomsIconsPhoneIcon /></span>
         </a>
         <a
-          :href="`mailto:${supplier.email}`"
+          :href="`mailto:${supplier?.email}`"
           class="contact-button contact-button--email"
         >
           <span><AtomsIconsMailIcon /></span>
@@ -28,9 +28,9 @@
     </div>
     <div class="location-tab__map">
       <AtomsMapaInteractivo
-        :latitude="supplier.latitude"
-        :longitude="supplier.longitude"
-        :name="supplier.name"
+        :latitude="supplier?.latitude"
+        :longitude="supplier?.longitude"
+        :name="supplier?.name"
       />
     </div>
   </div>
@@ -40,7 +40,7 @@
 import type { Supplier } from "~/types";
 
 defineProps<{
-  supplier: Supplier;
+  supplier: Supplier | Partial<Supplier> | null;
 }>();
 </script>
 
