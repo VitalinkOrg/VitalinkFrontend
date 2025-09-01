@@ -2,7 +2,7 @@ import type { IdType, Package } from "~/types";
 import type { Supplier } from "./supplier";
 
 export interface Customer {
-  id: number;
+  id: string;
   card_id: string;
   name: string;
   email: string;
