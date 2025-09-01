@@ -20,14 +20,16 @@ export const useAssessmentPackage = () => {
    *
    * @param price - The base price in the smallest currency unit (e.g., colones). Default: 18000.
    * @param discount - Discount percentage (0–100). Default: 0.
+   * @param packageId - Optional package ID. Default: 0.
    * @returns A fully formed `Package` object.
    *
    * @example
-   * const assessment = createAssessmentPackage(20000, 10); // ₡20,000 with 10% off
+   * const assessment = createAssessmentPackage(20000, 10, 1001); // ₡20,000 with 10% off and ID 1001
    */
   const createAssessmentPackage = (
     price: number = DEFAULT_PRICE,
-    discount: number = 0
+    discount: number = 0,
+    packageId: number = 0
   ): Package => {
     const discountRate = discount / 100;
     const discountedPrice = price * (1 - discountRate);
@@ -47,7 +49,7 @@ export const useAssessmentPackage = () => {
     };
 
     return {
-      id: 0,
+      id: packageId,
       product,
       reference_price: price,
       discount,
@@ -89,17 +91,19 @@ export const useAssessmentPackage = () => {
    * @param packages - Existing list of packages.
    * @param price - Optional custom price for the assessment.
    * @param discount - Optional discount percentage.
+   * @param packageId - Optional package ID.
    * @returns New array with the assessment package prepended.
    *
    * @example
-   * const updated = addAssessmentPackage(existingPackages, 20000);
+   * const updated = addAssessmentPackage(existingPackages, 20000, 0, 1001);
    */
   const addAssessmentPackage = (
     packages: Package[],
     price?: number,
-    discount?: number
+    discount?: number,
+    packageId?: number
   ): Package[] => {
-    const assessment = createAssessmentPackage(price, discount);
+    const assessment = createAssessmentPackage(price, discount, packageId);
     return [assessment, ...packages];
   };
 
