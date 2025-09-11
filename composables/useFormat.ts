@@ -18,25 +18,29 @@ export const useFormat = () => {
   };
 
   /**
-   * Formats an ISO date string into a human-readable full date in Spanish.
+   * Formats an ISO date string or Date object into a human-readable full date in Spanish.
    * Includes weekday, day number, and month name (e.g. "Lunes, 25 de agosto").
    *
-   * @param isoDate - ISO date string (e.g. "2025-08-25T10:00:00Z" or "2025-08-25")
+   * @param date - ISO date string (e.g. "2025-08-25T10:00:00Z" or "2025-08-25") or Date object
    * @returns Formatted date string in Spanish (e.g. "Lunes, 25 de agosto")
    *
    * @example
    * formatDate("2025-08-25"); // → "Lunes, 25 de agosto"
+   * formatDate(new Date("2025-08-25")); // → "Lunes, 25 de agosto"
+   * formatDate(new Date()); // → Current date formatted
    */
-  const formatDate = (isoDate: string): string => {
-    const date = new Date(isoDate);
+  const formatDate = (date: string | Date): string => {
+    const dateObj = typeof date === "string" ? new Date(date) : date;
 
     const dayOptions: Intl.DateTimeFormatOptions = { weekday: "long" };
     const monthOptions: Intl.DateTimeFormatOptions = { month: "long" };
 
-    const dayName = new Intl.DateTimeFormat("es-ES", dayOptions).format(date);
-    const dayNumber = date.getDate();
+    const dayName = new Intl.DateTimeFormat("es-ES", dayOptions).format(
+      dateObj
+    );
+    const dayNumber = dateObj.getDate();
     const monthName = new Intl.DateTimeFormat("es-ES", monthOptions).format(
-      date
+      dateObj
     );
 
     const capitalizedDayName =
