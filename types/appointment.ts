@@ -125,7 +125,7 @@ export interface Appointment {
   appointment_type: AppointmentType;
   price_procedure: string;
   price_valoration_appointment: string;
-  appointment_credit: any | null;
+  appointment_credit: AppointmentCredit | null;
   created_date: string;
   updated_date: string;
 }
@@ -141,4 +141,32 @@ export interface AppointmentResult {
   created_date: string;
   updated_date: string | null;
   is_deleted: number;
+}
+
+export interface AppointmentCredit {
+  id: number;
+  credit_status_code: string;
+  requested_amount: string;
+  approved_amount: string;
+  credit_observations: string;
+  pagare_file_code: string | null;
+  max_date_active: string | null;
+  already_been_used: 0 | 1;
+  is_deleted: 0 | 1;
+  created_date: string;
+  updated_date: string;
+  credit_status: CreditStatus;
+}
+
+export interface CreditStatus {
+  id: number;
+  code: string;
+  name: string;
+  type: string;
+  description: string | null;
+  father_code: string | null;
+  value1: string | null;
+  created_date: string;
+  updated_date: string | null;
+  is_deleted: 0 | 1;
 }
