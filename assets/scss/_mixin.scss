@@ -124,6 +124,35 @@
   }
 }
 
+@mixin danger-button {
+  @include button-base;
+
+  background-color: #ff2d46;
+  border-color: #ff2d46;
+  color: $white;
+  font-weight: 600;
+
+  &:hover {
+    background-color: darken(#ff2d46, 5%);
+    border-color: darken(#ff2d46, 5%);
+  }
+
+  &:active {
+    background-color: darken(#ff2d46, 8%);
+  }
+
+  &:disabled {
+    background-color: #e9c2c2;
+    color: $white;
+    cursor: not-allowed;
+  }
+
+  &:focus-visible {
+    border-color: darken(#ff2d46, 10%);
+    box-shadow: 0 0 0 3px rgba(#ff2d46, 0.4);
+  }
+}
+
 @mixin outline-danger-button {
   @include button-base;
 
@@ -198,6 +227,10 @@
     0 0 1.05px rgba(50, 50, 71, 0.2),
     0 1.05px 2.1px rgba(50, 50, 71, 0.08);
   transition: all 0.3s ease;
+
+  &:hover {
+    border: 1px solid #0cadbb;
+  }
 
   &::placeholder {
     color: #7a828a;
