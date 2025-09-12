@@ -1,36 +1,56 @@
 export const useFormat = () => {
   /**
-   * Formats a time string from 24-hour format (HH:mm:ss) to 12-hour format with AM/PM.
+   * Formats a time string from 24-hour format (HH:mm:ss) to different formats.
    *
    * @param time - Time string in HH:mm:ss or HH:mm format (e.g. "14:30:00")
-   * @returns Formatted time string in 12h format (e.g. "2:30PM")
+   * @param format - Format type: "12h" for AM/PM format, "hs" for hours format
+   * @returns Formatted time string
    *
    * @example
-   * formatTime("14:30:00"); // → "2:30PM"
-   * formatTime("09:15");    // → "9:15AM"
+   * formatTime("14:30:00", "12h"); // → "2:30PM"
+   * formatTime("09:15", "12h");    // → "9:15AM"
+   * formatTime("14:30:00", "hs");  // → "14:30hs"
+   * formatTime("09:15", "hs");     // → "9:15hs"
    */
-  const formatTime = (time: string): string => {
+  const formatTime = (time: string, format: "12h" | "hs" = "12h"): string => {
     const [hours, minutes] = time.split(":");
     const h = parseInt(hours, 10);
+
+    if (format === "hs") {
+      return `${h}:${minutes}hs`;
+    }
+
     const period = h >= 12 ? "PM" : "AM";
     const hour12 = h % 12 || 12;
     return `${hour12}:${minutes}${period}`;
   };
 
   /**
-   * Formats an ISO date string or Date object into a human-readable full date in Spanish.
-   * Includes weekday, day number, and month name (e.g. "Lunes, 25 de agosto").
+   * Formats an ISO date string or Date object into a human-readable date in Spanish.
    *
    * @param date - ISO date string (e.g. "2025-08-25T10:00:00Z" or "2025-08-25") or Date object
-   * @returns Formatted date string in Spanish (e.g. "Lunes, 25 de agosto")
+   * @param format - Format type: 'full' for full format, 'short' for MM/DD/YYYY format
+   * @returns Formatted date string in Spanish
    *
    * @example
-   * formatDate("2025-08-25"); // → "Lunes, 25 de agosto"
-   * formatDate(new Date("2025-08-25")); // → "Lunes, 25 de agosto"
-   * formatDate(new Date()); // → Current date formatted
+   * formatDate("2025-08-25"); // → "Lunes, 25 de agosto" (default format)
+   * formatDate("2025-08-25", "full"); // → "Lunes, 25 de agosto"
+   * formatDate("2025-08-25", "short"); // → "25/08/2025"
+   * formatDate(new Date(), "short"); // → Current date in MM/DD/YYYY format
    */
-  const formatDate = (date: string | Date): string => {
+  const formatDate = (
+    date: string | Date,
+    format: "full" | "short" = "full"
+  ): string => {
     const dateObj = typeof date === "string" ? new Date(date) : date;
+
+    if (format === "short") {
+      const day = dateObj.getDate().toString().padStart(2, "0");
+      const month = (dateObj.getMonth() + 1).toString().padStart(2, "0");
+      const year = dateObj.getFullYear();
+
+      return `${day}/${month}/${year}`;
+    }
 
     const dayOptions: Intl.DateTimeFormatOptions = { weekday: "long" };
     const monthOptions: Intl.DateTimeFormatOptions = { month: "long" };
