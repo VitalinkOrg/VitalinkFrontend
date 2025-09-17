@@ -112,7 +112,6 @@ const props = defineProps<Props>();
 const closeAppointmentDetailsModal = inject<() => void>(
   "closeAppointmentDetailsModal"
 );
-const openSuccessModal = inject<() => void>("openSuccessModal");
 const refreshAppointments = inject<() => Promise<void>>("refreshAppointments");
 
 const config = useRuntimeConfig();
@@ -228,7 +227,7 @@ const confirmProcedure = async () => {
 };
 
 const finishProcedure = async () => {
-  await executeApiCall("/appointment/finish_procedure");
+  await executeApiCall("/appointment/set_procedure_realized");
 };
 
 const confirmValoration = async () => {
@@ -254,11 +253,13 @@ const executeApiCall = async (endpoint: string) => {
     }
   );
 
+  console.log({ data });
+
   if (data) {
     await refreshAppointments?.();
+
     handleCloseModal();
     closeAppointmentDetailsModal?.();
-    openSuccessModal?.();
   }
 
   if (error) {

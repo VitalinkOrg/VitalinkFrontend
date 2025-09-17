@@ -136,7 +136,7 @@ defineExpose({
     padding: 20px 24px 0px 24px;
   }
 
-  &__content-title {
+  &__title {
     @include label-base;
     font-weight: 600;
     font-size: 20px;

@@ -161,6 +161,8 @@ import type { Appointment } from "~/types/appointment";
 
 const { formatCurrency } = useFormat();
 
+const refreshAppointments = inject<() => Promise<void>>("refreshAppointments");
+
 const token = useCookie("token");
 const config = useRuntimeConfig();
 
@@ -172,7 +174,6 @@ interface Props {
 interface Emits {
   (e: "open-modal", modalName: ModalName): void;
   (e: "close-modal", modalName: ModalName): void;
-  (e: "refresh"): void;
 }
 
 const props = defineProps<Props>();
@@ -299,7 +300,7 @@ const handleConfirmReservation = async () => {
     }
 
     if (data.value) {
-      emit("refresh");
+      await refreshAppointments?.();
       handleCloseModal("scheduleProcedure");
       handleCloseModal("appointmentDetails");
       handleOpenModal("scheduleProcedureSuccess");

@@ -44,7 +44,6 @@
     <PacientesModalesPagarCita
       :appointment="appointment"
       :is-open="modals.payAppointment"
-      @refresh="emit('refresh')"
       @open-modal="openModal"
       @close-modal="closeModal"
     />
@@ -66,7 +65,6 @@
     <PacientesModalesAnularCita
       :appointment="appointment"
       :is-open="modals.cancelAppointment"
-      @refresh="emit('refresh')"
       @open-modal="openModal"
       @close-modal="closeModal"
     />
@@ -74,7 +72,6 @@
     <PacientesModalesReservaProcedimientoExitoso
       :appointment="appointment"
       :is-open="modals.scheduleProcedureSuccess"
-      @refresh="emit('refresh')"
       @open-modal="openModal"
       @close-modal="closeModal"
     />
@@ -82,7 +79,6 @@
     <PacientesModalesSolicitarCredito
       :appointment="appointment"
       :is-open="modals.applyCredit"
-      @refresh="emit('refresh')"
       @open-modal="openModal"
       @close-modal="closeModal"
     />
@@ -119,13 +115,7 @@ interface Props {
   step?: string;
   showStatus?: boolean;
 }
-
-interface Emit {
-  (e: "refresh"): void;
-}
-
 const props = defineProps<Props>();
-const emit = defineEmits<Emit>();
 
 type ModalState = Record<ModalName, boolean>;
 

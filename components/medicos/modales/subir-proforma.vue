@@ -13,6 +13,23 @@
       <p class="upload-proforma__description">
         El cambio de estado de la cita se ha realizado con éxito:
       </p>
+
+      <div class="upload-proforma__table-wrapper">
+        <MedicosTablaDetallesCita
+          :rows="appointmentRowsWithData"
+          :hidden-title="true"
+          :aria-label="`Detalles de la cita de ${appointment.customer.name}`"
+        >
+          <template #data-estado-cita>
+            <span
+              class="status-badge"
+              :class="getStatusClass(appointment.appointment_status.code)"
+            >
+              {{ appointment.appointment_status.value1 }}
+            </span>
+          </template>
+        </MedicosTablaDetallesCita>
+      </div>
     </div>
 
     <template #footer>
@@ -47,13 +64,73 @@
 </template>
 
 <script lang="ts" setup>
-import type { Appointment } from "~/types";
+import { useFormat } from "~/composables/useFormat";
+import type { Appointment, AppointmentStatusCode } from "~/types";
+import type { TablaBaseRow } from "../tabla-detalles-cita.vue";
+
+const { formatDate } = useFormat();
 
 interface Props {
   appointment: Appointment;
 }
 
 const props = defineProps<Props>();
+
+const appointmentRowsWithData = computed((): TablaBaseRow[] => [
+  {
+    key: "tipo-servicio",
+    header: "Tipo de servicio:",
+    value: props.appointment.appointment_type.name,
+  },
+  {
+    key: "fecha",
+    header: "Fecha de la cita:",
+    value: props.appointment.appointment_date,
+    class: "appointment-editor__details-row--editable",
+  },
+  {
+    key: "hora",
+    header: "Hora de la cita:",
+    value: props.appointment.appointment_hour,
+    class: "appointment-editor__details-row--editable",
+  },
+  {
+    key: "paciente",
+    header: "Paciente:",
+    value: props.appointment.customer.name,
+    isEndRow: true,
+  },
+  {
+    key: "procedimiento",
+    header: "Procedimiento:",
+    value: props.appointment.package?.procedure?.name,
+  },
+  {
+    key: "motivo",
+    header: "Motivo:",
+    value: props.appointment.user_description,
+  },
+  {
+    key: "costo-servicio",
+    header: "Costo del servicio:",
+    value: "A confirmar en la cita",
+  },
+  {
+    key: "fecha-solicitud",
+    header: "Fecha de la solicitud:",
+    value: formatDate(props.appointment.application_date, "short"),
+  },
+  {
+    key: "tipo-reserva",
+    header: "Tipo de reserva:",
+    value: props.appointment.reservation_type.value1,
+  },
+  {
+    key: "estado-cita",
+    header: "Estado de la cita:",
+    value: props.appointment.appointment_status.code,
+  },
+]);
 
 const isModalOpen = ref<boolean>(false);
 const isLoading = ref<boolean>(false);
@@ -71,6 +148,21 @@ const handleCloseModal = () => {
 const openValorationDetails = () => {
   valorationDetailsRef.value?.handleOpenModal();
   handleCloseModal();
+};
+
+const getStatusClass = (status: AppointmentStatusCode) => {
+  const statusClassMap = {
+    CANCEL_APPOINTMENT: "status-badge--cancelled",
+    PENDING_VALORATION_APPOINTMENT: "status-badge--warning",
+    PENDING_PROCEDURE: "status-badge--warning",
+    CONFIRM_PROCEDURE: "status-badge--primary",
+    CONCRETED_APPOINTMENT: "status-badge--primary",
+    VALUED_VALORATION_APPOINTMENT: "status-badge--success",
+    CONFIRM_VALIDATION_APPOINTMENT: "status-badge--success",
+    VALUATION_PENDING_VALORATION_APPOINTMENT: "status-badge--primary",
+    WAITING_PROCEDURE: "status-badge--warning",
+  };
+  return statusClassMap[status] || "";
 };
 
 defineExpose({
@@ -110,6 +202,12 @@ defineExpose({
     line-height: 20px;
     letter-spacing: 0;
     color: #027a48;
+  }
+
+  &__table-wrapper {
+    padding: 20px;
+    background-color: #f8faff;
+    border-radius: 20px;
   }
 
   &__description {

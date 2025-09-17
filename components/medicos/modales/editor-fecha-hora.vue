@@ -126,7 +126,7 @@
           Cancelar
         </button>
         <button
-          :disabled="isLoading"
+          :disabled="isLoading || !canProceed"
           class="appointment-editor__button appointment-editor__button--primary"
           @click="handleSaveChanges"
         >
@@ -135,11 +135,17 @@
       </div>
     </template>
   </AtomsModalBase>
+
+  <MedicosModalesConfirmacionReprogramacion
+    ref="confirmationModalRef"
+    :appointment="appointment"
+    :appointment-date="formattedSelectedDate"
+    :appointment-hour="formattedSelectedHour"
+  />
 </template>
 
 <script lang="ts" setup>
 import type { TablaBaseRow } from "~/components/medicos/tabla-detalles-cita.vue";
-import { useErrorHandler } from "~/composables/useErrorHandler";
 import { useFormat } from "~/composables/useFormat";
 import type { Appointment, AppointmentStatusCode } from "~/types";
 
@@ -147,14 +153,9 @@ interface Props {
   appointment: Appointment;
 }
 
-const refreshAppointments = inject<() => Promise<void>>("refreshAppointments");
-
 const props = defineProps<Props>();
 
 const { formatDate, formatCurrency } = useFormat();
-const { withErrorHandling } = useErrorHandler();
-const config = useRuntimeConfig();
-const token = useCookie("token");
 
 const isModalOpen = ref<boolean>(false);
 const isLoading = ref<boolean>(false);
@@ -163,6 +164,8 @@ const selectedTime = ref<string>("");
 const dateError = ref<string>("");
 const timeError = ref<string>("");
 const apiError = ref<string>("");
+
+const confirmationModalRef = ref();
 
 const availableTimes = ref<string[]>([
   "08:30",
@@ -181,6 +184,29 @@ const timeOptions = computed(() =>
     label: `${time}hs`,
   }))
 );
+
+const canProceed = computed(() => {
+  return selectedDate.value !== null && selectedTime.value !== "";
+});
+
+const formattedSelectedDate = computed(() => {
+  if (!selectedDate.value) return "";
+
+  const year = selectedDate.value.getFullYear();
+  const month = String(selectedDate.value.getMonth() + 1).padStart(2, "0");
+  const day = String(selectedDate.value.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+});
+
+const formattedSelectedHour = computed(() => {
+  if (!selectedTime.value) return "";
+
+  return selectedTime.value.includes(":")
+    ? selectedTime.value.split(":").length === 2
+      ? `${selectedTime.value}:00`
+      : selectedTime.value
+    : `${selectedTime.value}:00:00`;
+});
 
 const appointmentRowsWithData = computed((): TablaBaseRow[] => [
   {
@@ -235,6 +261,9 @@ const appointmentRowsWithData = computed((): TablaBaseRow[] => [
     key: "apto-credito",
     header: "Apto para crédito:",
     value: "Sí",
+    show:
+      props.appointment.appointment_status.code === "WAITING_PROCEDURE" ||
+      props.appointment.appointment_status.code === "CONFIRM_PROCEDURE",
   },
   {
     key: "costo-servicio",
@@ -242,11 +271,17 @@ const appointmentRowsWithData = computed((): TablaBaseRow[] => [
     value: formatCurrency(props.appointment.price_procedure, {
       decimalPlaces: 0,
     }),
+    show:
+      props.appointment.appointment_status.code === "WAITING_PROCEDURE" ||
+      props.appointment.appointment_status.code === "CONFIRM_PROCEDURE",
   },
   {
     key: "costo-servicio",
     header: "Costo del servicio:",
     value: "Cubierto por crédito",
+    show:
+      props.appointment.appointment_status.code === "WAITING_PROCEDURE" ||
+      props.appointment.appointment_status.code === "CONFIRM_PROCEDURE",
   },
   {
     key: "estado-cita",
@@ -280,6 +315,8 @@ const handleOpenModal = () => {
 const handleCloseModal = () => {
   isModalOpen.value = false;
   clearErrors();
+  selectedDate.value = null;
+  selectedTime.value = "";
 };
 
 const clearErrors = () => {
@@ -333,52 +370,7 @@ const handleSaveChanges = async () => {
     return;
   }
 
-  if (!token.value) {
-    apiError.value = "Token de autenticación no disponible";
-    return;
-  }
-
-  const year = selectedDate.value!.getFullYear();
-  const month = String(selectedDate.value!.getMonth() + 1).padStart(2, "0");
-  const day = String(selectedDate.value!.getDate()).padStart(2, "0");
-  const dateString = `${year}-${month}-${day}`;
-
-  const formattedHour = selectedTime.value.includes(":")
-    ? selectedTime.value.split(":").length === 2
-      ? `${selectedTime.value}:00`
-      : selectedTime.value
-    : `${selectedTime.value}:00:00`;
-
-  const payload = {
-    customer_id: props.appointment.customer.id,
-    appointment_date: dateString || props.appointment.appointment_date,
-    appointment_hour: formattedHour || props.appointment.appointment_hour,
-    reservation_type: props.appointment.reservation_type.type,
-    supplier_id: props.appointment.supplier.id,
-  };
-
-  const operation = $fetch(config.public.API_BASE_URL + "/appointment/edit", {
-    method: "PUT",
-    headers: { Authorization: token.value },
-    params: {
-      id: props.appointment.id,
-    },
-    body: payload,
-  });
-
-  const { data, error } = await withErrorHandling(operation, isLoading, {
-    customMessage: "Error al actualizar la cita. Por favor intenta nuevamente.",
-    logError: true,
-  });
-
-  if (data) {
-    await refreshAppointments?.();
-    handleCloseModal();
-  }
-
-  if (error) {
-    apiError.value = error;
-  }
+  confirmationModalRef.value?.handleOpenModal();
 };
 
 const getStatusClass = (status: AppointmentStatusCode) => {
@@ -395,6 +387,8 @@ const getStatusClass = (status: AppointmentStatusCode) => {
   };
   return statusClassMap[status] || "";
 };
+
+provide("closeReschedulingModal", handleCloseModal);
 
 defineExpose({
   handleOpenModal,
@@ -508,6 +502,11 @@ defineExpose({
     &--primary {
       @include primary-button;
       width: 100%;
+
+      &:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+      }
     }
   }
 }

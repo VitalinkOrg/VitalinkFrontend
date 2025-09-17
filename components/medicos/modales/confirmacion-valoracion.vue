@@ -57,6 +57,7 @@ interface Props {
   proformaFileName: string;
 }
 
+const openSuccessModal = inject<() => void>("openSuccessModal");
 const refreshAppointments = inject<() => Promise<void>>("refreshAppointments");
 const closeValorationDetailsModal = inject<() => void>(
   "closeValorationDetailsModal"
@@ -114,6 +115,7 @@ const handleConfirmValoration = async () => {
   if (data) {
     await refreshAppointments?.();
     closeValorationDetailsModal?.();
+    openSuccessModal?.();
     handleCloseModal();
   }
 

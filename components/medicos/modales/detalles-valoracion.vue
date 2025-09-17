@@ -341,7 +341,6 @@ const handleOpenModal = () => {
 };
 
 const handleCloseModal = () => {
-  console.log("handleCloseModal");
   isModalOpen.value = false;
   resetState();
 };
