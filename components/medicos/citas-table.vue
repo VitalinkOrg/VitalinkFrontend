@@ -1,52 +1,41 @@
-<script setup>
+<script lang="ts" setup>
 import { jsPDF } from "jspdf";
-import { computed, inject, ref, watch } from "vue";
+import { computed, ref, watch } from "vue";
+import type { Appointment, AppointmentStatusCode } from "~/types";
 
-const emit = defineEmits(["refreshed"]);
+interface Props {
+  appointments: Appointment[];
+  useDropdown: boolean;
+  itemsPerPage: number;
+}
 
-const props = defineProps({
-  appointments: {
-    type: Array,
-    default: () => [],
-  },
-  useDropdown: {
-    type: Boolean,
-    default: false,
-  },
-  itemsPerPage: {
-    type: Number,
-    default: 10,
-  },
+const props = withDefaults(defineProps<Props>(), {
+  appointments: () => [],
+  useDropdown: false,
+  itemsPerPage: 10,
 });
 
-const refreshAppointments = inject("refreshAppointments");
+const { formatDate, formatTime } = useFormat();
 
-const openUserModal = ref(false);
-const openDateModal = ref(false);
-const openContactModal = ref(false);
-const openDateCancelModal = ref(false);
-const modalData = ref(null);
-const currentStep = ref(1);
-const selectedAppointments = ref(new Set());
-const allSelected = ref(false);
-const sortColumn = ref(null);
-const sortDirection = ref("asc");
+const selectedAppointments = ref<Set<number>>(new Set());
+const allSelected = ref<boolean>(false);
+const sortColumn = ref<string | null>(null);
+const sortDirection = ref<"asc" | "desc">("asc");
+const currentPage = ref<number>(1);
 
-const currentPage = ref(1);
-
-const hasAppointments = computed(
+const hasAppointments = computed<boolean>(
   () =>
     props.appointments &&
     Array.isArray(props.appointments) &&
     props.appointments.length > 0
 );
 
-const sortedAppointments = computed(() => {
+const sortedAppointments = computed<Appointment[]>(() => {
   if (!hasAppointments.value || !sortColumn.value) return props.appointments;
 
-  return [...props.appointments].sort((a, b) => {
-    let aValue = a[sortColumn.value];
-    let bValue = b[sortColumn.value];
+  return [...props.appointments].sort((a: Appointment, b: Appointment) => {
+    let aValue: any = a[sortColumn.value as keyof Appointment];
+    let bValue: any = b[sortColumn.value as keyof Appointment];
 
     if (sortColumn.value === "patient_name") {
       aValue = a.customer?.name || "";
@@ -69,13 +58,13 @@ const sortedAppointments = computed(() => {
   });
 });
 
-const totalItems = computed(() => sortedAppointments.value.length);
+const totalItems = computed<number>(() => sortedAppointments.value.length);
 
-const totalPages = computed(() =>
+const totalPages = computed<number>(() =>
   Math.ceil(totalItems.value / props.itemsPerPage)
 );
 
-const paginatedAppointments = computed(() => {
+const paginatedAppointments = computed<Appointment[]>(() => {
   const start = (currentPage.value - 1) * props.itemsPerPage;
   const end = start + props.itemsPerPage;
   return sortedAppointments.value.slice(start, end);
@@ -94,33 +83,8 @@ watch([sortColumn, sortDirection], () => {
   currentPage.value = 1;
 });
 
-const showUserDetails = (appointment) => {
-  closeModal();
-  modalData.value = appointment;
-  openUserModal.value = true;
-};
-
-const showContactDetails = (appointment) => {
-  closeModal();
-  modalData.value = appointment;
-  openContactModal.value = true;
-};
-
-const showDateDetails = (appointment, step = 1) => {
-  closeModal();
-  modalData.value = appointment;
-  currentStep.value = step;
-  openDateModal.value = true;
-};
-
-const showDateCancel = (appointment) => {
-  closeModal();
-  modalData.value = appointment;
-  openDateCancelModal.value = true;
-};
-
-const statusClass = (status) => {
-  const statusMap = {
+const statusClass = (status: AppointmentStatusCode): string => {
+  const statusMap: Record<AppointmentStatusCode, string> = {
     CANCEL_APPOINTMENT: "appointments-table__status--cancelled",
     PENDING_VALORATION_APPOINTMENT: "appointments-table__status--warning",
     PENDING_PROCEDURE: "appointments-table__status--warning",
@@ -135,7 +99,7 @@ const statusClass = (status) => {
   return statusMap[status] || "";
 };
 
-const toggleAppointmentSelection = (appointmentId) => {
+const toggleAppointmentSelection = (appointmentId: number): void => {
   if (selectedAppointments.value.has(appointmentId)) {
     selectedAppointments.value.delete(appointmentId);
   } else {
@@ -144,25 +108,27 @@ const toggleAppointmentSelection = (appointmentId) => {
   updateAllSelectedState();
 };
 
-const toggleAllAppointments = () => {
+const toggleAllAppointments = (): void => {
   if (allSelected.value) {
     selectedAppointments.value.clear();
   } else {
-    paginatedAppointments.value.forEach((appointment) => {
+    paginatedAppointments.value.forEach((appointment: Appointment) => {
       selectedAppointments.value.add(appointment.id);
     });
   }
   allSelected.value = !allSelected.value;
 };
 
-const updateAllSelectedState = () => {
-  const currentPageIds = paginatedAppointments.value.map((app) => app.id);
+const updateAllSelectedState = (): void => {
+  const currentPageIds = paginatedAppointments.value.map(
+    (app: Appointment) => app.id
+  );
   allSelected.value =
     currentPageIds.length > 0 &&
-    currentPageIds.every((id) => selectedAppointments.value.has(id));
+    currentPageIds.every((id: number) => selectedAppointments.value.has(id));
 };
 
-const sortBy = (column) => {
+const sortBy = (column: string): void => {
   if (sortColumn.value === column) {
     sortDirection.value = sortDirection.value === "asc" ? "desc" : "asc";
   } else {
@@ -171,7 +137,7 @@ const sortBy = (column) => {
   }
 };
 
-const downloadSummary = (appointment) => {
+const downloadSummary = (appointment: Appointment): void => {
   const doc = new jsPDF();
 
   doc.setFontSize(18);
@@ -189,7 +155,7 @@ const downloadSummary = (appointment) => {
 
   let yPosition = 45;
 
-  const addField = (label, value) => {
+  const addField = (label: string, value: string): void => {
     doc.setFont("helvetica", "bold");
     doc.text(`${label}:`, 20, yPosition);
     doc.setFont("helvetica", "normal");
@@ -199,18 +165,15 @@ const downloadSummary = (appointment) => {
 
   addField("Paciente", appointment.customer.name);
   addField("Tipo de Reserva", appointment.reservation_type.name);
-  addField(
-    "Fecha de la cita",
-    new Date(appointment.appointment_date).toLocaleDateString()
-  );
-  addField("Hora de la cita", appointment.appointment_hour);
-  addField("Procedimiento", appointment.package?.procedure.name);
+  addField("Fecha de la cita", formatDate(appointment.appointment_date));
+  addField("Hora de la cita", formatTime(appointment.appointment_hour));
+  addField("Procedimiento", appointment.package?.procedure?.name || "N/A");
   addField("Estado", appointment.appointment_status.value1);
 
   doc.setFontSize(10);
   doc.setTextColor(100, 100, 100);
   doc.text(
-    "Documento generado el: " + new Date().toLocaleDateString(),
+    "Documento generado el: " + formatDate(new Date().toISOString()),
     20,
     280
   );
@@ -223,50 +186,7 @@ const downloadSummary = (appointment) => {
   );
 };
 
-const closeModal = () => {
-  modalData.value = null;
-  openUserModal.value = false;
-  openDateModal.value = false;
-  openContactModal.value = false;
-  openDateCancelModal.value = false;
-  currentStep.value = 1;
-};
-
-const handleRefresh = async () => {
-  if (refreshAppointments) {
-    await refreshAppointments();
-    emit("refreshed");
-  }
-};
-
-const handleAppointmentUpdate = (appointmentData) => {
-  emit("refreshed", appointmentData);
-};
-
-const canRequestProcedure = (appointment) => {
-  if (
-    !appointment.appointment_result ||
-    appointment.appointment_result.code !== "FIT_FOR_PROCEDURE"
-  ) {
-    return false;
-  }
-
-  if (appointment.appointment_type.code === "PROCEDURE_APPOINTMENT") {
-    return false;
-  }
-
-  if (
-    appointment.appointment_credit &&
-    appointment.appointment_credit.credit_status_code === "REQUIRED" &&
-    !appointment.appointment_credit.approved_amount
-  ) {
-    return false;
-  }
-
-  return true;
-};
-
-const handlePageChange = (page) => {
+const handlePageChange = (page: number): void => {
   currentPage.value = page;
   selectedAppointments.value.clear();
   allSelected.value = false;
@@ -284,6 +204,10 @@ watch(paginatedAppointments, () => {
 <template>
   <section
     class="appointments-table"
+    :class="{
+      'appointments-table--with-dropdown': useDropdown,
+      'appointments-table--without-dropdown': !useDropdown,
+    }"
     role="region"
     aria-labelledby="appointments-heading"
   >
@@ -301,6 +225,7 @@ watch(paginatedAppointments, () => {
               <th
                 scope="col"
                 class="appointments-table__header-cell appointments-table__header-cell--checkbox"
+                v-if="useDropdown"
               >
                 <label class="appointments-table__checkbox-label">
                   <input
@@ -318,7 +243,10 @@ watch(paginatedAppointments, () => {
                 </label>
               </th>
 
-              <th scope="col" class="appointments-table__header-cell">
+              <th
+                scope="col"
+                class="appointments-table__header-cell appointments-table__header-cell--patient"
+              >
                 <button
                   class="appointments-table__sort-button"
                   @click="sortBy('patient_name')"
@@ -339,7 +267,10 @@ watch(paginatedAppointments, () => {
                 </button>
               </th>
 
-              <th scope="col" class="appointments-table__header-cell">
+              <th
+                scope="col"
+                class="appointments-table__header-cell appointments-table__header-cell--datetime"
+              >
                 <button
                   class="appointments-table__sort-button"
                   @click="sortBy('appointment_date')"
@@ -361,7 +292,10 @@ watch(paginatedAppointments, () => {
                 </button>
               </th>
 
-              <th scope="col" class="appointments-table__header-cell">
+              <th
+                scope="col"
+                class="appointments-table__header-cell appointments-table__header-cell--procedure"
+              >
                 <button
                   class="appointments-table__sort-button"
                   @click="sortBy('procedure_name')"
@@ -382,7 +316,11 @@ watch(paginatedAppointments, () => {
                 </button>
               </th>
 
-              <th scope="col" class="appointments-table__header-cell">
+              <th
+                scope="col"
+                class="appointments-table__header-cell appointments-table__header-cell--reservation-type"
+                v-if="useDropdown"
+              >
                 <button
                   class="appointments-table__sort-button"
                   @click="sortBy('reservation_type')"
@@ -404,7 +342,10 @@ watch(paginatedAppointments, () => {
                 </button>
               </th>
 
-              <th scope="col" class="appointments-table__header-cell">
+              <th
+                scope="col"
+                class="appointments-table__header-cell appointments-table__header-cell--status"
+              >
                 <button
                   class="appointments-table__sort-button"
                   @click="sortBy('appointment_status')"
@@ -428,7 +369,8 @@ watch(paginatedAppointments, () => {
 
               <th
                 scope="col"
-                class="appointments-table__header-cell appointments-table__header-cell--center"
+                class="appointments-table__header-cell appointments-table__header-cell--center appointments-table__header-cell--main-action"
+                v-if="useDropdown"
               >
                 <span class="appointments-table__header-text"
                   >Acción Principal</span
@@ -437,13 +379,16 @@ watch(paginatedAppointments, () => {
 
               <th
                 scope="col"
-                class="appointments-table__header-cell"
+                class="appointments-table__header-cell appointments-table__header-cell--contact"
                 v-if="useDropdown"
               >
                 <span class="appointments-table__header-text">Contacto</span>
               </th>
 
-              <th scope="col" class="appointments-table__header-cell">
+              <th
+                scope="col"
+                class="appointments-table__header-cell appointments-table__header-cell--actions"
+              >
                 <span class="appointments-table__header-text"></span>
               </th>
             </tr>
@@ -462,6 +407,7 @@ watch(paginatedAppointments, () => {
               }"
             >
               <td
+                v-if="useDropdown"
                 class="appointments-table__cell appointments-table__cell--checkbox"
               >
                 <label class="appointments-table__checkbox-label">
@@ -476,13 +422,17 @@ watch(paginatedAppointments, () => {
                 </label>
               </td>
 
-              <td class="appointments-table__cell">
+              <td
+                class="appointments-table__cell appointments-table__cell--patient"
+              >
                 <span class="appointments-table__patient-name">
                   {{ appointment.customer.name }}
                 </span>
               </td>
 
-              <td class="appointments-table__cell">
+              <td
+                class="appointments-table__cell appointments-table__cell--datetime"
+              >
                 <time
                   :datetime="appointment.appointment_date"
                   class="appointments-table__datetime"
@@ -496,19 +446,26 @@ watch(paginatedAppointments, () => {
                 </time>
               </td>
 
-              <td class="appointments-table__cell">
+              <td
+                class="appointments-table__cell appointments-table__cell--procedure"
+              >
                 <span class="appointments-table__procedure">
-                  {{ appointment.package?.procedure.name }}
+                  {{ appointment.package?.procedure?.name }}
                 </span>
               </td>
 
-              <td class="appointments-table__cell">
+              <td
+                class="appointments-table__cell appointments-table__cell--reservation-type"
+                v-if="useDropdown"
+              >
                 <span class="appointments-table__reservation-type">
                   {{ appointment.reservation_type.name }}
                 </span>
               </td>
 
-              <td class="appointments-table__cell">
+              <td
+                class="appointments-table__cell appointments-table__cell--status"
+              >
                 <span
                   class="appointments-table__status"
                   :class="statusClass(appointment.appointment_status.code)"
@@ -518,65 +475,66 @@ watch(paginatedAppointments, () => {
               </td>
 
               <td
-                class="appointments-table__cell appointments-table__cell--actions"
+                class="appointments-table__cell appointments-table__cell--actions appointments-table__cell--main-action"
+                v-if="useDropdown"
               >
-                <!-- 1. Botón Confirmar Cita de Valoración -->
-                <button
-                  v-if="
-                    appointment.appointment_status.code ===
-                    'PENDING_VALORATION_APPOINTMENT'
-                  "
-                  class="appointments-table__action-btn appointments-table__action-btn--primary"
-                  @click="showDateDetails(appointment)"
-                  :aria-label="`Confirmar cita de valoración de ${appointment.customer.name}`"
-                >
-                  Confirmar
-                </button>
+                <MedicosModalesDetallesCita :appointment="appointment">
+                  <template #trigger="{ open }">
+                    <button
+                      v-if="
+                        appointment.appointment_status.code ===
+                        'PENDING_VALORATION_APPOINTMENT'
+                      "
+                      class="appointments-table__action-btn appointments-table__action-btn--primary"
+                      @click="open"
+                      :aria-label="`Confirmar cita de valoración de ${appointment.customer.name}`"
+                    >
+                      Confirmar
+                    </button>
 
-                <!-- 2. Botón Valoración -->
-                <button
-                  v-if="
-                    [
-                      'VALUATION_PENDING_VALORATION_APPOINTMENT',
-                      'CONFIRM_VALIDATION_APPOINTMENT',
-                    ].includes(appointment.appointment_status.code)
-                  "
-                  class="appointments-table__action-btn appointments-table__action-btn--warning"
-                  @click="showDateDetails(appointment)"
-                  :aria-label="`Realizar valoración de ${appointment.customer.name}`"
-                  :disabled="
-                    appointment.appointment_status.code ===
-                    'VALUED_VALORATION_APPOINTMENT'
-                  "
-                >
-                  Valoración
-                </button>
+                    <button
+                      v-if="
+                        [
+                          'VALUATION_PENDING_VALORATION_APPOINTMENT',
+                          'CONFIRM_VALIDATION_APPOINTMENT',
+                        ].includes(appointment.appointment_status.code)
+                      "
+                      class="appointments-table__action-btn appointments-table__action-btn--warning"
+                      @click="open"
+                      :aria-label="`Realizar valoración de ${appointment.customer.name}`"
+                      :disabled="
+                        appointment.appointment_status.code ===
+                        'VALUED_VALORATION_APPOINTMENT'
+                      "
+                    >
+                      Valoración
+                    </button>
 
-                <!-- 3. Botón Confirmar Procedimiento -->
-                <button
-                  v-if="
-                    appointment.appointment_status.code === 'PENDING_PROCEDURE'
-                  "
-                  class="appointments-table__action-btn appointments-table__action-btn--success"
-                  @click="showDateDetails(appointment)"
-                  :aria-label="`Confirmar procedimiento de ${appointment.customer.name}`"
-                >
-                  Confirmar Procedimiento
-                </button>
+                    <button
+                      v-if="
+                        appointment.appointment_status.code ===
+                        'PENDING_PROCEDURE'
+                      "
+                      class="appointments-table__action-btn appointments-table__action-btn--success"
+                      @click="open"
+                      :aria-label="`Confirmar procedimiento de ${appointment.customer.name}`"
+                    >
+                      Confirmar Procedimiento
+                    </button>
 
-                <!-- 4. Botón Marcar como Concretado -->
-                <button
-                  v-if="
-                    appointment.appointment_status.code === 'WAITING_PROCEDURE'
-                  "
-                  class="appointments-table__action-btn appointments-table__action-btn--complete"
-                  @click="showDateDetails(appointment)"
-                  :aria-label="`Marcar como concretado procedimiento de ${appointment.customer.name}`"
-                >
-                  Marcar como Concretado
-                </button>
-
-                <!-- 5. Mensaje para estados sin acción -->
+                    <button
+                      v-if="
+                        appointment.appointment_status.code ===
+                        'WAITING_PROCEDURE'
+                      "
+                      class="appointments-table__action-btn appointments-table__action-btn--complete"
+                      @click="open"
+                      :aria-label="`Marcar como concretado procedimiento de ${appointment.customer.name}`"
+                    >
+                      Marcar como Concretado
+                    </button>
+                  </template>
+                </MedicosModalesDetallesCita>
                 <span
                   v-if="
                     ![
@@ -593,17 +551,16 @@ watch(paginatedAppointments, () => {
                 </span>
               </td>
 
-              <td class="appointments-table__cell--center" v-if="useDropdown">
-                <button
-                  class="appointments-table__contact-btn"
-                  @click="showContactDetails(appointment)"
-                  :aria-label="`Contactar a ${appointment.customer.name}`"
-                >
-                  <AtomsIconsPhoneIcon size="20" />
-                </button>
+              <td
+                class="appointments-table__cell appointments-table__cell--center appointments-table__cell--contact"
+                v-if="useDropdown"
+              >
+                <MedicosModalesContactModal :appointment="appointment" />
               </td>
 
-              <td class="appointments-table__cell">
+              <td
+                class="appointments-table__cell appointments-table__cell--actions"
+              >
                 <div v-if="useDropdown" class="appointments-table__dropdown">
                   <button
                     class="appointments-table__dropdown-toggle"
@@ -616,14 +573,39 @@ watch(paginatedAppointments, () => {
 
                   <ul class="dropdown-menu" role="menu">
                     <li role="none">
-                      <button
-                        class="dropdown-item"
-                        role="menuitem"
-                        @click="showDateDetails(appointment)"
+                      <MedicosModalesDetallesValoracion
+                        v-if="
+                          appointment.appointment_status.code ===
+                          'VALUED_VALORATION_APPOINTMENT'
+                        "
+                        :appointment="appointment"
                       >
-                        <AtomsIconsEyeIcon />
-                        Ver más detalles
-                      </button>
+                        <template #trigger="{ open }">
+                          <button
+                            class="dropdown-item"
+                            role="menuitem"
+                            @click="open"
+                          >
+                            <AtomsIconsEyeIcon />
+                            Ver más detalles
+                          </button>
+                        </template>
+                      </MedicosModalesDetallesValoracion>
+                      <MedicosModalesDetallesCita
+                        v-else
+                        :appointment="appointment"
+                      >
+                        <template #trigger="{ open }">
+                          <button
+                            class="dropdown-item"
+                            role="menuitem"
+                            @click="open"
+                          >
+                            <AtomsIconsEyeIcon />
+                            Ver más detalles
+                          </button>
+                        </template>
+                      </MedicosModalesDetallesCita>
                     </li>
 
                     <li
@@ -635,16 +617,21 @@ watch(paginatedAppointments, () => {
                         ].includes(appointment.appointment_status.code)
                       "
                     >
-                      <button
-                        class="dropdown-item"
-                        role="menuitem"
-                        @click="showDateDetails(appointment, 2)"
+                      <MedicosModalesConfirmacionReserva
+                        :appointment="appointment"
                       >
-                        <AtomsIconsCalendarDaysIcon />
-                        Confirmar reserva
-                      </button>
+                        <template #trigger="{ open }">
+                          <button
+                            class="dropdown-item"
+                            role="menuitem"
+                            @click="open"
+                          >
+                            <AtomsIconsCalendarDaysIcon />
+                            Confirmar reserva
+                          </button>
+                        </template>
+                      </MedicosModalesConfirmacionReserva>
                     </li>
-
                     <li
                       role="none"
                       v-if="
@@ -652,51 +639,69 @@ watch(paginatedAppointments, () => {
                         'PENDING_VALORATION_APPOINTMENT'
                       "
                     >
-                      <button
-                        class="dropdown-item"
-                        role="menuitem"
-                        @click="showDateDetails(appointment, 6)"
-                      >
-                        <Icon
-                          :name="
-                            appointment.appointment_type == 'pre-reserva'
-                              ? 'lucide:square-pen'
-                              : 'lucide:undo-2'
-                          "
-                        />
-                        {{
-                          appointment.appointment_type == "pre-reserva"
-                            ? "Editar fecha y hora"
-                            : "Reprogramar cita"
-                        }}
-                      </button>
+                      <MedicosModalesEditorFechaHora :appointment="appointment">
+                        <template #trigger="{ open }">
+                          <button
+                            class="dropdown-item"
+                            role="menuitem"
+                            @click="open"
+                          >
+                            <Icon
+                              :name="
+                                appointment.appointment_type.name ==
+                                'pre-reserva'
+                                  ? 'lucide:square-pen'
+                                  : 'lucide:undo-2'
+                              "
+                            />
+                            {{
+                              appointment.appointment_type.name == "pre-reserva"
+                                ? "Editar fecha y hora"
+                                : "Reprogramar cita"
+                            }}
+                          </button>
+                        </template>
+                      </MedicosModalesEditorFechaHora>
                     </li>
 
                     <li role="none">
-                      <button
-                        class="dropdown-item"
-                        role="menuitem"
-                        @click="showUserDetails(appointment)"
+                      <MedicosModalesInformacionUsuario
+                        :appointment="appointment"
                       >
-                        <AtomsIconsUserRoundIcon />
-                        Perfil del Paciente
-                      </button>
+                        <template #trigger="{ open }">
+                          <button
+                            class="dropdown-item"
+                            role="menuitem"
+                            @click="open"
+                          >
+                            <AtomsIconsUserRoundIcon />
+                            Perfil del Paciente
+                          </button>
+                        </template>
+                      </MedicosModalesInformacionUsuario>
                     </li>
 
                     <li
                       role="none"
                       v-if="
-                        !['COMPLETED', 'CANCELED'].includes(appointment.status)
+                        ![
+                          'CONCRETED_APPOINTMENT',
+                          'CANCEL_APPOINTMENT',
+                        ].includes(appointment.appointment_status.code)
                       "
                     >
-                      <button
-                        class="dropdown-item"
-                        role="menuitem"
-                        @click="showDateCancel(appointment)"
-                      >
-                        <AtomsIconsCircleXIcon />
-                        Anular cita
-                      </button>
+                      <MedicosModalesAnularCita :appointment="appointment">
+                        <template #trigger="{ open }">
+                          <button
+                            class="dropdown-item"
+                            role="menuitem"
+                            @click="open"
+                          >
+                            <AtomsIconsCircleXIcon />
+                            Anular cita
+                          </button>
+                        </template>
+                      </MedicosModalesAnularCita>
                     </li>
 
                     <li role="none">
@@ -713,32 +718,45 @@ watch(paginatedAppointments, () => {
                 </div>
 
                 <div v-else class="appointments-table__actions">
-                  <button
-                    class="appointments-table__action-btn appointments-table__action-btn--view"
-                    @click="showUserDetails(appointment)"
-                    :aria-label="`Ver detalles de ${appointment.customer.name}`"
-                  >
-                    <Icon name="fa6-regular:eye" />
-                  </button>
+                  <MedicosModalesInformacionUsuario :appointment="appointment">
+                    <template #trigger="{ open }">
+                      <button
+                        class="appointments-table__action-btn--view custom-stroke"
+                        @click="open"
+                        :aria-label="`Ver detalles de ${appointment.customer.name}`"
+                      >
+                        <Icon
+                          name="lucide:file-search"
+                          size="20"
+                          stroke-width="1"
+                        />
+                      </button>
+                    </template>
+                  </MedicosModalesInformacionUsuario>
 
-                  <button
-                    class="appointments-table__action-btn appointments-table__action-btn--edit"
-                    @click="showDateDetails(appointment)"
-                    :aria-label="`Editar cita de ${appointment.customer.name}`"
-                  >
-                    <Icon name="fa6-regular:edit" />
-                  </button>
+                  <MedicosModalesDetallesCita :appointment="appointment">
+                    <template #trigger="{ open }">
+                      <button
+                        class="appointments-table__action-btn--edit custom-stroke"
+                        @click="open"
+                        :aria-label="`Editar cita de ${appointment.customer.name}`"
+                      >
+                        <AtomsIconsPenLineIcon size="20" />
+                      </button>
+                    </template>
+                  </MedicosModalesDetallesCita>
 
-                  <button
-                    v-if="
-                      !['COMPLETED', 'CANCELED'].includes(appointment.status)
-                    "
-                    class="appointments-table__action-btn appointments-table__action-btn--cancel"
-                    @click="showDateCancel(appointment)"
-                    :aria-label="`Cancelar cita de ${appointment.customer.name}`"
-                  >
-                    <Icon name="fa6-regular:trash" />
-                  </button>
+                  <MedicosModalesAnularCita :appointment="appointment">
+                    <template #trigger="{ open }">
+                      <button
+                        class="appointments-table__action-btn--cancel custom-stroke"
+                        @click="open"
+                        :aria-label="`Cancelar cita de ${appointment.customer.name}`"
+                      >
+                        <AtomsIconsTrashIcon size="20" />
+                      </button>
+                    </template>
+                  </MedicosModalesAnularCita>
                 </div>
               </td>
             </tr>
@@ -747,7 +765,6 @@ watch(paginatedAppointments, () => {
       </div>
     </div>
 
-    <!-- Empty State -->
     <div
       v-else
       class="appointments-table__empty-state"
@@ -771,7 +788,7 @@ watch(paginatedAppointments, () => {
     </div>
 
     <MedicosPaginacion
-      v-if="hasAppointments && totalPages > 1"
+      v-if="useDropdown"
       :current-page="currentPage"
       :total-pages="totalPages"
       :total-items="totalItems"
@@ -779,59 +796,48 @@ watch(paginatedAppointments, () => {
       :show-info="false"
       @page-changed="handlePageChange"
     />
-
-    <!-- Modals -->
-    <MedicosUserModal
-      v-if="openUserModal"
-      :open="openUserModal"
-      :appointment="modalData"
-      @close-modal="closeModal"
-      @refresh="refreshAppointments"
-    />
-
-    <MedicosCitaModal
-      v-if="openDateModal"
-      :open="openDateModal"
-      :appointment="modalData"
-      v-model:step="currentStep"
-      @close-modal="closeModal"
-      @refresh="refreshAppointments"
-    />
-
-    <MedicosCitaCancelModal
-      v-if="openDateCancelModal"
-      :open="openDateCancelModal"
-      :appointment="modalData"
-      @close-modal="closeModal"
-      @refresh="refreshAppointments"
-    />
-
-    <MedicosCitaContactModal
-      v-if="openContactModal"
-      :open="openContactModal"
-      :appointment="modalData"
-      @close-modal="closeModal"
-      @refresh="refreshAppointments"
-    />
   </section>
 </template>
 
-<style lang="scss">
-// Screen reader only utility
-.sr-only {
-  position: absolute !important;
-  width: 1px !important;
-  height: 1px !important;
-  padding: 0 !important;
-  margin: -1px !important;
-  overflow: hidden !important;
-  clip: rect(0, 0, 0, 0) !important;
-  white-space: nowrap !important;
-  border: 0 !important;
+<style lang="scss" scoped>
+.custom-stroke {
+  &:deep(.icon g) {
+    stroke-width: 1.5px !important;
+  }
+
+  &:deep(.icon path) {
+    stroke-width: 1.5px !important;
+  }
 }
 
-// Main component
+.sr-only {
+  @include visually-hidden;
+}
+
 .appointments-table {
+  --col-checkbox-width: 60px;
+  --col-patient-width: 170px;
+  --col-datetime-width: 140px;
+  --col-procedure-width: 180px;
+  --col-reservation-width: 130px;
+  --col-status-width: 160px;
+  --col-main-action-width: 150px;
+  --col-contact-width: 80px;
+  --col-actions-width: 80px;
+
+  &--with-dropdown {
+    --col-patient-width: 160px;
+    --col-datetime-width: 120px;
+    --col-procedure-width: 150px;
+  }
+
+  &--without-dropdown {
+    --col-patient-width: 200px;
+    --col-datetime-width: 160px;
+    --col-procedure-width: 200px;
+    --col-actions-width: 120px;
+  }
+
   &__container {
     background: $white;
     border-radius: 10px;
@@ -840,6 +846,7 @@ watch(paginatedAppointments, () => {
 
   &__wrapper {
     overflow-x: auto;
+    min-height: 800px;
   }
 
   &__table {
@@ -849,7 +856,6 @@ watch(paginatedAppointments, () => {
     table-layout: fixed;
   }
 
-  // Header
   &__header {
     background-color: #f8f9fa;
     border-bottom: 2px solid #dee2e6;
@@ -869,32 +875,42 @@ watch(paginatedAppointments, () => {
     border: none;
     background-color: $white;
 
-    &:nth-child(1) {
-      width: 50px;
+    &--checkbox {
+      width: var(--col-checkbox-width);
+      text-align: center;
     }
-    &:nth-child(2) {
-      width: 170px;
+
+    &--patient {
+      width: var(--col-patient-width);
     }
-    &:nth-child(3) {
-      width: 120px;
+
+    &--datetime {
+      width: var(--col-datetime-width);
     }
-    &:nth-child(4) {
-      width: 160px;
+
+    &--procedure {
+      width: var(--col-procedure-width);
     }
-    &:nth-child(5) {
-      width: 120px;
+
+    &--reservation-type {
+      width: var(--col-reservation-width);
     }
-    &:nth-child(6) {
-      width: 160px;
+
+    &--status {
+      width: var(--col-status-width);
     }
-    &:nth-child(7) {
-      width: 140px;
+
+    &--main-action {
+      width: var(--col-main-action-width);
     }
-    &:nth-child(8) {
-      width: 80px;
+
+    &--contact {
+      width: var(--col-contact-width);
     }
-    &:nth-child(9) {
-      width: 60px;
+
+    &--actions {
+      width: var(--col-actions-width);
+      min-width: var(--col-actions-width);
     }
 
     &--center {
@@ -902,11 +918,6 @@ watch(paginatedAppointments, () => {
       text-align: center;
       font-size: 12px;
       color: #6d758f;
-    }
-
-    &--checkbox {
-      width: 3rem;
-      text-align: center;
     }
   }
 
@@ -981,7 +992,6 @@ watch(paginatedAppointments, () => {
     }
   }
 
-  // Content styling
   &__patient-name,
   &__procedure,
   &__reservation-type,
@@ -996,7 +1006,6 @@ watch(paginatedAppointments, () => {
     vertical-align: middle;
   }
 
-  // Status styling
   &__status {
     display: block;
     width: 100%;
@@ -1030,7 +1039,6 @@ watch(paginatedAppointments, () => {
     }
   }
 
-  // Checkbox styling
   &__checkbox-label {
     position: relative;
     display: flex;
@@ -1084,23 +1092,6 @@ watch(paginatedAppointments, () => {
     }
   }
 
-  // Action buttons
-  &__contact-btn {
-    @include button-base;
-    border-radius: 8px;
-    padding: 0;
-    color: #667085;
-
-    svg {
-      width: 20px;
-      height: 20px;
-    }
-
-    &:hover {
-      background-color: #f9fafb;
-    }
-  }
-
   &__action-btn {
     @include outline-button;
     font-weight: 600;
@@ -1109,16 +1100,22 @@ watch(paginatedAppointments, () => {
     padding: 8px 16px;
     width: 100%;
 
-    &--view {
-      color: $color-primary;
-    }
-
-    &--edit {
-      color: #faedbf;
-    }
-
+    &--view,
+    &--edit,
     &--cancel {
-      color: #fac6d0;
+      background: none;
+      border: none;
+      margin: auto;
+      color: #353e5c;
+
+      &:hover {
+        filter: brightness(0);
+      }
+
+      svg {
+        width: 20px;
+        height: 20px;
+      }
     }
   }
 
@@ -1127,7 +1124,6 @@ watch(paginatedAppointments, () => {
     gap: 0.25rem;
   }
 
-  // Dropdown
   &__dropdown {
     position: relative;
   }
@@ -1156,7 +1152,6 @@ watch(paginatedAppointments, () => {
     }
   }
 
-  // Empty state
   &__empty-state {
     background: $white;
     border-radius: 0.5rem;
@@ -1242,7 +1237,6 @@ watch(paginatedAppointments, () => {
     }
   }
 
-  // Pagination
   &__pagination {
     background: transparent;
     padding: 1rem;
@@ -1304,9 +1298,25 @@ watch(paginatedAppointments, () => {
   }
 }
 
-// Responsive design
+@media (max-width: 1200px) {
+  .appointments-table {
+    --col-patient-width: 140px;
+    --col-procedure-width: 130px;
+    --col-reservation-width: 110px;
+    --col-status-width: 130px;
+    --col-main-action-width: 120px;
+  }
+}
+
 @media (max-width: 768px) {
   .appointments-table {
+    --col-patient-width: 120px;
+    --col-datetime-width: 100px;
+    --col-procedure-width: 100px;
+    --col-status-width: 100px;
+    --col-main-action-width: 100px;
+    --col-actions-width: 60px;
+
     &__container {
       border-radius: 0;
       box-shadow: none;
@@ -1315,11 +1325,24 @@ watch(paginatedAppointments, () => {
 
     &__table {
       font-size: 0.75rem;
+      table-layout: auto;
     }
 
     &__header-cell,
     &__cell {
       padding: 0.5rem;
+    }
+
+    &__header-cell {
+      &--reservation-type {
+        display: none;
+      }
+    }
+
+    &__cell {
+      &--reservation-type {
+        display: none;
+      }
     }
 
     &__empty-content {
@@ -1362,7 +1385,6 @@ watch(paginatedAppointments, () => {
   }
 }
 
-// High contrast mode support
 @media (prefers-contrast: high) {
   .appointments-table {
     &__container {
