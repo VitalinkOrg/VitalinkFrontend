@@ -1,497 +1,212 @@
-<script>
-export default {
-  props: ["services"],
-  data() {
-    return {
-      servicesTest: [
-        {
-          id: 1,
-          doctor_service_id: "DS001",
-          hospital_service_id: "HS001",
-          service: "Consulta General",
-          name: "Consulta General",
-          cpt: "99213",
-          description: "Consulta médica general",
-          hospital_name: "Hospital Central",
-          schedule: [
-            { day: "Lunes", open: "08:00", close: "17:00" },
-            { day: "Martes", open: "08:00", close: "17:00" },
-          ],
-          price: "500",
-          currency: "MXN",
-        },
-        {
-          id: 2,
-          doctor_service_id: null,
-          hospital_service_id: "HS002",
-          service: "Radiografía",
-          name: "Radiografía",
-          cpt: "72050",
-          description: "Radiografía de tórax",
-          hospital_name: "Clínica Norte",
-          schedule: [
-            { day: "Miércoles", open: "09:00", close: "18:00" },
-            { day: "Jueves", open: "09:00", close: "18:00" },
-          ],
-          price: "800",
-          currency: "MXN",
-        },
-        {
-          id: 3,
-          doctor_service_id: "DS003",
-          hospital_service_id: null,
-          service: "Ultrasonido",
-          name: "Ultrasonido",
-          cpt: "76700",
-          description: "Ultrasonido abdominal",
-          hospital_name: "Hospital del Sur",
-          schedule: [
-            { day: "Viernes", open: "10:00", close: "15:00" },
-            { day: "Sábado", open: "10:00", close: "14:00" },
-          ],
-          price: "1200",
-          currency: "MXN",
-        },
-      ],
-      serviceSegmentOption: "info",
-    };
-  },
-};
-</script>
 <template>
-  <!-- <div v-if="servicesTest.length" class="row row-cols-md-3 gx-3"> -->
-  <!-- <div class="col" v-for="service in servicesTest" :key="service.id"> -->
-  <!--   <div class="card border shadow-sm rounded-4"> -->
-  <!--     <div class="card-body px-2"> -->
-  <!--       <p -->
-  <!--         v-if="service.doctor_service_id" -->
-  <!--         class="card-text fs-6 text-primary fw-medium text-center mb-2" -->
-  <!--       > -->
-  <!--         {{ service.doctor_service_id || service.hospital_service_id }} - -->
-  <!--         {{ service.service }} -->
-  <!--       </p> -->
-  <!--       <p -->
-  <!--         v-else -->
-  <!--         class="card-text fs-6 text-primary fw-medium text-center mb-2" -->
-  <!--       > -->
-  <!--         {{ service.name }} -->
-  <!--       </p> -->
-  <!--       <p v-if="service.cpt" class="lh-sm fw-light text-muted mb-2"> -->
-  <!--         <small>{{ service.cpt }}</small> -->
-  <!--       </p> -->
-  <!--       <p v-else class="lh-sm fw-light text-muted mb-2 text-center"> -->
-  <!--         {{ service.description }} -->
-  <!--       </p> -->
-  <!-- <ul class="text-muted list-unstyled border-top border-bottom py-1 mb-0">
-            <li v-for="amenidad in service.amenidades" class="text-muted fw-light"><small>[I] {{ amenidad.nombre
-            }}</small>
-            </li>
-          </ul> -->
-  <!--         <p -->
-  <!--           v-if="service.hospital_name" -->
-  <!--           class="card-text text-center text-success fs-6 fw-semibold border-bottom py-2" -->
-  <!--         > -->
-  <!--           <small>{{ service.hospital_name }}</small> -->
-  <!--         </p> -->
-  <!--         <div class="text-center border-bottom pb-2" v-if="service.schedule"> -->
-  <!--           <small -->
-  <!--             v-for="horario in service.schedule" -->
-  <!--             :key="horario.length" -->
-  <!--             class="me-2 text-nowrap" -->
-  <!--             ><strong class="fw-semibold me-1">{{ horario.day }}</strong> -->
-  <!--             <span class="fw-light" -->
-  <!--               >{{ horario.open }} - {{ horario.close }}</span -->
-  <!--             ></small -->
-  <!--           > -->
-  <!--         </div> -->
-  <!--         <div -->
-  <!--           v-if="service.price" -->
-  <!--           class="d-flex flex-column align-items-center pt-2" -->
-  <!--         > -->
-  <!--           <small class="text-muted fw-light">Precio a partir de:</small> -->
-  <!--           <span class="fw-semibold fs-5 text-primary" -->
-  <!--             >{{ parseFloat(service.price).toLocaleString() }} -->
-  <!--             {{ service.currency }}</span -->
-  <!--           > -->
-  <!--         </div> -->
-  <!--         <WebsiteReservarCitaModal :service="service" /> -->
-  <!--       </div> -->
-  <!--     </div> -->
-  <!--   </div> -->
-  <!-- </div> -->
-  <!-- <div v-else> -->
-  <!--   <p>No hay servicios disponibles.</p> -->
-  <!-- </div> -->
-  <div class="accordion" id="accordionExample">
-    <div class="accordion" id="accordionExample">
-      <div class="accordion-item">
-        <div class="d-flex justify-content-between align-items-center p-3">
-          <div class="accordion-header gap-2 mb-0" id="headingOne">
-            <span class="fw-bold">Cirugía de cataratas</span>
-            <small class="text-muted d-block mb-0">Oftalmología</small>
-          </div>
-          <div>
-            <button class="btn text-muted btn-sm me-2">
-              <span class="me-1">
-                <img src="@/src/assets/edit.svg" alt="Ver Cita" />
-              </span>
-              Editar
-            </button>
-            <button class="btn text-muted btn-sm me-2">
-              <span class="me-1">
-                <img src="@/src/assets/remove.svg" alt="Cancelar Cita" />
-              </span>
+  <div class="services">
+    <div v-if="pending" class="services__loading">
+      <p>Cargando servicios...</p>
+    </div>
 
-              Eliminar
-            </button>
+    <div v-else-if="error" class="services__error">
+      <p>{{ error }}</p>
+    </div>
+
+    <div
+      v-else-if="packages && packages.length > 0"
+      class="services__accordion"
+    >
+      <div class="services__header-controls">
+        <div class="services__select-all">
+          <input
+            id="select-all"
+            type="checkbox"
+            class="services__checkbox"
+            :checked="isAllSelected"
+            :indeterminate="isIndeterminate"
+            @change="toggleSelectAll"
+          />
+          <label for="select-all" class="services__checkbox-label">
+            Seleccionar todos
+          </label>
+        </div>
+        <h3 class="services__header-title">Nombre Servicio</h3>
+      </div>
+
+      <div v-for="pkg in packages" :key="pkg.id" class="services__item">
+        <div class="services__header">
+          <div class="services__main-info">
+            <input
+              :id="`service-${pkg.id}`"
+              type="checkbox"
+              class="services__checkbox"
+              :checked="selectedServices.includes(pkg.id)"
+              @change="toggleService(pkg.id)"
+            />
+            <div class="services__info">
+              <span class="services__title">{{
+                pkg.procedure?.name || "Servicio"
+              }}</span>
+              <small class="services__specialty">{{
+                pkg.product?.description || "Especialidad médica"
+              }}</small>
+            </div>
+          </div>
+          <div class="services__actions">
+            <MedicosModalesAgregarServicio :package="pkg">
+              <template #trigger="{ open }">
+                <button
+                  class="services__action services__action--edit"
+                  @click="open"
+                >
+                  <span class="services__action-icon">
+                    <AtomsIconsEditPencilIcon />
+                  </span>
+                  Editar
+                </button>
+              </template>
+            </MedicosModalesAgregarServicio>
+            <medicos-modales-confirmar-eliminacion>
+              <template #trigger="{ open }">
+                <button
+                  class="services__action services__action--remove"
+                  @click="open"
+                >
+                  <span class="services__action-icon">
+                    <AtomsIconsTrashIcon />
+                  </span>
+                  Eliminar
+                </button>
+              </template>
+            </medicos-modales-confirmar-eliminacion>
+
             <button
-              class="btn btn-outline-secondary btn-sm fw-bold text-dark p-2 dropdown-toggle"
-              type="button"
-              data-bs-toggle="collapse"
-              data-bs-target="#collapseOne"
-              aria-expanded="false"
-              aria-controls="collapseOne"
+              class="services__toggle"
+              :class="{
+                'services__toggle--active': expandedServices.includes(pkg.id),
+              }"
+              @click="toggleExpanded(pkg.id)"
             >
               Ver detalles
+              <AtomsIconsChevronDown size="20" />
             </button>
           </div>
         </div>
-      </div>
-      <div
-        id="collapseOne"
-        class="accordion-collapse collapse show"
-        aria-labelledby="headingOne"
-        data-bs-parent="#accordionExample"
-      >
-        <div class="accordion-body bg-info-subtle">
-          <!-- buttons actions -->
 
-          <ul class="nav nav-tabs">
-            <li
-              class="nav-item border-bottom"
-              :class="{
-                'border-info': serviceSegmentOption === 'info',
-              }"
-              @click="serviceSegmentOption = 'info'"
+        <div v-if="expandedServices.includes(pkg.id)" class="services__content">
+          <nav class="services__tabs">
+            <button
+              class="services__tab"
+              :class="{ 'services__tab--active': activeTab === 'info' }"
+              @click="activeTab = 'info'"
             >
-              <a
-                :class="{
-                  'text-info': serviceSegmentOption === 'info',
-                  'text-muted': serviceSegmentOption !== 'info',
-                }"
-                class="nav-link"
-                href="#"
-                >Información general</a
-              >
-            </li>
-            <li
-              class="nav-item border-bottom"
-              @click="serviceSegmentOption = 'packs'"
-              :class="{
-                'border-info': serviceSegmentOption === 'packs',
-              }"
+              Información general
+            </button>
+            <button
+              class="services__tab"
+              :class="{ 'services__tab--active': activeTab === 'packs' }"
+              @click="activeTab = 'packs'"
             >
-              <a
-                class="nav-link"
-                :class="{
-                  'text-info': serviceSegmentOption === 'packs',
-                  'text-muted': serviceSegmentOption !== 'packs',
-                }"
-                href="#"
-                >Precios y packs</a
-              >
-            </li>
-          </ul>
+              Precios y packs
+            </button>
+          </nav>
 
-          <!-- info -->
-          <section v-if="serviceSegmentOption == 'info'" class="p-2">
-            <div class="list-group list-group-flush">
-              <!-- speciality -->
-              <div class="d-flex flex-column m-2">
-                <label>Especialidades Medicas:</label>
+          <section v-if="activeTab === 'info'" class="services__info-section">
+            <div class="services__form">
+              <div class="services__field">
+                <label class="services__label">Especialidades Médicas:</label>
                 <input
                   type="text"
-                  value="Oftalmologia"
+                  :value="pkg.product?.name || 'No especificado'"
                   disabled
-                  class="form-control bg-white"
+                  class="services__input"
                 />
               </div>
 
-              <!-- speciality -->
-              <div class="d-flex flex-column m-2">
-                <label>Descripción</label>
+              <div class="services__field">
+                <label class="services__label">Descripción</label>
                 <textarea
-                  type="text"
                   rows="5"
                   disabled
-                  class="form-control bg-white text-dark"
-                >
-El procedimiento de cirugía de cataratas implica realizar una microincisión en el ojo para acceder al cristalino opacificado. Utilizando tecnología láser o instrumentos especializados, el cirujano fragmenta y extrae la lente afectada, para luego implantar una lente intraocular que restaura la claridad visual. Este proceso, llevado a cabo con precisión milimétrica, permite una recuperación rápida y una mejora significativa en la visión del paciente, contribuyendo a su calidad de vida.</textarea
-                >
+                  class="services__textarea"
+                  :value="
+                    pkg.product?.description || 'Sin descripción disponible'
+                  "
+                />
               </div>
 
-              <div class="m-2" aria-current="true">
-                <div class="d-flex w-100 justify-content-between">
-                  <p class="mb-1">Hospital de atención</p>
+              <div class="services__hospital-info">
+                <div class="services__hospital-header">
+                  <p class="services__hospital-title">Hospital de atención</p>
+                  <p class="services__hospital-subtitle">
+                    Indica el/los lugares donde tendrá disponibilidad este
+                    servicio
+                  </p>
                 </div>
-                <p class="mb-1 text-muted">
-                  Indica el/los lugares donde tendrá disponibilidad este
-                  servicio
-                </p>
-              </div>
 
-              <div class="card m-2 rounded-4">
-                <div class="card-body p-0">
-                  <div class="list-group list-group-flush">
-                    <div
-                      class="list-group-item list-group-item-action"
-                      aria-current="true"
+                <div class="services__hospital-card">
+                  <div class="services__hospital-details">
+                    <h5 class="services__hospital-name">Hospital CIMA</h5>
+                    <p class="services__hospital-address">
+                      Autop. Próspero Fernández, San José, San Rafael, Costa
+                      Rica
+                    </p>
+                    <small class="services__hospital-location"
+                      >Piso 1 - Pasillo 3</small
                     >
-                      <div class="d-flex w-100 justify-content-between">
-                        <h5 class="mb-1">Hospital CIMA</h5>
-                      </div>
-                      <p class="mb-1">
-                        Autop. Próspero Fernández, San José, San Rafael, Costa
-                        Rica
-                      </p>
-                      <small>Piso 1 - Pasillo 3</small>
-                    </div>
                   </div>
                 </div>
               </div>
             </div>
           </section>
 
-          <!-- packs -->
-          <section v-if="serviceSegmentOption == 'packs'" class="p-2">
-            <p>Packs:</p>
-            <div class="container">
-              <div class="row">
-                <!-- Option 1 -->
-                <div class="col-4">
-                  <div class="custom-card">
-                    <div class="card-header text-center">OPCIÓN 1</div>
-                    <div class="card-body">
-                      <h5 class="card-title">19.000 USD</h5>
-                      <p class="card-text">Precio original 28.000 USD</p>
-                      <p class="card-text rating">
-                        <span class="icon"
-                          ><img
-                            src="@/src/assets/star.svg"
-                            alt="Busca centro medico"
-                            class="img-fluid"
-                        /></span>
-                        5.0 <span class="text-muted">(13 Reseñas)</span>
-                      </p>
-                      <ul class="list-group list-group-flush">
-                        <li class="list-group-item">
-                          <span class="icon"
-                            ><img
-                              src="@/src/assets/check.svg"
-                              alt="Busca centro medico"
-                              class="img-fluid"
-                          /></span>
-                          Cita de valoración
-                        </li>
-                        <li class="list-group-item">
-                          <span class="icon"
-                            ><img
-                              src="@/src/assets/check.svg"
-                              alt="Busca centro medico"
-                              class="img-fluid"
-                          /></span>
-                          Medicamentos
-                        </li>
-                        <li class="list-group-item">
-                          <span class="icon"
-                            ><img
-                              src="@/src/assets/check.svg"
-                              alt="Busca centro medico"
-                              class="img-fluid"
-                          /></span>
-                          Cita de seguimiento 1 mes después.
-                        </li>
-                      </ul>
-                      <p class="text-muted">Próxima Disponibilidad:</p>
-                      <p class="card-text availability">
-                        <span class="availability-text">
-                          <span class="icon">
-                            <img
-                              src="@/src/assets/calendar.svg"
-                              alt="Busca centro medico"
-                              class="img-fluid"
-                            />
-                          </span>
-                          19/10/2024
-                        </span>
-                        <span class="time-text">
-                          <span class="icon">
-                            <img
-                              src="@/src/assets/clock.svg"
-                              alt="Busca centro medico"
-                              class="img-fluid"
-                            />
-                          </span>
-                          11:00 am
-                        </span>
-                      </p>
-                    </div>
-                  </div>
-                </div>
-
-                <!-- Option 2 -->
-                <div class="col-4">
-                  <div class="custom-card">
-                    <div
-                      class="card-header selected text-center d-flex gap-2 align-items-center justify-content-center"
+          <section v-if="activeTab === 'packs'" class="services__packs-section">
+            <p class="services__packs-title">Packs:</p>
+            <div class="services__packs-grid">
+              <div class="services__pack">
+                <div class="services__pack-header">OPCIÓN 1</div>
+                <div class="services__pack-body">
+                  <h5 class="services__pack-price">
+                    ${{ pkg.discounted_price?.toLocaleString() || "0" }} USD
+                  </h5>
+                  <p class="services__pack-original">
+                    Precio original ${{
+                      pkg.reference_price?.toLocaleString() || "0"
+                    }}
+                    USD
+                  </p>
+                  <p class="services__pack-rating">
+                    <span class="services__pack-icon">
+                      <img src="@/assets/star.svg" alt="Rating" />
+                    </span>
+                    5.0 <span class="services__pack-reviews">(13 Reseñas)</span>
+                  </p>
+                  <ul class="services__pack-features">
+                    <li
+                      v-for="service in pkg.services_offer
+                        ?.ASSESSMENT_DETAILS || []"
+                      :key="service"
+                      class="services__pack-feature"
                     >
-                      <span
-                        ><img
-                          src="@/src/assets/crown.svg"
-                          alt="Busca centro medico"
-                          class="img-fluid"
-                      /></span>
-                      <p class="m-0">OPCIÓN 2</p>
-                    </div>
-                    <div class="card-body">
-                      <h5 class="card-title">23.000 USD</h5>
-                      <p class="card-text">Precio original 28.000 USD</p>
-                      <p class="card-text rating">
-                        <span class="icon"
-                          ><img
-                            src="@/src/assets/star.svg"
-                            alt="Busca centro medico"
-                            class="img-fluid"
-                        /></span>
-                        5.0 <span class="text-muted">(13 Reseñas)</span>
-                      </p>
-                      <ul class="list-group list-group-flush">
-                        <li class="list-group-item">
-                          <span class="icon"
-                            ><img
-                              src="@/src/assets/check.svg"
-                              alt="Busca centro medico"
-                              class="img-fluid"
-                          /></span>
-                          Cita de valoración
-                        </li>
-                        <li class="list-group-item">
-                          <span class="icon"
-                            ><img
-                              src="@/src/assets/check.svg"
-                              alt="Busca centro medico"
-                              class="img-fluid"
-                          /></span>
-                          Medicamentos
-                        </li>
-                        <li class="list-group-item">
-                          <span class="icon"
-                            ><img
-                              src="@/src/assets/check.svg"
-                              alt="Busca centro medico"
-                              class="img-fluid"
-                          /></span>
-                          Cita de seguimiento 1 mes después.
-                        </li>
-                      </ul>
-                      <p class="text-muted">Próxima Disponibilidad:</p>
-                      <p class="card-text availability">
-                        <span class="availability-text">
-                          <span class="icon">
-                            <img
-                              src="@/src/assets/calendar.svg"
-                              alt="Busca centro medico"
-                              class="img-fluid"
-                            />
-                          </span>
-                          19/10/2024
-                        </span>
-                        <span class="time-text">
-                          <span class="icon">
-                            <img
-                              src="@/src/assets/clock.svg"
-                              alt="Busca centro medico"
-                              class="img-fluid"
-                            />
-                          </span>
-                          11:00 am
-                        </span>
-                      </p>
-                    </div>
-                  </div>
-                </div>
-
-                <!-- Option 3 -->
-                <div class="col-4">
-                  <div class="custom-card">
-                    <div class="card-header text-center">OPCIÓN 3</div>
-                    <div class="card-body">
-                      <h5 class="card-title">26.000 USD</h5>
-                      <p class="card-text">Precio original 28.000 USD</p>
-                      <p class="card-text rating">
-                        <span class="icon"
-                          ><img
-                            src="@/src/assets/star.svg"
-                            alt="Busca centro medico"
-                            class="img-fluid"
-                        /></span>
-                        5.0 <span class="text-muted">(13 Reseñas)</span>
-                      </p>
-                      <ul class="list-group list-group-flush">
-                        <li class="list-group-item">
-                          <span class="icon"
-                            ><img
-                              src="@/src/assets/check.svg"
-                              alt="Busca centro medico"
-                              class="img-fluid"
-                          /></span>
-                          Cita con nutricionista
-                        </li>
-                        <li class="list-group-item">
-                          <span class="icon"
-                            ><img
-                              src="@/src/assets/check.svg"
-                              alt="Busca centro medico"
-                              class="img-fluid"
-                          /></span>
-                          Cita con alergólogo
-                        </li>
-                        <li class="list-group-item">
-                          <span class="icon"
-                            ><img
-                              src="@/src/assets/cross.svg"
-                              alt="Busca centro medico"
-                              class="img-fluid"
-                          /></span>
-                          Cita de seguimiento 1 mes después.
-                        </li>
-                      </ul>
-                      <p class="text-muted">Próxima Disponibilidad:</p>
-                      <p class="card-text availability">
-                        <span class="availability-text">
-                          <span class="icon">
-                            <img
-                              src="@/src/assets/calendar.svg"
-                              alt="Busca centro medico"
-                              class="img-fluid"
-                            />
-                          </span>
-                          19/10/2024
-                        </span>
-
-                        <span class="time-text">
-                          <span class="icon">
-                            <img
-                              src="@/src/assets/clock.svg"
-                              alt="Busca centro medico"
-                              class="img-fluid"
-                            />
-                          </span>
-                          11:00 am
-                        </span>
-                      </p>
-                    </div>
-                  </div>
+                      <span class="services__pack-feature-icon">
+                        <img src="@/assets/check.svg" alt="Incluido" />
+                      </span>
+                      {{ service }}
+                    </li>
+                  </ul>
+                  <p class="services__pack-availability-title">
+                    Próxima Disponibilidad:
+                  </p>
+                  <p class="services__pack-availability">
+                    <span class="services__pack-date">
+                      <span class="services__pack-icon">
+                        <img src="@/assets/calendar.svg" alt="Fecha" />
+                      </span>
+                      19/10/2024
+                    </span>
+                    <span class="services__pack-time">
+                      <span class="services__pack-icon">
+                        <img src="@/assets/clock.svg" alt="Hora" />
+                      </span>
+                      11:00 am
+                    </span>
+                  </p>
                 </div>
               </div>
             </div>
@@ -499,125 +214,487 @@ El procedimiento de cirugía de cataratas implica realizar una microincisión en
         </div>
       </div>
     </div>
-    <div class="accordion-item">
-      <h2 class="accordion-header" id="headingTwo">
-        <button
-          class="accordion-button collapsed"
-          type="button"
-          data-bs-toggle="collapse"
-          data-bs-target="#collapseTwo"
-          aria-expanded="false"
-          aria-controls="collapseTwo"
-        >
-          Accordion Item #2
-        </button>
-      </h2>
-      <div
-        id="collapseTwo"
-        class="accordion-collapse collapse"
-        aria-labelledby="headingTwo"
-        data-bs-parent="#accordionExample"
-      >
-        <div class="accordion-body">
-          <strong>This is the second item's accordion body.</strong> It is
-          hidden by default, until the collapse plugin adds the appropriate
-          classes that we use to style each element. These classes control the
-          overall appearance, as well as the showing and hiding via CSS
-          transitions. You can modify any of this with custom CSS or overriding
-          our default variables. It's also worth noting that just about any HTML
-          can go within the <code>.accordion-body</code>, though the transition
-          does limit overflow.
-        </div>
-      </div>
-    </div>
-    <div class="accordion-item">
-      <h2 class="accordion-header" id="headingThree">
-        <button
-          class="accordion-button collapsed"
-          type="button"
-          data-bs-toggle="collapse"
-          data-bs-target="#collapseThree"
-          aria-expanded="false"
-          aria-controls="collapseThree"
-        >
-          Accordion Item #3
-        </button>
-      </h2>
-      <div
-        id="collapseThree"
-        class="accordion-collapse collapse"
-        aria-labelledby="headingThree"
-        data-bs-parent="#accordionExample"
-      >
-        <div class="accordion-body">
-          <strong>This is the third item's accordion body.</strong> It is hidden
-          by default, until the collapse plugin adds the appropriate classes
-          that we use to style each element. These classes control the overall
-          appearance, as well as the showing and hiding via CSS transitions. You
-          can modify any of this with custom CSS or overriding our default
-          variables. It's also worth noting that just about any HTML can go
-          within the <code>.accordion-body</code>, though the transition does
-          limit overflow.
-        </div>
-      </div>
+
+    <div v-else class="services__empty">
+      <p>No hay servicios disponibles.</p>
     </div>
   </div>
 </template>
-<style scoped>
-.custom-card {
-  border: 1px solid var(--Gray-Scale-300, #f1f3f7);
-  background: var(--Gray-Scale-White, #fff);
-  box-shadow: 0px 2px 8px 0px rgba(0, 0, 0, 0.08);
-}
 
-.custom-card .card-header {
-  font-weight: bold;
-  padding: 15px;
-  background: linear-gradient(
-    188deg,
-    #f8faff 65.03%,
-    rgba(248, 250, 255, 0.1) 112.13%
+<script lang="ts" setup>
+import { AtomsIconsChevronDown, AtomsIconsTrashIcon } from "#components";
+import type { Package } from "~/types";
+
+const config = useRuntimeConfig();
+const token = useCookie("token");
+const { withErrorHandling } = useErrorHandler();
+
+const activeTab = ref<"info" | "packs">("info");
+const expandedServices = ref<number[]>([]);
+const selectedServices = ref<number[]>([]);
+const packages = ref<Package[]>([]);
+const pending = ref(true);
+const error = ref<string | null>(null);
+
+const isAllSelected = computed(() => {
+  return (
+    packages.value.length > 0 &&
+    selectedServices.value.length === packages.value.length
   );
-  border: none;
-}
+});
 
-.custom-card .card-header.selected {
-  background: linear-gradient(
-    180deg,
-    #fffcf5 70.16%,
-    rgba(255, 252, 245, 0.05) 100%
+const isIndeterminate = computed(() => {
+  return (
+    selectedServices.value.length > 0 &&
+    selectedServices.value.length < packages.value.length
   );
-}
+});
 
-.custom-card .card-body {
-  padding: 20px;
-}
+const toggleExpanded = (serviceId: number) => {
+  const index = expandedServices.value.indexOf(serviceId);
+  if (index > -1) {
+    expandedServices.value.splice(index, 1);
+  } else {
+    expandedServices.value.push(serviceId);
+  }
+};
 
-.custom-card .card-title {
-  font-size: 1.5em;
-  margin-bottom: 10px;
-}
+const toggleService = (serviceId: number) => {
+  const index = selectedServices.value.indexOf(serviceId);
+  if (index > -1) {
+    selectedServices.value.splice(index, 1);
+  } else {
+    selectedServices.value.push(serviceId);
+  }
+};
 
-.custom-card .card-text {
-  margin-bottom: 10px;
-}
+const toggleSelectAll = () => {
+  if (isAllSelected.value) {
+    selectedServices.value = [];
+  } else {
+    selectedServices.value = packages.value.map((pkg) => pkg.id);
+  }
+};
 
-.custom-card .list-group-item {
-  border: none;
-  padding-left: 0;
-  padding-right: 0;
-}
+const fetchPackages = async () => {
+  if (!token.value) {
+    error.value = "Token de autorización no encontrado";
+    pending.value = false;
+    return;
+  }
 
-.custom-card .btn {
-  width: 100%;
-  margin-top: 15px;
-}
+  const { data, error: fetchError } = await withErrorHandling(
+    $fetch<any>(`${config.public.API_BASE_URL}/package/get_all`, {
+      headers: {
+        Authorization: token.value as string,
+      },
+    }),
+    pending
+  );
 
-.custom-card .rating .icon {
-  color: #ffc107;
-}
+  if (fetchError) {
+    error.value = fetchError;
+  } else if (data) {
+    packages.value = data?.data || data || [];
+  }
+};
 
-.custom-card .icon {
-  margin-right: 5px;
+watch(
+  isIndeterminate,
+  (newValue) => {
+    nextTick(() => {
+      const selectAllCheckbox = document.getElementById(
+        "select-all"
+      ) as HTMLInputElement;
+      if (selectAllCheckbox) {
+        selectAllCheckbox.indeterminate = newValue;
+      }
+    });
+  },
+  { immediate: true }
+);
+
+await fetchPackages();
+</script>
+
+<style lang="scss" scoped>
+.services {
+  &__loading,
+  &__error,
+  &__empty {
+    padding: 2rem;
+    text-align: center;
+    color: #6c757d;
+  }
+
+  &__error {
+    color: #dc3545;
+  }
+
+  &__accordion {
+    border: 1px solid #dee2e6;
+    border-radius: 0.5rem;
+    overflow: hidden;
+  }
+
+  &__header-controls {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 24px;
+    background: #f9fafb;
+    border-bottom: 1px solid #eaecf0;
+  }
+
+  &__header-title {
+    @include text-base;
+    font-weight: 500;
+    font-size: 12px;
+    line-height: 18px;
+    color: #667085;
+  }
+
+  &__select-all {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  &__checkbox {
+    width: 1rem;
+    height: 1rem;
+    accent-color: $color-primary;
+    border: 1px solid #d0d5dd;
+    border-radius: 6px;
+    cursor: pointer;
+  }
+
+  &__checkbox-label {
+    @include visually-hidden;
+  }
+
+  &__item {
+    border-bottom: 1px solid #dee2e6;
+
+    &:last-child {
+      border-bottom: none;
+    }
+  }
+
+  &__header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1rem 1.5rem;
+    background: #fff;
+  }
+
+  &__main-info {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+  }
+
+  &__info {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+  }
+
+  &__title {
+    @include text-base;
+    font-weight: 500;
+    line-height: 20px;
+    color: #101828;
+  }
+
+  &__specialty {
+    @include text-base;
+    font-weight: 400;
+    font-size: 14px;
+    line-height: 20px;
+    color: #667085;
+  }
+
+  &__actions {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  &__action {
+    display: flex;
+    align-items: center;
+    font-weight: 600;
+    gap: 0.25rem;
+    padding: 0.375rem 0.75rem;
+    border: none;
+    background: none;
+    color: #667085;
+    font-size: 14px;
+    cursor: pointer;
+    transition: color 0.15s ease-in-out;
+
+    &:hover {
+      color: #495057;
+    }
+
+    &--edit:hover {
+      color: #0d6efd;
+    }
+
+    &--remove:hover {
+      color: #dc3545;
+    }
+
+    &-icon {
+      display: flex;
+      align-items: center;
+    }
+  }
+
+  &__toggle {
+    @include outline-button;
+    border-radius: 8px;
+    gap: 8px;
+    border-width: 1px;
+    padding: 10px 16px;
+    font-weight: 600;
+    font-size: 14px;
+    line-height: 20px;
+    color: #344054;
+
+    &--active {
+      color: $primary-aqua;
+      border: none;
+
+      svg {
+        transform: rotate(180deg);
+      }
+    }
+  }
+
+  &__content {
+    background: #e7f3ff;
+  }
+
+  &__tabs {
+    display: flex;
+    border-bottom: 1px solid #dee2e6;
+  }
+
+  &__tab {
+    padding: 0.75rem 1rem;
+    border: none;
+    background: none;
+    color: #6c757d;
+    cursor: pointer;
+    border-bottom: 2px solid transparent;
+    transition: all 0.15s ease-in-out;
+
+    &:hover {
+      color: #0d6efd;
+    }
+
+    &--active {
+      color: #0d6efd;
+      border-bottom-color: #0d6efd;
+    }
+  }
+
+  &__info-section,
+  &__packs-section {
+    padding: 1rem;
+  }
+
+  &__form {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+  }
+
+  &__field {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+
+  &__label {
+    font-weight: 500;
+    color: #212529;
+  }
+
+  &__input,
+  &__textarea {
+    padding: 0.5rem 0.75rem;
+    border: 1px solid #ced4da;
+    border-radius: 0.375rem;
+    background: #fff;
+    color: #212529;
+
+    &:disabled {
+      background: #f8f9fa;
+      opacity: 1;
+    }
+  }
+
+  &__textarea {
+    resize: vertical;
+    min-height: 100px;
+  }
+
+  &__hospital-info {
+    margin-top: 1rem;
+  }
+
+  &__hospital-header {
+    margin-bottom: 1rem;
+  }
+
+  &__hospital-title {
+    margin: 0 0 0.25rem 0;
+    font-weight: 500;
+  }
+
+  &__hospital-subtitle {
+    margin: 0;
+    color: #6c757d;
+    font-size: 0.875rem;
+  }
+
+  &__hospital-card {
+    border: 1px solid #dee2e6;
+    border-radius: 0.5rem;
+    background: #fff;
+    overflow: hidden;
+  }
+
+  &__hospital-details {
+    padding: 1rem;
+  }
+
+  &__hospital-name {
+    margin: 0 0 0.5rem 0;
+    font-size: 1.125rem;
+    font-weight: 600;
+  }
+
+  &__hospital-address {
+    margin: 0 0 0.25rem 0;
+    color: #6c757d;
+  }
+
+  &__hospital-location {
+    color: #6c757d;
+    font-size: 0.875rem;
+  }
+
+  &__packs-title {
+    margin: 0 0 1rem 0;
+    font-weight: 600;
+  }
+
+  &__packs-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 1rem;
+  }
+
+  &__pack {
+    border: 1px solid #f1f3f7;
+    border-radius: 0.5rem;
+    background: #fff;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    overflow: hidden;
+  }
+
+  &__pack-header {
+    padding: 1rem;
+    font-weight: 700;
+    text-align: center;
+    background: linear-gradient(
+      188deg,
+      #f8faff 65.03%,
+      rgba(248, 250, 255, 0.1) 112.13%
+    );
+
+    &--selected {
+      background: linear-gradient(
+        180deg,
+        #fffcf5 70.16%,
+        rgba(255, 252, 245, 0.05) 100%
+      );
+    }
+  }
+
+  &__pack-body {
+    padding: 1.25rem;
+  }
+
+  &__pack-price {
+    font-size: 1.5rem;
+    margin: 0 0 0.5rem 0;
+    color: #212529;
+  }
+
+  &__pack-original {
+    margin: 0 0 0.5rem 0;
+    color: #6c757d;
+  }
+
+  &__pack-rating {
+    margin: 0 0 1rem 0;
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+  }
+
+  &__pack-reviews {
+    color: #6c757d;
+  }
+
+  &__pack-features {
+    list-style: none;
+    padding: 0;
+    margin: 0 0 1rem 0;
+  }
+
+  &__pack-feature {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.25rem 0;
+    border-bottom: 1px solid #f8f9fa;
+
+    &:last-child {
+      border-bottom: none;
+    }
+  }
+
+  &__pack-feature-icon,
+  &__pack-icon {
+    display: flex;
+    align-items: center;
+    flex-shrink: 0;
+  }
+
+  &__pack-availability-title {
+    margin: 1rem 0 0.5rem 0;
+    color: #6c757d;
+    font-size: 0.875rem;
+  }
+
+  &__pack-availability {
+    display: flex;
+    gap: 1rem;
+    margin: 0;
+  }
+
+  &__pack-date,
+  &__pack-time {
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+  }
 }
 </style>
