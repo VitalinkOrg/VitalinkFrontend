@@ -158,28 +158,67 @@ export const useFormat = () => {
   };
 
   /**
-   * Formats a phone number for display.
+   * Options for phone number formatting
+   */
+  interface PhoneFormatOptions {
+    /** Country code prefix (default: "506" for Costa Rica) */
+    countryCode?: string;
+    /** Whether to add the country prefix to 8-digit numbers (default: false) */
+    addPrefix?: boolean;
+  }
+
+  /**
+   * Formats a phone number for display with configurable country prefix support.
    * Supports multiple formats:
-   * - 8-digit Costa Rican numbers: formats as "8727-3307"
-   * - Full international numbers: formats as "(506) 8727-3307"
+   * - 8-digit numbers: formats as "8727-3307" or "(506) 8727-3307" with prefix
+   * - Full international numbers: formats as "(506) 8727-3307" or custom country code
    *
    * @param phone - Raw phone number string (e.g. "87273307" or "+50687273307")
+   * @param options - Configuration options for formatting
    * @returns Formatted phone string
    *
    * @example
-   * formatPhone("87273307");     // → "8727-3307"
-   * formatPhone("+50687273307"); // → "(506) 8727-3307"
-   * formatPhone("1234567890");   // → "1234567890" (unchanged if not recognized)
+   * // Default Costa Rica formatting
+   * formatPhone("87273307");                           // → "8727-3307"
+   * formatPhone("+50687273307");                       // → "(506) 8727-3307"
+   *
+   * // Add Costa Rica prefix to 8-digit numbers
+   * formatPhone("87273307", { addPrefix: true });      // → "(506) 8727-3307"
+   *
+   * // Custom country code
+   * formatPhone("1234567890", { countryCode: "1" });   // → "(1) 123456-7890"
+   * formatPhone("+11234567890");                       // → "(1) 123456-7890"
+   *
+   * // Mexico example
+   * formatPhone("5551234567", { countryCode: "52", addPrefix: true }); // → "(52) 5551-234567"
    */
-  const formatPhone = (phone: string): string => {
+  const formatPhone = (
+    phone: string,
+    options: PhoneFormatOptions = {}
+  ): string => {
+    const { countryCode = "506", addPrefix = false } = options;
     const digits = phone.replace(/\D/g, "");
 
-    if (digits.length === 11 && digits.startsWith("506")) {
-      return `(506) ${digits.slice(3, 7)}-${digits.slice(7)}`;
+    const fullLength = countryCode.length + 8;
+    if (digits.length === fullLength && digits.startsWith(countryCode)) {
+      const localNumber = digits.slice(countryCode.length);
+      return `(${countryCode}) ${localNumber.slice(0, 4)}-${localNumber.slice(4)}`;
     }
 
     if (digits.length === 8) {
-      return `${digits.slice(0, 4)}-${digits.slice(4)}`;
+      const formatted = `${digits.slice(0, 4)}-${digits.slice(4)}`;
+      return addPrefix ? `(${countryCode}) ${formatted}` : formatted;
+    }
+
+    if (digits.length === 10 && countryCode === "1") {
+      return addPrefix
+        ? `(${countryCode}) ${digits.slice(0, 3)}-${digits.slice(3, 6)}-${digits.slice(6)}`
+        : `${digits.slice(0, 3)}-${digits.slice(3, 6)}-${digits.slice(6)}`;
+    }
+
+    if (digits.length === 11 && digits.startsWith("1")) {
+      const localNumber = digits.slice(1);
+      return `(1) ${localNumber.slice(0, 3)}-${localNumber.slice(3, 6)}-${localNumber.slice(6)}`;
     }
 
     return phone;
