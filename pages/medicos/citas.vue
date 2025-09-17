@@ -27,6 +27,21 @@ const statusMapping: Record<string, string> = {
   Todos: "Todos",
 };
 
+const valorationAppointmentStates = [
+  "PENDING_VALORATION_APPOINTMENT",
+  "CONFIRM_VALIDATION_APPOINTMENT",
+  "VALUATION_PENDING_VALORATION_APPOINTMENT",
+  "VALUED_VALORATION_APPOINTMENT",
+];
+
+const procedureStates = [
+  "PENDING_PROCEDURE",
+  "CONFIRM_PROCEDURE",
+  "WAITING_PROCEDURE",
+  "CONCRETED_APPOINTMENT",
+  "CANCEL_APPOINTMENT",
+];
+
 const loading: Ref<boolean> = ref(false);
 const isRefreshing: Ref<boolean> = ref(false);
 const previousAppointments: Ref<Appointment[]> = ref([]);
@@ -121,19 +136,31 @@ const allAppointments = computed((): Appointment[] => {
   return appointmentsData.value || [];
 });
 
+const getAppointmentState = (appointment: Appointment): string => {
+  return appointment.appointment_status.code;
+};
+
 const filteredAppointments = computed((): Appointment[] => {
   let filtered = allAppointments.value;
+
+  if (tab.value === 1) {
+    filtered = filtered.filter((appointment) => {
+      const state = getAppointmentState(appointment);
+      return valorationAppointmentStates.includes(state);
+    });
+  } else if (tab.value === 2) {
+    filtered = filtered.filter((appointment) => {
+      const state = getAppointmentState(appointment);
+      return procedureStates.includes(state);
+    });
+  }
 
   if (!selectedStatuses.value.has("Todos")) {
     const mappedStatuses = Array.from(selectedStatuses.value).map(
       (status) => statusMapping[status]
     );
     filtered = filtered.filter((appointment) => {
-      const appointmentStatus =
-        appointment.appointment_status?.name ||
-        appointment.appointment_status?.value1 ||
-        "";
-
+      const appointmentStatus = getAppointmentState(appointment);
       return mappedStatuses.includes(appointmentStatus);
     });
   }
@@ -190,6 +217,11 @@ const filteredAppointments = computed((): Appointment[] => {
   return filtered;
 });
 
+const changeTab = (newTab: number): void => {
+  tab.value = newTab;
+  selectedStatuses.value = new Set(["Todos"]);
+};
+
 const toggleStatusFilter = (status: string): void => {
   const newSelectedStatuses = new Set(selectedStatuses.value);
 
@@ -239,16 +271,23 @@ const selectedStatusBadges = computed((): string[] => {
 });
 
 const downloadAllAppointments = (): void => {
-  if (!allAppointments.value || allAppointments.value.length === 0) return;
+  if (!filteredAppointments.value || filteredAppointments.value.length === 0)
+    return;
 
   const doc = new jsPDF();
   const pageWidth = doc.internal.pageSize.getWidth();
   const margin = 15;
   let yPosition = 20;
 
+  // Título del reporte según el tab activo
+  const reportTitle =
+    tab.value === 1
+      ? "Reporte de Citas de Valoración"
+      : "Reporte de Procedimientos";
+
   doc.setFontSize(18);
   doc.setFont("helvetica", "bold");
-  doc.text("Reporte de Citas Médicas", pageWidth / 2, yPosition, {
+  doc.text(reportTitle, pageWidth / 2, yPosition, {
     align: "center",
   });
   yPosition += 10;
@@ -281,7 +320,7 @@ const downloadAllAppointments = (): void => {
   doc.setFontSize(10);
   doc.setFont("helvetica", "normal");
 
-  allAppointments.value.forEach((appointment, index) => {
+  filteredAppointments.value.forEach((appointment, index) => {
     if (yPosition > 270) {
       doc.addPage();
       yPosition = 20;
@@ -292,7 +331,7 @@ const downloadAllAppointments = (): void => {
     const timeFrom = appointment.appointment_hour || "";
     const serviceName = appointment.package?.product?.name || "N/A";
     const appointmentType = appointment.appointment_type?.name || "N/A";
-    const status = appointment.appointment_status?.name || "N/A";
+    const status = getAppointmentState(appointment) || "N/A";
 
     const row = [
       patientName,
@@ -311,7 +350,7 @@ const downloadAllAppointments = (): void => {
 
     yPosition += 8;
 
-    if (index < allAppointments.value.length - 1) {
+    if (index < filteredAppointments.value.length - 1) {
       doc.setDrawColor(220, 220, 220);
       doc.line(margin, yPosition - 2, pageWidth - margin, yPosition - 2);
       doc.setDrawColor(0, 0, 0);
@@ -321,12 +360,17 @@ const downloadAllAppointments = (): void => {
 
   doc.setFontSize(8);
   doc.setTextColor(100);
-  doc.text(`Total citas: ${allAppointments.value.length}`, margin, 280);
+  doc.text(`Total citas: ${filteredAppointments.value.length}`, margin, 280);
   doc.text("Sistema de Gestión Médica - Vitalink", pageWidth / 2, 280, {
     align: "center",
   });
 
-  doc.save(`Reporte_Citas_${new Date().toISOString().slice(0, 10)}.pdf`);
+  const fileName =
+    tab.value === 1
+      ? `Reporte_Citas_Valoracion_${new Date().toISOString().slice(0, 10)}.pdf`
+      : `Reporte_Procedimientos_${new Date().toISOString().slice(0, 10)}.pdf`;
+
+  doc.save(fileName);
 };
 
 interface TabFilter {
@@ -336,11 +380,15 @@ interface TabFilter {
 }
 
 const tabFilters: TabFilter[] = [
-  { label: "Citas de valoración", value: "ALL", aria: "all-appointments-tab" },
+  {
+    label: "Citas de valoración",
+    value: "VALORATION",
+    aria: "valoration-appointments-tab",
+  },
   {
     label: "Procedimientos",
     value: "PROCEDURES",
-    aria: "all-procedures-tab",
+    aria: "procedures-tab",
   },
 ];
 
@@ -404,9 +452,9 @@ provide("refreshAppointments", refreshAppointments);
               :aria-selected="tab === index + 1"
               :aria-controls="filter.aria"
               :tabindex="tab === index + 1 ? 0 : -1"
-              @click="tab = index + 1"
-              @keydown.enter="tab = index + 1"
-              @keydown.space.prevent="tab = index + 1"
+              @click="changeTab(index + 1)"
+              @keydown.enter="changeTab(index + 1)"
+              @keydown.space.prevent="changeTab(index + 1)"
             >
               {{ filter.label }}
             </button>
@@ -454,8 +502,8 @@ provide("refreshAppointments", refreshAppointments);
             type="button"
             class="button button--outline"
             @click="downloadAllAppointments"
-            :disabled="!allAppointments.length"
-            :aria-label="`Descargar reporte de ${allAppointments.length} citas`"
+            :disabled="!filteredAppointments.length"
+            :aria-label="`Descargar reporte de ${filteredAppointments.length} citas`"
           >
             <AtomsIconsDownloadIcon
               size="20"
@@ -562,7 +610,9 @@ provide("refreshAppointments", refreshAppointments);
             role="status"
           >
             <p class="empty-state__message">
-              No se encontraron citas que coincidan con los filtros aplicados.
+              No se encontraron
+              {{ tab === 1 ? "citas de valoración" : "procedimientos" }} que
+              coincidan con los filtros aplicados.
             </p>
           </div>
 
@@ -570,7 +620,7 @@ provide("refreshAppointments", refreshAppointments);
             v-else
             :appointments="filteredAppointments"
             :useDropdown="true"
-            :aria-label="`Tabla con ${filteredAppointments.length} citas médicas`"
+            :aria-label="`Tabla con ${filteredAppointments.length} ${tab === 1 ? 'citas de valoración' : 'procedimientos'}`"
           />
         </div>
       </section>
@@ -594,17 +644,9 @@ provide("refreshAppointments", refreshAppointments);
   &__title {
     font-family: $font-family-main;
     font-weight: 600;
-    font-size: 1.25rem;
-    line-height: 1.2;
-    color: #19213d;
-
-    @include respond-to(sm) {
-      font-size: 1.5rem;
-    }
-
-    @include respond-to(md) {
-      font-size: 1.75rem;
-    }
+    font-size: 20px;
+    line-height: 20px;
+    letter-spacing: 0;
   }
 
   &__main {
