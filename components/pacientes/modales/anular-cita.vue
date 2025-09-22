@@ -47,6 +47,8 @@
 import type { ModalName } from "~/types";
 import type { Appointment } from "~/types/appointment";
 
+const refreshAppointments = inject<() => Promise<void>>("refreshAppointments");
+
 interface Props {
   appointment: Appointment;
   isOpen: boolean;
@@ -55,7 +57,6 @@ interface Props {
 interface Emits {
   (e: "open-modal", modalName: ModalName): void;
   (e: "close-modal", modalName: ModalName): void;
-  (e: "refresh"): void;
 }
 
 const props = defineProps<Props>();
@@ -97,7 +98,7 @@ const handleCancelAppointment = async () => {
     );
 
     if (data) {
-      emit("refresh");
+      await refreshAppointments?.();
       handleCloseModal("appointmentDetails");
       handleCloseModal("cancelAppointment");
     }
@@ -108,7 +109,7 @@ const handleCancelAppointment = async () => {
     console.error("Error canceling appointment:", error);
   } finally {
     isLoading.value = false;
-    emit("refresh");
+    await refreshAppointments?.();
     handleCloseModal("cancelAppointment");
     handleCloseModal("appointmentDetails");
   }

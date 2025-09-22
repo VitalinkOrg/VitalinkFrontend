@@ -124,6 +124,35 @@
   }
 }
 
+@mixin danger-button {
+  @include button-base;
+
+  background-color: #ff2d46;
+  border-color: #ff2d46;
+  color: $white;
+  font-weight: 600;
+
+  &:hover {
+    background-color: darken(#ff2d46, 5%);
+    border-color: darken(#ff2d46, 5%);
+  }
+
+  &:active {
+    background-color: darken(#ff2d46, 8%);
+  }
+
+  &:disabled {
+    background-color: #e9c2c2;
+    color: $white;
+    cursor: not-allowed;
+  }
+
+  &:focus-visible {
+    border-color: darken(#ff2d46, 10%);
+    box-shadow: 0 0 0 3px rgba(#ff2d46, 0.4);
+  }
+}
+
 @mixin outline-danger-button {
   @include button-base;
 
@@ -188,16 +217,22 @@
 }
 
 @mixin input-base {
+  @include input-reset;
   border-radius: $border-radius-md;
   padding: 15px 17px;
   font-family: $font-family-main;
   font-size: 14.7px;
   color: #425466;
+  background: $white;
   border: 1px solid #d4dae0;
   box-shadow:
     0 0 1.05px rgba(50, 50, 71, 0.2),
     0 1.05px 2.1px rgba(50, 50, 71, 0.08);
   transition: all 0.3s ease;
+
+  &:hover {
+    border: 1px solid #0cadbb;
+  }
 
   &::placeholder {
     color: #7a828a;
@@ -231,6 +266,70 @@
   }
 }
 
+@mixin input-reset {
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  background: none;
+  border: none;
+  outline: none;
+  padding: 0;
+  margin: 0;
+  box-shadow: none;
+
+  &::-webkit-inner-spin-button,
+  &::-webkit-outer-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+  }
+
+  &::-webkit-search-decoration,
+  &::-webkit-search-cancel-button,
+  &::-webkit-search-results-button,
+  &::-webkit-search-results-decoration {
+    display: none;
+  }
+
+  &::-ms-clear,
+  &::-ms-reveal {
+    display: none;
+  }
+
+  &[type="file"] {
+    &::-webkit-file-upload-button {
+      appearance: none;
+      -webkit-appearance: none;
+    }
+  }
+
+  resize: none;
+
+  &:focus {
+    outline: none;
+    box-shadow: none;
+  }
+
+  font-family: inherit;
+  font-size: inherit;
+  font-weight: inherit;
+  color: inherit;
+  line-height: inherit;
+
+  width: auto;
+  height: auto;
+  box-sizing: border-box;
+
+  text-decoration: none;
+  border-radius: 0;
+
+  &:disabled,
+  &[readonly] {
+    background: none;
+    opacity: 1;
+    cursor: default;
+  }
+}
+
 @mixin visually-hidden {
   position: absolute !important;
   width: 1px !important;
@@ -259,6 +358,19 @@
   font-weight: 400;
   font-size: 14px;
   color: $color-text-secondary;
+  display: block;
+}
+
+@mixin text-base {
+  margin: 0;
+  padding: 0;
+  border: none;
+  font: inherit;
+  background: none;
+  font-family: $font-family-main;
+  font-weight: 400;
+  font-size: 14px;
+  color: $color-foreground;
   display: block;
 }
 

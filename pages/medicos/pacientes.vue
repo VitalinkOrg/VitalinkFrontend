@@ -1,23 +1,33 @@
-<script setup>
+<script lang="ts" setup>
 import { jsPDF } from "jspdf";
 import "jspdf-autotable";
 import { ref } from "vue";
-import { useRefreshToken } from "#imports";
+
+import type { Customer } from "~/types";
+
+interface RuntimeConfig {
+  public: {
+    API_BASE_URL: string;
+  };
+}
+
 definePageMeta({
   middleware: ["auth-doctors-hospitals"],
 });
-const config = useRuntimeConfig();
-const token = useCookie("token");
-const role = useCookie("role");
-const tab = ref(1);
+
+const config: RuntimeConfig = useRuntimeConfig();
+const token = useCookie<string>("token");
+const role = useCookie<string>("role");
+const tab = ref<number>(1);
 const allAppointments = ref();
 
-let url;
+let url: string;
 if (role.value == "R_HOS") {
   url = "/hospital_dashboard/get_patients";
 } else {
   url = "/doctor_dashboard/get_patients";
 }
+
 // const { data: patients, loading } = await useFetch(
 //   config.public.API_BASE_URL + url,
 //   {
@@ -25,57 +35,150 @@ if (role.value == "R_HOS") {
 //     transform: (_patients) => _patients.data,
 //   },
 // );
-const patients = [
+
+const patients: Customer[] = [
   {
-    patient_id: 1,
-    patient_name: "Juan Pérez",
-    date: "2023-10-01",
-    time_from: "10:00",
-    time_to: "11:00",
-    service_name: "Consulta General",
-    patient_address: "Calle Falsa 123",
-    patient_phone: "4444565756",
-    patient_email: "Andreamorales@gmail.com",
-    code: "ABC123",
-    status: "Confirmado",
+    id: "1",
+    card_id: "ABC123",
+    name: "Juan Pérez",
+    email: "juan.perez@gmail.com",
+    user_name: "jperez",
+    phone_number: "4444565756",
+    gender: "M",
+    birth_date: "1990-01-01",
+    country_iso_code: "CR",
+    province: "San José",
+    address: "Calle Falsa 123",
+    city_name: "San José",
+    postal_code: "10101",
+    role_code: "CUSTOMER",
+    is_deleted: 0,
+    is_active_from_email: 1,
+    account_status: "ACTIVE",
+    fail_login_number: 0,
+    forgot_password_token: null,
+    active_register_token: null,
+    latitude: null,
+    longitude: null,
+    code_contract: null,
+    language: "es",
+    profile_picture_url: null,
+    last_login_at: "2023-10-01T10:00:00Z",
+    login_ip_address: "192.168.1.1",
+    created_at: "2023-01-01T00:00:00Z",
+    updated_at: "2023-10-01T10:00:00Z",
+    verified_at: "2023-01-01T12:00:00Z",
+    id_type: {
+      id: 1,
+      code: "CEDULA",
+      name: "Cédula Nacional",
+      type: "IDENTIFICATION",
+      description: "Documento de identificación nacional",
+      father_code: null,
+      value1: null,
+      created_date: "2023-01-01T00:00:00Z",
+      updated_date: null,
+      is_deleted: 0,
+    },
   },
   {
-    patient_id: 2,
-    patient_name: "María López",
-    date: "2023-10-02",
-    time_from: "12:00",
-    time_to: "13:00",
-    service_name: "Odontología",
-    patient_address: "Avenida Siempre Viva 742",
-    patient_phone: "4444565756",
-    patient_email: "Andreamorales@gmail.com",
-    code: "DEF456",
-    status: "Pendiente",
+    id: "2",
+    card_id: "DEF456",
+    name: "María López",
+    email: "maria.lopez@gmail.com",
+    user_name: "mlopez",
+    phone_number: "4444565757",
+    gender: "F",
+    birth_date: "1985-05-15",
+    country_iso_code: "CR",
+    province: "Cartago",
+    address: "Avenida Siempre Viva 742",
+    city_name: "Cartago",
+    postal_code: "30101",
+    role_code: "CUSTOMER",
+    is_deleted: 0,
+    is_active_from_email: 1,
+    account_status: "ACTIVE",
+    fail_login_number: 0,
+    forgot_password_token: null,
+    active_register_token: null,
+    latitude: null,
+    longitude: null,
+    code_contract: null,
+    language: "es",
+    profile_picture_url: null,
+    last_login_at: "2023-10-02T12:00:00Z",
+    login_ip_address: "192.168.1.2",
+    created_at: "2023-02-01T00:00:00Z",
+    updated_at: "2023-10-02T12:00:00Z",
+    verified_at: "2023-02-01T15:00:00Z",
+    id_type: {
+      id: 1,
+      code: "CEDULA",
+      name: "Cédula Nacional",
+      type: "IDENTIFICATION",
+      description: "Documento de identificación nacional",
+      father_code: null,
+      value1: null,
+      created_date: "2023-01-01T00:00:00Z",
+      updated_date: null,
+      is_deleted: 0,
+    },
   },
   {
-    patient_id: 3,
-    patient_name: "Carlos García",
-    date: "2023-10-03",
-    time_from: "14:00",
-    time_to: "15:00",
-    service_name: "Cardiología",
-    patient_address: "Calle Luna 456",
-    patient_phone: "4444565756",
-    patient_email: "Andreamorales@gmail.com",
-    code: "GHI789",
-    status: "Cancelado",
+    id: "3",
+    card_id: "GHI789",
+    name: "Carlos García",
+    email: "carlos.garcia@gmail.com",
+    user_name: "cgarcia",
+    phone_number: "4444565758",
+    gender: "M",
+    birth_date: "1978-12-20",
+    country_iso_code: "CR",
+    province: "Heredia",
+    address: "Calle Luna 456",
+    city_name: "Heredia",
+    postal_code: "40101",
+    role_code: "CUSTOMER",
+    is_deleted: 0,
+    is_active_from_email: 1,
+    account_status: "ACTIVE",
+    fail_login_number: 0,
+    forgot_password_token: null,
+    active_register_token: null,
+    latitude: null,
+    longitude: null,
+    code_contract: null,
+    language: "es",
+    profile_picture_url: null,
+    last_login_at: "2023-10-03T14:00:00Z",
+    login_ip_address: "192.168.1.3",
+    created_at: "2023-03-01T00:00:00Z",
+    updated_at: "2023-10-03T14:00:00Z",
+    verified_at: "2023-03-01T16:00:00Z",
+    id_type: {
+      id: 1,
+      code: "CEDULA",
+      name: "Cédula Nacional",
+      type: "IDENTIFICATION",
+      description: "Documento de identificación nacional",
+      father_code: null,
+      value1: null,
+      created_date: "2023-01-01T00:00:00Z",
+      updated_date: null,
+      is_deleted: 0,
+    },
   },
 ];
 
-const downloadAllPatients = () => {
+const downloadAllPatients = (): void => {
   if (!patients || patients.length === 0) return;
 
   const doc = new jsPDF();
-  const pageWidth = doc.internal.pageSize.getWidth();
-  const margin = 15;
-  let yPosition = 20;
+  const pageWidth: number = doc.internal.pageSize.getWidth();
+  const margin: number = 15;
+  let yPosition: number = 20;
 
-  // Add title
   doc.setFontSize(18);
   doc.setFont("helvetica", "bold");
   doc.text("Reporte de Pacientes", pageWidth / 2, yPosition, {
@@ -83,7 +186,6 @@ const downloadAllPatients = () => {
   });
   yPosition += 10;
 
-  // Add date
   doc.setFontSize(10);
   doc.setFont("helvetica", "normal");
   doc.text(
@@ -94,60 +196,53 @@ const downloadAllPatients = () => {
   );
   yPosition += 15;
 
-  // Table headers
   doc.setFontSize(12);
   doc.setFont("helvetica", "bold");
-  const headers = ["Paciente", "Direccion", "Telefono", "Correo"];
-  const columnWidths = [40, 50, 40, 40];
-  let xPosition = margin;
+  const headers: string[] = ["Paciente", "Direccion", "Telefono", "Correo"];
+  const columnWidths: number[] = [40, 50, 40, 40];
+  let xPosition: number = margin;
 
-  // Draw headers
-  headers.forEach((header, i) => {
+  headers.forEach((header: string, i: number) => {
     doc.text(header, xPosition, yPosition);
     xPosition += columnWidths[i];
   });
   yPosition += 8;
 
-  // Draw line under headers
   doc.line(margin, yPosition, pageWidth - margin, yPosition);
   yPosition += 10;
 
-  // Table content
   doc.setFontSize(10);
   doc.setFont("helvetica", "normal");
 
-  patients.forEach((patient, index) => {
-    // Check if we need a new page
+  patients.forEach((customer: Customer, index: number) => {
     if (yPosition > 270) {
       doc.addPage();
       yPosition = 20;
     }
 
-    const row = [
-      patient.patient_name,
-      patient.patient_address,
-      patient.patient_phone,
-      patient.patient_email,
+    const row: string[] = [
+      customer.name,
+      customer.address,
+      customer.phone_number,
+      customer.email,
     ];
 
     xPosition = margin;
-    row.forEach((cell, i) => {
+    row.forEach((cell: string, i: number) => {
       doc.text(cell, xPosition, yPosition);
       xPosition += columnWidths[i];
     });
 
     yPosition += 8;
 
-    // Add light gray line between rows
     if (index < patients.length - 1) {
       doc.setDrawColor(220, 220, 220);
       doc.line(margin, yPosition - 2, pageWidth - margin, yPosition - 2);
-      doc.setDrawColor(0, 0, 0); // Reset to black
+      doc.setDrawColor(0, 0, 0);
       yPosition += 4;
     }
   });
 
-  // Footer
   doc.setFontSize(8);
   doc.setTextColor(100);
   doc.text(`Total pacientes: ${patients.length}`, margin, 280);
@@ -155,58 +250,39 @@ const downloadAllPatients = () => {
     align: "center",
   });
 
-  // Save the PDF
   doc.save(`Reporte_Pacientes_${new Date().toISOString().slice(0, 10)}.pdf`);
 };
 </script>
 
 <template>
   <NuxtLayout name="medicos-dashboard">
-    <nav style="--bs-breadcrumb-divider: &quot;/&quot;" aria-label="breadcrumb">
-      <ol class="breadcrumb">
-        <li class="breadcrumb-item">
-          <NuxtLink href="/medicos/inicio" class="text-muted">Inicio</NuxtLink>
-        </li>
-        <li class="breadcrumb-item active fw-semibold" aria-current="page">
-          Pacientes
-        </li>
-      </ol>
-    </nav>
-    <p>
-      <span class="fw-medium fs-4">Mis Pacientes</span>
-    </p>
+    <MedicosCommonPageHeader title="Mis Pacientes" />
 
-    <div class="row mb-4">
+    <div class="patients__actions--wrapper">
       <div class="col-auto">
-        <div class="input-group shadow-sm">
-          <span
-            class="input-group-text bg-transparent border-end-0 rounded-start-3"
-            id="basic-addon1"
-          >
+        <div class="patients__search-group">
+          <span class="patients__search-group--icon" id="basic-addon1">
             <AtomsIconsSearchIcon />
           </span>
           <input
             type="text"
-            class="form-control border-start-0 rounded-end-3"
+            class="patients__search-group--input"
             placeholder="Buscar"
             aria-label="Buscar"
             aria-describedby="basic-addon1"
           />
         </div>
       </div>
-      <div class="col-auto ms-auto d-flex">
-        <button disabled class="btn btn-outline-dark text-nowrap me-2">
+      <div class="patients__actions">
+        <button disabled class="patients__button--outline">
           + Nuevo Paciente
         </button>
-        <button
-          class="btn btn-outline-dark text-nowrap me-2"
-          @click="downloadAllPatients"
-        >
+        <button class="patients__button--outline" @click="downloadAllPatients">
           <AtomsIconsDownloadIcon /> Descargar
         </button>
         <div class="dropdown">
           <button
-            class="btn btn-outline-dark dropdown-toggle"
+            class="patients__button--outline dropdown-toggle"
             type="button"
             data-bs-toggle="dropdown"
             aria-expanded="false"
@@ -223,7 +299,66 @@ const downloadAllPatients = () => {
     </div>
 
     <div class="card">
-      <MedicosPatientsTable :patients="patients" />
+      <MedicosPacientesTabla :patients="patients" />
     </div>
   </NuxtLayout>
 </template>
+
+<style lang="scss" scoped>
+.patients {
+  &__search-group {
+    @include input-base;
+    position: relative;
+    display: flex;
+    align-items: center;
+    padding: 0px;
+
+    &--icon {
+      position: absolute;
+      left: 12px;
+      pointer-events: none;
+      svg {
+        width: 20px;
+        height: 20px;
+      }
+    }
+
+    &--input {
+      @include input-reset;
+      width: 100%;
+      padding: 10px 14px 10px 42px;
+      background-color: transparent;
+      font-weight: 300;
+      font-size: 16px;
+      line-height: 24px;
+      letter-spacing: 0;
+    }
+  }
+
+  &__actions {
+    display: flex;
+    gap: 12px;
+
+    &--wrapper {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 12px 0px;
+    }
+  }
+
+  &__input {
+    @include input-base;
+  }
+
+  &__button {
+    &--outline {
+      @include outline-button;
+    }
+
+    &--primary {
+      @include primary-button;
+    }
+  }
+}
+</style>

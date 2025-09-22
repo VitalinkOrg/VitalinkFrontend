@@ -1,42 +1,66 @@
 export const useFormat = () => {
   /**
-   * Formats a time string from 24-hour format (HH:mm:ss) to 12-hour format with AM/PM.
+   * Formats a time string from 24-hour format (HH:mm:ss) to different formats.
    *
    * @param time - Time string in HH:mm:ss or HH:mm format (e.g. "14:30:00")
-   * @returns Formatted time string in 12h format (e.g. "2:30PM")
+   * @param format - Format type: "12h" for AM/PM format, "hs" for hours format
+   * @returns Formatted time string
    *
    * @example
-   * formatTime("14:30:00"); // → "2:30PM"
-   * formatTime("09:15");    // → "9:15AM"
+   * formatTime("14:30:00", "12h"); // → "2:30PM"
+   * formatTime("09:15", "12h");    // → "9:15AM"
+   * formatTime("14:30:00", "hs");  // → "14:30hs"
+   * formatTime("09:15", "hs");     // → "9:15hs"
    */
-  const formatTime = (time: string): string => {
+  const formatTime = (time: string, format: "12h" | "hs" = "12h"): string => {
     const [hours, minutes] = time.split(":");
     const h = parseInt(hours, 10);
+
+    if (format === "hs") {
+      return `${h}:${minutes}hs`;
+    }
+
     const period = h >= 12 ? "PM" : "AM";
     const hour12 = h % 12 || 12;
     return `${hour12}:${minutes}${period}`;
   };
 
   /**
-   * Formats an ISO date string into a human-readable full date in Spanish.
-   * Includes weekday, day number, and month name (e.g. "Lunes, 25 de agosto").
+   * Formats an ISO date string or Date object into a human-readable date in Spanish.
    *
-   * @param isoDate - ISO date string (e.g. "2025-08-25T10:00:00Z" or "2025-08-25")
-   * @returns Formatted date string in Spanish (e.g. "Lunes, 25 de agosto")
+   * @param date - ISO date string (e.g. "2025-08-25T10:00:00Z" or "2025-08-25") or Date object
+   * @param format - Format type: 'full' for full format, 'short' for MM/DD/YYYY format
+   * @returns Formatted date string in Spanish
    *
    * @example
-   * formatDate("2025-08-25"); // → "Lunes, 25 de agosto"
+   * formatDate("2025-08-25"); // → "Lunes, 25 de agosto" (default format)
+   * formatDate("2025-08-25", "full"); // → "Lunes, 25 de agosto"
+   * formatDate("2025-08-25", "short"); // → "25/08/2025"
+   * formatDate(new Date(), "short"); // → Current date in MM/DD/YYYY format
    */
-  const formatDate = (isoDate: string): string => {
-    const date = new Date(isoDate);
+  const formatDate = (
+    date: string | Date,
+    format: "full" | "short" = "full"
+  ): string => {
+    const dateObj = typeof date === "string" ? new Date(date) : date;
+
+    if (format === "short") {
+      const day = dateObj.getDate().toString().padStart(2, "0");
+      const month = (dateObj.getMonth() + 1).toString().padStart(2, "0");
+      const year = dateObj.getFullYear();
+
+      return `${day}/${month}/${year}`;
+    }
 
     const dayOptions: Intl.DateTimeFormatOptions = { weekday: "long" };
     const monthOptions: Intl.DateTimeFormatOptions = { month: "long" };
 
-    const dayName = new Intl.DateTimeFormat("es-ES", dayOptions).format(date);
-    const dayNumber = date.getDate();
+    const dayName = new Intl.DateTimeFormat("es-ES", dayOptions).format(
+      dateObj
+    );
+    const dayNumber = dateObj.getDate();
     const monthName = new Intl.DateTimeFormat("es-ES", monthOptions).format(
-      date
+      dateObj
     );
 
     const capitalizedDayName =
@@ -134,28 +158,67 @@ export const useFormat = () => {
   };
 
   /**
-   * Formats a phone number for display.
+   * Options for phone number formatting
+   */
+  interface PhoneFormatOptions {
+    /** Country code prefix (default: "506" for Costa Rica) */
+    countryCode?: string;
+    /** Whether to add the country prefix to 8-digit numbers (default: false) */
+    addPrefix?: boolean;
+  }
+
+  /**
+   * Formats a phone number for display with configurable country prefix support.
    * Supports multiple formats:
-   * - 8-digit Costa Rican numbers: formats as "8727-3307"
-   * - Full international numbers: formats as "(506) 8727-3307"
+   * - 8-digit numbers: formats as "8727-3307" or "(506) 8727-3307" with prefix
+   * - Full international numbers: formats as "(506) 8727-3307" or custom country code
    *
    * @param phone - Raw phone number string (e.g. "87273307" or "+50687273307")
+   * @param options - Configuration options for formatting
    * @returns Formatted phone string
    *
    * @example
-   * formatPhone("87273307");     // → "8727-3307"
-   * formatPhone("+50687273307"); // → "(506) 8727-3307"
-   * formatPhone("1234567890");   // → "1234567890" (unchanged if not recognized)
+   * // Default Costa Rica formatting
+   * formatPhone("87273307");                           // → "8727-3307"
+   * formatPhone("+50687273307");                       // → "(506) 8727-3307"
+   *
+   * // Add Costa Rica prefix to 8-digit numbers
+   * formatPhone("87273307", { addPrefix: true });      // → "(506) 8727-3307"
+   *
+   * // Custom country code
+   * formatPhone("1234567890", { countryCode: "1" });   // → "(1) 123456-7890"
+   * formatPhone("+11234567890");                       // → "(1) 123456-7890"
+   *
+   * // Mexico example
+   * formatPhone("5551234567", { countryCode: "52", addPrefix: true }); // → "(52) 5551-234567"
    */
-  const formatPhone = (phone: string): string => {
+  const formatPhone = (
+    phone: string,
+    options: PhoneFormatOptions = {}
+  ): string => {
+    const { countryCode = "506", addPrefix = false } = options;
     const digits = phone.replace(/\D/g, "");
 
-    if (digits.length === 11 && digits.startsWith("506")) {
-      return `(506) ${digits.slice(3, 7)}-${digits.slice(7)}`;
+    const fullLength = countryCode.length + 8;
+    if (digits.length === fullLength && digits.startsWith(countryCode)) {
+      const localNumber = digits.slice(countryCode.length);
+      return `(${countryCode}) ${localNumber.slice(0, 4)}-${localNumber.slice(4)}`;
     }
 
     if (digits.length === 8) {
-      return `${digits.slice(0, 4)}-${digits.slice(4)}`;
+      const formatted = `${digits.slice(0, 4)}-${digits.slice(4)}`;
+      return addPrefix ? `(${countryCode}) ${formatted}` : formatted;
+    }
+
+    if (digits.length === 10 && countryCode === "1") {
+      return addPrefix
+        ? `(${countryCode}) ${digits.slice(0, 3)}-${digits.slice(3, 6)}-${digits.slice(6)}`
+        : `${digits.slice(0, 3)}-${digits.slice(3, 6)}-${digits.slice(6)}`;
+    }
+
+    if (digits.length === 11 && digits.startsWith("1")) {
+      const localNumber = digits.slice(1);
+      return `(1) ${localNumber.slice(0, 3)}-${localNumber.slice(3, 6)}-${localNumber.slice(6)}`;
     }
 
     return phone;

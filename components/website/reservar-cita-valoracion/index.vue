@@ -125,7 +125,7 @@
 <script lang="ts" setup>
 import type { ApiResponse, Package, Service } from "~/types";
 
-import { useErrorHandler } from "~/composables/useErrorHandler";
+import { useErrorHandler } from "~/composables/api/useErrorHandler";
 
 const { withErrorHandling } = useErrorHandler();
 

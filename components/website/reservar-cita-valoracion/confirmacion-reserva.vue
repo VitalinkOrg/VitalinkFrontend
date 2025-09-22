@@ -245,7 +245,6 @@ const getSelectedProcedureName = computed(() => {
     }
   }
 
-  // Responsive adjustments
   @include respond-to-max(sm) {
     &__step-content {
       padding: $spacing-sm;

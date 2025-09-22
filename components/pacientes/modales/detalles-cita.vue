@@ -15,7 +15,7 @@
         {{
           isProcedureDetails
             ? "Detalles de la cita"
-            : "Detalles del procedimeinto"
+            : "Detalles del procedimiento"
         }}
       </h2>
 

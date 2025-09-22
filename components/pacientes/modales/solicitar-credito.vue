@@ -114,6 +114,8 @@ const { formatCurrency } = useFormat();
 const token = useCookie("token");
 const config = useRuntimeConfig();
 
+const refreshAppointments = inject<() => Promise<void>>("refreshAppointments");
+
 interface Props {
   appointment: Appointment;
   isOpen: boolean;
@@ -122,7 +124,6 @@ interface Props {
 interface Emits {
   (e: "open-modal", modalName: ModalName): void;
   (e: "close-modal", modalName: ModalName): void;
-  (e: "refresh"): void;
 }
 
 const props = defineProps<Props>();
@@ -244,21 +245,8 @@ const handleSendRequest = async () => {
       );
     }
 
-    if (
-      data.value &&
-      typeof data.value === "object" &&
-      "success" in data.value
-    ) {
-      if (
-        (data.value as { success: boolean; message?: string }).success === false
-      ) {
-        throw new Error(
-          (data.value as { message?: string }).message ||
-            "No se pudo procesar la solicitud de crédito"
-        );
-      }
-
-      emit("refresh");
+    if (data) {
+      await refreshAppointments?.();
       handleCloseModal("applyCredit");
       handleCloseModal("appointmentDetails");
       handleOpenModal("applyCreditSuccess");

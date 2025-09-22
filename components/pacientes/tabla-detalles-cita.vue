@@ -440,7 +440,7 @@ const formatTime = (time: string): string => {
     font-size: 16px;
     line-height: 20px;
     color: #6d758f;
-    padding: 10px 0px;
+    padding: 10px;
   }
 
   &__value {
@@ -449,7 +449,7 @@ const formatTime = (time: string): string => {
     font-size: 16px;
     line-height: 20px;
     color: $color-foreground;
-    padding: 10px 0px;
+    padding: 10px;
   }
 
   &__payment-status {

@@ -1,8 +1,9 @@
-<script setup>
-import { useRefreshToken } from "#imports";
+<script lang="ts" setup>
 import { jsPDF } from "jspdf";
 import "jspdf-autotable";
-import { computed, ref, watch } from "vue";
+import { computed, ref, watch, type Ref } from "vue";
+import { useErrorHandler } from "~/composables/api/useErrorHandler";
+import type { Appointment } from "~/types";
 
 definePageMeta({
   middleware: ["auth-doctors-hospitals"],
@@ -11,51 +12,71 @@ definePageMeta({
 const config = useRuntimeConfig();
 const token = useCookie("token");
 const role = useCookie("role");
-const tab = ref(1);
-const searchQuery = ref("");
-const sortOption = ref("date");
+const { formatDate } = useFormat();
+const { handleApiError } = useErrorHandler();
 
-const selectedStatuses = ref(new Set(["Todos"]));
+const tab: Ref<number> = ref(1);
+const searchQuery: Ref<string> = ref("");
+const sortOption: Ref<string> = ref("date");
+const selectedStatuses: Ref<Set<string>> = ref(new Set(["Todos"]));
 
-const statusMapping = {
+const statusMapping: Record<string, string> = {
   Pendiente: "Pendiente",
   Completada: "Concretado",
   Cancelada: "Cancelada",
   Todos: "Todos",
 };
 
-const loading = ref(false);
-const isRefreshing = ref(false);
-const previousAppointments = ref([]);
+const valorationAppointmentStates = [
+  "PENDING_VALORATION_APPOINTMENT",
+  "CONFIRM_VALIDATION_APPOINTMENT",
+  "VALUATION_PENDING_VALORATION_APPOINTMENT",
+  "VALUED_VALORATION_APPOINTMENT",
+];
 
-const allAppointmentsData = ref(null);
+const procedureStates = [
+  "PENDING_PROCEDURE",
+  "CONFIRM_PROCEDURE",
+  "WAITING_PROCEDURE",
+  "CONCRETED_APPOINTMENT",
+  "CANCEL_APPOINTMENT",
+];
+
+const loading: Ref<boolean> = ref(false);
+const isRefreshing: Ref<boolean> = ref(false);
+const previousAppointments: Ref<Appointment[]> = ref([]);
+const allAppointmentsData: Ref<Appointment[] | null> = ref(null);
 
 const appointmentsData = computed(() => {
   return allAppointmentsData.value || previousAppointments.value;
 });
 
-let url;
+let url: string;
 if (role.value == "R_HOS") {
   url = "/hospital_dashboard/history_appointments";
 } else {
   url = "/doctor_dashboard/history_appointments";
 }
 
-const { data: appointmentsResponse } = await useFetch(
-  config.public.API_BASE_URL + "/appointment/get_all",
-  {
-    headers: { Authorization: token.value },
-    transform: (_appointments) => _appointments.data,
-  }
-);
+try {
+  const { data: appointmentsResponse } = await useFetch<Appointment[]>(
+    config.public.API_BASE_URL + "/appointment/get_all",
+    {
+      headers: { Authorization: token.value ?? "" },
+      transform: (_appointments: any) => _appointments.data,
+    }
+  );
 
-if (appointmentsResponse.value) {
-  allAppointmentsData.value = appointmentsResponse.value;
-  previousAppointments.value = appointmentsResponse.value;
-  useRefreshToken();
+  if (appointmentsResponse.value) {
+    allAppointmentsData.value = appointmentsResponse.value;
+    previousAppointments.value = appointmentsResponse.value;
+    useRefreshToken();
+  }
+} catch (error) {
+  console.error("Initial fetch error:", handleApiError(error));
 }
 
-const fetchAppointments = async (isRefresh = false) => {
+const fetchAppointments = async (isRefresh: boolean = false): Promise<void> => {
   if (isRefresh) {
     isRefreshing.value = true;
   } else {
@@ -63,11 +84,11 @@ const fetchAppointments = async (isRefresh = false) => {
   }
 
   try {
-    const { data } = await useFetch(
+    const { data } = await useFetch<Appointment[]>(
       config.public.API_BASE_URL + "/appointment/get_all",
       {
-        headers: { Authorization: token.value },
-        transform: (_appointments) => _appointments.data,
+        headers: { Authorization: token.value ?? "" },
+        transform: (_appointments: any) => _appointments.data,
         server: false,
         key: isRefresh ? `appointments-${Date.now()}` : "appointments",
       }
@@ -82,7 +103,7 @@ const fetchAppointments = async (isRefresh = false) => {
       useRefreshToken();
     }
   } catch (error) {
-    console.error("Fetch error:", error);
+    console.error("Fetch error:", handleApiError(error));
   } finally {
     loading.value = false;
     isRefreshing.value = false;
@@ -99,36 +120,47 @@ watch(
   { deep: true }
 );
 
-const refreshAppointments = async () => {
+const refreshAppointments = async (): Promise<void> => {
   await fetchAppointments(true);
 };
 
 provide("refreshAppointments", refreshAppointments);
 
-const handleRefresh = async () => {
+const handleRefresh = async (): Promise<void> => {
   await refreshAppointments();
 };
 
 provide("handleRefresh", handleRefresh);
 
-const allAppointments = computed(() => {
+const allAppointments = computed((): Appointment[] => {
   return appointmentsData.value || [];
 });
 
-const filteredAppointments = computed(() => {
+const getAppointmentState = (appointment: Appointment): string => {
+  return appointment.appointment_status.code;
+};
+
+const filteredAppointments = computed((): Appointment[] => {
   let filtered = allAppointments.value;
+
+  if (tab.value === 1) {
+    filtered = filtered.filter((appointment) => {
+      const state = getAppointmentState(appointment);
+      return valorationAppointmentStates.includes(state);
+    });
+  } else if (tab.value === 2) {
+    filtered = filtered.filter((appointment) => {
+      const state = getAppointmentState(appointment);
+      return procedureStates.includes(state);
+    });
+  }
 
   if (!selectedStatuses.value.has("Todos")) {
     const mappedStatuses = Array.from(selectedStatuses.value).map(
       (status) => statusMapping[status]
     );
     filtered = filtered.filter((appointment) => {
-      const appointmentStatus =
-        appointment.status ||
-        appointment.appointment_status?.name ||
-        appointment.appointment_status?.value1 ||
-        "";
-
+      const appointmentStatus = getAppointmentState(appointment);
       return mappedStatuses.includes(appointmentStatus);
     });
   }
@@ -137,23 +169,18 @@ const filteredAppointments = computed(() => {
     const query = searchQuery.value.toLowerCase();
     filtered = filtered.filter((appointment) => {
       const patientName =
-        appointment.patient_name ||
         appointment.customer?.name ||
-        appointment.customer?.first_name +
-          " " +
-          (appointment.customer?.last_name || "") ||
+        `${appointment.customer?.name || ""} ${appointment.customer?.name || ""}`.trim() ||
         "";
 
       const serviceName =
-        appointment.service_name ||
-        appointment.procedure?.name ||
-        appointment.product?.name ||
+        appointment.package?.product?.name ||
+        appointment.package?.procedure?.name ||
         "";
 
       const appointmentCode =
-        appointment.code ||
-        appointment.procedure?.code ||
         appointment.id?.toString() ||
+        appointment.package?.procedure?.code ||
         "";
 
       return (
@@ -166,21 +193,19 @@ const filteredAppointments = computed(() => {
 
   filtered = [...filtered].sort((a, b) => {
     if (sortOption.value === "date" || sortOption.value === "fecha") {
-      const dateA = new Date(a.date || a.appointment_date || "");
-      const dateB = new Date(b.date || b.appointment_date || "");
-      return dateA - dateB;
+      const dateA = new Date(a.appointment_date || "");
+      const dateB = new Date(b.appointment_date || "");
+      return dateA.getTime() - dateB.getTime();
     } else if (sortOption.value === "name" || sortOption.value === "nombre") {
       const nameA = (
-        a.patient_name ||
         a.customer?.name ||
-        a.customer?.first_name + " " + (a.customer?.last_name || "") ||
+        `${a.customer?.name || ""} ${a.customer?.name || ""}`.trim() ||
         ""
       ).toLowerCase();
 
       const nameB = (
-        b.patient_name ||
         b.customer?.name ||
-        b.customer?.first_name + " " + (b.customer?.last_name || "") ||
+        `${b.customer?.name || ""} ${b.customer?.name || ""}`.trim() ||
         ""
       ).toLowerCase();
 
@@ -192,7 +217,12 @@ const filteredAppointments = computed(() => {
   return filtered;
 });
 
-const toggleStatusFilter = (status) => {
+const changeTab = (newTab: number): void => {
+  tab.value = newTab;
+  selectedStatuses.value = new Set(["Todos"]);
+};
+
+const toggleStatusFilter = (status: string): void => {
   const newSelectedStatuses = new Set(selectedStatuses.value);
 
   if (status === "Todos") {
@@ -218,11 +248,11 @@ const toggleStatusFilter = (status) => {
   selectedStatuses.value = newSelectedStatuses;
 };
 
-const isStatusSelected = (status) => {
+const isStatusSelected = (status: string): boolean => {
   return selectedStatuses.value.has(status);
 };
 
-const removeStatusBadge = (status) => {
+const removeStatusBadge = (status: string): void => {
   const newSelectedStatuses = new Set(selectedStatuses.value);
   newSelectedStatuses.delete(status);
 
@@ -233,24 +263,31 @@ const removeStatusBadge = (status) => {
   selectedStatuses.value = newSelectedStatuses;
 };
 
-const selectedStatusBadges = computed(() => {
+const selectedStatusBadges = computed((): string[] => {
   if (selectedStatuses.value.has("Todos")) {
     return ["Todos"];
   }
   return Array.from(selectedStatuses.value);
 });
 
-const downloadAllAppointments = () => {
-  if (!allAppointments.value || allAppointments.value.length === 0) return;
+const downloadAllAppointments = (): void => {
+  if (!filteredAppointments.value || filteredAppointments.value.length === 0)
+    return;
 
   const doc = new jsPDF();
   const pageWidth = doc.internal.pageSize.getWidth();
   const margin = 15;
   let yPosition = 20;
 
+  // Título del reporte según el tab activo
+  const reportTitle =
+    tab.value === 1
+      ? "Reporte de Citas de Valoración"
+      : "Reporte de Procedimientos";
+
   doc.setFontSize(18);
   doc.setFont("helvetica", "bold");
-  doc.text("Reporte de Citas Médicas", pageWidth / 2, yPosition, {
+  doc.text(reportTitle, pageWidth / 2, yPosition, {
     align: "center",
   });
   yPosition += 10;
@@ -258,7 +295,7 @@ const downloadAllAppointments = () => {
   doc.setFontSize(10);
   doc.setFont("helvetica", "normal");
   doc.text(
-    `Generado el: ${new Date().toLocaleDateString("es-ES")}`,
+    `Generado el: ${formatDate(new Date().toISOString())}`,
     pageWidth / 2,
     yPosition,
     { align: "center" }
@@ -283,46 +320,23 @@ const downloadAllAppointments = () => {
   doc.setFontSize(10);
   doc.setFont("helvetica", "normal");
 
-  allAppointments.value.forEach((appointment, index) => {
+  filteredAppointments.value.forEach((appointment, index) => {
     if (yPosition > 270) {
       doc.addPage();
       yPosition = 20;
     }
 
-    const patientName =
-      appointment.patient_name ||
-      appointment.customer?.name ||
-      appointment.customer?.first_name +
-        " " +
-        (appointment.customer?.last_name || "") ||
-      "N/A";
-
-    const appointmentDate =
-      appointment.date || appointment.appointment_date || "N/A";
-
-    const timeFrom =
-      appointment.time_from || appointment.appointment_hour || "";
-    const timeTo = appointment.time_to || "";
-    const timeRange = timeTo ? `${timeFrom} - ${timeTo}` : timeFrom;
-
-    const serviceName =
-      appointment.service_name ||
-      appointment.procedure?.name ||
-      appointment.product?.name ||
-      "N/A";
-
-    const appointmentType =
-      appointment.appointment_type ||
-      appointment.reservation_type?.name ||
-      "N/A";
-
-    const status =
-      appointment.status || appointment.appointment_status?.name || "N/A";
+    const patientName = appointment.customer?.name || "N/A";
+    const appointmentDate = appointment.appointment_date || "N/A";
+    const timeFrom = appointment.appointment_hour || "";
+    const serviceName = appointment.package?.product?.name || "N/A";
+    const appointmentType = appointment.appointment_type?.name || "N/A";
+    const status = getAppointmentState(appointment) || "N/A";
 
     const row = [
       patientName,
       appointmentDate,
-      timeRange,
+      timeFrom,
       serviceName,
       appointmentType,
       status,
@@ -336,7 +350,7 @@ const downloadAllAppointments = () => {
 
     yPosition += 8;
 
-    if (index < allAppointments.value.length - 1) {
+    if (index < filteredAppointments.value.length - 1) {
       doc.setDrawColor(220, 220, 220);
       doc.line(margin, yPosition - 2, pageWidth - margin, yPosition - 2);
       doc.setDrawColor(0, 0, 0);
@@ -346,29 +360,49 @@ const downloadAllAppointments = () => {
 
   doc.setFontSize(8);
   doc.setTextColor(100);
-  doc.text(`Total citas: ${allAppointments.value.length}`, margin, 280);
+  doc.text(`Total citas: ${filteredAppointments.value.length}`, margin, 280);
   doc.text("Sistema de Gestión Médica - Vitalink", pageWidth / 2, 280, {
     align: "center",
   });
 
-  doc.save(`Reporte_Citas_${new Date().toISOString().slice(0, 10)}.pdf`);
+  const fileName =
+    tab.value === 1
+      ? `Reporte_Citas_Valoracion_${new Date().toISOString().slice(0, 10)}.pdf`
+      : `Reporte_Procedimientos_${new Date().toISOString().slice(0, 10)}.pdf`;
+
+  doc.save(fileName);
 };
 
-const tabFilters = [
-  { label: "Citas de valoración", value: "ALL", aria: "all-appointments-tab" },
+interface TabFilter {
+  label: string;
+  value: string;
+  aria: string;
+}
+
+const tabFilters: TabFilter[] = [
+  {
+    label: "Citas de valoración",
+    value: "VALORATION",
+    aria: "valoration-appointments-tab",
+  },
   {
     label: "Procedimientos",
     value: "PROCEDURES",
-    aria: "all-procedures-tab",
+    aria: "procedures-tab",
   },
 ];
 
-const sortOptions = [
+interface SortOption {
+  label: string;
+  value: string;
+}
+
+const sortOptions: SortOption[] = [
   { label: "Fecha", value: "fecha" },
   { label: "Nombre", value: "nombre" },
 ];
 
-const setSort = (value) => {
+const setSort = (value: string): void => {
   sortOption.value = value;
 };
 
@@ -378,7 +412,7 @@ provide("refreshAppointments", refreshAppointments);
 <template>
   <NuxtLayout name="medicos-dashboard">
     <header class="appointment-tracking__header">
-      <nav class="breadcrumb-nav" aria-label="Breadcrumb">
+      <nav class="breadcrumb-nav" aria-label="Navegación de migas de pan">
         <ol class="breadcrumb-nav__list">
           <li class="breadcrumb-nav__item">
             <NuxtLink
@@ -400,148 +434,197 @@ provide("refreshAppointments", refreshAppointments);
       <h1 class="appointment-tracking__title">Seguimiento de Citas</h1>
     </header>
 
-    <nav class="appointments-tabs" aria-label="Filtros de citas médicas">
-      <ul class="appointments-tabs__list" role="tablist">
-        <li
-          class="appointments-tabs__item"
-          role="presentation"
-          v-for="(filter, index) in tabFilters"
-          :key="filter.value"
-        >
-          <button
-            class="appointments-tabs__button"
-            :class="{
-              'appointments-tabs__button--active': tab === index + 1,
-            }"
-            role="tab"
-            :aria-selected="true"
-            :aria-controls="filter.aria"
-            @click="tab = index + 1"
+    <main class="appointment-tracking__main">
+      <nav class="appointments-tabs" aria-label="Filtros de citas médicas">
+        <ul class="appointments-tabs__list" role="tablist">
+          <li
+            class="appointments-tabs__item"
+            role="presentation"
+            v-for="(filter, index) in tabFilters"
+            :key="filter.value"
           >
-            <span class="visually-hidden">Mostrar </span>{{ filter.label }}
-            <span class="visually-hidden">, pestaña activa</span>
-          </button>
-        </li>
-      </ul>
-    </nav>
+            <button
+              class="appointments-tabs__button"
+              :class="{
+                'appointments-tabs__button--active': tab === index + 1,
+              }"
+              role="tab"
+              :aria-selected="tab === index + 1"
+              :aria-controls="filter.aria"
+              :tabindex="tab === index + 1 ? 0 : -1"
+              @click="changeTab(index + 1)"
+              @keydown.enter="changeTab(index + 1)"
+              @keydown.space.prevent="changeTab(index + 1)"
+            >
+              {{ filter.label }}
+            </button>
+          </li>
+        </ul>
+      </nav>
 
-    <section class="appointments-toolbar">
-      <form class="appointments-toolbar__search" role="search" @submit.prevent>
-        <div class="search-input">
-          <label for="search-field" class="search-input__icon" id="search-icon">
-            <AtomsIconsSearchIcon
+      <section
+        class="appointments-toolbar"
+        aria-label="Herramientas de filtrado y búsqueda"
+      >
+        <form
+          class="appointments-toolbar__search"
+          role="search"
+          @submit.prevent
+        >
+          <div class="search-input">
+            <label
+              for="search-field"
+              class="search-input__icon"
+              id="search-icon"
+            >
+              <AtomsIconsSearchIcon
+                size="20"
+                aria-hidden="true"
+                focusable="false"
+              />
+              <span class="visually-hidden">Buscar</span>
+            </label>
+            <input
+              type="search"
+              id="search-field"
+              class="search-input__field"
+              placeholder="Buscar"
+              aria-label="Buscar citas por paciente, servicio o código"
+              aria-describedby="search-icon"
+              v-model="searchQuery"
+              autocomplete="off"
+            />
+          </div>
+        </form>
+
+        <div class="appointments-toolbar__actions">
+          <button
+            type="button"
+            class="button button--outline"
+            @click="downloadAllAppointments"
+            :disabled="!filteredAppointments.length"
+            :aria-label="`Descargar reporte de ${filteredAppointments.length} citas`"
+          >
+            <AtomsIconsDownloadIcon
               size="20"
               aria-hidden="true"
               focusable="false"
             />
-            <span class="visually-hidden">Buscar</span>
-          </label>
-          <input
-            type="text"
-            id="search-field"
-            class="search-input__field"
-            placeholder="Buscar"
-            aria-label="Buscar"
-            aria-describedby="search-icon"
-            v-model="searchQuery"
+            <span class="button__text">Descargar</span>
+          </button>
+
+          <WebsiteBaseDropdown>
+            <template #button>
+              <span class="dropdown-button__text">Ordenar por</span>
+              <span
+                class="dropdown-button__icon icon-chevron-down"
+                aria-hidden="true"
+              />
+            </template>
+            <template #menu>
+              <li
+                v-for="option in sortOptions"
+                :key="option.value"
+                class="appointments-toolbar__dropdown-item"
+              >
+                <button
+                  type="button"
+                  role="menuitem"
+                  class="dropdown__item"
+                  @click="setSort(option.value)"
+                  :aria-pressed="sortOption === option.value"
+                >
+                  {{ option.label }}
+                </button>
+              </li>
+            </template>
+          </WebsiteBaseDropdown>
+
+          <WebsiteBaseDropdown>
+            <template #button>
+              <span class="dropdown-button__text">Estado de solicitud:</span>
+              <div class="badges-container" aria-live="polite">
+                <span
+                  v-for="status in selectedStatusBadges"
+                  :key="status"
+                  class="badge"
+                  :aria-label="`Filtro activo: ${status}`"
+                >
+                  {{ status }}
+                  <button
+                    v-if="status !== 'Todos'"
+                    type="button"
+                    class="badge__remove"
+                    @click.stop="removeStatusBadge(status)"
+                    :aria-label="`Remover filtro ${status}`"
+                  >
+                    <AtomsIconsXIcon size="14" aria-hidden="true" />
+                  </button>
+                </span>
+              </div>
+            </template>
+            <template #menu>
+              <li
+                v-for="status in Object.keys(statusMapping)"
+                :key="status"
+                class="appointments-toolbar__dropdown-item"
+                role="none"
+              >
+                <label class="appointments-toolbar__checkbox-label">
+                  <input
+                    type="checkbox"
+                    class="appointments-toolbar__checkbox"
+                    :checked="isStatusSelected(status)"
+                    @change="toggleStatusFilter(status)"
+                    :aria-label="`${isStatusSelected(status) ? 'Deseleccionar' : 'Seleccionar'} filtro ${status}`"
+                  />
+                  <span
+                    class="appointments-toolbar__checkbox-custom"
+                    aria-hidden="true"
+                  ></span>
+                </label>
+                <button
+                  type="button"
+                  role="menuitem"
+                  class="dropdown__item"
+                  @click="toggleStatusFilter(status)"
+                  :aria-pressed="isStatusSelected(status)"
+                >
+                  {{ status }}
+                </button>
+              </li>
+            </template>
+          </WebsiteBaseDropdown>
+        </div>
+      </section>
+
+      <section class="appointments-content" aria-label="Lista de citas médicas">
+        <div class="card">
+          <div v-if="loading" class="loading-state" aria-live="polite">
+            <span class="visually-hidden">Cargando citas...</span>
+          </div>
+
+          <div
+            v-else-if="!filteredAppointments.length"
+            class="empty-state"
+            role="status"
+          >
+            <p class="empty-state__message">
+              No se encontraron
+              {{ tab === 1 ? "citas de valoración" : "procedimientos" }} que
+              coincidan con los filtros aplicados.
+            </p>
+          </div>
+
+          <MedicosCitasTable
+            v-else
+            :appointments="filteredAppointments"
+            :useDropdown="true"
+            :aria-label="`Tabla con ${filteredAppointments.length} ${tab === 1 ? 'citas de valoración' : 'procedimientos'}`"
           />
         </div>
-      </form>
-
-      <div class="appointments-toolbar__actions">
-        <button
-          type="button"
-          class="button button--outline"
-          @click="downloadAllAppointments"
-        >
-          <AtomsIconsDownloadIcon
-            size="20"
-            aria-hidden="true"
-            focusable="false"
-          />
-          Descargar
-        </button>
-
-        <WebsiteBaseDropdown>
-          <template #button>
-            Ordenar por <span class="icon-chevron-down" />
-          </template>
-          <template #menu>
-            <li
-              v-for="option in sortOptions"
-              :key="option.value"
-              class="appointments-toolbar__dropdown-item"
-            >
-              <button
-                type="button"
-                role="menuitem"
-                class="dropdown__item"
-                @click="setSort(option.value)"
-              >
-                {{ option.label }}
-              </button>
-            </li>
-          </template>
-        </WebsiteBaseDropdown>
-
-        <WebsiteBaseDropdown>
-          <template #button>
-            Estado de solicitud:
-            <div class="badges-container">
-              <span
-                v-for="status in selectedStatusBadges"
-                :key="status"
-                class="badge"
-              >
-                {{ status }}
-                <button
-                  v-if="status !== 'Todos'"
-                  type="button"
-                  class="badge__remove"
-                  @click.stop="removeStatusBadge(status)"
-                  :aria-label="`Remover filtro ${status}`"
-                >
-                  <AtomsIconsXIcon size="14" />
-                </button>
-              </span>
-            </div>
-          </template>
-          <template #menu>
-            <li
-              v-for="status in Object.keys(statusMapping)"
-              :key="status"
-              class="appointments-toolbar__dropdown-item"
-            >
-              <label class="appointments-toolbar__checkbox-label">
-                <input
-                  type="checkbox"
-                  class="appointments-toolbar__checkbox"
-                  :checked="isStatusSelected(status)"
-                  @change="toggleStatusFilter(status)"
-                  :aria-label="`${isStatusSelected(status) ? 'Deseleccionar' : 'Seleccionar'} filtro ${status}`"
-                />
-                <span class="appointments-toolbar__checkbox-custom"></span>
-              </label>
-              <button
-                type="button"
-                role="menuitem"
-                class="dropdown__item"
-                @click="toggleStatusFilter(status)"
-              >
-                {{ status }}
-              </button>
-            </li>
-          </template>
-        </WebsiteBaseDropdown>
-      </div>
-    </section>
-
-    <div class="card">
-      <MedicosCitasTable
-        :appointments="filteredAppointments"
-        :useDropdown="true"
-      />
-    </div>
+      </section>
+    </main>
   </NuxtLayout>
 </template>
 
@@ -551,14 +634,30 @@ provide("refreshAppointments", refreshAppointments);
     display: flex;
     flex-direction: column;
     gap: 6px;
+    margin-bottom: 1.5rem;
+
+    @include respond-to(md) {
+      margin-bottom: 2rem;
+    }
   }
 
   &__title {
     font-family: $font-family-main;
     font-weight: 600;
     font-size: 20px;
-    line-height: 1.2;
-    color: #19213d;
+    line-height: 20px;
+    letter-spacing: 0;
+  }
+
+  &__main {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+
+    @include respond-to(md) {
+      gap: 1.5rem;
+      margin-bottom: 3rem;
+    }
   }
 }
 
@@ -572,16 +671,26 @@ provide("refreshAppointments", refreshAppointments);
     list-style: none;
     padding: 0;
     margin: 0;
+    flex-wrap: wrap;
+    gap: 0.25rem;
 
     li + li::before {
       content: var(--breadcrumb-divider);
       padding: 0 0.5rem;
       color: #6c757d;
+
+      @include respond-to-max(sm) {
+        padding: 0 0.25rem;
+      }
     }
   }
 
   &__item {
-    font-size: 0.875rem;
+    font-size: 0.75rem;
+
+    @include respond-to(sm) {
+      font-size: 0.875rem;
+    }
 
     &--active .breadcrumb-nav__text {
       color: #6c757d;
@@ -596,8 +705,16 @@ provide("refreshAppointments", refreshAppointments);
       color: #6c757d;
     }
 
-    &:hover {
+    &:hover,
+    &:focus-visible {
       text-decoration: underline;
+      outline: 2px solid transparent;
+    }
+
+    &:focus-visible {
+      outline: 2px solid $color-primary;
+      outline-offset: 2px;
+      border-radius: 2px;
     }
   }
 
@@ -607,133 +724,115 @@ provide("refreshAppointments", refreshAppointments);
 }
 
 .appointments-tabs {
-  margin-top: 24px;
+  margin-top: 1rem;
+
+  @include respond-to(md) {
+    margin-top: 1.5rem;
+  }
 
   &__list {
     display: flex;
     list-style: none;
     padding: 0;
-    gap: 12px;
+    gap: 0.5rem;
     border-bottom: 2px solid #e1e4ed;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+
+    @include respond-to(sm) {
+      gap: 0.75rem;
+    }
+
+    @include respond-to(md) {
+      gap: 1rem;
+      overflow-x: visible;
+    }
+  }
+
+  &__item {
+    flex-shrink: 0;
   }
 
   &__button {
     width: 100%;
-    padding: 10px 0;
+    min-width: max-content;
+    padding: 0.625rem 0;
     font-weight: 300;
-    font-size: 16px;
+    font-size: 0.875rem;
     color: #6d758f;
     background: none;
     border: none;
     cursor: pointer;
     border-bottom: 2px solid transparent;
     transform: translateY(2px);
+    transition: all 0.2s ease;
+    white-space: nowrap;
+
+    @include respond-to(sm) {
+      font-size: 1rem;
+      padding: 0.75rem 0;
+    }
+
+    &:focus-visible {
+      outline: 2px solid $color-primary;
+      outline-offset: 2px;
+    }
 
     &--active {
       font-weight: 600;
       color: #3541b4;
       border-bottom-color: #3541b4;
     }
-  }
-}
 
-.appointments-toolbar {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 1rem;
-  margin-bottom: 1.5rem;
-
-  &__search {
-    display: flex;
-    align-items: center;
-  }
-
-  &__actions {
-    display: flex;
-    align-items: center;
-    margin-left: auto;
-    gap: 0.75rem;
-  }
-}
-
-.search-input {
-  position: relative;
-  display: flex;
-  align-items: center;
-
-  &__icon {
-    position: absolute;
-    left: 12px;
-    display: flex;
-    align-items: center;
-    color: #6c757d;
-    pointer-events: none;
-  }
-
-  &__field {
-    padding: 10px 14px 10px 40px;
-    font-weight: 300;
-    font-size: 16px;
-    color: #6d758f;
-    border-radius: 8px;
-    border: 1px solid #f1f3f7;
-    box-shadow: 0 1px 2px #1018280d;
-    background-color: #fff;
-    width: 100%;
-  }
-}
-
-.button--outline {
-  @include outline-button;
-  font-weight: 400;
-  font-size: 14px;
-  line-height: 20px;
-  color: #344054;
-}
-
-.badges-container {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 4px;
-  margin-left: 8px;
-}
-
-.badge {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  border-radius: 16px;
-  padding: 2px 8px;
-  background-color: #f2f4f7;
-  font-weight: 500;
-  font-size: 12px;
-  line-height: 18px;
-  color: #344054;
-
-  &__remove {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    padding: 0;
-    margin: 0;
-    background: none;
-    border: none;
-    color: #6c757d;
-    cursor: pointer;
-    border-radius: 50%;
-
-    &:hover {
-      background-color: rgba(0, 0, 0, 0.05);
-      color: #344054;
+    &:hover:not(&--active) {
+      color: #3541b4;
     }
   }
 }
 
 .appointments-toolbar {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  margin-bottom: 1rem;
+
+  @include respond-to(sm) {
+    flex-direction: row;
+    flex-wrap: wrap;
+    align-items: flex-start;
+  }
+
+  @include respond-to(lg) {
+    margin-bottom: 1.5rem;
+  }
+
+  &__search {
+    display: flex;
+    align-items: center;
+    flex: 1;
+    min-width: 0;
+
+    @include respond-to(sm) {
+      max-width: 20rem;
+    }
+  }
+
+  &__actions {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+
+    @include respond-to(sm) {
+      margin-left: auto;
+      gap: 0.75rem;
+    }
+  }
+
   &__dropdown-item {
     display: flex;
-    gap: 12px;
-    padding: 10px 16px;
+    gap: 0.75rem;
+    padding: 0.625rem 1rem;
     align-items: center;
 
     &:hover {
@@ -755,7 +854,7 @@ provide("refreshAppointments", refreshAppointments);
     width: 0;
     height: 0;
 
-    &:focus + &-custom {
+    &:focus-visible + &-custom {
       outline: 2px solid $color-primary;
       outline-offset: 2px;
     }
@@ -795,7 +894,268 @@ provide("refreshAppointments", refreshAppointments);
   }
 }
 
+.search-input {
+  position: relative;
+  display: flex;
+  align-items: center;
+  width: 100%;
+
+  &__icon {
+    position: absolute;
+    left: 0.75rem;
+    display: flex;
+    align-items: center;
+    color: #6c757d;
+    pointer-events: none;
+    z-index: 1;
+  }
+
+  &__field {
+    padding: 0.625rem 0.875rem 0.625rem 2.5rem;
+    font-weight: 300;
+    font-size: 0.875rem;
+    color: #6d758f;
+    border-radius: 8px;
+    border: 1px solid #f1f3f7;
+    box-shadow: 0 1px 2px #1018280d;
+    background-color: #fff;
+    width: 100%;
+    transition: all 0.2s ease;
+
+    @include respond-to(sm) {
+      font-size: 1rem;
+      padding: 0.75rem 1rem 0.75rem 2.5rem;
+    }
+
+    &:focus-visible {
+      outline: 2px solid $color-primary;
+      outline-offset: 2px;
+      border-color: $color-primary;
+      box-shadow: 0 0 0 3px rgba($color-primary, 0.2);
+    }
+
+    &::placeholder {
+      @include respond-to-max(sm) {
+        font-size: 0.875rem;
+      }
+    }
+  }
+}
+
+.button--outline {
+  @include outline-button;
+  font-weight: 400;
+  font-size: 0.75rem;
+  line-height: 1.25;
+  color: #344054;
+  padding: 0.5rem 0.75rem;
+  gap: 0.375rem;
+
+  @include respond-to(sm) {
+    font-size: 0.875rem;
+    padding: 0.625rem 1rem;
+    gap: 0.5rem;
+  }
+
+  &:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+
+  &__text {
+    @include respond-to-max(sm) {
+      display: none;
+    }
+  }
+}
+
+.dropdown-button {
+  &__text {
+    @include respond-to-max(sm) {
+      font-size: 0.875rem;
+    }
+  }
+
+  &__icon {
+    margin-left: 0.25rem;
+
+    @include respond-to-max(sm) {
+      margin-left: 0.125rem;
+    }
+  }
+}
+
+.badges-container {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem;
+  margin-left: 0.5rem;
+
+  @include respond-to-max(sm) {
+    margin-left: 0.25rem;
+  }
+}
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  border-radius: 1rem;
+  padding: 0.125rem 0.5rem;
+  background-color: #f2f4f7;
+  font-weight: 500;
+  font-size: 0.75rem;
+  line-height: 1.125rem;
+  color: #344054;
+
+  @include respond-to-max(sm) {
+    font-size: 0.625rem;
+    padding: 0.125rem 0.375rem;
+  }
+
+  &__remove {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+    margin: 0;
+    background: none;
+    border: none;
+    color: #6c757d;
+    cursor: pointer;
+    border-radius: 50%;
+    transition: all 0.2s ease;
+
+    &:hover,
+    &:focus-visible {
+      background-color: rgba(0, 0, 0, 0.05);
+      color: #344054;
+    }
+
+    &:focus-visible {
+      outline: 2px solid $color-primary;
+      outline-offset: 1px;
+    }
+  }
+}
+
+.appointments-content {
+  flex: 1;
+  min-height: 20rem;
+}
+
+.card {
+  background: #fff;
+  border-radius: 8px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  overflow: hidden;
+}
+
+.loading-state {
+  padding: 3rem 1rem;
+  text-align: center;
+  color: #6c757d;
+}
+
+.empty-state {
+  padding: 3rem 1rem;
+  text-align: center;
+
+  &__message {
+    color: #6c757d;
+    font-size: 1rem;
+    margin: 0;
+  }
+}
+
 .visually-hidden {
   @include visually-hidden;
+}
+
+.dropdown__item {
+  width: 100%;
+  text-align: left;
+  padding: 0.5rem 0;
+  background: none;
+  border: none;
+  color: inherit;
+  cursor: pointer;
+  font-size: 0.875rem;
+  transition: all 0.2s ease;
+
+  @include respond-to-max(sm) {
+    font-size: 0.8125rem;
+    padding: 0.625rem 0;
+  }
+
+  &:hover,
+  &:focus-visible {
+    color: $color-primary;
+  }
+
+  &:focus-visible {
+    outline: 2px solid $color-primary;
+    outline-offset: 2px;
+  }
+
+  &[aria-pressed="true"] {
+    font-weight: 600;
+    color: $color-primary;
+  }
+}
+
+@include respond-to-max(sm) {
+  .appointments-toolbar {
+    &__search {
+      order: -1;
+      width: 100%;
+    }
+
+    &__actions {
+      width: 100%;
+      justify-content: space-between;
+    }
+  }
+
+  .card {
+    border-radius: 0;
+    box-shadow: none;
+    border-top: 1px solid #e1e4ed;
+    border-bottom: 1px solid #e1e4ed;
+  }
+
+  .loading-state {
+    padding: 2rem 1rem;
+  }
+
+  .empty-state {
+    padding: 2rem 1rem;
+
+    &__message {
+      font-size: 0.875rem;
+    }
+  }
+}
+
+@include respond-to-max(xs) {
+  .appointment-tracking {
+    &__header {
+      padding: 0 1rem;
+    }
+  }
+
+  .appointments-tabs {
+    margin: 0 -1rem 1rem;
+    padding: 0 1rem;
+  }
+
+  .appointments-toolbar {
+    padding: 0 1rem;
+    margin: 0 -1rem 1rem;
+  }
+
+  .appointments-content {
+    margin: 0 -1rem;
+  }
 }
 </style>

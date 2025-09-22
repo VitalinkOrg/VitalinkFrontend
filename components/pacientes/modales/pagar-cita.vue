@@ -332,6 +332,8 @@ const resetModalData = () => {
 const token = useCookie("token");
 const config = useRuntimeConfig();
 
+const refreshAppointments = inject<() => Promise<void>>("refreshAppointments");
+
 const isOpen = ref<boolean>(false);
 const isLoading = ref<boolean>(false);
 const cardName = ref("");
@@ -495,7 +497,7 @@ const processPayment = async () => {
     }
 
     if (data.value) {
-      emit("refresh");
+      await refreshAppointments?.();
       handleCloseModal("appointmentDetails");
       handleCloseModal("payAppointment");
       handleOpenModal("successfulPayment");
@@ -541,7 +543,7 @@ const processPaymentProcedure = async () => {
     }
 
     if (data.value) {
-      emit("refresh");
+      await refreshAppointments?.();
       handleCloseModal("appointmentDetails");
       handleCloseModal("payAppointment");
       handleOpenModal("successfulPayment");
@@ -560,7 +562,7 @@ const balanceToPay = (appointment: Appointment) => {
   return (
     Number(appointment.price_procedure) -
     0 - // Descuento (siempre 0 para MVP)
-    (appointment.appointment_credit?.approved_amount || 0)
+    Number(appointment.appointment_credit?.approved_amount ?? 0)
   );
 };
 </script>

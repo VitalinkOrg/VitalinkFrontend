@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { useErrorHandler } from "~/composables/api/useErrorHandler";
 import type { Supplier } from "~/types";
 
 interface SupplierResponse {

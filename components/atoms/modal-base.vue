@@ -14,37 +14,24 @@
         :aria-describedby="contentId"
         aria-modal="true"
       >
-        <div
+        <dialog
           class="modal__dialog"
           :class="modalClasses"
           :style="customStyles"
           @click.stop
           ref="dialogRef"
+          open
         >
           <header class="modal__header" :class="headerClass" v-if="!hideHeader">
-            <div class="modal__title" :id="headerId" v-if="$slots.title">
+            <h2 class="modal__title" :id="headerId" v-if="$slots.title">
               <slot name="title" />
-            </div>
+            </h2>
 
-            <div
+            <nav
               class="modal__controls"
               v-if="showCloseButton || showCloseAllButton"
+              aria-label="Controles del modal"
             >
-              <button
-                v-if="showCloseAllButton && openModalsCount > 1"
-                class="modal__close-all"
-                type="button"
-                @click="closeAllModals"
-                :aria-label="closeAllButtonLabel"
-                title="Cerrar todos los modales"
-              >
-                <AtomsIconsLayersIcon
-                  class="modal__close-all-icon"
-                  width="20"
-                  height="20"
-                />
-              </button>
-
               <button
                 v-if="showCloseButton"
                 class="modal__close"
@@ -56,14 +43,15 @@
                   class="modal__close-icon"
                   width="24"
                   height="24"
+                  aria-hidden="true"
                 />
               </button>
-            </div>
+            </nav>
           </header>
 
-          <div class="modal__content" :class="contentClass" :id="contentId">
+          <main class="modal__content" :class="contentClass" :id="contentId">
             <slot />
-          </div>
+          </main>
 
           <footer
             class="modal__footer"
@@ -72,7 +60,7 @@
           >
             <slot name="footer" />
           </footer>
-        </div>
+        </dialog>
       </div>
     </Transition>
   </Teleport>
@@ -242,13 +230,6 @@ const closeModal = () => {
   }
 };
 
-const closeAllModals = () => {
-  if (!props.persistent) {
-    closeAllTrigger.value++;
-    emit("close-all");
-  }
-};
-
 const handleBackdropClick = () => {
   if (props.closeOnBackdrop && !props.persistent) {
     closeModal();
@@ -270,33 +251,20 @@ watch(
       openModalsCount.value++;
       activeModals.value.add(modalId.value);
 
-      modalZIndex.value = baseZIndex.value + openModalsCount.value;
-
       if (openModalsCount.value === 1) {
-        previousActiveElement.value = document.activeElement as HTMLElement;
         lockBodyScroll();
       }
 
-      nextTick(() => {
-        dialogRef.value?.focus();
-        emit("opened");
-      });
+      nextTick(() => dialogRef.value?.focus());
     } else if (!newValue && oldValue) {
       openModalsCount.value = Math.max(0, openModalsCount.value - 1);
       activeModals.value.delete(modalId.value);
 
       if (openModalsCount.value === 0) {
         unlockBodyScroll();
-        if (previousActiveElement.value) {
-          previousActiveElement.value.focus();
-          previousActiveElement.value = null;
-        }
       }
-
-      emit("closed");
     }
-  },
-  { immediate: false }
+  }
 );
 
 onUnmounted(() => {
@@ -352,7 +320,7 @@ defineExpose({
 
 <style lang="scss" scoped>
 $modal-backdrop-color: rgba(0, 0, 0, 0.2);
-$modal-border-radius: 12px;
+$modal-border-radius: 15px;
 $modal-padding: 1.5rem;
 
 @mixin modal-size($width, $max-height: 90vh) {
@@ -372,6 +340,7 @@ $modal-padding: 1.5rem;
   align-items: center;
   justify-content: center;
   padding: 1rem;
+  overflow: hidden;
 
   &__dialog {
     background: white;
@@ -381,6 +350,7 @@ $modal-padding: 1.5rem;
     display: flex;
     flex-direction: column;
     outline: none;
+    border: none;
     @include modal-size(500px);
 
     &--extra-small {
@@ -559,5 +529,7 @@ $modal-padding: 1.5rem;
 
 .height-full {
   height: 100%;
+  display: flex;
+  flex-direction: column;
 }
 </style>
