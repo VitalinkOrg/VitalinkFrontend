@@ -87,7 +87,7 @@
                 Procedimiento:
               </th>
               <td class="appointment-details__table-data">
-                {{ appointment.package?.procedure.name }}
+                {{ appointment.package?.procedure?.name }}
               </td>
             </tr>
 

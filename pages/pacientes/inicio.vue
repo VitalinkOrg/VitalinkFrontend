@@ -135,7 +135,7 @@ const closePackagesModal = () => {
 
       <WebsitePackTratamientos
         v-if="!loadingPackages && doctorData"
-        :doctor="doctorData"
+        :supplier="doctorData"
         :open="openPackagesModal"
         :user-info="user_info"
         :procedure-code="procedureCode"

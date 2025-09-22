@@ -1,41 +1,235 @@
+<script lang="ts" setup>
+import type { Customer, Package, Service, Supplier } from "~/types";
+
+interface SupplierReview {
+  first_name: string;
+  last_name: string;
+  message: string;
+  pacient_type: string;
+  score: number;
+}
+
+interface Props {
+  pkg: Package;
+  supplier?: Supplier | Partial<Supplier> | null;
+  supplierReviews?: SupplierReview[];
+  getPackagePrice: (pkg: Package) => number | string;
+  getAssessmentLabel: (code: string) => string;
+  customer?: Customer | null;
+  selectedSpecialtyId?: number | null;
+  selectedProcedureId?: number | null;
+  procedureName: string | null;
+  selectedDay?: string | null;
+  selectedHour?: string | null;
+}
+
+const props = withDefaults(defineProps<Props>(), {
+  supplier: null,
+  supplierReviews: () => [],
+  customer: null,
+  selectedSpecialtyId: null,
+  selectedProcedureId: null,
+  selectedDay: null,
+  selectedHour: null,
+});
+
+const { formatCurrency, formatDate, formatTime } = useFormat();
+
+const currentModalStep = ref<number>(1);
+const isOpenModal = ref<boolean>(false);
+const offers = ref<any[]>([]);
+
+const currentSupplier = computed<Supplier | Partial<Supplier> | null>(() => {
+  return props.supplier || null;
+});
+
+const isAssessmentPackage = computed<boolean>(() => {
+  return props.pkg?.product?.name === "Cita de Valoración";
+});
+
+const packageName = computed<string>(() => {
+  return props.pkg?.product?.name || "Paquete sin nombre";
+});
+
+const isKingPackage = computed<boolean>(() => {
+  return Boolean(props.pkg?.is_king);
+});
+
+const packagePrice = computed<string>(() => {
+  if (!props.pkg) return "₡0.00";
+
+  try {
+    const price = props.getPackagePrice(props.pkg);
+    return typeof price === "string" ? price : formatCurrency(price);
+  } catch (error) {
+    console.error("Error getting package price:", error);
+    return "₡0.00";
+  }
+});
+
+const originalPrice = computed<string>(() => {
+  const value = props.pkg?.product?.value1;
+  return value ? formatCurrency(parseFloat(value)) : "₡0.00";
+});
+
+const hasDiscount = computed<boolean>(() => {
+  return Boolean(props.pkg?.discount && props.pkg.discount > 0);
+});
+
+const supplierName = computed<string>(() => {
+  return currentSupplier.value?.name || "Proveedor médico";
+});
+
+const supplierId = computed<number>(() => {
+  return currentSupplier.value?.id || 0;
+});
+
+const supplierServices = computed<Service[]>(() => {
+  const services = currentSupplier.value?.services;
+  return Array.isArray(services) ? services : [];
+});
+
+const reviewsCount = computed<number>(() => {
+  return Array.isArray(props.supplierReviews)
+    ? props.supplierReviews.length
+    : 0;
+});
+
+const averageRating = computed<string>(() => {
+  if (
+    !Array.isArray(props.supplierReviews) ||
+    props.supplierReviews.length === 0
+  ) {
+    return "5.0";
+  }
+
+  const total = props.supplierReviews.reduce(
+    (sum, review) => sum + (review.score || 0),
+    0
+  );
+  const average = total / props.supplierReviews.length;
+  return average.toFixed(1);
+});
+
+const nextAvailabilityDate = computed<string>(() => {
+  const date = currentSupplier.value?.date_availability;
+  if (!date) return "No disponible";
+
+  try {
+    return formatDate(date);
+  } catch (error) {
+    console.error("Error formatting availability date:", error);
+    return date;
+  }
+});
+
+const nextAvailabilityTime = computed<string>(() => {
+  const time = currentSupplier.value?.hour_availability;
+  if (!time) return "No disponible";
+
+  try {
+    return formatTime(time);
+  } catch (error) {
+    console.error("Error formatting availability time:", error);
+    return time;
+  }
+});
+
+const servicesList = computed<string[]>(() => {
+  const services = props.pkg?.services_offer?.ASSESSMENT_DETAILS;
+  return Array.isArray(services) ? services : [];
+});
+
+const hasServices = computed<boolean>(() => {
+  return servicesList.value.length > 0;
+});
+
+const customerInfo = computed(() => {
+  return {
+    id: props.customer?.id || "",
+    name: props.customer?.name || "",
+    phone: props.customer?.phone_number || "",
+  };
+});
+
+const getMonthlyPayment = (pkg: Package): string => {
+  if (!pkg?.product?.value1) return "0";
+
+  try {
+    let price: number;
+
+    if (pkg.discount && pkg.product.value2) {
+      price = parseFloat(pkg.product.value2);
+    } else {
+      price = parseFloat(pkg.product.value1);
+    }
+
+    if (isNaN(price)) return "0";
+
+    const monthlyPayment = (price / 12) * 1.1;
+    return Math.round(monthlyPayment).toLocaleString("es-CR");
+  } catch (error) {
+    console.error("Error calculating monthly payment:", error);
+    return "0";
+  }
+};
+
+const getServiceLabel = (serviceCode: string): string => {
+  if (!serviceCode) return "Servicio desconocido";
+
+  try {
+    return props.getAssessmentLabel(serviceCode);
+  } catch (error) {
+    console.error("Error getting service label:", error);
+    return serviceCode;
+  }
+};
+
+const closeModal = (): void => {
+  isOpenModal.value = false;
+  currentModalStep.value = 1;
+};
+</script>
+
 <template>
-  <div class="service-card">
-    <div class="service-card__wrapper" :class="{ selected: pkg.is_king }">
-      <div
-        v-if="pkg.product.name === 'Cita de Valoración'"
-        class="service-card__legend"
-      >
+  <div class="service-card" :class="{ 'service-card--king': isKingPackage }">
+    <div class="service-card__wrapper">
+      <!-- Assessment Package Legend -->
+      <div v-if="isAssessmentPackage" class="service-card__legend">
         Primero vamos a valorarte
       </div>
 
+      <!-- Header -->
       <div class="service-card__header">
-        {{ pkg.product.name }}
-        <span v-if="pkg.is_king">
+        <span v-if="isKingPackage">
           <img
             src="@/src/assets/crown.svg"
             alt="Recomendado"
             class="img-fluid"
           />
         </span>
+        {{ packageName }}
       </div>
 
+      <!-- Body -->
       <div class="service-card__body">
-        <h5 class="service-card__price">₡{{ getPackagePrice(pkg) }}</h5>
+        <!-- Price -->
+        <h5 class="service-card__price">
+          {{ packagePrice }}
+        </h5>
 
+        <!-- Monthly Payment -->
         <p class="service-card__monthly-payment">
           Cuotas mensuales desde ₡{{ getMonthlyPayment(pkg) }}
         </p>
 
-        <p
-          v-if="pkg.product.name === 'Cita de Valoración'"
-          class="service-card__payment-disclaimer"
-        >
+        <p v-if="isAssessmentPackage" class="service-card__payment-disclaimer">
           Podes pagar el día de tu cita
         </p>
 
-        <p class="service-card__discount" v-if="pkg.discount">
+        <p v-if="hasDiscount" class="service-card__discount">
           Precio original
-          <span>₡{{ pkg.product.value1 }}</span>
+          <span>{{ originalPrice }}</span>
         </p>
 
         <small class="service-card__disclaimer">
@@ -45,17 +239,14 @@
         <p class="service-card__rating-wrapper">
           <span class="service-card__rating">
             <img src="@/src/assets/star.svg" alt="Rating" class="img-fluid" />
-            5.0
+            {{ averageRating }}
           </span>
-          <span class="service-card__reviews"
-            >({{ doctorReviews.length }} Reseñas)</span
-          >
+          <span class="service-card__reviews">
+            ({{ reviewsCount }} {{ reviewsCount === 1 ? "Reseña" : "Reseñas" }})
+          </span>
         </p>
 
-        <div
-          v-if="pkg.product.name === 'Cita de Valoración'"
-          class="service-card__availability"
-        >
+        <div v-if="isAssessmentPackage" class="service-card__availability">
           <p class="service-card__availability-title">
             Próxima Disponibilidad:
           </p>
@@ -64,135 +255,95 @@
               <span class="service-card__availability-icon">
                 <AtomsIconsCalendarIcon size="20" />
               </span>
-              {{ doctor.date_availability }}
+              {{ nextAvailabilityDate }}
             </span>
             <span class="service-card__availability-time">
               <span class="service-card__availability-icon">
                 <AtomsIconsClockIcon size="20" />
               </span>
-              {{ doctor.hour_availability }}
+              {{ nextAvailabilityTime }}
             </span>
           </p>
         </div>
 
         <div
-          v-if="pkg.product.name !== 'Cita de Valoración'"
+          v-if="!isAssessmentPackage && hasServices"
           class="service-card__services-wrapper"
         >
           <p class="service-card__services-title">Servicios:</p>
           <ul class="service-card__services">
             <li
-              class="service-card__services-item"
-              v-for="service in pkg.services_offer.ASSESSMENT_DETAILS"
+              v-for="service in servicesList"
               :key="service"
+              class="service-card__services-item"
             >
               <div class="service-card__services-icon-wrapper">
                 <AtomsIconsCheckIcon class="service-card__services-icon" />
               </div>
               <p class="service-card__services-text">
-                {{ getAssesmentLabel(service) }}
+                {{ getServiceLabel(service) }}
               </p>
             </li>
           </ul>
         </div>
 
-        <button
-          v-if="pkg.product.name === 'Cita de Valoración'"
-          class="service-card__assessment-appointment-button"
-          @click="openModal()"
+        <div
+          v-else-if="!isAssessmentPackage && !hasServices"
+          class="service-card__no-services"
         >
-          Cita de valoración
-        </button>
+          <p>No hay servicios especificados para este paquete.</p>
+        </div>
+
+        <WebsiteReservarCitaValoracion
+          v-if="isAssessmentPackage"
+          :selected-day="selectedDay"
+          :selected-hour="selectedHour"
+          :current-step="1"
+          :supplier-id="supplierId"
+          :supplier-name="supplierName"
+          :customer-id="customerInfo.id ?? ''"
+          :customer-name="customerInfo.name"
+          :customer-phone="customerInfo.phone"
+          :selected-package="pkg"
+          :services="supplierServices"
+          :selected-procedure-id="selectedProcedureId || 0"
+        />
       </div>
     </div>
   </div>
 
   <WebsiteReservarModal
-    :selectedProcedureId="selectedProcedureId"
-    :selectedSpecialtyId="selectedSpecialtyId"
-    :userInfo="userInfo"
-    :doctorInfo="doctor"
-    :selectedDay="selectedDay"
-    :selectedHour="selectedHour"
+    v-if="currentSupplier"
+    :selected-procedure-id="selectedProcedureId || 0"
+    :selected-specialty-id="selectedSpecialtyId || 0"
+    :user-info="customer"
+    :supplier-info="currentSupplier"
+    :doctor-info="currentSupplier"
+    :selected-day="selectedDay || ''"
+    :selected-hour="selectedHour || ''"
     :selected-package="pkg"
-    :isOpen="isOpenModal"
-    :currentStep="currentModalStep"
+    :is-open="isOpenModal"
+    :current-step="currentModalStep"
     :offers="offers"
     @close="closeModal"
   />
 </template>
 
-<script setup>
-import { defineProps, ref } from "vue";
+<style scoped>
+.service-card__no-services {
+  padding: 1rem;
+  background-color: #f9fafb;
+  border-radius: 8px;
+  text-align: center;
+  color: #6b7280;
+  font-style: italic;
+}
 
-const props = defineProps({
-  pkg: {
-    type: Object,
-    required: true,
-  },
-  doctor: {
-    type: Object,
-    required: true,
-  },
-  doctorReviews: {
-    type: Array,
-    default: () => [],
-  },
-  getPackagePrice: {
-    type: Function,
-    required: true,
-  },
-  getAssesmentLabel: {
-    type: Function,
-    required: true,
-  },
-  selectPackage: {
-    type: Function,
-    required: true,
-  },
-  selectedPackage: {
-    type: Object,
-    default: null,
-  },
-  userInfo: {
-    type: Object,
-    required: true,
-  },
-  selectedSpecialtyId: {
-    type: Number,
-    default: null,
-  },
-  selectedProcedureId: {
-    type: Number,
-    default: null,
-  },
-});
-
-const currentModalStep = ref(1);
-const isOpenModal = ref(false);
-
-const getMonthlyPayment = (pkg) => {
-  let price;
-  if (pkg.discount) {
-    price = parseFloat(pkg.product.value2 || pkg.product.value1 || 0);
-  } else {
-    price = parseFloat(pkg.product.value1 || 0);
-  }
-
-  const monthlyPayment = (price / 12) * 1.1;
-  return Math.round(monthlyPayment).toLocaleString();
-};
-
-const openModal = () => {
-  isOpenModal.value = true;
-  currentModalStep.value = 1;
-};
-
-const closeModal = () => {
-  isOpenModal.value = false;
-  currentModalStep.value = 1;
-};
-</script>
+.service-card__no-services p {
+  margin: 0;
+  font-size: 0.875rem;
+}
+</style>
 
 <style lang="scss" scoped>
 .service-card {
@@ -222,6 +373,9 @@ const closeModal = () => {
   }
 
   &__header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
     font-weight: 600;
     font-size: 16px;
     line-height: 22px;
@@ -234,6 +388,18 @@ const closeModal = () => {
       #f8faff 65.03%,
       rgba(248, 250, 255, 0.1) 112.13%
     );
+
+    span {
+      display: flex;
+      align-items: center;
+    }
+
+    img {
+      width: 24px;
+      height: 24px;
+      flex-shrink: 0;
+      object-fit: contain;
+    }
   }
 
   &__body {
@@ -407,6 +573,22 @@ const closeModal = () => {
     width: 100%;
     font-weight: 600;
     font-size: 14px;
+    &--primary {
+      @include primary-button;
+    }
+  }
+}
+
+.service-card {
+  &--king {
+    border: 2px solid #3541b4;
+
+    .service-card__header {
+      color: #3541b4;
+    }
+    .service-card__assessment-appointment-button {
+      @include primary-button;
+    }
   }
 }
 </style>

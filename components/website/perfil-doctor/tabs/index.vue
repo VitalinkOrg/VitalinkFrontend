@@ -1,407 +1,417 @@
-<script>
-import { useCookie } from "nuxt/app";
+<script lang="ts" setup>
+import type {
+  AssessmentDetail,
+  Customer,
+  MedicalSpecialty,
+  Package,
+  Procedures,
+  ReviewDetail,
+  Service,
+  Supplier,
+} from "~/types";
 
-export default {
-  props: {
-    doctor: {
-      type: Object,
-      default: () => ({}),
-    },
-    searchSpecialtyCode: {
-      type: String,
-      default: null,
-    },
-    searchProcedureCode: {
-      type: String,
-      default: null,
-    },
-  },
-  data() {
-    return {
-      panel: false,
-      user: useCookie("user_info"),
-      tab: 1,
-      appointment: {
-        specialty: "",
-        service: "",
-        location: "",
-        type: "",
-        date: "",
-        time: "",
-      },
-      result: null,
-      open: false,
-      errorText: "",
-      selectedMonth: null,
-      selectedDay: null,
-      selectedHour: null,
-      availableDays: [],
-      availableHours: [],
-      months: [
-        { value: 0, label: "Enero" },
-        { value: 1, label: "Febrero" },
-        { value: 2, label: "Marzo" },
-        { value: 3, label: "Abril" },
-        { value: 4, label: "Mayo" },
-        { value: 5, label: "Junio" },
-        { value: 6, label: "Julio" },
-        { value: 7, label: "Agosto" },
-        { value: 8, label: "Septiembre" },
-        { value: 9, label: "Octubre" },
-        { value: 10, label: "Noviembre" },
-        { value: 11, label: "Diciembre" },
-      ],
-      breadcumCitaValoracion: 1,
-      selectedSpecialty: null,
-      selectedSpecialtyId: null,
-      selectedPackage: null,
-      selectedProcedure: null,
-      selectedProcedureId: null,
-      reviewDetails: [],
-      assessmentDetails: [],
-      weekdayMap: {
-        Monday: "Lun",
-        Tuesday: "Mar",
-        Wednesday: "Mié",
-        Thursday: "Jue",
-        Friday: "Vie",
-        Saturday: "Sáb",
-        Sunday: "Dom",
-      },
-    };
-  },
-  watch: {
-    selectedMonth(newMonth) {
-      this.handleMonthChange();
-    },
-  },
-  async created() {
-    const token = useCookie("token");
-    const config = useRuntimeConfig();
+interface Props {
+  supplier?: Supplier | Partial<Supplier> | null;
+  searchSpecialtyCode?: string | null;
+  searchProcedureCode?: string | null;
+}
 
-    try {
-      // Fetch review details
-      const reviewResponse = await $fetch(
-        config.public.API_BASE_URL + "/udc/get_all",
-        {
-          headers: { Authorization: token.value },
-          params: { type: "REVIEW" },
-        }
-      );
-      this.reviewDetails = reviewResponse.data;
+interface AppointmentForm {
+  specialty: string | null;
+  service: string | null;
+  location: string | null;
+  type: string | null;
+  date: string | null;
+  time: string | null;
+}
 
-      // Fetch assessment details
-      const assessmentResponse = await $fetch(
-        config.public.API_BASE_URL + "/udc/get_all",
-        {
-          headers: { Authorization: token.value },
-          params: { type: "ASSESSMENT_DETAIL" },
-        }
-      );
-      this.assessmentDetails = assessmentResponse.data;
+const props = defineProps<Props>();
 
-      // Set default specialty and procedure
-      if (this.doctor.services && this.doctor.services.length > 0) {
-        this.selectedSpecialty = this.doctor.services[0].medical_specialty.code;
-        this.selectedSpecialtyId = this.doctor.services[0].medical_specialty.id;
-        this.appointment.specialty = this.selectedSpecialty;
-        if (
-          this.doctor.services[0].procedures &&
-          this.doctor.services[0].procedures.length > 0
-        ) {
-          this.selectedProcedure =
-            this.doctor.services[0].procedures[0].procedure.code;
-          this.selectedProcedureId =
-            this.doctor.services[0].procedures[0].procedure.id;
-          this.appointment.service = this.selectedProcedure;
-        }
-      }
-    } catch (error) {
-      console.error("Error fetching details:", error);
+const { createAssessmentPackage } = useAssessmentPackage();
+const { withErrorHandling } = useErrorHandler();
+
+const panel = ref<boolean>(false);
+const user = useCookie<Customer>("user_info");
+const tab = ref<number>(1);
+const appointment = reactive<AppointmentForm>({
+  specialty: null,
+  service: null,
+  location: null,
+  type: null,
+  date: null,
+  time: null,
+});
+const result = ref<any>(null);
+const open = ref<boolean>(false);
+const selectedSpecialty = ref<string | null>(null);
+const selectedSpecialtyId = ref<number | null>(null);
+const selectedPackage = ref<Package | null>(null);
+const selectedProcedure = ref<string | null>(null);
+const selectedProcedureId = ref<number | null>(null);
+const reviewDetails = ref<ReviewDetail[]>([]);
+const assessmentDetails = ref<AssessmentDetail[]>([]);
+const isLoadingData = ref<boolean>(false);
+
+const currentSupplier = computed<Supplier | Partial<Supplier> | null>(() => {
+  return props.supplier || null;
+});
+
+const supplierServices = computed<Service[]>(() => {
+  const services = currentSupplier.value?.services;
+  return Array.isArray(services) ? services : [];
+});
+
+const hasServices = computed<boolean>(() => {
+  return supplierServices.value.length > 0;
+});
+
+const selectedSpecialtyName = computed<string>(() => {
+  if (!selectedSpecialty.value || !hasServices.value) return "";
+
+  const service = supplierServices.value.find(
+    (s) => s.medical_specialty?.code === selectedSpecialty.value
+  );
+  return service?.medical_specialty?.name || selectedSpecialty.value;
+});
+
+const selectedProcedureName = computed<string>(() => {
+  if (!selectedProcedure.value || !hasServices.value) return "";
+
+  for (const service of supplierServices.value) {
+    if (!service.procedures || !Array.isArray(service.procedures)) continue;
+
+    const procedure = service.procedures.find(
+      (p) => p.procedure?.code === selectedProcedure.value
+    );
+    if (procedure?.procedure?.name) {
+      return procedure.procedure.name;
     }
-  },
-  computed: {
-    isSearchMode() {
-      return this.searchSpecialtyCode || this.searchProcedureCode;
-    },
-    defaultService() {
-      return this.doctor.services && this.doctor.services.length > 0
-        ? this.doctor.services[0]
-        : null;
-    },
-    defaultProcedure() {
-      if (!this.defaultService) return null;
-      return this.defaultService.procedures &&
-        this.defaultService.procedures.length > 0
-        ? this.defaultService.procedures[0]
-        : null;
-    },
-    doctorReviews() {
-      return (
-        this.doctor.reviews?.map((review) => ({
-          first_name: review.customer.split(" ")[0] || "Anónimo",
-          last_name: review.is_annonymous
-            ? ""
-            : review.customer.split(" ")[1] || "",
-          message: review.comment,
-          pacient_type: "Paciente",
-          score: review.stars_average,
-        })) || []
-      );
-    },
-    reviewSummary() {
-      return this.doctor.review_details_summary || [];
-    },
-    availability() {
-      const availabilityMap = {};
+  }
+  return selectedProcedure.value;
+});
 
-      if (!this.doctor.availabilities) return availabilityMap;
+const isSearchMode = computed<boolean>(() => {
+  return Boolean(props.searchSpecialtyCode || props.searchProcedureCode);
+});
 
-      const today = new Date();
-      const endDate = new Date();
-      endDate.setDate(today.getDate() + 30);
+const specialties = computed<MedicalSpecialty[]>(() => {
+  return supplierServices.value
+    .map((service) => service.medical_specialty)
+    .filter(
+      (specialty): specialty is MedicalSpecialty => specialty !== undefined
+    );
+});
 
-      this.doctor.availabilities.forEach((avail) => {
-        const currentDate = new Date(today);
-        while (currentDate <= endDate) {
-          const weekdayName = currentDate.toLocaleDateString("en-US", {
-            weekday: "long",
-          });
-
-          if (weekdayName === avail.weekday) {
-            const dateStr = currentDate.toISOString().split("T")[0];
-            const fromHour = avail.from_hour.substring(0, 5);
-
-            if (!availabilityMap[dateStr]) {
-              availabilityMap[dateStr] = [];
-            }
-
-            availabilityMap[dateStr].push(fromHour);
-          }
-          currentDate.setDate(currentDate.getDate() + 1);
-        }
-      });
-
-      return availabilityMap;
-    },
-    specialties() {
-      return (
-        this.doctor.services?.map((service) => service.medical_specialty) || []
-      );
-    },
-    filteredProcedures() {
-      if (
-        !this.selectedSpecialty &&
-        this.doctor.services &&
-        this.doctor.services.length > 0
-      ) {
-        this.selectedSpecialty = this.doctor.services[0].medical_specialty.code;
-        this.appointment.specialty = this.selectedSpecialty;
-        return this.doctor.services[0].procedures;
-      }
-
-      const specialty = this.doctor.services.find(
-        (s) => s.medical_specialty.code === this.selectedSpecialty
-      );
-
-      return specialty?.procedures || [];
-    },
-    filteredPackages() {
-      let packages = [];
-
-      if (
-        !this.selectedProcedure &&
-        this.filteredProcedures &&
-        this.filteredProcedures.length > 0
-      ) {
-        this.selectedProcedure = this.filteredProcedures[0].procedure.code;
-        this.selectedProcedureId = this.filteredProcedures[0].procedure.id;
-        this.appointment.service = this.selectedProcedure;
-        packages = this.filteredProcedures[0].packages || [];
-      } else {
-        const procedure = this.filteredProcedures.find(
-          (p) => p.procedure.code === this.selectedProcedure
-        );
-        packages = procedure?.packages || [];
-      }
-
-      const citaValoracionPackage = {
-        id: "cita-valoracion",
-        product: {
-          id: 9999,
-          code: "ASSESSMENT_APPOINTMENT",
-          name: "Cita de Valoración",
-          type: "MEDICAL_PRODUCT",
-          description: "Cita de valoración médica inicial",
-          father_code: null,
-          value1: "18000",
-          created_date: new Date().toISOString(),
-          updated_date: null,
-          is_deleted: 0,
-        },
-        reference_price: 18000,
-        discount: 0,
-        discounted_price: 18000,
-        services_offer: {
-          ASSESSMENT_DETAILS: [
-            "MEDICAL_CONSULTATION",
-            "CLINICAL_EVALUATION",
-            "INITIAL_DIAGNOSIS",
-          ],
-        },
-        is_king: 0,
-        observations: "",
-        postoperative_assessments: null,
-      };
-
-      return [citaValoracionPackage, ...packages];
-    },
-  },
-  methods: {
-    search() {
-      let filter = this.doctor.services;
-      filter = filter.filter((item) => {
-        return (
-          item.medical_specialty.code === this.appointment.specialty &&
-          item.procedures.some(
-            (p) => p.procedure.code === this.appointment.service
-          ) &&
-          this.doctor.locations.some(
-            (l) => l.name === this.appointment.location
-          )
-        );
-      });
-      if (filter.length === 0) {
-        this.errorText = "No hay disponibilidad para esta cita";
-      } else {
-        this.errorText = "";
-      }
-      return (this.result = filter[0]);
-    },
-    getReviewLabel(reviewCode) {
-      if (!this.reviewDetails) return reviewCode;
-      const detail = this.reviewDetails.find(
-        (item) => item.code === reviewCode
-      );
-      return detail ? detail.name : reviewCode;
-    },
-    getAssesmentLabel(assesmentCode) {
-      if (!this.assessmentDetails) return assesmentCode;
-      const detail = this.assessmentDetails.find(
-        (item) => item.code === assesmentCode
-      );
-      return detail ? detail.name : assesmentCode;
-    },
-    calculateAverageRating() {
-      if (!this.doctor.reviews || this.doctor.reviews.length === 0) {
-        return 0; // Return 0 if no reviews
-      }
-
-      const sum = this.doctor.reviews.reduce(
-        (total, review) => total + review.stars_average,
-        0
-      );
-      const average = sum / this.doctor.reviews.length;
-      return Math.round(average * 10) / 10;
-    },
-    selectDay(date) {
-      this.selectedDay = date;
-      this.availableHours = this.availability[date] || [];
-      this.selectedHour = null;
-    },
-    selectHour(time) {
-      this.selectedHour = time;
-    },
-    handleMonthChange() {
-      this.selectedDay = null;
-      this.selectedHour = null;
-      this.availableDays = this.getAvailableDaysForMonth(this.selectedMonth);
-      this.availableHours = [];
-    },
-    getAvailableDaysForMonth(month) {
-      if (month === null) return [];
-
-      const year = new Date().getFullYear();
-      const daysInMonth = new Date(year, month + 1, 0).getDate();
-      const availableDays = [];
-
-      for (let day = 1; day <= daysInMonth; day++) {
-        const date = new Date(year, month, day);
-        const dateStr = date.toISOString().split("T")[0];
-
-        if (
-          this.availability[dateStr] &&
-          this.availability[dateStr].length > 0
-        ) {
-          const weekdayName = date.toLocaleDateString("en-US", {
-            weekday: "long",
-          });
-
-          availableDays.push({
-            date: dateStr,
-            day: this.weekdayMap[weekdayName] || weekdayName.slice(0, 3),
-            number: date.getDate(),
-          });
-        }
-      }
-
-      return availableDays;
-    },
-    formatTime(time) {
-      const [hours, minutes] = time.split(":");
-      const period = hours >= 12 ? "PM" : "AM";
-      return `${hours % 12 || 12}:${minutes}${period}`;
-    },
-    closeModal() {
-      this.open = false;
-    },
-    reserveAppointment() {
-      if (this.panel) {
-        this.panel = false;
-        return;
-      }
-      this.panel = true;
-    },
-    selectSpecialty(specialtyCode, specialtyId) {
-      this.selectedSpecialty = specialtyCode;
-      this.selectedSpecialtyId = specialtyId;
-      this.selectedProcedure = null;
-      this.appointment.specialty = specialtyCode;
-
-      const specialty = this.doctor.services.find(
-        (s) => s.medical_specialty.code === specialtyCode
-      );
-      if (
-        specialty &&
-        specialty.procedures &&
-        specialty.procedures.length > 0
-      ) {
-        this.selectedProcedure = specialty.procedures[0].procedure.code;
-        this.selectedProcedureId = specialty.procedures[0].procedure.id;
-        this.appointment.service = this.selectedProcedure;
-      }
-    },
-    selectPackage(selectedPackage) {
-      this.selectedPackage = selectedPackage;
-      this.tab = 2;
-    },
-    selectProcedure(procedureCode, procedureId) {
-      this.selectedProcedure = procedureCode;
-      this.selectedProcedureId = procedureId;
-      this.appointment.service = procedureCode;
-    },
-    getPackagePrice(pkg) {
-      const price = parseFloat(pkg.product.value1);
-      const discount = pkg.discount / 100;
-      return price - price * discount;
-    },
-  },
-  mounted() {
-    if (this.selectedMonth !== null) {
-      this.availableDays = this.getAvailableDaysForMonth(this.selectedMonth);
+const filteredProcedures = computed<Procedures[]>(() => {
+  if (!selectedSpecialty.value && hasServices.value) {
+    const firstService = supplierServices.value[0];
+    if (firstService?.medical_specialty?.code) {
+      selectedSpecialty.value = firstService.medical_specialty.code;
+      appointment.specialty = selectedSpecialty.value;
+      return Array.isArray(firstService.procedures)
+        ? firstService.procedures
+        : [];
     }
-  },
+  }
+
+  const specialty = supplierServices.value.find(
+    (s) => s.medical_specialty?.code === selectedSpecialty.value
+  );
+
+  return Array.isArray(specialty?.procedures) ? specialty.procedures : [];
+});
+
+const filteredPackages = computed<Package[]>(() => {
+  let packages: Package[] = [];
+
+  if (!selectedProcedure.value && filteredProcedures.value.length > 0) {
+    const firstProcedure = filteredProcedures.value[0];
+    if (firstProcedure?.procedure) {
+      selectedProcedure.value = firstProcedure.procedure.code;
+      selectedProcedureId.value = firstProcedure.procedure.id;
+      appointment.service = selectedProcedure.value;
+      packages = Array.isArray(firstProcedure.packages)
+        ? firstProcedure.packages
+        : [];
+    }
+  } else {
+    const procedure = filteredProcedures.value.find(
+      (p) => p.procedure?.code === selectedProcedure.value
+    );
+    packages = Array.isArray(procedure?.packages) ? procedure.packages : [];
+  }
+
+  try {
+    const packageId = packages.length > 0 ? packages[0].id : 0;
+
+    const assessmentPackage = createAssessmentPackage(18000, 0, packageId);
+
+    return [assessmentPackage, ...packages];
+  } catch (error) {
+    console.error("Error creating assessment package:", error);
+    return packages;
+  }
+});
+
+console.log("filteredPackages: ", filteredPackages.value);
+
+const getAssessmentLabel = (assessmentCode: string): string => {
+  if (!assessmentCode || !Array.isArray(assessmentDetails.value)) {
+    return assessmentCode || "Código desconocido";
+  }
+
+  const detail = assessmentDetails.value.find(
+    (item) => item?.code === assessmentCode
+  );
+  return detail?.name || assessmentCode;
 };
+
+const closeModal = (): void => {
+  open.value = false;
+};
+
+const reserveAppointment = (): void => {
+  if (panel.value) {
+    panel.value = false;
+    return;
+  }
+  panel.value = true;
+};
+
+const selectSpecialty = (specialtyCode: string, specialtyId: number): void => {
+  if (!specialtyCode || !specialtyId) {
+    console.warn("Invalid specialty selection parameters");
+    return;
+  }
+
+  selectedSpecialty.value = specialtyCode;
+  selectedSpecialtyId.value = specialtyId;
+  selectedProcedure.value = null;
+  selectedProcedureId.value = null;
+  appointment.specialty = specialtyCode;
+
+  const specialty = supplierServices.value.find(
+    (s) => s.medical_specialty?.code === specialtyCode
+  );
+
+  if (
+    specialty?.procedures &&
+    Array.isArray(specialty.procedures) &&
+    specialty.procedures.length > 0
+  ) {
+    const firstProcedure = specialty.procedures[0];
+    if (firstProcedure?.procedure) {
+      selectedProcedure.value = firstProcedure.procedure.code;
+      selectedProcedureId.value = firstProcedure.procedure.id;
+      appointment.service = firstProcedure.procedure.code;
+    }
+  }
+};
+
+const selectPackage = (selectedPkg: Package): void => {
+  if (!selectedPkg) {
+    console.warn("Invalid package selection");
+    return;
+  }
+
+  selectedPackage.value = selectedPkg;
+  tab.value = 2;
+};
+
+const selectPackageAutomatically = (packages: Package[]): void => {
+  if (!Array.isArray(packages) || packages.length === 0) return;
+
+  const nonAssessmentPackage = packages.find(
+    (pkg) => pkg.product?.name !== "Cita de Valoración"
+  );
+
+  selectedPackage.value = nonAssessmentPackage || packages[0];
+};
+
+const selectProcedure = (procedureCode: string, procedureId: number): void => {
+  if (!procedureCode || !procedureId) {
+    console.warn("Invalid procedure selection parameters");
+    return;
+  }
+
+  selectedProcedure.value = procedureCode;
+  selectedProcedureId.value = procedureId;
+  selectedPackage.value = null;
+  appointment.service = procedureCode;
+
+  nextTick(() => {
+    if (filteredPackages.value.length > 0) {
+      selectPackageAutomatically(filteredPackages.value);
+    }
+  });
+};
+
+const initializeDefaults = (): void => {
+  if (!hasServices.value) return;
+
+  if (isSearchMode.value) return;
+
+  const firstService = supplierServices.value[0];
+  if (!firstService?.medical_specialty) return;
+
+  selectedSpecialty.value = firstService.medical_specialty.code;
+  selectedSpecialtyId.value = firstService.medical_specialty.id;
+  appointment.specialty = firstService.medical_specialty.code;
+
+  if (
+    Array.isArray(firstService.procedures) &&
+    firstService.procedures.length > 0
+  ) {
+    const firstProcedure = firstService.procedures[0];
+    if (firstProcedure?.procedure) {
+      selectedProcedure.value = firstProcedure.procedure.code;
+      selectedProcedureId.value = firstProcedure.procedure.id;
+      appointment.service = firstProcedure.procedure.code;
+    }
+  }
+
+  nextTick(() => {
+    if (filteredPackages.value.length > 0 && !selectedPackage.value) {
+      selectPackageAutomatically(filteredPackages.value);
+    }
+  });
+};
+
+const loadAssessmentDetails = async (): Promise<void> => {
+  const token = useCookie<string>("token");
+  const config = useRuntimeConfig();
+
+  if (!token.value) {
+    console.warn("No authorization token available");
+    return;
+  }
+
+  const assessmentOperation = $fetch<{ data: AssessmentDetail[] }>(
+    config.public.API_BASE_URL + "/udc/get_all",
+    {
+      headers: { Authorization: token.value },
+      params: { type: "ASSESSMENT_DETAIL" },
+    }
+  );
+
+  const { data: assessmentData, error: assessmentError } =
+    await withErrorHandling(assessmentOperation, isLoadingData, {
+      customMessage: "Error al cargar detalles de evaluación",
+    });
+
+  if (assessmentData?.data && Array.isArray(assessmentData.data)) {
+    assessmentDetails.value = assessmentData.data;
+  }
+
+  if (assessmentError) {
+    console.error("Assessment details loading error:", assessmentError);
+  }
+};
+
+const loadApiData = async (): Promise<void> => {
+  const token = useCookie<string>("token");
+  const config = useRuntimeConfig();
+
+  if (!token.value) {
+    console.warn("No authorization token available");
+    return;
+  }
+
+  const reviewOperation = $fetch<{ data: ReviewDetail[] }>(
+    config.public.API_BASE_URL + "/udc/get_all",
+    {
+      headers: { Authorization: token.value },
+      params: { type: "REVIEW" },
+    }
+  );
+
+  const { data: reviewData, error: reviewError } = await withErrorHandling(
+    reviewOperation,
+    isLoadingData,
+    { customMessage: "Error al cargar detalles de reseñas" }
+  );
+
+  if (reviewData?.data && Array.isArray(reviewData.data)) {
+    reviewDetails.value = reviewData.data;
+  }
+
+  if (reviewError) {
+    console.error("Review details loading error:", reviewError);
+  }
+
+  await loadAssessmentDetails();
+};
+
+watch(
+  () => currentSupplier.value,
+  (newSupplier) => {
+    if (newSupplier && hasServices.value) {
+      initializeDefaults();
+      nextTick(() => {
+        if (filteredPackages.value.length > 0 && !selectedPackage.value) {
+          selectPackageAutomatically(filteredPackages.value);
+        }
+      });
+    }
+  },
+  { immediate: true }
+);
+
+onMounted(() => {
+  loadApiData();
+});
+
+watch(
+  [() => props.searchSpecialtyCode, () => props.searchProcedureCode],
+  ([newSpecialtyCode, newProcedureCode]) => {
+    if (!hasServices.value || !isSearchMode.value) return;
+
+    const validSpecialty = supplierServices.value.find(
+      (s) => s.medical_specialty?.code === newSpecialtyCode
+    );
+
+    if (validSpecialty && newSpecialtyCode) {
+      selectedSpecialty.value = newSpecialtyCode;
+      selectedSpecialtyId.value = validSpecialty.medical_specialty?.id || null;
+      appointment.specialty = newSpecialtyCode;
+
+      if (newProcedureCode && Array.isArray(validSpecialty.procedures)) {
+        const validProcedure = validSpecialty.procedures.find(
+          (p) => p.procedure?.code === newProcedureCode
+        );
+
+        if (validProcedure && validProcedure.procedure) {
+          selectedProcedure.value = newProcedureCode;
+          selectedProcedureId.value = validProcedure.procedure.id;
+          appointment.service = newProcedureCode;
+        } else {
+          const firstProcedure = validSpecialty.procedures[0];
+          if (firstProcedure?.procedure) {
+            selectedProcedure.value = firstProcedure.procedure.code;
+            selectedProcedureId.value = firstProcedure.procedure.id;
+            appointment.service = firstProcedure.procedure.code;
+          }
+        }
+      } else {
+        const firstProcedure = validSpecialty.procedures[0];
+        if (firstProcedure?.procedure) {
+          selectedProcedure.value = firstProcedure.procedure.code;
+          selectedProcedureId.value = firstProcedure.procedure.id;
+          appointment.service = firstProcedure.procedure.code;
+        }
+      }
+
+      nextTick(() => {
+        if (filteredPackages.value.length > 0 && !selectedPackage.value) {
+          selectPackageAutomatically(filteredPackages.value);
+        }
+      });
+    } else {
+      initializeDefaults();
+    }
+  },
+  { immediate: true }
+);
 </script>
 
 <template>
@@ -420,6 +430,7 @@ export default {
         class="tab-item__link"
         :class="{ 'tab-item__link--active': tab === 2 }"
         @click="tab = 2"
+        :disabled="!selectedPackage"
       >
         Disponibilidad
       </button>
@@ -436,7 +447,7 @@ export default {
     <li class="tab-item">
       <button
         class="tab-item__link"
-        :class="{ 'tab-item__link--active': tab === 5 }"
+        :class="{ 'tab-item__link--active': tab === 4 }"
         @click="tab = 4"
       >
         Perfil
@@ -445,118 +456,64 @@ export default {
   </ul>
 
   <section class="tabs-content">
-    <!-- Servicios Tab -->
+    <div v-if="isLoadingData" class="loading-container">
+      <p>Cargando información...</p>
+    </div>
+
+    <div v-else-if="!currentSupplier" class="empty-state">
+      <p>No se encontró información del proveedor médico.</p>
+    </div>
+
     <WebsitePerfilDoctorTabsServicio
-      v-if="tab === 1"
-      :doctor="doctor"
-      :selectSpecialty="selectSpecialty"
-      :selectedSpecialty="selectedSpecialty"
-      :filteredProcedures="filteredProcedures"
-      :selectedProcedure="selectedProcedure"
-      :filteredPackages="filteredPackages"
-      :selectPackage="selectPackage"
-      :getAssesmentLabel="getAssesmentLabel"
-      :doctorReviews="doctorReviews"
-      :getPackagePrice="getPackagePrice"
-      :selectProcedure="selectProcedure"
+      v-else-if="tab === 1 && hasServices"
+      :supplier="currentSupplier"
+      :select-specialty="selectSpecialty"
+      :selected-specialty="selectedSpecialty"
+      :selected-procedure="selectedProcedure"
+      :filtered-procedures="filteredProcedures"
+      :filtered-packages="filteredPackages"
+      :select-package="selectPackage"
+      :get-assessment-label="getAssessmentLabel"
+      :select-procedure="selectProcedure"
       :specialties="specialties"
-      :searchSpecialtyCode="searchSpecialtyCode"
-      :searchProcedureCode="searchProcedureCode"
-      :isSearchMode="isSearchMode"
-      :userInfo="user"
+      :search-specialty-code="searchSpecialtyCode"
+      :search-procedure-code="searchProcedureCode"
+      :is-search-mode="isSearchMode"
+      :customer="user"
+      :assessment-details="assessmentDetails"
     />
+
+    <div v-else-if="tab === 1 && !hasServices" class="empty-state">
+      <p>Este proveedor no tiene servicios disponibles.</p>
+    </div>
 
     <WebsitePerfilDoctorTabsDisponibilidad
-      v-if="tab === 2"
-      :selected-day="selectedDay"
-      :available-hours="availableHours"
-      :selected-hour="selectedHour"
-      :available-days="availableDays"
-      :selected-month="selectedMonth"
-      :months="months"
-      :availability="availability"
-      :format-time="formatTime"
+      v-if="tab === 2 && selectedPackage"
+      :supplier="currentSupplier"
+      :selected-specialty="selectedSpecialtyName"
+      :selected-procedure-id="selectedProcedureId"
+      :selected-procedure-name="selectedProcedureName"
+      :selected-package="selectedPackage"
+      :customer="user"
       :reserve-appointment="reserveAppointment"
-      @update:selected-day="selectDay"
-      @update:selected-month="
-        selectedMonth = $event;
-        handleMonthChange();
-      "
-      @update:selected-hour="selectHour"
     />
 
-    <!-- Ubicación Tab -->
-    <WebsitePerfilDoctorTabsUbicacion v-if="tab === 3" :doctor="doctor" />
-
-    <!-- Perfil Tab -->
-    <WebsitePerfilDoctorTabsPerfil v-if="tab === 4" :doctor="doctor" />
-  </section>
-
-  <!-- modals -->
-  <div>
-    <div
-      class="modal fade"
-      id="modalCitaValoracion"
-      tabindex="-1"
-      aria-labelledby="exampleModalLabel"
-      aria-hidden="true"
-    >
-      <div class="modal-dialog">
-        <div class="modal-content">
-          <div class="modal-header">
-            <h5 class="modal-title" id="exampleModalLabel">Título del Modal</h5>
-            <button
-              type="button"
-              class="btn-close"
-              data-bs-dismiss="modal"
-              aria-label="Close"
-            ></button>
-          </div>
-
-          <!-- modal content -->
-          <div class="modal-body">
-            <nav aria-label="breadcrumb">
-              <ol class="breadcrumb">
-                <li
-                  :class="{ active: breadcumCitaValoracion == 1 }"
-                  class="breadcrumb-item"
-                  aria-current="page"
-                >
-                  1
-                </li>
-                <li
-                  :class="{ active: breadcumCitaValoracion == 2 }"
-                  class="breadcrumb-item active"
-                  aria-current="page"
-                >
-                  2
-                </li>
-                <li
-                  :class="{ active: breadcumCitaValoracion == 3 }"
-                  class="breadcrumb-item active"
-                  aria-current="page"
-                >
-                  3
-                </li>
-              </ol>
-            </nav>
-          </div>
-          <div class="modal-footer">
-            <button
-              type="button"
-              class="btn btn-secondary"
-              data-bs-dismiss="modal"
-            >
-              Cerrar
-            </button>
-            <button type="button" class="btn btn-primary">
-              Guardar cambios
-            </button>
-          </div>
-        </div>
-      </div>
+    <div v-else-if="tab === 2 && !selectedPackage" class="empty-state">
+      <p>
+        Primero selecciona un paquete de servicios en la pestaña "Servicios".
+      </p>
     </div>
-  </div>
+
+    <WebsitePerfilDoctorTabsUbicacion
+      v-if="tab === 3"
+      :supplier="currentSupplier"
+    />
+
+    <WebsitePerfilDoctorTabsPerfil
+      v-if="tab === 4"
+      :supplier="currentSupplier"
+    />
+  </section>
 
   <WebsiteConfirmationCitaModal
     :open="open"
@@ -564,20 +521,29 @@ export default {
     :result="result"
     @close-modal="closeModal"
   />
-  <WebsiteReservarModal
-    :selectedProcedureId="selectedProcedureId"
-    :selectedSpecialtyId="selectedSpecialtyId"
-    :userInfo="user"
-    :doctorInfo="doctor"
-    :selectedDay="selectedDay"
-    :selectedHour="selectedHour"
-    :selectedPackage="selectedPackage"
-    :isOpen="panel"
-    :currentStep="2"
-    :offers="offers"
-    @close="panel = false"
-  />
 </template>
+
+<style scoped>
+.loading-container,
+.empty-state {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 200px;
+  padding: 2rem;
+  text-align: center;
+}
+
+.empty-state p {
+  color: #6b7280;
+  font-size: 1rem;
+}
+
+.tab-item__link:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+</style>
 
 <style lang="scss" scoped>
 .tabs-container {
@@ -587,7 +553,6 @@ export default {
   margin: 0;
   padding: 0;
   overflow-x: auto;
-
   -webkit-overflow-scrolling: touch;
 
   @include respond-to-max(sm) {
@@ -644,209 +609,25 @@ export default {
     font-weight: 600;
     border-bottom-color: #0cadbb;
   }
-
-  &__icon {
-    font-size: 18px;
-
-    @include respond-to-max(sm) {
-      font-size: 14px;
-    }
-  }
-
-  &__text {
-    white-space: nowrap;
-
-    @include respond-to-max(sm) {
-      font-size: 10px;
-    }
-  }
 }
 
-.day-container {
+.loading-container,
+.empty-state {
   display: flex;
-  /* margin-top: 20px; */
-}
-
-.day {
-  width: 41px;
-  height: 40px;
-  text-align: center;
-  line-height: 40px;
-  background-color: #f0f0f0;
-  border-radius: 5px;
-  margin: 10px;
-}
-
-.day-active {
-  background-color: #007bff;
-  color: white;
-}
-
-.hour {
-  width: auto;
-  height: 40px;
-  text-align: center;
-  line-height: 40px;
-  background-color: #f0f0f0;
-  border-radius: 5px;
-  margin: 10px;
-}
-
-.hour > span {
-  padding: 16px;
-}
-
-.custom-card {
-  border: 1px solid var(--Gray-Scale-300, #f1f3f7);
-  background: var(--Gray-Scale-White, #fff);
-  box-shadow: 0px 2px 8px 0px rgba(0, 0, 0, 0.08);
-}
-
-.custom-card .card-header {
-  font-weight: bold;
-  padding: 15px;
-  background: linear-gradient(
-    188deg,
-    #f8faff 65.03%,
-    rgba(248, 250, 255, 0.1) 112.13%
-  );
-  border: none;
-}
-
-.custom-card .card-header.selected {
-  background: linear-gradient(
-    180deg,
-    #fffcf5 70.16%,
-    rgba(255, 252, 245, 0.05) 100%
-  );
-}
-
-.custom-card .card-body {
-  padding: 20px;
-}
-
-.custom-card .card-title {
-  font-size: 1.5em;
-  margin-bottom: 10px;
-}
-
-.custom-card .card-text {
-  margin-bottom: 10px;
-}
-
-.custom-card .list-group-item {
-  border: none;
-  padding-left: 0;
-  padding-right: 0;
-}
-
-.custom-card .btn {
-  width: 100%;
-  margin-top: 15px;
-}
-
-.custom-card .rating .icon {
-  color: #ffc107;
-}
-
-.custom-card .icon {
-  margin-right: 5px;
-}
-
-.availability {
-  display: flex;
-  justify-content: space-around;
+  justify-content: center;
   align-items: center;
+  min-height: 200px;
+  padding: 2rem;
+  text-align: center;
 }
 
-.availability .availability-text,
-.availability .time-text {
-  display: flex;
-  align-items: center;
+.empty-state p {
+  color: #6b7280;
+  font-size: 1rem;
 }
 
-.availability .icon {
-  margin-right: 5px;
-}
-
-.btn-outline-primary {
-  border-color: #dee2e6;
-  color: #6c757d;
-}
-
-.btn-outline-primary:hover {
-  border-color: #0d6efd;
-  background-color: rgba(13, 110, 253, 0.05);
-}
-
-.btn-outline-primary.active {
-  background-color: rgba(13, 110, 253, 0.1);
-  border-color: #0d6efd;
-  color: #0d6efd;
-}
-
-.btn-outline-primary.active span {
-  color: #0d6efd;
-}
-
-.day-container {
-  display: flex;
-  gap: 0.5rem;
-  overflow-x: auto;
-  padding-bottom: 0.5rem;
-}
-
-.day-container::-webkit-scrollbar {
-  height: 4px;
-}
-
-.day-container::-webkit-scrollbar-track {
-  background: #f1f1f1;
-}
-
-.day-container::-webkit-scrollbar-thumb {
-  background: #888;
-  border-radius: 4px;
-}
-
-.day-container::-webkit-scrollbar-thumb:hover {
-  background: #555;
-}
-
-.btn-outline-info:hover .text-info {
-  color: white !important;
-}
-
-.hover-info:hover {
-  color: white !important;
-}
-
-/* Ensure text is white when active (selected) */
-.active .text-info {
-  color: white !important;
-}
-
-select {
-  appearance: none; /* Remove default arrow */
-  -webkit-appearance: none; /* For Safari */
-  -moz-appearance: none; /* For Firefox */
-  background-image: none; /* Remove any background image */
-  padding-right: 1rem; /* Add padding to prevent text overlap */
-}
-
-/* Optional: Add a custom arrow if needed */
-.custom-select-wrapper {
-  position: relative;
-  display: inline-block;
-}
-
-.custom-select-wrapper::after {
-  content: ""; /* Custom arrow */
-  position: absolute;
-  right: 0.5rem;
-  top: 50%;
-  transform: translateY(-50%);
-  pointer-events: none; /* Ensure clicks go to the select element */
-  color: #000; /* Arrow color */
+.tab-item__link:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
 }
 </style>

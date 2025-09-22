@@ -293,28 +293,14 @@
                 </span>
               </td>
               <td class="appointments-table__cell">
-                <PacientesPagarCitaModal
-                  v-if="showPaymentModal(appointment)"
-                  :appointment="appointment"
-                  :showStatus="true"
-                  @refresh="refreshAppointments"
-                />
-                <PacientesProcedimientoCitaModal
-                  v-else
+                <PacientesAccionesEstadoCita
                   :appointment="appointment"
                   :showStatus="true"
                   @refresh="refreshAppointments"
                 />
               </td>
               <td class="appointments-table__cell--center">
-                <PacientesPagarCitaModal
-                  v-if="showPaymentModal(appointment)"
-                  :appointment="appointment"
-                  :showStatus="false"
-                  @refresh="refreshAppointments"
-                />
-                <PacientesProcedimientoCitaModal
-                  v-else
+                <PacientesAccionesEstadoCita
                   :appointment="appointment"
                   :showStatus="false"
                   @refresh="refreshAppointments"
@@ -597,7 +583,6 @@ const props = defineProps({
   },
 });
 
-const activeAppointment = ref(null);
 const isContactModalOpen = ref(false);
 const selectedAppointment = ref(null);
 const sortColumn = ref("created_date");
@@ -904,8 +889,6 @@ const handleKeydown = (event) => {
 };
 
 const showPaymentModal = (appointment) => {
-  console.log(appointment);
-
   if (
     appointment.appointment_status?.code === "PENDING_PROCEDURE" &&
     appointment.payment_status?.code === "PAYMENT_STATUS_NOT_PAID_PROCEDURE"

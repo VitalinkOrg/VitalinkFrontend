@@ -1,162 +1,150 @@
 <template>
-  <Teleport to="body">
-    <div
-      v-if="props.open"
-      class="modal-backdrop"
-      @click.self="emit('close-modal')"
-      @keydown.esc="emit('close-modal')"
-      role="dialog"
-      aria-modal="true"
-      :aria-labelledby="modalTitleId"
-      tabindex="-1"
-    >
-      <div class="modal-content" role="document">
-        <div class="modal-content__header">
-          <h2 :id="modalTitleId" class="modal-content__title">
-            Packs de tratamientos
-          </h2>
-          <button
-            class="modal-close-button"
-            @click="emit('close-modal')"
-            aria-label="Cerrar modal"
-          >
-            <AtomsIconsXIcon size="24" />
-          </button>
+  <AtomsModalBase
+    :is-open="open"
+    size="extra-large"
+    @close="emit('close-modal')"
+  >
+    <template #title>
+      <h2 :id="modalTitleId" class="modal-content__title">
+        Packs de tratamientos
+      </h2>
+    </template>
+
+    <div class="modal-tab">
+      <div v-if="!props.supplier || isLoading">
+        <WebsitePerfilDoctorPantallaCarga />
+      </div>
+
+      <template v-else>
+        <div v-if="!hasServices" class="no-services-message">
+          <div class="alert alert-warning">
+            <h4>Información de servicios no disponible</h4>
+            <p>
+              Este doctor aún no tiene servicios configurados en el sistema.
+            </p>
+            <p>
+              Puedes agendar una cita de valoración para obtener más información
+              sobre los tratamientos disponibles.
+            </p>
+          </div>
         </div>
 
-        <div class="modal-tab">
-          <!-- Loading state -->
-          <div v-if="!props.doctor || isLoading">
-            <WebsitePerfilDoctorPantallaCarga />
+        <template v-else>
+          <div class="modal-tab__badges-wrapper">
+            <button
+              v-for="specialty in specialties()"
+              :key="specialty.code"
+              @click="selectSpecialty(specialty.code, specialty.id)"
+              class="modal-tab__badge"
+              style="--bs-bg-opacity: 0.07"
+              :class="{
+                'modal-tab__badge--active':
+                  selectedSpecialty === specialty.code,
+              }"
+            >
+              {{ specialty.name }}
+            </button>
           </div>
 
-          <!-- Content when doctor is loaded -->
-          <template v-else>
-            <!-- Mostrar mensaje si no hay servicios -->
-            <div v-if="!hasServices" class="no-services-message">
-              <div class="alert alert-warning">
-                <h4>Información de servicios no disponible</h4>
-                <p>
-                  Este doctor aún no tiene servicios configurados en el sistema.
-                </p>
-                <p>
-                  Puedes agendar una cita de valoración para obtener más
-                  información sobre los tratamientos disponibles.
-                </p>
-              </div>
-            </div>
+          <div class="modal-tab__procedures-wrapper">
+            <button
+              v-for="procedure in filteredProcedures"
+              :key="procedure.procedure.code"
+              @click="
+                selectProcedure(
+                  procedure.procedure.code,
+                  procedure.procedure.id
+                )
+              "
+              class="modal-tab__procedure-badge"
+              :class="{
+                'modal-tab__procedure-badge--active':
+                  selectedProcedure === procedure.procedure.code,
+              }"
+            >
+              {{ procedure.procedure.name }}
+            </button>
+          </div>
 
-            <!-- Contenido normal cuando hay servicios -->
-            <template v-else>
-              <!-- Specialty badges -->
-              <div class="modal-tab__badges-wrapper">
-                <button
-                  v-for="specialty in specialties()"
-                  :key="specialty.code"
-                  @click="selectSpecialty(specialty.code, specialty.id)"
-                  class="modal-tab__badge"
-                  style="--bs-bg-opacity: 0.07"
-                  :class="{
-                    'modal-tab__badge--active':
-                      selectedSpecialty === specialty.code,
-                  }"
-                >
-                  {{ specialty.name }}
-                </button>
-              </div>
+          <div>
+            <p class="modal-tab__packages-title"></p>
+          </div>
 
-              <!-- Procedure badges (shown when specialty is selected) -->
-              <div class="modal-tab__procedures-wrapper">
-                <button
-                  v-for="procedure in filteredProcedures"
-                  :key="procedure.procedure.code"
-                  @click="
-                    selectProcedure(
-                      procedure.procedure.code,
-                      procedure.procedure.id
-                    )
-                  "
-                  class="modal-tab__procedure-badge"
-                  :class="{
-                    'modal-tab__procedure-badge--active':
-                      selectedProcedure === procedure.procedure.code,
-                  }"
-                >
-                  {{ procedure.procedure.name }}
-                </button>
-              </div>
+          <div v-if="filteredPackages.length > 0" class="modal-tab__packages">
+            <WebsitePerfilDoctorTarjetaServicio
+              v-for="pkg in filteredPackages"
+              :key="pkg.id"
+              :pkg="pkg"
+              :supplier="props.supplier"
+              :supplierReviews="doctorReviews()"
+              :getPackagePrice="getPackagePrice"
+              :getAssessmentLabel="getAssesmentLabel"
+              :customer="userInfo"
+              :selectedSpecialtyId="selectedSpecialtyId || 0"
+              :selectedProcedureId="selectedProcedureId || 0"
+              :procedureName="
+                selectedProcedure
+                  ? filteredProcedures.find(
+                      (p) => p.procedure.code === selectedProcedure
+                    )?.procedure.name || ''
+                  : filteredProcedures[0]?.procedure.name || ''
+              "
+            />
+          </div>
 
-              <div>
-                <p class="modal-tab__packages-title"></p>
-              </div>
+          <div
+            v-else-if="selectedSpecialty && filteredProcedures.length === 0"
+            class="alert alert-info"
+          >
+            No hay procedimientos disponibles para esta especialidad
+          </div>
+          <div
+            v-else-if="selectedProcedure && filteredPackages.length === 0"
+            class="alert alert-info"
+          >
+            No hay paquetes disponibles para este procedimiento
+          </div>
+        </template>
 
-              <!-- All packages for selected procedure -->
-              <div
-                v-if="filteredPackages.length > 0"
-                class="modal-tab__packages"
-              >
-                <WebsitePerfilDoctorTarjetaServicio
-                  v-for="pkg in filteredPackages"
-                  :key="pkg.id"
-                  :pkg="pkg"
-                  :doctor="props.doctor"
-                  :doctor-reviews="doctorReviews()"
-                  :get-package-price="getPackagePrice"
-                  :get-assesment-label="getAssesmentLabel"
-                  :userInfo="userInfo"
-                  :selected-specialty-id="selectedSpecialtyId || 0"
-                  :selected-procedure-id="selectedProcedureId || 0"
-                />
-              </div>
-
-              <div
-                v-else-if="selectedSpecialty && filteredProcedures.length === 0"
-                class="alert alert-info"
-              >
-                No hay procedimientos disponibles para esta especialidad
-              </div>
-              <div
-                v-else-if="selectedProcedure && filteredPackages.length === 0"
-                class="alert alert-info"
-              >
-                No hay paquetes disponibles para este procedimiento
-              </div>
-            </template>
-
-            <!-- Siempre mostrar la cita de valoración al final, independientemente de si hay servicios -->
-            <div v-if="!hasServices" class="modal-tab__packages">
-              <WebsitePerfilDoctorTarjetaServicio
-                :key="`assessment-${citaValoracionPackage.id}`"
-                :pkg="citaValoracionPackage"
-                :doctor="props.doctor"
-                :doctor-reviews="doctorReviews()"
-                :get-package-price="getPackagePrice"
-                :get-assesment-label="getAssesmentLabel"
-                :selected-specialty-id="selectedSpecialtyId || 0"
-                :selected-procedure-id="selectedProcedureId || 0"
-                :userInfo="userInfo"
-              />
-            </div>
-          </template>
+        <div v-if="!hasServices" class="modal-tab__packages">
+          <WebsitePerfilDoctorTarjetaServicio
+            :key="`assessment-${citaValoracionPackage.id}`"
+            :pkg="citaValoracionPackage"
+            :supplier="props.supplier"
+            :supplierReviews="doctorReviews()"
+            :getPackagePrice="getPackagePrice"
+            :getAssessmentLabel="getAssesmentLabel"
+            :selectedSpecialtyId="selectedSpecialtyId || 0"
+            :selectedProcedureId="selectedProcedureId || 0"
+            :customer="userInfo"
+            :procedureName="
+              selectedProcedure
+                ? filteredProcedures.find(
+                    (p) => p.procedure.code === selectedProcedure
+                  )?.procedure.name || ''
+                : filteredProcedures[0]?.procedure.name || ''
+            "
+          />
         </div>
-      </div>
+      </template>
     </div>
-  </Teleport>
+  </AtomsModalBase>
 </template>
 
 <script setup lang="ts">
 import type {
   AssessmentDetail,
-  Doctor,
+  Customer,
   MedicalSpecialty,
   Package,
-  Procedure,
-} from "~/types/doctor";
+  Procedures,
+  Supplier,
+} from "~/types";
 
 const props = defineProps<{
-  doctor: Doctor | null;
+  supplier: Supplier | null;
   open: boolean;
-  userInfo: Object;
+  userInfo: Customer;
   specialtyCode?: string;
   procedureCode?: string;
 }>();
@@ -192,13 +180,13 @@ const appointment = ref({
 });
 
 const hasServices = computed(() => {
-  return props.doctor?.services && props.doctor.services.length > 0;
+  return props.supplier?.services && props.supplier.services.length > 0;
 });
 
 const citaValoracionPackage = computed<Package>(() => {
   let packageId = 0;
 
-  if (selectedProcedureId.value && props.doctor?.services) {
+  if (selectedProcedureId.value && props.supplier?.services) {
     const selectedProcedureData = filteredProcedures.value.find(
       (p) => p.procedure.id === selectedProcedureId.value
     );
@@ -211,6 +199,8 @@ const citaValoracionPackage = computed<Package>(() => {
     }
   }
 
+  const now = new Date().toISOString();
+
   return {
     id: packageId,
     product: {
@@ -221,7 +211,8 @@ const citaValoracionPackage = computed<Package>(() => {
       description: "Cita de valoración médica inicial",
       father_code: null,
       value1: "18000",
-      created_date: new Date().toISOString(),
+      value2: null,
+      created_date: now,
       updated_date: null,
       is_deleted: 0,
     },
@@ -238,6 +229,9 @@ const citaValoracionPackage = computed<Package>(() => {
     is_king: 0,
     observations: "",
     postoperative_assessments: null,
+    is_deleted: 0,
+    created_date: now,
+    updated_date: null,
   };
 });
 
@@ -260,15 +254,15 @@ const setDefaultSpecialtyAndProcedure = async () => {
     isLoading.value = false;
   }
 
-  if (!props.doctor?.services || props.doctor.services.length === 0) return;
+  if (!props.supplier?.services || props.supplier.services.length === 0) return;
 
-  const matchService = props.doctor.services.find(
+  const matchService = props.supplier.services.find(
     (service) =>
       service.medical_specialty.code === props.specialtyCode &&
       service.procedures.some((p) => p.procedure.code === props.procedureCode)
   );
 
-  const serviceToUse = matchService || props.doctor.services[0];
+  const serviceToUse = matchService || props.supplier.services[0];
   selectedSpecialty.value = serviceToUse.medical_specialty.code;
   selectedSpecialtyId.value = serviceToUse.medical_specialty.id;
   appointment.value.specialty = selectedSpecialty.value;
@@ -286,19 +280,19 @@ const setDefaultSpecialtyAndProcedure = async () => {
 };
 
 const specialties = (): MedicalSpecialty[] => {
-  if (!props.doctor?.services) return [];
-  return props.doctor.services.map((service) => service.medical_specialty);
+  if (!props.supplier?.services) return [];
+  return props.supplier.services.map((service) => service.medical_specialty);
 };
 
 const selectSpecialty = (specialtyCode: string, specialtyId: number) => {
-  if (!props.doctor?.services) return;
+  if (!props.supplier?.services) return;
 
   selectedSpecialty.value = specialtyCode;
   selectedSpecialtyId.value = specialtyId;
   selectedProcedure.value = null;
   appointment.value.specialty = specialtyCode;
 
-  const specialty = props.doctor.services.find(
+  const specialty = props.supplier.services.find(
     (s) => s.medical_specialty.code === specialtyCode
   );
 
@@ -310,17 +304,17 @@ const selectSpecialty = (specialtyCode: string, specialtyId: number) => {
   }
 };
 
-const filteredProcedures = computed<Procedure[]>(() => {
-  if (!props.doctor?.services?.length) {
+const filteredProcedures = computed<Procedures[]>(() => {
+  if (!props.supplier?.services?.length) {
     return [];
   }
 
-  if (!selectedSpecialty.value && props.doctor.services.length > 0) {
-    const firstServiceProcedures = props.doctor.services[0].procedures || [];
+  if (!selectedSpecialty.value && props.supplier.services.length > 0) {
+    const firstServiceProcedures = props.supplier.services[0].procedures || [];
     return firstServiceProcedures;
   }
 
-  const specialty = props.doctor.services.find(
+  const specialty = props.supplier.services.find(
     (s) => s.medical_specialty.code === selectedSpecialty.value
   );
 
@@ -339,7 +333,7 @@ const selectProcedure = (procedureCode: string, procedureId: number) => {
 };
 
 const filteredPackages = computed<Package[]>(() => {
-  if (!props.doctor) {
+  if (!props.supplier) {
     return [];
   }
 
@@ -384,9 +378,9 @@ const getAssesmentLabel = (assesmentCode: string) => {
 };
 
 const doctorReviews = (): ProcessedDoctorReview[] => {
-  if (!props.doctor?.reviews) return [];
+  if (!props.supplier?.reviews) return [];
 
-  return props.doctor.reviews.map((review) => ({
+  return props.supplier.reviews.map((review) => ({
     first_name: review.customer.split(" ")[0] || "Anónimo",
     last_name: review.is_annonymous ? "" : review.customer.split(" ")[1] || "",
     message: review.comment,
@@ -402,7 +396,7 @@ const getPackagePrice = (pkg: Package) => {
 };
 
 watch(
-  () => props.doctor,
+  () => props.supplier,
   (newDoctor) => {
     if (newDoctor && props.open) {
       setDefaultSpecialtyAndProcedure();
@@ -414,7 +408,7 @@ watch(
 watch(
   () => props.open,
   (isOpen) => {
-    if (isOpen && props.doctor) {
+    if (isOpen && props.supplier) {
       setDefaultSpecialtyAndProcedure();
     }
   }
@@ -423,26 +417,13 @@ watch(
 onMounted(() => {
   modalTitleId.value = `modal-title-${Math.random().toString(36).substring(2, 11)}`;
 
-  if (props.doctor && props.open) {
+  if (props.supplier && props.open) {
     setDefaultSpecialtyAndProcedure();
   }
 });
 </script>
 
 <style lang="scss" scoped>
-.modal-backdrop {
-  position: fixed;
-  top: 0;
-  left: 0;
-  z-index: 1000;
-  width: 100vw;
-  height: 100vh;
-  background-color: rgba(0, 0, 0, 0.5);
-  display: flex;
-  justify-content: center;
-  align-items: center;
-}
-
 .modal {
   height: 90vh;
 

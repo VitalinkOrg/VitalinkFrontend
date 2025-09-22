@@ -503,23 +503,23 @@
                     </tr>
                     <tr>
                       <td><strong>Fecha de la cita:</strong></td>
-                      <td>{{ formatDate(this.localSelectedDay) }}</td>
+                      <td>{{ formatDate(localSelectedDay) }}</td>
                     </tr>
                     <tr>
                       <td><strong>Hora de la cita:</strong></td>
-                      <td>{{ formatTime(this.localSelectedHour) }}</td>
+                      <td>{{ formatTime(localSelectedHour) }}</td>
                     </tr>
                     <tr>
                       <td><strong>Paciente titular:</strong></td>
-                      <td>{{ this.userInfo?.name || "N/A" }}</td>
+                      <td>{{ userInfo?.name || "N/A" }}</td>
                     </tr>
                     <tr>
                       <td><strong>Teléfono de Contacto:</strong></td>
-                      <td>{{ this.phoneNumber }}</td>
+                      <td>{{ phoneNumber }}</td>
                     </tr>
                     <tr>
                       <td><strong>Profesional Médico:</strong></td>
-                      <td>{{ this.doctorInfo?.name || "N/A" }}</td>
+                      <td>{{ doctorInfo?.name || "N/A" }}</td>
                     </tr>
                     <tr>
                       <td><strong>Procedimiento:</strong></td>
@@ -577,29 +577,29 @@
                       <div class="detail-item">
                         <span class="detail-label">Fecha de la cita:</span>
                         <span class="detail-value">{{
-                          formatDate(this.localSelectedDay)
+                          formatDate(localSelectedDay)
                         }}</span>
                       </div>
                       <div class="detail-item">
                         <span class="detail-label">Hora de la cita:</span>
                         <span class="detail-value">{{
-                          formatTime(this.selectedHour)
+                          formatTime(selectedHour)
                         }}</span>
                       </div>
                       <div class="detail-item">
                         <span class="detail-label">Paciente titular:</span>
                         <span class="detail-value">{{
-                          this.userInfo?.name || "N/A"
+                          userInfo?.name || "N/A"
                         }}</span>
                       </div>
                       <div class="detail-item">
                         <span class="detail-label">Teléfono de Contacto:</span>
-                        <span class="detail-value">{{ this.phoneNumber }}</span>
+                        <span class="detail-value">{{ phoneNumber }}</span>
                       </div>
                       <div class="detail-item">
                         <span class="detail-label">Profesional Médico:</span>
                         <span class="detail-value">{{
-                          this.doctorInfo?.name || "N/A"
+                          doctorInfo?.name || "N/A"
                         }}</span>
                       </div>
                       <div class="detail-item">
@@ -649,410 +649,359 @@
   </Teleport>
 </template>
 
-<script>
-export default {
-  props: {
-    selectedPackage: {
-      type: Object,
-      required: true,
-    },
-    selectedProcedureId: {
-      type: String,
-      required: true,
-    },
-    selectedSpecialtyId: {
-      type: String,
-      required: true,
-    },
-    userInfo: {
-      type: Object,
-      required: true,
-    },
-    doctorInfo: {
-      type: Object,
-      required: true,
-    },
-    selectedDay: {
-      type: String,
-      default: null,
-    },
-    selectedHour: {
-      type: String,
-      default: null,
-    },
-    isOpen: Boolean,
-    currentStep: {
-      type: Number,
-      default: 1,
-    },
-  },
-  data() {
-    return {
-      isConfirmationModalOpen: false,
-      isLoading: false,
-      selectedMonth: null,
-      localSelectedDay: this.selectedDay,
-      localSelectedHour: this.selectedHour,
-      availableDays: [],
-      availableHours: [],
-      steps: ["1", "2", "3"],
-      description: "",
-      appointmentFor: "me",
-      phoneNumber: "",
-      months: [
-        { value: 0, label: "Enero" },
-        { value: 1, label: "Febrero" },
-        { value: 2, label: "Marzo" },
-        { value: 3, label: "Abril" },
-        { value: 4, label: "Mayo" },
-        { value: 5, label: "Junio" },
-        { value: 6, label: "Julio" },
-        { value: 7, label: "Agosto" },
-        { value: 8, label: "Septiembre" },
-        { value: 9, label: "Octubre" },
-        { value: 10, label: "Noviembre" },
-        { value: 11, label: "Diciembre" },
-      ],
-      availability: {
-        "2025-01-10": ["09:00", "11:00", "14:00"],
-        "2025-01-15": ["08:30", "10:30"],
-        "2025-01-25": ["09:00", "13:00"],
+<script lang="ts" setup>
+import type { ApiResponse, Customer, Package, Supplier } from "~/types";
 
-        "2025-02-10": ["09:00", "10:00", "11:00", "14:00"],
-        "2025-02-11": ["10:30", "12:00", "15:00"],
-        "2025-02-12": ["08:00", "09:30", "11:00", "13:00", "16:00"],
+interface Props {
+  selectedPackage: Package;
+  selectedProcedureId: number;
+  selectedSpecialtyId: number;
+  userInfo: Customer | null;
+  doctorInfo: Supplier | Partial<Supplier> | null;
+  selectedDay: string;
+  selectedHour: string;
+  isOpen: boolean;
+  currentStep?: number;
+}
 
-        "2025-03-05": ["08:00", "12:00"],
-        "2025-03-14": ["09:30", "11:00", "14:30"],
-        "2025-03-28": ["10:00", "13:00", "16:00"],
+interface Emits {
+  (e: "close"): void;
+  (e: "update:currentStep", value: number): void;
+  (e: "update:selectedDay", value: string | null): void;
+  (e: "update:selectedHour", value: string | null): void;
+}
 
-        "2025-04-03": ["09:00", "10:00"],
-        "2025-04-20": ["10:00", "11:30"],
-        "2025-04-29": ["08:00", "13:00", "15:30"],
+interface MonthOption {
+  value: number;
+  label: string;
+}
 
-        "2025-05-06": ["08:30", "10:00"],
-        "2025-05-18": ["09:00", "13:00", "15:00"],
-        "2025-05-25": ["09:00", "11:00", "14:00"],
+interface AvailableDay {
+  date: string;
+  day: string;
+  number: number;
+}
 
-        "2025-06-08": ["09:00", "10:30"],
-        "2025-06-17": ["11:00", "13:00"],
-        "2025-06-25": ["10:30", "14:00"],
+interface AvailabilityData {
+  [key: string]: string[];
+}
 
-        "2025-07-07": ["08:30", "10:00", "16:00"],
-        "2025-07-15": ["09:00", "12:00"],
-        "2025-07-28": ["10:00", "13:00", "15:00"],
+const props = withDefaults(defineProps<Props>(), {
+  selectedDay: "",
+  selectedHour: "",
+  currentStep: 1,
+});
 
-        "2025-08-05": ["09:00", "10:30", "14:00"],
-        "2025-08-12": ["09:00", "11:00", "13:30"],
-        "2025-08-27": ["08:00", "10:00", "12:00"],
+const emit = defineEmits<Emits>();
 
-        "2025-09-02": ["09:00", "11:30"],
-        "2025-09-13": ["10:00", "13:00"],
-        "2025-09-21": ["07:00", "08:30"],
+const { formatTime, formatDate } = useFormat();
+const { withErrorHandling } = useErrorHandler();
 
-        "2025-10-06": ["08:00", "09:30"],
-        "2025-10-20": ["10:00", "12:00", "14:00"],
-        "2025-10-30": ["09:00", "10:00", "14:00"],
+const isConfirmationModalOpen = ref<boolean>(false);
+const isLoading = ref<boolean>(false);
+const selectedMonth = ref<number | null>(null);
+const localSelectedDay = ref<string>(props.selectedDay);
+const localSelectedHour = ref<string>(props.selectedHour);
+const availableDays = ref<AvailableDay[]>([]);
+const availableHours = ref<string[]>([]);
+const steps = ref<string[]>(["1", "2", "3"]);
+const description = ref<string>("");
+const appointmentFor = ref<string>("me");
+const phoneNumber = ref<string>("");
 
-        "2025-11-01": ["08:30", "11:00"],
-        "2025-11-11": ["09:30", "12:00"],
-        "2025-11-19": ["10:00", "14:00", "16:00"],
+const months = ref<MonthOption[]>([
+  { value: 0, label: "Enero" },
+  { value: 1, label: "Febrero" },
+  { value: 2, label: "Marzo" },
+  { value: 3, label: "Abril" },
+  { value: 4, label: "Mayo" },
+  { value: 5, label: "Junio" },
+  { value: 6, label: "Julio" },
+  { value: 7, label: "Agosto" },
+  { value: 8, label: "Septiembre" },
+  { value: 9, label: "Octubre" },
+  { value: 10, label: "Noviembre" },
+  { value: 11, label: "Diciembre" },
+]);
 
-        "2025-12-05": ["09:00", "10:30", "12:00"],
-        "2025-12-15": ["08:00", "09:00", "11:00"],
-        "2025-12-24": ["10:00", "11:30", "13:00"],
-      },
+const availability = ref<AvailabilityData>({
+  "2025-01-10": ["09:00", "11:00", "14:00"],
+  "2025-01-15": ["08:30", "10:30"],
+  "2025-01-25": ["09:00", "13:00"],
 
-      internalCurrentStep: this.currentStep || 1,
-    };
-  },
-  computed: {
-    debugButtonDisabled() {
-      const disabled = !this.selectedHour;
-      return disabled;
-    },
-    isStep2Valid() {
-      return this.appointmentFor && this.phoneNumber.trim() !== "";
-    },
-    getSelectedServiceName() {
-      try {
-        if (!this.doctorInfo?.services || !this.selectedSpecialtyId) {
-          return "N/A";
-        }
-        const service = this.doctorInfo.services.find(
-          (service) =>
-            service.medical_specialty?.id === this.selectedSpecialtyId
-        );
-        return service?.medical_specialty?.name || "N/A";
-      } catch (error) {
-        console.error("Error getting service name:", error);
-        return "N/A";
-      }
-    },
-    getSelectedProcedureName() {
-      try {
-        if (!this.doctorInfo?.services || !this.selectedProcedureId) {
-          return "N/A";
-        }
-        const allProcedures = this.doctorInfo.services.flatMap(
-          (service) => service.procedures || []
-        );
-        const procedure = allProcedures.find(
-          (procedure) => procedure.procedure?.id === this.selectedProcedureId
-        );
-        return procedure?.procedure?.name || "N/A";
-      } catch (error) {
-        console.error("Error getting procedure name:", error);
-        return "N/A";
-      }
-    },
-  },
-  watch: {
-    currentStep: {
-      handler(newVal) {
-        this.internalCurrentStep = newVal;
-      },
-      immediate: true,
-    },
-    internalCurrentStep(newVal) {},
-    // Limpiar datos cuando el modal se cierra
-    isOpen: {
-      handler(newVal) {
-        if (!newVal) {
-          // Cuando el modal se cierra, limpiar los datos después de un pequeño delay
-          // para evitar que se vea el reseteo antes de que el modal se cierre
-          setTimeout(() => {
-            this.resetModalData();
-          }, 300);
-        }
-      },
-      immediate: false,
-    },
-  },
-  methods: {
-    openConfirmationModal() {
-      this.isConfirmationModalOpen = true;
-    },
-    closeConfirmationModal() {
-      this.isConfirmationModalOpen = false;
-    },
-    resetModalData() {
-      this.description = "";
-      this.appointmentFor = "me";
-      this.phoneNumber = "";
+  "2025-02-10": ["09:00", "10:00", "11:00", "14:00"],
+  "2025-02-11": ["10:30", "12:00", "15:00"],
+  "2025-02-12": ["08:00", "09:30", "11:00", "13:00", "16:00"],
 
-      this.selectedMonth = null;
-      this.localSelectedDay = null;
-      this.localSelectedHour = null;
-      this.availableDays = [];
-      this.availableHours = [];
+  "2025-03-05": ["08:00", "12:00"],
+  "2025-03-14": ["09:30", "11:00", "14:30"],
+  "2025-03-28": ["10:00", "13:00", "16:00"],
 
-      this.internalCurrentStep = 1;
+  "2025-04-03": ["09:00", "10:00"],
+  "2025-04-20": ["10:00", "11:30"],
+  "2025-04-29": ["08:00", "13:00", "15:30"],
 
-      this.isConfirmationModalOpen = false;
-    },
+  "2025-05-06": ["08:30", "10:00"],
+  "2025-05-18": ["09:00", "13:00", "15:00"],
+  "2025-05-25": ["09:00", "11:00", "14:00"],
 
-    closeMainModal() {
-      this.resetModalData();
-      this.$emit("close");
-    },
-    goToStep(step) {
-      this.internalCurrentStep = step;
-      this.$emit("update:currentStep", step);
-    },
-    continueToStep3() {
-      if (this.isStep2Valid) {
-        this.$emit("update:selectedDay", this.localSelectedDay);
-        this.$emit("update:selectedHour", this.localSelectedHour);
-        this.goToStep(3);
-      }
-    },
-    handleMonthChange() {
-      this.localSelectedDay = null;
-      this.localSelectedHour = null;
-      this.availableHours = [];
-      this.availableDays = this.getAvailableDaysForMonth(this.selectedMonth);
-    },
-    getAvailableDaysForMonth(month) {
-      const year = new Date().getFullYear();
-      const today = new Date();
-      today.setHours(0, 0, 0, 0);
+  "2025-06-08": ["09:00", "10:30"],
+  "2025-06-17": ["11:00", "13:00"],
+  "2025-06-25": ["10:30", "14:00"],
 
-      const daysInMonth = new Date(year, month + 1, 0).getDate();
-      const availableDays = [];
+  "2025-07-07": ["08:30", "10:00", "16:00"],
+  "2025-07-15": ["09:00", "12:00"],
+  "2025-07-28": ["10:00", "13:00", "15:00"],
 
-      for (let day = 1; day <= daysInMonth; day++) {
-        const date = new Date(year, month, day);
-        const dateString = date.toISOString().split("T")[0];
+  "2025-08-05": ["09:00", "10:30", "14:00"],
+  "2025-08-12": ["09:00", "11:00", "13:30"],
+  "2025-08-27": ["08:00", "10:00", "12:00"],
 
-        if (date >= today && this.availability[dateString]) {
-          availableDays.push({
-            date: dateString,
-            day: date
-              .toLocaleDateString("es-ES", { weekday: "short" })
-              .slice(0, 3),
-            number: date.getDate(),
-          });
-        }
-      }
+  "2025-09-02": ["09:00", "11:30"],
+  "2025-09-13": ["10:00", "13:00"],
+  "2025-09-21": ["07:00", "08:30"],
 
-      return availableDays;
-    },
-    selectDay(date) {
-      this.localSelectedDay = date;
-      this.localSelectedHour = null;
-      this.availableHours = this.availability[date] || [];
-    },
-    reserveAppointment() {
-      if (this.localSelectedHour && this.localSelectedDay) {
-        this.goToStep(2);
-      }
-    },
-    formatTime(time) {
-      if (!time || typeof time !== "string") {
-        return "N/A";
-      }
-      try {
-        const [hours, minutes] = time.split(":");
-        if (!hours || !minutes) {
-          return "N/A";
-        }
-        const numHours = parseInt(hours, 10);
-        const period = numHours >= 12 ? "PM" : "AM";
-        const displayHours = numHours % 12 || 12;
-        return `${displayHours}:${minutes} ${period}`;
-      } catch (error) {
-        console.error("Error formatting time:", error);
-        return "N/A";
-      }
-    },
-    formatDate(dateString) {
-      if (!dateString || typeof dateString !== "string") {
-        return "N/A";
-      }
-      try {
-        const [year, month, day] = dateString.split("-");
-        const date = new Date(year, month - 1, day);
+  "2025-10-06": ["08:00", "09:30"],
+  "2025-10-20": ["10:00", "12:00", "14:00"],
+  "2025-10-30": ["09:00", "10:00", "14:00"],
 
-        if (isNaN(date.getTime())) {
-          return "N/A";
-        }
+  "2025-11-01": ["08:30", "11:00"],
+  "2025-11-11": ["09:30", "12:00"],
+  "2025-11-19": ["10:00", "14:00", "16:00"],
 
-        return date.toLocaleDateString("es-ES", {
-          weekday: "long",
-          day: "numeric",
-          month: "long",
-        });
-      } catch (error) {
-        console.error("Error formatting date:", error);
-        return "N/A";
-      }
-    },
-    async confirmReservation() {
-      if (!this.isOpen) {
-        console.warn("Modal no abierto. Cancelando POST.");
-        return;
-      }
+  "2025-12-05": ["09:00", "10:30", "12:00"],
+  "2025-12-15": ["08:00", "09:00", "11:00"],
+  "2025-12-24": ["10:00", "11:30", "13:00"],
+});
 
-      if (!this.doctorInfo?.id) {
-        console.error("Doctor ID is missing");
-        alert(
-          "Error: Información del doctor no disponible. Por favor, intente nuevamente."
-        );
-        return;
-      }
+const internalCurrentStep = ref<number>(props.currentStep || 1);
 
-      if (!this.selectedPackage?.id) {
-        console.error("Package ID is missing");
-        alert(
-          "Error: Información del paquete no disponible. Por favor, intente nuevamente."
-        );
-        return;
-      }
+const isStep2Valid = computed<boolean>(() => {
+  return Boolean(appointmentFor.value) && phoneNumber.value.trim() !== "";
+});
 
-      if (!this.localSelectedDay || !this.localSelectedHour) {
-        alert(
-          "Error: Fecha u hora no seleccionada. Por favor, complete la información."
-        );
-        return;
-      }
+const getSelectedServiceName = computed<string>(() => {
+  try {
+    if (!props.doctorInfo?.services || !props.selectedSpecialtyId) {
+      return "N/A";
+    }
+    const service = props.doctorInfo.services.find(
+      (service) => service.medical_specialty?.id === props.selectedSpecialtyId
+    );
+    return service?.medical_specialty?.name || "N/A";
+  } catch (error) {
+    console.error("Error getting service name:", error);
+    return "N/A";
+  }
+});
 
-      const token = useCookie("token");
-      const config = useRuntimeConfig();
-      const user_info = useCookie("user_info");
+const getSelectedProcedureName = computed<string>(() => {
+  try {
+    if (!props.doctorInfo?.services || !props.selectedProcedureId) {
+      return "N/A";
+    }
+    const allProcedures = props.doctorInfo.services.flatMap(
+      (service) => service.procedures || []
+    );
+    const procedure = allProcedures.find(
+      (procedure) => procedure.procedure?.id === props.selectedProcedureId
+    );
+    return procedure?.procedure?.name || "N/A";
+  } catch (error) {
+    console.error("Error getting procedure name:", error);
+    return "N/A";
+  }
+});
 
-      this.isLoading = true;
-
-      try {
-        const formattedHour = this.localSelectedHour.includes(":")
-          ? this.localSelectedHour.split(":").length === 2
-            ? `${this.localSelectedHour}:00`
-            : this.localSelectedHour
-          : `${this.localSelectedHour}:00:00`;
-
-        const payload = {
-          customer_id: user_info.value?.id || "",
-          appointment_date: this.localSelectedDay,
-          appointment_hour: formattedHour,
-          supplier_id: this.doctorInfo.id,
-          package_id: this.selectedPackage.id,
-          user_description: this.description || "Consulta general preventiva.",
-          is_for_external_user: this.appointmentFor === "someoneElse",
-          phone_number_external_user: this.phoneNumber,
-          procedure_id: this.selectedProcedureId,
-        };
-
-        const response = await $fetch(
-          config.public.API_BASE_URL + "/appointment/add",
-          {
-            method: "POST",
-            body: payload,
-            headers: { Authorization: token.value },
-          }
-        );
-
-        this.goToStep(4);
-      } catch (error) {
-        console.error("Error creating appointment:", error);
-        console.error("Payload que causó el error:", payload);
-
-        let errorMessage =
-          "Error al crear la cita. Por favor, intente nuevamente.";
-
-        if (error.response?.status === 400) {
-          errorMessage =
-            "Datos inválidos. Por favor, verifique la información ingresada.";
-        } else if (error.response?.status === 401) {
-          errorMessage =
-            "Sesión expirada. Por favor, inicie sesión nuevamente.";
-        } else if (error.response?.status === 500) {
-          errorMessage = "Error del servidor. Por favor, intente más tarde.";
-        }
-
-        alert(errorMessage);
-      } finally {
-        this.isLoading = false;
-      }
-    },
-    resetModalData() {
-      this.description = "";
-      this.appointmentFor = "me";
-      this.phoneNumber = "";
-
-      this.selectedMonth = null;
-      this.localSelectedDay = null;
-      this.localSelectedHour = null;
-      this.availableDays = [];
-      this.availableHours = [];
-
-      this.internalCurrentStep = 1;
-
-      this.isConfirmationModalOpen = false;
-
-      this.isLoading = false;
-    },
-  },
+// Methods
+const openConfirmationModal = (): void => {
+  isConfirmationModalOpen.value = true;
 };
+
+const closeConfirmationModal = (): void => {
+  isConfirmationModalOpen.value = false;
+};
+
+const resetModalData = (): void => {
+  description.value = "";
+  appointmentFor.value = "me";
+  phoneNumber.value = "";
+
+  selectedMonth.value = null;
+  localSelectedDay.value = "";
+  localSelectedHour.value = "";
+  availableDays.value = [];
+  availableHours.value = [];
+
+  internalCurrentStep.value = 1;
+
+  isConfirmationModalOpen.value = false;
+  isLoading.value = false;
+};
+
+const closeMainModal = (): void => {
+  resetModalData();
+  emit("close");
+};
+
+const goToStep = (step: number): void => {
+  internalCurrentStep.value = step;
+  emit("update:currentStep", step);
+};
+
+const continueToStep3 = (): void => {
+  if (isStep2Valid.value) {
+    emit("update:selectedDay", localSelectedDay.value);
+    emit("update:selectedHour", localSelectedHour.value);
+    goToStep(3);
+  }
+};
+
+const handleMonthChange = (): void => {
+  localSelectedDay.value = "";
+  localSelectedHour.value = "";
+  availableHours.value = [];
+  availableDays.value = getAvailableDaysForMonth(selectedMonth.value);
+};
+
+const getAvailableDaysForMonth = (month: number | null): AvailableDay[] => {
+  if (month === null) return [];
+
+  const year = new Date().getFullYear();
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
+  const daysInMonth = new Date(year, month + 1, 0).getDate();
+  const availableDaysArray: AvailableDay[] = [];
+
+  for (let day = 1; day <= daysInMonth; day++) {
+    const date = new Date(year, month, day);
+    const dateString = date.toISOString().split("T")[0];
+
+    if (date >= today && availability.value[dateString]) {
+      availableDaysArray.push({
+        date: dateString,
+        day: date.toLocaleDateString("es-ES", { weekday: "short" }).slice(0, 3),
+        number: date.getDate(),
+      });
+    }
+  }
+
+  return availableDaysArray;
+};
+
+const selectDay = (date: string): void => {
+  localSelectedDay.value = date;
+  localSelectedHour.value = "";
+  availableHours.value = availability.value[date] || [];
+};
+
+const reserveAppointment = (): void => {
+  if (localSelectedHour.value && localSelectedDay.value) {
+    goToStep(2);
+  }
+};
+
+const confirmReservation = async (): Promise<void> => {
+  if (!props.isOpen) {
+    console.warn("Modal no abierto. Cancelando POST.");
+    return;
+  }
+
+  if (!props.doctorInfo?.id) {
+    console.error("Doctor ID is missing");
+    alert(
+      "Error: Información del doctor no disponible. Por favor, intente nuevamente."
+    );
+    return;
+  }
+
+  if (!props.selectedPackage?.id) {
+    console.error("Package ID is missing");
+    alert(
+      "Error: Información del paquete no disponible. Por favor, intente nuevamente."
+    );
+    return;
+  }
+
+  if (!localSelectedDay.value || !localSelectedHour.value) {
+    alert(
+      "Error: Fecha u hora no seleccionada. Por favor, complete la información."
+    );
+    return;
+  }
+
+  const token = useCookie("token");
+  const config = useRuntimeConfig();
+
+  const formattedHour = localSelectedHour.value.includes(":")
+    ? localSelectedHour.value.split(":").length === 2
+      ? `${localSelectedHour.value}:00`
+      : localSelectedHour.value
+    : `${localSelectedHour.value}:00:00`;
+
+  const payload = {
+    customer_id: props.userInfo?.id || "",
+    appointment_date: localSelectedDay.value,
+    appointment_hour: formattedHour,
+    supplier_id: props.doctorInfo.id,
+    package_id: props.selectedPackage.id,
+    user_description: description.value || "Consulta general preventiva.",
+    is_for_external_user: appointmentFor.value === "someoneElse",
+    phone_number_external_user: phoneNumber.value,
+    procedure_id: props.selectedProcedureId,
+  };
+
+  const appointmentOperation = $fetch<ApiResponse>(
+    config.public.API_BASE_URL + "/appointment/add",
+    {
+      method: "POST",
+      body: payload,
+      headers: { Authorization: token.value ?? "" },
+    }
+  );
+
+  const { data, error } = await withErrorHandling(
+    appointmentOperation,
+    isLoading,
+    {
+      customMessage: undefined,
+      redirectOn401: true,
+      logError: true,
+    }
+  );
+
+  if (error) {
+    alert(error);
+    return;
+  }
+
+  if (data) {
+    goToStep(4);
+  }
+};
+
+// Watchers
+watch(
+  () => props.currentStep,
+  (newVal) => {
+    internalCurrentStep.value = newVal;
+  },
+  { immediate: true }
+);
+
+watch(
+  () => props.isOpen,
+  (newVal) => {
+    if (!newVal) {
+      // Cuando el modal se cierra, limpiar los datos después de un pequeño delay
+      // para evitar que se vea el reseteo antes de que el modal se cierre
+      setTimeout(() => {
+        resetModalData();
+      }, 300);
+    }
+  }
+);
 </script>
 
 <style scoped>

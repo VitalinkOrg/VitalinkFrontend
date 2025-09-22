@@ -124,7 +124,7 @@ const closePackagesModal = () => {
   </div>
 
   <WebsitePackTratamientos
-    :doctor="doctorData"
+    :supplier="doctorData"
     :open="openPackagesModal"
     :procedure-code="searchProcedureCode"
     :specialty-code="searchSpecialtyCode"

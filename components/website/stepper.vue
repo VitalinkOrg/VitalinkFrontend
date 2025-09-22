@@ -10,7 +10,7 @@
       }"
     >
       <div class="step-circle-container">
-        <div class="step-circle">
+        <div class="step-circle" ref="stepCircles">
           <span v-if="currentStep > index + 1">✓</span>
           <span v-else-if="currentStep === index + 1">
             <svg
@@ -53,58 +53,108 @@
         {{ step }}
       </div>
     </div>
-    <div class="line"></div>
+    <div class="line" ref="line"></div>
   </div>
 </template>
 
-<script>
-import { ref, onMounted, nextTick } from "vue";
-export default {
-  props: {
-    steps: {
-      type: Array,
-      required: true,
-    },
-    currentStep: {
-      type: Number,
-      required: true,
-    },
-  },
-  setup() {
-    const stepper = ref(null);
+<script lang="ts" setup>
+import { nextTick, onBeforeUnmount, onMounted, ref, watch } from "vue";
 
-    const updateLinePosition = () => {
-      if (!stepper.value) return;
+interface Props {
+  steps: Array<string>;
+  currentStep: number;
+}
 
-      const line = stepper.value.querySelector(".line");
-      const circles = stepper.value.querySelectorAll(".step-circle");
+const props = defineProps<Props>();
 
-      if (circles.length < 2) return;
+const stepper = ref<HTMLElement | null>(null);
+const line = ref<HTMLElement | null>(null);
+const stepCircles = ref<HTMLElement[]>([]);
 
-      const firstCircle = circles[0];
-      const lastCircle = circles[circles.length - 1];
+let resizeObserver: ResizeObserver | null = null;
+let timeoutId: number | null = null;
 
-      const firstRect = firstCircle.getBoundingClientRect();
-      const lastRect = lastCircle.getBoundingClientRect();
-      const stepperRect = stepper.value.getBoundingClientRect();
+const updateLinePosition = () => {
+  if (!stepper.value || !line.value || stepCircles.value.length < 2) return;
 
-      const start = firstRect.left + firstRect.width / 2 - stepperRect.left;
-      const end = lastRect.left + lastRect.width / 2 - stepperRect.left;
+  const circles = stepCircles.value.filter((circle) => circle !== null);
+  if (circles.length < 2) return;
 
-      line.style.left = `${start}px`;
-      line.style.width = `${end - start}px`;
-    };
+  const firstCircle = circles[0];
+  const lastCircle = circles[circles.length - 1];
 
-    onMounted(() => {
-      nextTick(() => {
-        updateLinePosition();
-        window.addEventListener("resize", updateLinePosition);
-      });
-    });
+  const stepperRect = stepper.value.getBoundingClientRect();
+  const firstRect = firstCircle.getBoundingClientRect();
+  const lastRect = lastCircle.getBoundingClientRect();
 
-    return { stepper };
-  },
+  if (
+    stepperRect.width === 0 ||
+    firstRect.width === 0 ||
+    lastRect.width === 0
+  ) {
+    if (timeoutId) clearTimeout(timeoutId);
+    timeoutId = window.setTimeout(updateLinePosition, 50);
+    return;
+  }
+
+  const start = firstRect.left + firstRect.width / 2 - stepperRect.left;
+  const end = lastRect.left + lastRect.width / 2 - stepperRect.left;
+
+  line.value.style.left = `${start}px`;
+  line.value.style.width = `${Math.max(0, end - start)}px`;
 };
+
+const scheduleUpdate = () => {
+  if (timeoutId) clearTimeout(timeoutId);
+  timeoutId = window.setTimeout(() => {
+    nextTick(() => {
+      requestAnimationFrame(updateLinePosition);
+    });
+  }, 100);
+};
+
+onMounted(async () => {
+  await nextTick();
+  await new Promise((resolve) => setTimeout(resolve, 150));
+
+  updateLinePosition();
+
+  if (stepper.value && "ResizeObserver" in window) {
+    resizeObserver = new ResizeObserver(() => {
+      scheduleUpdate();
+    });
+    resizeObserver.observe(stepper.value);
+  }
+
+  window.addEventListener("resize", scheduleUpdate);
+
+  window.addEventListener("load", scheduleUpdate);
+});
+
+watch(
+  () => [props.steps.length, props.currentStep],
+  () => {
+    scheduleUpdate();
+  },
+  { flush: "post" }
+);
+
+watch(
+  stepCircles,
+  () => {
+    scheduleUpdate();
+  },
+  { deep: true, flush: "post" }
+);
+
+onBeforeUnmount(() => {
+  if (timeoutId) clearTimeout(timeoutId);
+  if (resizeObserver) {
+    resizeObserver.disconnect();
+  }
+  window.removeEventListener("resize", scheduleUpdate);
+  window.removeEventListener("load", scheduleUpdate);
+});
 </script>
 
 <style scoped>
@@ -114,6 +164,7 @@ export default {
   position: relative;
   margin: 40px 0;
   width: 100%;
+  min-height: 50px;
 }
 
 .step {
@@ -154,6 +205,18 @@ export default {
   height: 2px;
   background-color: #0cadbb;
   z-index: 0;
+  transition: all 0.2s ease;
+  opacity: 0;
+  animation: fadeIn 0.3s ease-in-out 0.2s forwards;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
 }
 
 .step.completed .step-circle {
@@ -176,6 +239,7 @@ export default {
 .step.completed .step-label {
   color: #0cadbb;
 }
+
 .step.active .step-label {
   color: #0cadbb;
   font-weight: bold;

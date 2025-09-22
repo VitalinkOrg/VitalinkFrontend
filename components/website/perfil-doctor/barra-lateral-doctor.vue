@@ -1,44 +1,134 @@
-<script setup lang="ts">
-interface DoctorData {
-  profile_picture_url: string;
-  name: string;
-  services: Array<{
-    medical_specialty?: {
-      name: string;
-    };
-  }>;
-  num_medical_enrollment: string;
-  phone_number: string;
-  email: string;
-  street_number: string;
-  address: string;
-  city_name: string;
-  country_iso_code: string;
-  experience_years: number;
-  patients_number: number;
-}
-
-interface Doctor {
-  servicesResult: Array<{
-    doctor_service_id: number;
-    specialty: string;
-  }>;
-}
+<script lang="ts" setup>
+import type { Supplier } from "~/types";
 
 interface Props {
-  doctorData: DoctorData;
-  doctor: Doctor;
+  supplierData?: Supplier | Partial<Supplier> | null;
+  supplier?: Supplier | Partial<Supplier> | null;
 }
 
-const props = defineProps<Props>();
+interface Emits {
+  (e: "openModal"): void;
+}
 
-const emit = defineEmits<{
-  openModal: [];
-}>();
+const props = withDefaults(defineProps<Props>(), {
+  supplierData: null,
+  supplier: null,
+});
 
-const handleOpenModal = () => {
+const emit = defineEmits<Emits>();
+
+const { formatPhone } = useFormat();
+
+const handleOpenModal = (): void => {
   emit("openModal");
 };
+
+const currentSupplier = computed<Supplier | Partial<Supplier> | null>(() => {
+  return props.supplierData || props.supplier || null;
+});
+
+const supplierName = computed<string>(() => {
+  return currentSupplier.value?.name || "Nombre no disponible";
+});
+
+const supplierEmail = computed<string>(() => {
+  return currentSupplier.value?.email || "";
+});
+
+const supplierPhone = computed<string>(() => {
+  const phone = currentSupplier.value?.phone_number;
+  return phone ? formatPhone(phone) : "";
+});
+
+const supplierPhoneHref = computed<string>(() => {
+  return currentSupplier.value?.phone_number
+    ? `tel:${currentSupplier.value.phone_number}`
+    : "#";
+});
+
+const supplierEmailHref = computed<string>(() => {
+  return currentSupplier.value?.email
+    ? `mailto:${currentSupplier.value.email}`
+    : "#";
+});
+
+const medicalEnrollmentNumber = computed<string>(() => {
+  return currentSupplier.value?.num_medical_enrollment || "No disponible";
+});
+
+const primarySpecialty = computed<string>(() => {
+  const services = currentSupplier.value?.services;
+  if (!services || !Array.isArray(services) || services.length === 0) {
+    return "Sin especialidad";
+  }
+  return services[0]?.medical_specialty?.name || "Sin especialidad";
+});
+
+const supplierServices = computed(() => {
+  const services = currentSupplier.value?.services;
+  if (!services || !Array.isArray(services)) {
+    return [];
+  }
+  return services.map((service) => ({
+    id: service.id || 0,
+    specialty: service.medical_specialty?.name || "Especialidad desconocida",
+  }));
+});
+
+const supplierAddress = computed<string>(() => {
+  const supplier = currentSupplier.value;
+  if (!supplier) return "Dirección no disponible";
+
+  const parts = [
+    supplier.street_number,
+    supplier.address,
+    supplier.city_name,
+    supplier.country_iso_code,
+  ].filter((part) => part && part.trim() !== "");
+
+  return parts.length > 0 ? parts.join(", ") : "Dirección no disponible";
+});
+
+const experienceYears = computed<string>(() => {
+  const years = currentSupplier.value?.experience_years;
+  return years && years > 0 ? years.toString() : "0";
+});
+
+const patientsNumber = computed<string>(() => {
+  const patients = currentSupplier.value?.patients_number;
+  return patients && patients > 0 ? patients.toString() : "0";
+});
+
+const averageRating = computed<number>(() => {
+  // TODO: Calculate from reviews when available
+  return 5.0;
+});
+
+const reviewsCount = computed<number>(() => {
+  const reviews = currentSupplier.value?.reviews;
+  return Array.isArray(reviews) ? reviews.length : 0;
+});
+
+const hasContactInfo = computed<boolean>(() => {
+  return !!(
+    currentSupplier.value?.phone_number || currentSupplier.value?.email
+  );
+});
+
+const hasAddress = computed<boolean>(() => {
+  return !!(
+    currentSupplier.value?.address ||
+    currentSupplier.value?.city_name ||
+    currentSupplier.value?.country_iso_code
+  );
+});
+
+const hasStatistics = computed<boolean>(() => {
+  return !!(
+    currentSupplier.value?.experience_years ||
+    currentSupplier.value?.patients_number
+  );
+});
 </script>
 
 <template>
@@ -46,129 +136,146 @@ const handleOpenModal = () => {
     <div class="profile-card">
       <div class="profile-card-body">
         <img
-          :src="doctorData.profile_picture_url"
-          alt="Foto del doctor"
+          :src="currentSupplier?.profile_picture_url ?? ''"
+          :alt="`Foto de ${supplierName}`"
           class="profile-card-body__image"
         />
 
         <div class="profile-card-body__info-wrapper">
-          <!-- Rating -->
-          <div class="profile-card-body__rating-info">
+          <div v-if="reviewsCount > 0" class="profile-card-body__rating-info">
             <span class="profile-card-body__rating-score">
-              5.0
+              {{ averageRating.toFixed(1) }}
               <AtomsIconsStarFilled color="#FFD835" size="20" />
             </span>
-            <span class="profile-card-body__review-count">(13 Reseñas)</span>
+            <span class="profile-card-body__review-count">
+              ({{ reviewsCount }}
+              {{ reviewsCount === 1 ? "Reseña" : "Reseñas" }})
+            </span>
           </div>
 
           <h2 class="profile-card-body__doctor-name">
-            {{ doctorData.name }}
+            {{ supplierName }}
           </h2>
 
-          <h2 class="profile-card-body__doctor-specialty">
-            {{
-              doctorData.services[0]?.medical_specialty?.name ||
-              "Sin especialidad"
-            }}
-          </h2>
+          <h3 class="profile-card-body__doctor-specialty">
+            {{ primarySpecialty }}
+          </h3>
 
-          <h2 class="profile-card-body__enrollment-number">
-            Nº de Colegiado: {{ doctorData.num_medical_enrollment }}
-          </h2>
+          <h4 class="profile-card-body__enrollment-number">
+            Nº de Colegiado: {{ medicalEnrollmentNumber }}
+          </h4>
 
-          <div class="profile-card-body__badge-wrapper">
+          <div
+            v-if="supplierServices.length > 0"
+            class="profile-card-body__badge-wrapper"
+          >
             <span
+              v-for="service in supplierServices"
+              :key="service.id"
               class="profile-card-body__badge"
-              v-for="service in doctor.servicesResult"
-              :key="service.doctor_service_id"
             >
               {{ service.specialty }}
             </span>
           </div>
         </div>
 
-        <div class="profile-card-body__contact-info">
+        <div v-if="hasContactInfo" class="profile-card-body__contact-info">
           <a
-            :href="`tel:${doctorData.phone_number}`"
+            v-if="currentSupplier?.phone_number"
+            :href="supplierPhoneHref"
             class="profile-card-body__contact-link"
+            :title="`Llamar a ${supplierPhone}`"
           >
             <AtomsIconsPhoneIcon />
           </a>
           <a
-            :href="`mailto:${doctorData.email}`"
+            v-if="currentSupplier?.email"
+            :href="supplierEmailHref"
             class="profile-card-body__contact-link"
+            :title="`Enviar email a ${supplierEmail}`"
           >
             <AtomsIconsMailIcon />
           </a>
           <a
-            :href="`mailto:${doctorData.email}`"
+            v-if="hasAddress"
+            href="#location"
             class="profile-card-body__contact-link"
+            title="Ver ubicación"
           >
             <AtomsIconsMapPointerIcon />
           </a>
         </div>
 
         <div class="profile-card-body__additional-info">
-          <p class="profile-card-body__address">
-            <small v-if="doctor">
+          <p v-if="hasAddress" class="profile-card-body__address">
+            <small>
               <AtomsIconsMapPointerIcon />
-              {{
-                doctorData.street_number +
-                " " +
-                doctorData.address +
-                ", " +
-                doctorData.city_name +
-                ", " +
-                doctorData.country_iso_code
-              }}
+              {{ supplierAddress }}
             </small>
           </p>
 
-          <div class="profile-card-body__statistics">
-            <div class="profile-card-body__statistics-card">
+          <div v-if="hasStatistics" class="profile-card-body__statistics">
+            <div
+              v-if="currentSupplier?.experience_years"
+              class="profile-card-body__statistics-card"
+            >
               <p class="profile-card-body__statistics-card-title">
                 Experiencia
               </p>
               <p class="profile-card-body__statistics-card-highlight">
-                +{{ doctorData.experience_years }} años
+                +{{ experienceYears }} años
               </p>
             </div>
-            <div class="profile-card-body__statistics-card">
+            <div
+              v-if="currentSupplier?.patients_number"
+              class="profile-card-body__statistics-card"
+            >
               <p class="profile-card-body__statistics-card-title">Pacientes</p>
               <p class="profile-card-body__statistics-card-highlight">
-                +{{ doctorData.patients_number }}
+                +{{ patientsNumber }}
               </p>
             </div>
           </div>
 
-          <!-- More Photos Section -->
           <div class="profile-card-body__photos-section">
             <div class="profile-card-body__photos-section-row">
               <img
                 src="@/src/assets/img-clinica-thumbnail-md.png"
-                alt=""
+                alt="Foto adicional de la clínica 1"
                 @click="handleOpenModal"
+                @error="
+                  ($event.target as HTMLImageElement).style.display = 'none'
+                "
               />
               <img
                 src="@/src/assets/img-clinica-thumbnail-md.png"
-                alt=""
+                alt="Foto adicional de la clínica 2"
                 @click="handleOpenModal"
+                @error="
+                  ($event.target as HTMLImageElement).style.display = 'none'
+                "
               />
               <img
                 src="@/src/assets/img-clinica-thumbnail-md.png"
-                alt=""
+                alt="Foto adicional de la clínica 3"
                 @click="handleOpenModal"
+                @error="
+                  ($event.target as HTMLImageElement).style.display = 'none'
+                "
               />
               <img
                 src="@/src/assets/img-clinica-thumbnail-md.png"
-                alt=""
+                alt="Foto adicional de la clínica 4"
                 @click="handleOpenModal"
+                @error="
+                  ($event.target as HTMLImageElement).style.display = 'none'
+                "
               />
             </div>
             <a
               href="#"
               class="profile-card-body__more-photos-link"
-              @click="handleOpenModal"
+              @click.prevent="handleOpenModal"
             >
               Ver más Fotos
             </a>
