@@ -1,20 +1,76 @@
 <script lang="ts" setup>
-import { ref } from "vue";
-import type { Service } from "~/types";
-
-const isLoading = ref<boolean>(false);
-const errorMessage = ref<string | null>(null);
+import { jwtDecode } from "jwt-decode";
+import { onMounted, ref } from "vue";
+import { useErrorHandler } from "~/composables/api/useErrorHandler";
+import type { Service, Supplier } from "~/types";
 
 definePageMeta({
   middleware: ["auth-doctors-hospitals"],
 });
 
+interface DecodedToken {
+  id: string;
+}
+
 const config = useRuntimeConfig();
+const token = useCookie("token");
+
+const decodedToken = jwtDecode<DecodedToken>(token.value!);
+const userId = decodedToken.id;
+
+const isLoading = ref<boolean>(false);
+const errorMessage = ref<string | null>(null);
+const services = ref<Service[]>([]);
+const supplier = ref<Supplier | null>(null);
+const supplierId = ref<number | null>(null);
+
 const { withErrorHandling } = useErrorHandler();
 
-const fetchServices = async (): Promise<Service[]> => {
-  const fetchOperation = $fetch<{ data: Service[] }>(
-    config.public.API_BASE_URL + "/services"
+const fetchSupplierId = async (): Promise<number | null> => {
+  const fetchOperation = $fetch<{ data: Supplier[] }>(
+    `${config.public.API_BASE_URL}/supplier/get_all`,
+    {
+      headers: {
+        Authorization: token.value!,
+      },
+      params: {
+        legal_representative_id: userId,
+      },
+    }
+  );
+
+  const { data, error } = await withErrorHandling(fetchOperation, isLoading, {
+    customMessage:
+      "Error al cargar el proveedor. Por favor intenta nuevamente.",
+    logError: true,
+  });
+
+  if (error || !data?.data || data.data.length === 0) {
+    errorMessage.value = "No se encontró un proveedor asociado a este usuario.";
+    return null;
+  }
+
+  supplier.value = data.data[0];
+  supplierId.value = supplier.value.id;
+  return supplier.value.id;
+};
+
+const fetchServices = async (): Promise<void> => {
+  if (!supplierId.value) {
+    errorMessage.value = "ID de proveedor no disponible.";
+    return;
+  }
+
+  const fetchOperation = $fetch<{ data: Supplier }>(
+    `${config.public.API_BASE_URL}/supplier/get`,
+    {
+      headers: {
+        Authorization: token.value!,
+      },
+      params: {
+        id: supplierId.value,
+      },
+    }
   );
 
   const { data, error } = await withErrorHandling(fetchOperation, isLoading, {
@@ -25,47 +81,30 @@ const fetchServices = async (): Promise<Service[]> => {
 
   if (error) {
     errorMessage.value = error;
-    return [];
+    return;
   }
 
-  return data?.data || [];
+  const supplier = data?.data;
+  services.value = supplier?.services || [];
 };
 
-const services = ref<Service[]>([]);
-
 onMounted(async () => {
-  services.value = await fetchServices();
+  isLoading.value = true;
+  const id = await fetchSupplierId();
+  if (id) {
+    await fetchServices();
+  }
+  isLoading.value = false;
 });
-
-const filteredArray: Service[] = [];
 </script>
 
 <template>
   <NuxtLayout name="medicos-dashboard">
-    <nav class="breadcrumb-nav" aria-label="breadcrumb">
-      <ol class="breadcrumb-nav__list">
-        <li class="breadcrumb-nav__item">
-          <NuxtLink href="/medicos/inicio" class="breadcrumb-nav__link">
-            Inicio
-          </NuxtLink>
-        </li>
-        <li
-          class="breadcrumb-nav__item breadcrumb-nav__item--active"
-          aria-current="page"
-        >
-          Servicios
-        </li>
-      </ol>
-    </nav>
-
-    <div class="services-header">
-      <p class="services-header__title">
-        <span class="services-header__text">Mis servicios</span>
-      </p>
-
+    <div class="services__header">
+      <MedicosCompartidosEncabezadoBreadcrumb title="Mis servicios" />
       <MedicosModalesAgregarServicio>
         <template #trigger="{ open }">
-          <button class="services-header__button--primary" @click="open">
+          <button class="services__button--primary" @click="open">
             <AtomsIconsPlusIcon size="20" />
             Añadir servicio
           </button>
@@ -110,65 +149,41 @@ const filteredArray: Service[] = [];
       </div>
     </div>
 
-    <WebsiteClinicaServiciosTab :services="filteredArray" />
+    <WebsitePerfilDoctorPantallaCarga v-if="isLoading" />
+
+    <div v-else-if="errorMessage" class="services__error">
+      <p>{{ errorMessage }}</p>
+    </div>
+
+    <MedicosServicios
+      v-else-if="services.length > 0 && supplier"
+      :service="services[0]"
+      :supplier="supplier"
+    />
+
+    <div v-else class="services__empty">
+      <p>No hay servicios disponibles.</p>
+    </div>
   </NuxtLayout>
 </template>
 
 <style lang="scss" scoped>
-.breadcrumb-nav {
-  --breadcrumb-divider: "/";
-
-  &__list {
+.services {
+  &__header {
     display: flex;
-    flex-wrap: wrap;
-    padding: 0;
-    margin: 0;
-    list-style: none;
+    align-items: center;
+    justify-content: space-between;
   }
 
-  &__item {
-    font-family: $font-family-main;
-    font-size: 14px;
-    line-height: 20px;
-    &:not(:last-child)::after {
-      content: var(--breadcrumb-divider);
-      margin: 0 6px 0 3px;
-      color: #353e5c;
-    }
-
-    &--active {
-      font-weight: 600;
-      color: #353e5c;
-    }
-  }
-
-  &__link {
+  &__error,
+  &__empty {
+    text-align: center;
+    padding: 2rem;
     color: #6c757d;
-    text-decoration: none;
-
-    &:hover {
-      color: #495057;
-      text-decoration: underline;
-    }
-  }
-}
-
-.services-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 1.5rem;
-
-  &__title {
-    margin: 0;
   }
 
-  &__text {
-    @include text-base;
-    font-weight: 600;
-    font-size: 20px;
-    line-height: 20px;
-    letter-spacing: 0;
+  &__error {
+    color: #dc3545;
   }
 
   &__button {
@@ -229,37 +244,9 @@ const filteredArray: Service[] = [];
   width: 100%;
   position: relative;
 
-  &__toggle {
-    width: 100%;
-    padding: 0.375rem 0.75rem;
-    background-color: transparent;
-    border: 1px solid #6c757d;
-    border-radius: 0.375rem;
-    color: #212529;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-
-    &::after {
-      content: "";
-      display: inline-block;
-      margin-left: 0.255em;
-      vertical-align: 0.255em;
-      border-top: 0.3em solid;
-      border-right: 0.3em solid transparent;
-      border-bottom: 0;
-      border-left: 0.3em solid transparent;
-    }
-
-    &:hover {
-      background-color: #f8f9fa;
-      border-color: #5c636a;
-    }
-
-    &:focus {
-      outline: 0;
-      box-shadow: 0 0 0 0.25rem rgba(108, 117, 125, 0.25);
+  &__button {
+    &--outline {
+      @include outline-button;
     }
   }
 
@@ -301,12 +288,6 @@ const filteredArray: Service[] = [];
     &:focus {
       color: #1e2125;
       background-color: #e9ecef;
-    }
-  }
-
-  &__button {
-    &--outline {
-      @include outline-button;
     }
   }
 }
