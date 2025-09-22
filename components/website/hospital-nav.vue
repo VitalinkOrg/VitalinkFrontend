@@ -236,22 +236,30 @@ export default {
           <span class="fw-semibold">Resultados de la Disponibilidad:</span>
           <div class="my-2 row align-items-center justify-content-between">
             <div class="col-md-8 row gap-2 align-items-center">
-              <div class="col-auto btn rounded-5 btn-outline-success btn-sm me-1">
+              <div
+                class="col-auto btn rounded-5 btn-outline-success btn-sm me-1"
+              >
                 <small>
                   {{ this.appointment.specialty }}
                 </small>
               </div>
-              <div class="col-auto btn rounded-5 btn-outline-success btn-sm me-1">
+              <div
+                class="col-auto btn rounded-5 btn-outline-success btn-sm me-1"
+              >
                 <small>
                   {{ this.appointment.service }}
                 </small>
               </div>
-              <div class="col-auto btn rounded-5 btn-outline-success btn-sm me-1">
+              <div
+                class="col-auto btn rounded-5 btn-outline-success btn-sm me-1"
+              >
                 <small>
                   {{ this.appointment.location }}
                 </small>
               </div>
-              <div class="col-auto btn rounded-5 btn-outline-success btn-sm me-1">
+              <div
+                class="col-auto btn rounded-5 btn-outline-success btn-sm me-1"
+              >
                 <small>
                   {{ this.appointment.type }}
                 </small>
@@ -310,10 +318,7 @@ export default {
       </div>
     </div>
     <!-- Servicios  -->
-    <WebsiteClinicaServiciosTab
-      :services="hospital.servicesResult"
-      v-if="tab === 2"
-    />
+    <MedicosServicios :services="hospital.servicesResult" v-if="tab === 2" />
     <!-- Ubicacion -->
     <div v-if="tab === 3">
       <div class="row gap-2">
