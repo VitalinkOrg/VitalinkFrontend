@@ -19,5 +19,22 @@ export const usePackage = () => {
     });
   };
 
-  return { fetchPackages };
+  const createPackage = (
+    packageData: Partial<Package>
+  ): UsableAPI<ApiResponse<Package>> => {
+    if (!token.value) throw new Error("No authentication token found");
+
+    const url = `${config.public.API_BASE_URL}/package/add`;
+
+    return useApi<ApiResponse<Package>>(url, {
+      method: "POST",
+      headers: {
+        Authorization: token.value,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(packageData),
+    });
+  };
+
+  return { fetchPackages, createPackage };
 };
