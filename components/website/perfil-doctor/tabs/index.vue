@@ -1,4 +1,5 @@
 <script lang="ts" setup>
+import { useErrorHandler } from "~/composables/api/useErrorHandler";
 import type {
   AssessmentDetail,
   Customer,
