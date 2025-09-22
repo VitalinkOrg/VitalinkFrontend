@@ -162,6 +162,7 @@ export interface Procedure {
   code: string;
   name: string;
   type: string;
+  description: string | null;
   father_code: string | null;
   value1: string | null;
   created_date: string;
