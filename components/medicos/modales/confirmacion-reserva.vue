@@ -101,6 +101,7 @@
 </template>
 
 <script lang="ts" setup>
+import { useErrorHandler } from "~/composables/api/useErrorHandler";
 import type { Appointment, AppointmentStatusCode } from "~/types";
 
 interface Props {

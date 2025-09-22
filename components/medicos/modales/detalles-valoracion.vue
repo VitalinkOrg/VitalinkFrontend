@@ -195,6 +195,7 @@
 </template>
 
 <script lang="ts" setup>
+import { useErrorHandler } from "~/composables/api/useErrorHandler";
 import type { Appointment, AppointmentStatusCode } from "~/types";
 import type { TablaBaseRow } from "../tabla-detalles-cita.vue";
 

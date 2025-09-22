@@ -650,6 +650,7 @@
 </template>
 
 <script lang="ts" setup>
+import { useErrorHandler } from "~/composables/api/useErrorHandler";
 import type { ApiResponse, Customer, Package, Supplier } from "~/types";
 
 interface Props {

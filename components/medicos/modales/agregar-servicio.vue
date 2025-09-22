@@ -329,7 +329,7 @@
 </template>
 
 <script lang="ts" setup>
-import type { Package } from "~/types";
+import type { Procedure } from "~/types";
 
 interface Specialty {
   code: string;
@@ -366,13 +366,13 @@ interface Pack {
 interface Props {
   specialties?: Specialty[];
   currentStep?: number;
-  package?: Package;
+  procedure?: Procedure;
 }
 
 const props = withDefaults(defineProps<Props>(), {
   specialties: () => [],
   currentStep: 1,
-  package: undefined,
+  procedure: undefined,
 });
 
 const emit = defineEmits<{
@@ -381,7 +381,7 @@ const emit = defineEmits<{
   "confirm-exit": [];
 }>();
 
-const isEditing = computed(() => !!props.package);
+const isEditing = computed(() => !!props.procedure);
 
 const isModalOpen = ref<boolean>(false);
 const internalCurrentStep = ref<number>(props.currentStep);
@@ -412,14 +412,14 @@ const currencies: Currency[] = [
   { code: "ARS", symbol: "$" },
 ];
 
-const loadPackageData = (packageData: Package): void => {
-  serviceName.value = packageData.product?.name || "";
-  serviceDescription.value = packageData.product?.description || "";
+const loadProcedureData = (procedureData: Procedure): void => {
+  serviceName.value = procedureData.name || "";
+  serviceDescription.value = procedureData.type || "";
 
   const packData: Pack = {
-    name: packageData.product?.name || "",
-    services: packageData.services_offer?.ASSESSMENT_DETAILS?.join(", ") || "",
-    price: packageData.reference_price || 0,
+    name: procedureData.name || "",
+    services: procedureData.type || "",
+    price: 0,
     currency: "CRC",
     availability: weekDays.map(() => ({
       active: false,
@@ -449,10 +449,10 @@ watch(
 );
 
 watch(
-  () => props.package,
-  (newPackage) => {
-    if (newPackage) {
-      loadPackageData(newPackage);
+  () => props.procedure,
+  (newProcedure) => {
+    if (newProcedure) {
+      loadProcedureData(newProcedure);
     } else {
       resetForm();
     }
@@ -525,7 +525,7 @@ const removeTimeSlot = (timeSlots: TimeSlot[], index: number): void => {
 
 const saveService = (): void => {
   const serviceData = {
-    id: isEditing.value ? props.package?.id : undefined,
+    id: isEditing.value ? props.procedure?.id : undefined,
     serviceName: serviceName.value,
     selectedSpecialty: selectedSpecialty.value,
     serviceDescription: serviceDescription.value,

@@ -1,8 +1,8 @@
 <script lang="ts" setup>
-import { useErrorHandler, useFormat, useRefreshToken } from "#imports";
 import { jsPDF } from "jspdf";
 import "jspdf-autotable";
 import { computed, ref, watch, type Ref } from "vue";
+import { useErrorHandler } from "~/composables/api/useErrorHandler";
 import type { Appointment } from "~/types";
 
 definePageMeta({

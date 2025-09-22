@@ -13,6 +13,7 @@ import {
   type ChartOptions,
 } from "chart.js";
 import { Bar, Doughnut } from "vue-chartjs";
+import { useErrorHandler } from "~/composables/api/useErrorHandler";
 import type { Appointment, Supplier } from "~/types";
 
 definePageMeta({
@@ -811,6 +812,8 @@ onMounted(() => {
       </div>
     </div>
   </NuxtLayout>
+
+  <MedicosRegistroOnboarding />
 </template>
 
 <style scoped lang="scss">

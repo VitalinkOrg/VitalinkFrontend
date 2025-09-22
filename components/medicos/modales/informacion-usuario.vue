@@ -504,7 +504,6 @@ defineExpose({
     }
   }
 
-  // Estilos para el input de teléfono con dropdown
   &__phone-input {
     position: relative;
   }
@@ -568,7 +567,7 @@ defineExpose({
 
   &__phone-number-input {
     width: 100%;
-    padding-left: 120px !important; // Espacio para el prefijo
+    padding-left: 120px !important;
 
     &:focus-visible:not(:disabled) {
       + .user-information__prefix-section:not(
@@ -579,7 +578,6 @@ defineExpose({
     }
   }
 
-  // Estilos del dropdown
   &__country-dropdown {
     position: absolute;
     top: 100%;

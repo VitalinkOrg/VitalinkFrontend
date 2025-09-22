@@ -37,7 +37,7 @@ const { data: historial } = await useFetch(
     transform: (_historial) => _historial.data,
   }
 );
-
+console.log(historial);
 const genderWelcome = computed(() => {
   const gender = user_info.value?.gender;
   if (!gender) return "Bienvenido/a";
