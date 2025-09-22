@@ -217,11 +217,13 @@
 }
 
 @mixin input-base {
+  @include input-reset;
   border-radius: $border-radius-md;
   padding: 15px 17px;
   font-family: $font-family-main;
   font-size: 14.7px;
   color: #425466;
+  background: $white;
   border: 1px solid #d4dae0;
   box-shadow:
     0 0 1.05px rgba(50, 50, 71, 0.2),
@@ -261,6 +263,70 @@
         0 0 0 4px rgba(231, 76, 60, 0.2),
         0 0 1.05px rgba(231, 76, 60, 0.4);
     }
+  }
+}
+
+@mixin input-reset {
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  background: none;
+  border: none;
+  outline: none;
+  padding: 0;
+  margin: 0;
+  box-shadow: none;
+
+  &::-webkit-inner-spin-button,
+  &::-webkit-outer-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+  }
+
+  &::-webkit-search-decoration,
+  &::-webkit-search-cancel-button,
+  &::-webkit-search-results-button,
+  &::-webkit-search-results-decoration {
+    display: none;
+  }
+
+  &::-ms-clear,
+  &::-ms-reveal {
+    display: none;
+  }
+
+  &[type="file"] {
+    &::-webkit-file-upload-button {
+      appearance: none;
+      -webkit-appearance: none;
+    }
+  }
+
+  resize: none;
+
+  &:focus {
+    outline: none;
+    box-shadow: none;
+  }
+
+  font-family: inherit;
+  font-size: inherit;
+  font-weight: inherit;
+  color: inherit;
+  line-height: inherit;
+
+  width: auto;
+  height: auto;
+  box-sizing: border-box;
+
+  text-decoration: none;
+  border-radius: 0;
+
+  &:disabled,
+  &[readonly] {
+    background: none;
+    opacity: 1;
+    cursor: default;
   }
 }
 
