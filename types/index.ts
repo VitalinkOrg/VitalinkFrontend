@@ -121,6 +121,18 @@ export interface IAseguradora {
   nombre: string;
 }
 
+export interface InsuranceRegisterData {
+  password: string;
+  email: string;
+  name: string;
+  phone_number: string;
+  birthdate: string;
+  address: string;
+  city: string;
+  country: string;
+  postal_code: string;
+}
+
 export type ModalName =
   | "appointmentDetails"
   | "cancelAppointment"
