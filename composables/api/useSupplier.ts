@@ -11,18 +11,31 @@ export interface CreateSupplier {
   card_id: string;
   email: string;
   medical_type_code: string;
-  legal_representative: string; // UUID
+  legal_representative: string;
   num_medical_enrollment: string;
   name: string;
   phone_number: string;
-  country_iso_code: string; // Código de país ISO (ej: "CRC", "USA", etc.)
+  country_iso_code: string;
   province: string;
   city_name: string;
+  postal_code?: string;
   profile_picture_url: string;
   description: string;
   is_hospital: boolean;
   code_card_id_file: string;
   code_medical_license_file: string;
+  gender?: string;
+  address?: string;
+  street_number?: string;
+  floor?: string;
+  door_number?: string;
+  latitude?: string;
+  longitude?: string;
+  experience_years?: string;
+  patients_number?: string;
+  our_history?: string;
+  mission?: string;
+  vision?: string;
 }
 
 export const useSupplier = () => {
@@ -76,24 +89,24 @@ export const useSupplier = () => {
     });
   };
 
-  const fetchSpecialtyBySupplier = (supplierId: number) => {
-    const token = getToken();
-    if (!token) throw new Error("No authentication token found");
+  const fetchSpecialtyBySupplier = (supplierId: number, token?: string) => {
+    const authToken = token || getToken();
+    if (!authToken) throw new Error("No authentication token found");
 
     const url = `${config.public.API_BASE_URL}/specialtybysupplier/get_all?supplier_id=${supplierId}`;
 
     return useApi<ApiResponse<Service[]>>(url, {
       method: "GET",
       headers: {
-        Authorization: token,
+        Authorization: authToken,
         "Content-Type": "application/json",
       },
     });
   };
 
-  const createSupplier = (body: CreateSupplier) => {
-    const token = getToken();
-    if (!token) throw new Error("No authentication token found");
+  const createSupplier = (body: CreateSupplier, token?: string) => {
+    const authToken = token || getToken();
+    if (!authToken) throw new Error("No authentication token found");
 
     const url = `${config.public.API_BASE_URL}/supplier/add`;
 
@@ -101,14 +114,18 @@ export const useSupplier = () => {
       method: "POST",
       body: JSON.stringify(body),
       headers: {
-        Authorization: token,
+        Authorization: authToken,
+        "Content-Type": "application/json",
       },
     });
   };
 
-  const uploadSpecialtyBySupplier = (body: SupplierSpecialty[]) => {
-    const token = getToken();
-    if (!token) throw new Error("No authentication token found");
+  const uploadSpecialtyBySupplier = (
+    body: SupplierSpecialty[],
+    token?: string
+  ) => {
+    const authToken = token || getToken();
+    if (!authToken) throw new Error("No authentication token found");
 
     const url = `${config.public.API_BASE_URL}/specialtybysupplier/add_multiple`;
 
@@ -116,7 +133,8 @@ export const useSupplier = () => {
       method: "POST",
       body: JSON.stringify(body),
       headers: {
-        Authorization: token,
+        Authorization: authToken,
+        "Content-Type": "application/json",
       },
     });
   };
