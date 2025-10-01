@@ -1,75 +1,70 @@
-import { type Ref } from "vue";
-
-export interface ErrorHandlerOptions {
-  customMessage?: string;
-  redirectOn401?: boolean;
-  redirectPath?: string;
-  logError?: boolean;
-  context?: string;
+interface ErrorStatus {
+  id: number;
+  message: string;
+  http_code: number;
 }
 
-export interface ApiError {
-  statusCode?: number;
-  name?: string;
-  message?: string;
-  data?: { errors?: Record<string, string[]>; message?: string };
+interface ApiErrorResponse {
+  status: ErrorStatus;
+  data: any;
+  info?: string;
 }
 
-export const useErrorHandler = () => {
-  const handleApiError = (
-    error: ApiError | any,
-    options: ErrorHandlerOptions = {}
-  ): string => {
-    const {
-      customMessage,
-      redirectOn401 = true,
-      redirectPath = "/pacientes/login",
-      logError = true,
-      context = "API",
-    } = options;
+export interface ParsedError {
+  message: string;
+  httpCode: number;
+  info?: string;
+  statusId?: number;
+  raw?: string;
+}
 
-    let message =
-      customMessage ||
-      error.data?.message ||
-      error.response?.data?.message ||
-      error.message ||
-      "Ocurrió un error inesperado.";
+export function useErrorHandler() {
+  const parseError = (error: unknown): ParsedError => {
+    if (error instanceof Error) {
+      const errorMessage = error.message;
 
-    const status = error.statusCode || error.response?.status || error.status;
+      const jsonMatch = errorMessage.match(/HTTP \d+: ({.*})/);
 
-    if (status) {
-      if (status === 401 && redirectOn401 && process.client)
-        navigateTo(redirectPath);
-      message = customMessage || message;
+      if (jsonMatch) {
+        try {
+          const errorData: ApiErrorResponse = JSON.parse(jsonMatch[1]);
+
+          return {
+            message: errorData.status.message,
+            httpCode: errorData.status.http_code,
+            info: errorData.info,
+            statusId: errorData.status.id,
+            raw: errorMessage,
+          };
+        } catch (e) {
+          console.error("Failed to parse error JSON:", e);
+        }
+      }
+
+      const httpCodeMatch = errorMessage.match(/HTTP (\d+)/);
+      return {
+        message: errorMessage,
+        httpCode: httpCodeMatch ? parseInt(httpCodeMatch[1]) : 500,
+        raw: errorMessage,
+      };
     }
 
-    if (logError) {
-      console.error(`🔴 ${context} Error:`, {
-        message,
-        status,
-        timestamp: new Date().toISOString(),
-      });
-    }
-
-    return message;
+    return {
+      message: "An unknown error occurred",
+      httpCode: 500,
+      raw: String(error),
+    };
   };
 
-  const withErrorHandling = async <T>(
-    operation: Promise<T> | (() => Promise<T>),
-    loadingRef?: Ref<boolean>,
-    options?: ErrorHandlerOptions
-  ): Promise<{ data: T | null; error: string | null }> => {
-    try {
-      if (loadingRef) loadingRef.value = true;
-      const result =
-        typeof operation === "function" ? await operation() : await operation;
-      return { data: result, error: null };
-    } catch (err: any) {
-      return { data: null, error: handleApiError(err, options) };
-    } finally {
-      if (loadingRef) loadingRef.value = false;
-    }
+  const logError = (parsedError: ParsedError, context?: string) => {
+    console.error("Error Details:", {
+      context,
+      ...parsedError,
+    });
   };
 
-  return { handleApiError, withErrorHandling };
-};
+  return {
+    parseError,
+    logError,
+  };
+}
