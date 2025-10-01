@@ -3,48 +3,23 @@
     <section class="register">
       <HeaderRegistro />
       <div class="register__stepper">
-        <StepperRegistro :steps="steps" :current-step="tab" />
+        <MedicosRegistroStepperRegistro :steps="steps" :current-step="tab" />
       </div>
       <form @submit.prevent="handleSubmit" class="register__form">
-        <!-- Paso 1: Formulario proveedor médico -->
         <div v-if="tab === 1" class="register__step">
-          <FormularioProveedorMedico
-            :document-type="formData.documentType"
-            :document-number="formData.documentNumber"
-            :full-name="formData.fullName"
-            :email="formData.email"
-            :confirm-email="formData.confirmEmail"
-            :phone="formData.phone"
-            :uploaded-file="formData.uploadedFile"
-            :email-mismatch="formData.emailMismatch"
-            @update:document-type="updateFormData('documentType', $event)"
-            @update:document-number="updateFormData('documentNumber', $event)"
-            @update:full-name="updateFormData('fullName', $event)"
-            @update:email="updateFormData('email', $event)"
-            @update:confirm-email="updateFormData('confirmEmail', $event)"
-            @update:phone="updateFormData('phone', $event)"
-            @update:uploaded-file="updateFormData('uploadedFile', $event)"
-            @update:email-mismatch="updateFormData('emailMismatch', $event)"
+          <MedicosRegistroFormularioProveedorMedico
+            :supplierFormData="supplierFormData"
+            @update:supplierFormData="updateSupplierFormData"
             @next="goToNextStep"
           />
         </div>
 
-        <!-- Paso 2: Médicos relacionados -->
         <div v-if="tab === 2" class="register__step">
-          <FormularioMedicosRelacionados
-            :doctors-list="doctorsList"
-            :specialties="specialties"
-            :can-add-more-doctors="canAddMoreDoctors"
-            :is-form-complete="isFormComplete"
-            @toggle-same-info="toggleSameInfo"
-            @handle-identity-upload="handleIdentityFileUpload"
-            @remove-identity-file="removeIdentityFile"
-            @handle-medical-card-upload="handleMedicalCardUpload"
-            @remove-medical-card="removeMedicalCard"
-            @add-specialty="addSpecialty"
-            @remove-specialty="removeSpecialty"
-            @add-doctor="addNewDoctor"
-            @remove-doctor="removeDoctor"
+          <MedicosRegistroFormularioMedicosRelacionados
+            :supplierFormData="supplierFormData"
+            :relatedMedicalFormData="relatedMedicalFormData"
+            :loading="isLoadingSubmit"
+            @updateRelatedMedicalFormData="updateRelatedMedicalFormData"
             @prev="goToPreviousStep"
             @submit="handleSubmit"
           />
@@ -54,74 +29,47 @@
   </NuxtLayout>
 </template>
 
-<script setup lang="ts">
-import FormularioMedicosRelacionados from "~/components/medicos/registro/formulario-medicos-relacionados.vue";
-import FormularioProveedorMedico from "~/components/medicos/registro/formulario-proveedor-medico.vue";
-import HeaderRegistro from "~/components/medicos/registro/header-registro.vue";
-import StepperRegistro from "~/components/medicos/registro/stepper-registro.vue";
+<script lang="ts" setup>
+import { useAuth, useDocuments, useSupplier } from "@/composables/api";
+import type { IRelatedMedicalFormData, ISupplierFormData } from "@/types";
+import type { CreateSupplier } from "~/composables/api/useSupplier";
 
-definePageMeta({
-  middleware: ["auth-login"],
-});
-
-interface FormData {
-  documentType: string;
-  documentNumber: string;
-  fullName: string;
-  email: string;
-  confirmEmail: string;
-  phone: string;
-  uploadedFile: File | null;
-  emailMismatch: boolean;
-}
-
-interface Doctor {
-  useSameInfo: boolean;
-  documentType: string;
-  documentNumber: string;
-  fullName: string;
-  doctorCode: string;
-  doctorType: string;
-  specialties: Array<{ id: number; code: string; name: string }>;
-  identityDocument: File | null;
-  medicalCard: File | null;
-  selectedSpecialty?: { id: number; code: string; name: string } | null;
-  identityFileError?: string;
-  medicalCardError?: string;
-}
+const { uploadDocument } = useDocuments();
+const { createSupplier, uploadSpecialtyBySupplier } = useSupplier();
+const { register, login, fetchUserInfo } = useAuth();
+const { setAuthenticated, setRole } = useAuthState();
+const { setToken, setRefreshToken } = useAuthToken();
+const { setUserInfo } = useUserInfo();
+const router = useRouter();
 
 const tab = ref(1);
+const legalRepresentativeId = ref<string>("");
+const isLoadingSubmit = ref<boolean>(false);
 
-const formData = reactive<FormData>({
+const supplierFormData = ref<ISupplierFormData>({
   documentType: "",
   documentNumber: "",
   fullName: "",
+  contratcFile: null,
+  codeContract: "",
+  contratcId: 0,
   email: "",
-  confirmEmail: "",
   phone: "",
-  uploadedFile: null,
-  emailMismatch: false,
+  password: "",
 });
 
-const doctorsList = ref<Doctor[]>([
+const relatedMedicalFormData = ref<IRelatedMedicalFormData[]>([
   {
-    useSameInfo: false,
     documentType: "",
     documentNumber: "",
     fullName: "",
-    doctorCode: "",
-    doctorType: "",
+    identityDocumentFile: null,
+    medicalCode: "",
+    validLicenseFile: null,
+    medicalType: "",
     specialties: [],
-    identityDocument: null,
-    medicalCard: null,
-    selectedSpecialty: null,
+    useSameDataAsSupplier: false,
   },
-]);
-
-const specialties = ref([
-  { id: 1, code: "ophthalmology", name: "Oftalmología" },
-  { id: 2, code: "cardiology", name: "Cardiología" },
-  { id: 3, code: "dermatology", name: "Dermatología" },
 ]);
 
 const steps = [
@@ -129,31 +77,343 @@ const steps = [
   "Formulario médicos relacionados",
 ];
 
-const updateFormData = (key: keyof FormData, value: any) => {
-  (formData as any)[key] = value;
+const updateSupplierFormData = (newData: ISupplierFormData) => {
+  supplierFormData.value = { ...newData };
 };
 
-const canAddMoreDoctors = computed(() => {
-  const allDoctorsComplete = doctorsList.value.every(
-    (doctor) =>
-      (doctor.useSameInfo ||
-        (doctor.documentType && doctor.documentNumber && doctor.fullName)) &&
-      doctor.doctorCode &&
-      doctor.doctorType &&
-      doctor.specialties.length > 0
-  );
-  return allDoctorsComplete && doctorsList.value.length < 5;
-});
+const updateRelatedMedicalFormData = (
+  index: number,
+  newData: Partial<IRelatedMedicalFormData> | null
+) => {
+  if (newData === null) {
+    if (index > 0 && index < relatedMedicalFormData.value.length) {
+      relatedMedicalFormData.value.splice(index, 1);
+    }
+    return;
+  }
 
-const isFormComplete = computed(() => {
-  return (
-    doctorsList.value.length > 0 &&
-    doctorsList.value.every(
-      (doctor) =>
-        doctor.doctorCode && doctor.doctorType && doctor.specialties.length > 0
-    )
-  );
-});
+  if (index >= relatedMedicalFormData.value.length) {
+    const newDoctor: IRelatedMedicalFormData = {
+      documentType: "",
+      documentNumber: "",
+      fullName: "",
+      identityDocumentFile: null,
+      medicalCode: "",
+      validLicenseFile: null,
+      medicalType: "",
+      specialties: [],
+      ...newData,
+    };
+    relatedMedicalFormData.value.push(newDoctor);
+    return;
+  }
+
+  if (index >= 0 && index < relatedMedicalFormData.value.length) {
+    relatedMedicalFormData.value[index] = {
+      ...relatedMedicalFormData.value[index],
+      ...newData,
+    };
+  }
+};
+
+const delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+
+const handleSubmit = async (): Promise<void> => {
+  isLoadingSubmit.value = true;
+
+  let accessToken: string | undefined;
+
+  try {
+    if (!supplierFormData.value.contratcFile) {
+      throw new Error("Archivo de contrato requerido");
+    }
+
+    const codeContract = await handleUploadFile(
+      supplierFormData.value.contratcFile,
+      "PRIVATE_CONTRACT"
+    );
+
+    if (!codeContract) {
+      throw new Error("Error subiendo contrato");
+    }
+
+    await delay(1000);
+
+    const representativeId =
+      await handleRegisterLegalRepresentative(codeContract);
+    legalRepresentativeId.value = representativeId;
+
+    await delay(1000);
+
+    accessToken = await handleLogin();
+    if (!accessToken) {
+      throw new Error("No se pudo obtener el token de autenticación");
+    }
+
+    await delay(1000);
+
+    const identityDocumentCodes: string[] = [];
+
+    for (let i = 0; i < relatedMedicalFormData.value.length; i++) {
+      const supplier = relatedMedicalFormData.value[i];
+      if (!supplier.identityDocumentFile) {
+        throw new Error(
+          `Documento de identidad requerido para médico ${i + 1}`
+        );
+      }
+
+      const code = await handleUploadFile(
+        supplier.identityDocumentFile,
+        "PERSONAL_DOCUMENT"
+      );
+      identityDocumentCodes.push(code);
+
+      if (i < relatedMedicalFormData.value.length - 1) {
+        await delay(1500);
+      }
+    }
+
+    await delay(1000);
+
+    const licenseFileCodes: string[] = [];
+
+    for (let i = 0; i < relatedMedicalFormData.value.length; i++) {
+      const supplier = relatedMedicalFormData.value[i];
+      if (!supplier.validLicenseFile) {
+        throw new Error(`Licencia médica requerida para médico ${i + 1}`);
+      }
+
+      const code = await handleUploadFile(
+        supplier.validLicenseFile,
+        "PERSONAL_DOCUMENT"
+      );
+      licenseFileCodes.push(code);
+
+      if (i < relatedMedicalFormData.value.length - 1) {
+        await delay(1500);
+      }
+    }
+
+    await delay(1000);
+
+    for (let i = 0; i < relatedMedicalFormData.value.length; i++) {
+      const supplier = relatedMedicalFormData.value[i];
+      const codeCardIdFile = identityDocumentCodes[i];
+      const codeMedicalLicenseFile = licenseFileCodes[i];
+
+      if (!codeCardIdFile || !codeMedicalLicenseFile) {
+        throw new Error(
+          `Error obteniendo códigos de documentos para médico ${i + 1}`
+        );
+      }
+
+      await handleCreateSupplier(
+        supplier,
+        legalRepresentativeId.value,
+        codeCardIdFile,
+        codeMedicalLicenseFile,
+        accessToken
+      );
+
+      if (i < relatedMedicalFormData.value.length - 1) {
+        await delay(1000);
+      }
+    }
+
+    localStorage.setItem("onboarding", "true");
+    router.push("/medicos/inicio");
+  } catch (error) {
+    console.error("Error en el registro:", error);
+    isLoadingSubmit.value = false;
+  }
+};
+
+const handleUploadFile = async (
+  file: File,
+  actionType: string
+): Promise<string> => {
+  const fields = {
+    title: file.name,
+    type: "DOC",
+    description: "Private document uploaded during medical registration",
+    id_for_table: 6,
+    table: "",
+    action_type: actionType,
+    user_id: "",
+    is_public: 0,
+  };
+
+  const api = uploadDocument(file, fields);
+  await api.request();
+
+  if (api.error.value) {
+    throw new Error(`Error subiendo documento: ${api.error.value}`);
+  }
+
+  const code = api.response.value?.data?.code;
+
+  if (!code) {
+    throw new Error("No se pudo obtener el código del documento");
+  }
+
+  return code;
+};
+
+const handleRegisterLegalRepresentative = async (
+  codeContract: string
+): Promise<string> => {
+  const body = {
+    card_id: supplierFormData.value.documentNumber,
+    id_type: supplierFormData.value.documentType,
+    name: supplierFormData.value.fullName,
+    email: supplierFormData.value.email,
+    password: supplierFormData.value.password,
+    gender: "M",
+    role_code: "LEGAL_REPRESENTATIVE",
+    phone_number: supplierFormData.value.phone,
+    country_iso_code: "",
+    province: "",
+    city_name: "",
+    address: "",
+    postal_code: "",
+    birth_date: "",
+    profile_picture_url: "",
+    code_contract: codeContract,
+  };
+
+  const api = register(body);
+  await api.request();
+
+  if (api.error.value) {
+    throw new Error(
+      `Error registrando representante legal: ${api.error.value}`
+    );
+  }
+
+  const representativeId = api.response.value?.data?.id;
+
+  if (!representativeId) {
+    throw new Error("No se pudo obtener el ID del representante legal");
+  }
+
+  return representativeId;
+};
+
+const handleCreateSupplier = async (
+  supplier: IRelatedMedicalFormData,
+  legalRepresentativeId: string,
+  codeCardIdFile: string,
+  codeMedicalLicenseFile: string,
+  token: string
+) => {
+  const payload: CreateSupplier = {
+    id_type: supplier.documentType,
+    card_id: supplier.documentNumber,
+    email: supplierFormData.value.email,
+    medical_type_code: supplier.medicalType,
+    legal_representative: legalRepresentativeId,
+    num_medical_enrollment: supplier.medicalCode,
+    name: supplier.fullName,
+    phone_number: supplierFormData.value.phone,
+    country_iso_code: "CRC",
+    province: "Provincia",
+    city_name: "Ciudad",
+    postal_code: "0000",
+    profile_picture_url: "Avatar aquí",
+    description: "Descripción aquí",
+    is_hospital: false,
+    code_card_id_file: codeCardIdFile,
+    code_medical_license_file: codeMedicalLicenseFile,
+    gender: "M",
+    address: "Dirección completa aquí",
+    street_number: "123",
+    floor: "1",
+    door_number: "1",
+    latitude: "9.9281",
+    longitude: "-84.0907",
+    experience_years: "10",
+    patients_number: "1000",
+    our_history: "Historia aquí",
+    mission: "Misión aquí",
+    vision: "Visión aquí",
+  };
+
+  const api = createSupplier(payload, token);
+  await api.request();
+
+  if (api.error.value) {
+    throw new Error(`Error creando supplier: ${api.error.value}`);
+  }
+
+  const supplierId = api.response.value?.data?.id;
+
+  if (!supplierId) {
+    throw new Error("No se pudo obtener el ID del supplier");
+  }
+
+  if (supplier.specialties && supplier.specialties.length > 0) {
+    await handleUploadSpecialtyBySupplier(supplierId, supplier, token);
+  }
+
+  return supplierId;
+};
+
+const handleUploadSpecialtyBySupplier = async (
+  supplierId: number,
+  supplier: IRelatedMedicalFormData,
+  token?: string
+) => {
+  const body = supplier.specialties.map((specialty) => ({
+    supplier_id: supplierId,
+    medical_specialty_code: specialty.code,
+  }));
+
+  const api = uploadSpecialtyBySupplier(body, token);
+  await api.request();
+
+  if (api.error.value) {
+    throw new Error(`Error subiendo especialidades: ${api.error.value}`);
+  }
+};
+
+const handleLogin = async (): Promise<string | undefined> => {
+  const payload = {
+    email: supplierFormData.value.email,
+    username: "",
+    password: supplierFormData.value.password,
+  };
+  const api = login(payload);
+  await api.request();
+
+  const response = api.response.value;
+  const error = api.error.value;
+
+  if (response?.data) {
+    setAuthenticated(true);
+    setToken(response.data.access_token);
+    setRefreshToken(response.data.refresh_token);
+    setRole("LEGAL_REPRESENTATIVE");
+
+    handleGetUserInfo(response.data.access_token);
+
+    return response.data.access_token;
+  }
+
+  if (error) {
+    throw new Error(error.info);
+  }
+};
+
+const handleGetUserInfo = async (accessToken: string) => {
+  const api = fetchUserInfo(legalRepresentativeId.value, accessToken);
+  await api.request();
+
+  const response = api.response.value;
+
+  if (response?.data) {
+    setUserInfo(response.data);
+  }
+};
 
 const goToNextStep = () => {
   tab.value = 2;
@@ -161,82 +421,6 @@ const goToNextStep = () => {
 
 const goToPreviousStep = () => {
   tab.value = 1;
-};
-
-const handleSubmit = async () => {
-  console.log("Datos del formulario:", {
-    proveedorMedico: formData,
-    medicosRelacionados: doctorsList.value,
-  });
-};
-
-const toggleSameInfo = (index: number) => {
-  const doctor = doctorsList.value[index];
-  if (doctor.useSameInfo) {
-    doctor.documentType = formData.documentType;
-    doctor.documentNumber = formData.documentNumber;
-    doctor.fullName = formData.fullName;
-  } else {
-    doctor.documentType = "";
-    doctor.documentNumber = "";
-    doctor.fullName = "";
-  }
-};
-
-const handleIdentityFileUpload = (index: number, file: File) => {
-  doctorsList.value[index].identityDocument = file;
-  doctorsList.value[index].identityFileError = "";
-};
-
-const removeIdentityFile = (index: number) => {
-  doctorsList.value[index].identityDocument = null;
-  doctorsList.value[index].identityFileError = "";
-};
-
-const handleMedicalCardUpload = (index: number, file: File) => {
-  doctorsList.value[index].medicalCard = file;
-  doctorsList.value[index].medicalCardError = "";
-};
-
-const removeMedicalCard = (index: number) => {
-  doctorsList.value[index].medicalCard = null;
-  doctorsList.value[index].medicalCardError = "";
-};
-
-const addSpecialty = (index: number) => {
-  const doctor = doctorsList.value[index];
-  if (
-    doctor.selectedSpecialty &&
-    !doctor.specialties.some((s) => s.code === doctor.selectedSpecialty!.code)
-  ) {
-    doctor.specialties.push(doctor.selectedSpecialty);
-    doctor.selectedSpecialty = null;
-  }
-};
-
-const removeSpecialty = (index: number, specIndex: number) => {
-  doctorsList.value[index].specialties.splice(specIndex, 1);
-};
-
-const addNewDoctor = () => {
-  if (canAddMoreDoctors.value) {
-    doctorsList.value.push({
-      useSameInfo: false,
-      documentType: "",
-      documentNumber: "",
-      fullName: "",
-      doctorCode: "",
-      doctorType: "",
-      specialties: [],
-      identityDocument: null,
-      medicalCard: null,
-      selectedSpecialty: null,
-    });
-  }
-};
-
-const removeDoctor = (index: number) => {
-  doctorsList.value.splice(index, 1);
 };
 </script>
 

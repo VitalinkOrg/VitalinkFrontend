@@ -42,7 +42,7 @@
                 role="combobox"
               >
                 <span class="dropdown__selected">
-                  {{ selectedMedico || "Selecciona un médico" }}
+                  {{ selectedSupplier?.name || "Selecciona un médico" }}
                 </span>
                 <Icon
                   name="mdi:chevron-down"
@@ -67,7 +67,7 @@
                   class="dropdown__item"
                   @click="selectSupplier(supplier)"
                   role="option"
-                  :aria-selected="selectedMedico === supplier.name"
+                  :aria-selected="selectedSupplier?.id === supplier.id"
                 >
                   {{ supplier.name }}
                 </li>
@@ -94,7 +94,9 @@
                   role="combobox"
                 >
                   <span class="dropdown__selected">
-                    {{ selectedProcedimiento || "Selecciona un procedimiento" }}
+                    {{
+                      selectedProcedure?.name || "Selecciona un procedimiento"
+                    }}
                   </span>
                   <Icon
                     name="mdi:chevron-down"
@@ -115,16 +117,14 @@
                   aria-label="Lista de procedimientos"
                 >
                   <li
-                    v-for="procedimiento in procedimientos"
-                    :key="procedimiento.id"
+                    v-for="procedure in procedures"
+                    :key="procedure.id"
                     class="dropdown__item"
-                    @click="selectProcedimiento(procedimiento)"
+                    @click="selectProcedure(procedure)"
                     role="option"
-                    :aria-selected="
-                      selectedProcedimiento === procedimiento.name
-                    "
+                    :aria-selected="selectedProcedure?.id === procedure.id"
                   >
-                    {{ procedimiento.name }}
+                    {{ procedure.name }}
                   </li>
                 </ul>
               </div>
@@ -134,9 +134,9 @@
               <legend
                 class="onboarding-modal__label"
                 :class="{
-                  'onboarding-modal__label--disabled': !selectedProcedimiento,
+                  'onboarding-modal__label--disabled': !selectedProcedure,
                 }"
-                :disabled="!selectedProcedimiento"
+                :disabled="!selectedProcedure"
               >
                 Producto
               </legend>
@@ -147,18 +147,18 @@
                   @click="toggleDropdown('producto')"
                   :class="{
                     'dropdown__trigger--active': activeDropdown === 'producto',
-                    'dropdown__trigger--disabled': !selectedProcedimiento,
+                    'dropdown__trigger--disabled': !selectedProcedure,
                   }"
-                  :disabled="!selectedProcedimiento"
+                  :disabled="!selectedProcedure"
                   :aria-expanded="activeDropdown === 'producto'"
                   aria-haspopup="listbox"
                   role="combobox"
                 >
                   <span class="dropdown__selected">
                     {{
-                      !selectedProcedimiento
+                      !selectedProcedure
                         ? "Selecciona un producto"
-                        : selectedProducto || "Selecciona un producto"
+                        : selectedProduct?.name || "Selecciona un producto"
                     }}
                   </span>
                   <Icon
@@ -166,7 +166,7 @@
                     class="dropdown__icon"
                     :class="{
                       'dropdown__icon--rotated': activeDropdown === 'producto',
-                      'dropdown__icon--disabled': !selectedProcedimiento,
+                      'dropdown__icon--disabled': !selectedProcedure,
                     }"
                     aria-hidden="true"
                   />
@@ -175,20 +175,20 @@
                   class="dropdown__menu"
                   :class="{
                     'dropdown__menu--open':
-                      activeDropdown === 'producto' && selectedProcedimiento,
+                      activeDropdown === 'producto' && selectedProcedure,
                   }"
                   role="listbox"
                   aria-label="Lista de productos"
                 >
                   <li
-                    v-for="producto in productos"
-                    :key="producto.id"
+                    v-for="product in products"
+                    :key="product.id"
                     class="dropdown__item"
-                    @click="selectProduct(producto)"
+                    @click="selectProduct(product)"
                     role="option"
-                    :aria-selected="selectedProducto === producto.name"
+                    :aria-selected="selectedProduct?.id === product.id"
                   >
-                    {{ producto.name }}
+                    {{ product.name }}
                   </li>
                 </ul>
               </div>
@@ -206,14 +206,13 @@
               type="number"
               placeholder="0"
               class="onboarding-modal__input onboarding-modal__input--number"
-              v-model="valoracionesPostOperatorias"
+              v-model="PostoperativeAssessments"
               min="0"
               :aria-describedby="`${preoperativeAssessment.code}-help`"
             />
           </fieldset>
 
           <section class="onboarding-modal__services">
-            <!-- Servicios incluidos dinámicos -->
             <div v-if="generalAssessments.length > 0">
               <h3 class="onboarding-modal__services-title">
                 Servicios incluidos
@@ -339,7 +338,7 @@
               <textarea
                 class="onboarding-modal__textarea"
                 placeholder="Escribe las observaciones aquí"
-                v-model="observaciones"
+                v-model="observations"
                 aria-describedby="observaciones-help"
               ></textarea>
             </fieldset>
@@ -353,6 +352,7 @@
         type="button"
         @click="handleGoBack"
         class="onboarding-modal__button onboarding-modal__button--outline"
+        :disabled="isLoading"
       >
         Volver
       </button>
@@ -360,55 +360,52 @@
         type="button"
         @click="handleFinish"
         class="onboarding-modal__button onboarding-modal__button--primary"
+        :disabled="isLoading"
       >
-        Finalizar
+        {{ isLoading ? "Procesando..." : "Finalizar" }}
       </button>
     </template>
   </AtomsModalBase>
 </template>
 
 <script lang="ts" setup>
+import { usePackage, useSupplier, useUdc } from "@/composables/api";
+import type { AssessmentDetail, IUdc, Supplier } from "@/types";
 import { onClickOutside } from "@vueuse/core";
-import {
-  useAssessment,
-  useProcedure,
-  useProducts,
-  useSupplier,
-} from "~/composables/api";
-import type { AssessmentDetail, Procedure, Product, Supplier } from "~/types";
-
-const { fetchProducts } = useProducts();
-const { fetchProcedure } = useProcedure();
-const { fetchAssessment } = useAssessment();
-const { fetchSupplier } = useSupplier();
-
-const isModalOpen = ref<boolean>(false);
-const activeDropdown = ref<string | null>(null);
-
-const selectedMedico = ref<string>("");
-const selectedProcedimiento = ref<string>("");
-const selectedProducto = ref<string>("");
-const valoracionesPostOperatorias = ref<number>(0);
-const observaciones = ref<string>("");
-
-const supplierDropdown = ref<HTMLElement | null>(null);
-const procedureDropdown = ref<HTMLElement | null>(null);
-const productDropdown = ref<HTMLElement | null>(null);
-
-const suppliers = ref<Supplier[]>([]);
-const procedimientos = ref<Procedure[]>([]);
-const productos = ref<Product[]>();
-const assessments = ref<AssessmentDetail[]>([]);
-
-const dynamicServices = reactive<Record<string, string>>({});
-const dynamicTreatment = reactive<Record<string, string>>({});
 
 interface Emits {
   (e: "openWelcomeModal"): void;
   (e: "openSuccessModal"): void;
   (e: "closeWelcomeModal"): void;
 }
+
 const emit = defineEmits<Emits>();
+
+const { createPackage } = usePackage();
+const { fetchUdc } = useUdc();
+const { fetchAllSuppliers, fetchSpecialtyBySupplier } = useSupplier();
+
+const isModalOpen = ref<boolean>(false);
+const activeDropdown = ref<string | null>(null);
+const isLoading = ref<boolean>(false);
+
+const selectedSupplier = ref<Supplier | null>(null);
+const selectedProcedure = ref<IUdc | null>(null);
+const selectedProduct = ref<IUdc | null>(null);
+const PostoperativeAssessments = ref<number>(0);
+const observations = ref<string>("");
+
+const supplierDropdown = ref<HTMLElement | null>(null);
+const procedureDropdown = ref<HTMLElement | null>(null);
+const productDropdown = ref<HTMLElement | null>(null);
+
+const suppliers = ref<Supplier[]>([]);
+const procedures = ref<IUdc[]>([]);
+const products = ref<IUdc[]>();
+const assessments = ref<AssessmentDetail[]>([]);
+
+const dynamicServices = reactive<Record<string, string>>({});
+const dynamicTreatment = reactive<Record<string, string>>({});
 
 const preoperativeAssessment = computed(() => {
   return assessments.value.find(
@@ -447,25 +444,56 @@ const handleGoBack = () => {
   emit("openWelcomeModal");
 };
 
-const handleFinish = () => {
-  const formData = {
-    selectedMedico: selectedMedico.value,
-    selectedProcedimiento: selectedProcedimiento.value,
-    selectedProducto: selectedProducto.value,
-    valoracionesPostOperatorias: valoracionesPostOperatorias.value,
-    dynamicServices: { ...dynamicServices },
-    dynamicTreatment: { ...dynamicTreatment },
-    observaciones: observaciones.value,
-  };
+const handleFinish = async () => {
+  if (!selectedSupplier.value) return;
 
-  console.log("Form data:", formData);
-  handleCloseModal();
-  localStorage.removeItem("onboarding");
-  emit("openSuccessModal");
+  try {
+    isLoading.value = true;
+    const specialtyId = await handleFetchSpecialtyBySupplier(
+      selectedSupplier.value.id
+    );
+
+    const formData = {
+      specialty_id: specialtyId,
+      procedure_code: selectedProcedure.value?.code || "",
+      product_code: selectedProduct.value?.code || "",
+      discount: 7,
+      services_offer: {
+        ASSESSMENT_DETAILS: [
+          ...Object.entries(dynamicServices)
+            .filter(([_, value]) => value === "si")
+            .map(([code]) => code),
+          ...Object.entries(dynamicTreatment)
+            .filter(([_, value]) => value === "si")
+            .map(([code]) => code),
+        ],
+      },
+      is_king: 0,
+      observations: observations.value,
+      postoperative_assessments: PostoperativeAssessments.value,
+    };
+
+    const api = createPackage(formData);
+    await api.request();
+
+    const data = api.response.value?.data;
+
+    if (data) {
+      handleCloseModal();
+      localStorage.removeItem("onboarding");
+      emit("openSuccessModal");
+    } else {
+      console.error("Error creating package:");
+    }
+  } catch (error) {
+    console.error("Error creating package:", error);
+  } finally {
+    isLoading.value = false;
+  }
 };
 
 const toggleDropdown = (dropdownName: string) => {
-  if (dropdownName === "producto" && !selectedProcedimiento.value) {
+  if (dropdownName === "producto" && !selectedProcedure.value) {
     return;
   }
 
@@ -481,24 +509,88 @@ const closeAllDropdowns = () => {
 };
 
 const selectSupplier = (medico: Supplier) => {
-  selectedMedico.value = medico.name;
+  selectedSupplier.value = medico;
   closeAllDropdowns();
+};
+
+const selectProcedure = (procedure: IUdc) => {
+  selectedProcedure.value = procedure;
+  selectedProduct.value = null;
+  closeAllDropdowns();
+  loadProducts(procedure.code);
+};
+
+const selectProduct = (product: IUdc) => {
+  selectedProduct.value = product;
+  closeAllDropdowns();
+};
+
+const handleFetchSpecialtyBySupplier = async (
+  supplierId: number
+): Promise<number> => {
+  try {
+    const api = fetchSpecialtyBySupplier(supplierId);
+    await api.request();
+
+    const data = api.response.value?.data;
+
+    if (data) {
+      return data[0].id;
+    }
+
+    return 0;
+  } catch (error) {
+    console.error(error);
+    throw new Error("Error al obtener la especialidad del médico");
+  }
 };
 
 const loadAssessment = async () => {
   try {
-    const api = fetchAssessment();
+    const api = fetchUdc("ASSESSMENT");
     await api.request();
 
     if (api.response.value?.data) {
       assessments.value = api.response.value.data;
-
       initializeDynamicStates();
     }
-
-    console.log("Assessment data:", assessments.value);
   } catch (error) {
     console.error("Error loading assessments:", error);
+  }
+};
+
+const loadSuppliers = async () => {
+  try {
+    const api = fetchAllSuppliers();
+    await api.request();
+
+    suppliers.value = api.response.value?.data || [];
+  } catch (error) {
+    console.error("Error loading suppliers:", error);
+  }
+};
+
+const loadProcedures = async () => {
+  try {
+    const api = fetchUdc("MEDICAL_PROCEDURE");
+    await api.request();
+
+    procedures.value = api.response.value?.data || [];
+  } catch (error) {
+    console.error("Error loading procedures:", error);
+  }
+};
+
+const loadProducts = async (procedimientoCode: string) => {
+  if (!procedimientoCode) return;
+
+  try {
+    const api = fetchUdc("MEDICAL_PRODUCT", { father_code: procedimientoCode });
+    await api.request();
+
+    products.value = api.response.value?.data || [];
+  } catch (error) {
+    console.error("Error loading products:", error);
   }
 };
 
@@ -516,54 +608,6 @@ const initializeDynamicStates = () => {
   });
 };
 
-const loadSuppliers = async () => {
-  try {
-    const api = fetchSupplier();
-    await api.request();
-
-    suppliers.value = api.response.value?.data || [];
-  } catch (error) {
-    console.error("Error loading suppliers:", error);
-  }
-};
-
-const loadProcedures = async () => {
-  try {
-    const api = fetchProcedure();
-    await api.request();
-
-    procedimientos.value = api.response.value?.data || [];
-  } catch (error) {
-    console.error("Error loading procedures:", error);
-  }
-};
-
-const loadProductos = async (procedimientoCode: string) => {
-  if (!procedimientoCode) return;
-
-  try {
-    const api = fetchProducts({ father_code: procedimientoCode });
-    await api.request();
-
-    productos.value = api.response.value?.data || [];
-  } catch (error) {
-    console.error("Error loading products:", error);
-  }
-};
-
-const selectProcedimiento = (procedimiento: Procedure) => {
-  selectedProcedimiento.value = procedimiento.name;
-  selectedProducto.value = "";
-  closeAllDropdowns();
-
-  loadProductos(procedimiento.code);
-};
-
-const selectProduct = (product: Product) => {
-  selectedProducto.value = product.name;
-  closeAllDropdowns();
-};
-
 onClickOutside(supplierDropdown, () => {
   if (activeDropdown.value === "medico") activeDropdown.value = null;
 });
@@ -576,9 +620,11 @@ onClickOutside(productDropdown, () => {
   if (activeDropdown.value === "producto") activeDropdown.value = null;
 });
 
-await loadProcedures();
-await loadSuppliers();
-await loadAssessment();
+onMounted(async () => {
+  await loadSuppliers();
+  await loadAssessment();
+  await loadProcedures();
+});
 
 defineExpose({
   handleOpenModal,
@@ -724,6 +770,7 @@ defineExpose({
     font-weight: 600;
     color: #2d3748;
     margin: 0;
+    padding: 0 0 4px 0;
   }
 
   &__button {
