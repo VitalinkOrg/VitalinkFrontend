@@ -194,12 +194,10 @@ const closeModal = (): void => {
 <template>
   <div class="service-card" :class="{ 'service-card--king': isKingPackage }">
     <div class="service-card__wrapper">
-      <!-- Assessment Package Legend -->
       <div v-if="isAssessmentPackage" class="service-card__legend">
         Primero vamos a valorarte
       </div>
 
-      <!-- Header -->
       <div class="service-card__header">
         <span v-if="isKingPackage">
           <img
@@ -211,14 +209,11 @@ const closeModal = (): void => {
         {{ packageName }}
       </div>
 
-      <!-- Body -->
       <div class="service-card__body">
-        <!-- Price -->
         <h5 class="service-card__price">
           {{ packagePrice }}
         </h5>
 
-        <!-- Monthly Payment -->
         <p class="service-card__monthly-payment">
           Cuotas mensuales desde ₡{{ getMonthlyPayment(pkg) }}
         </p>
@@ -348,7 +343,6 @@ const closeModal = (): void => {
 <style lang="scss" scoped>
 .service-card {
   width: 100%;
-  max-width: 256px;
   height: 100%;
   max-height: 510px;
   border-radius: 20px;
@@ -359,10 +353,8 @@ const closeModal = (): void => {
   box-shadow: 0px 2px 8px 0px #00000014;
   overflow: hidden;
   min-height: 441px;
-
-  @media (max-width: 768px) {
-    max-width: 100%;
-  }
+  min-width: 256px;
+  max-width: 300px;
 
   &__wrapper {
     height: 100%;

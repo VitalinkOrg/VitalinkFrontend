@@ -1,7 +1,6 @@
 <template>
   <div class="registration-form">
     <form @submit.prevent="register" class="registration-form__main">
-      <!-- Campo: Nombre -->
       <div class="registration-field-group">
         <label for="nombre" class="registration-label">Tu nombre</label>
         <input
@@ -14,9 +13,10 @@
         />
       </div>
 
-      <!-- Campo: Email o Teléfono -->
       <div class="registration-field-group">
-        <label for="email" class="registration-label">Correo electrónico o número de teléfono</label>
+        <label for="email" class="registration-label"
+          >Correo electrónico o número de teléfono</label
+        >
         <input
           v-model="email"
           type="email"
@@ -27,7 +27,6 @@
         />
       </div>
 
-      <!-- Campo: Contraseña -->
       <div class="registration-field-group">
         <label for="password" class="registration-label">Contraseña</label>
         <input
@@ -38,12 +37,12 @@
           required
           class="registration-input"
         />
-        <small class="registration-hint">Debe tener al menos 8 caracteres</small>
+        <small class="registration-hint"
+          >Debe tener al menos 8 caracteres</small
+        >
       </div>
 
-      <!-- Checkboxes -->
       <div class="registration-options-group">
-        <!-- Recordarme -->
         <div class="registration-option">
           <input type="checkbox" id="recordarme" class="form-check-input" />
           <label for="recordarme" class="registration-option-label">
@@ -51,7 +50,6 @@
           </label>
         </div>
 
-        <!-- Condiciones de uso -->
         <div class="registration-option">
           <input type="checkbox" id="condiciones" class="form-check-input" />
           <label for="condiciones" class="registration-option-label">
@@ -64,11 +62,11 @@
         </div>
       </div>
 
-      <!-- Botón de registro -->
-      <button type="submit" class="registration-submit-button">Registrarme</button>
+      <button type="submit" class="registration-submit-button">
+        Registrarme
+      </button>
     </form>
 
-    <!-- Inicio de sesión social -->
     <div class="registration-social-login">
       <p class="registration-social-login__label">
         <span>O hacerlo con:</span>
@@ -84,11 +82,12 @@
       </div>
     </div>
 
-    <!-- Enlace a inicio de sesión -->
     <div class="registration-footer-actions">
       <p class="registration-already-account">
         <span>¿Ya tienes una cuenta?</span>
-        <NuxtLink to="/pacientes/login" class="registration-login-link">Iniciar sesión</NuxtLink>
+        <NuxtLink to="/pacientes/login" class="registration-login-link"
+          >Iniciar sesión</NuxtLink
+        >
       </p>
     </div>
   </div>
@@ -108,7 +107,7 @@ const router = useRouter();
 
 const register = async () => {
   const { data, error }: any = await useFetch(
-    config.public.API_BASE_URL + "/users/register_patient",
+    config.public.API_BASE_URL + "/auth/register",
     {
       method: "POST",
       body: {

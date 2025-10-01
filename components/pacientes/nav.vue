@@ -1,7 +1,6 @@
 <template>
   <nav class="navbar navbar-expand-lg header" aria-label="Navegación principal">
     <div class="header-container">
-      <!-- Botón para colapsar el menú en dispositivos móviles -->
       <button
         class="navbar-toggler"
         type="button"
@@ -14,7 +13,6 @@
         <span class="navbar-toggler-icon" aria-hidden="true"></span>
       </button>
 
-      <!-- Logo / Marca -->
       <NuxtLink
         class="header-container__brand"
         href="/pacientes/inicio"
@@ -23,9 +21,7 @@
         <img src="@/src/assets/img-vitalink-logo.svg" alt="Logo de Vitalink" />
       </NuxtLink>
 
-      <!-- Contenido principal del menú de navegación -->
       <div class="header-container__nav">
-        <!-- Menú de navegación -->
         <div class="collapse navbar-collapse" id="navbarTogglerDemo03">
           <ul class="navbar-nav mx-auto mb-2 mb-lg-0" role="menubar">
             <li class="header-container__nav-item">
@@ -49,9 +45,7 @@
           </ul>
         </div>
 
-        <!-- Barra lateral derecha: iconos e información del usuario -->
         <ul class="header-container__actions">
-          <!-- Búsqueda -->
           <li class="header-container__search nav-item" role="none">
             <NuxtLink
               href="/buscar"
@@ -77,7 +71,6 @@
             </NuxtLink>
           </li>
 
-          <!-- Notificaciones -->
           <li class="header-container__notifications nav-item" role="none">
             <button class="nav-link" aria-label="Notificaciones">
               <svg
@@ -98,146 +91,14 @@
               <span class="visually-hidden">Notificaciones</span>
             </button>
           </li>
-
-          <!-- Menú de usuario -->
-          <li class="nav-item dropdown" role="none">
-            <button
-              class="nav-link d-flex align-items-center"
-              type="button"
-              data-bs-toggle="dropdown"
-              aria-expanded="false"
-              aria-label="Menú de usuario"
-            >
-              <div class="avatar-container me-2">
-                <img
-                  src="@/src/assets/img-avatar-sm.png"
-                  alt=""
-                  class="rounded-circle"
-                  width="32"
-                  height="32"
-                />
-              </div>
-              <AtomsIconsChevronDown />
-            </button>
-
-            <ul
-              class="dropdown-menu dropdown-menu-end user-dropdown"
-              role="menu"
-            >
-              <li role="none">
-                <NuxtLink
-                  class="dropdown-item user-dropdown__item"
-                  href="/pacientes/cuenta"
-                  role="menuitem"
-                >
-                  <svg
-                    width="20"
-                    height="20"
-                    viewBox="0 0 20 20"
-                    fill="none"
-                    xmlns="http://www.w3.org/2000/svg"
-                  >
-                    <g clip-path="url(#clip0_5724_48537)">
-                      <path
-                        d="M10.0001 9.06897C12.2283 9.06897 14.0346 7.26267 14.0346 5.03448C14.0346 2.8063 12.2283 1 10.0001 1C7.77188 1 5.96558 2.8063 5.96558 5.03448C5.96558 7.26267 7.77188 9.06897 10.0001 9.06897Z"
-                        stroke="#0CADBB"
-                        stroke-width="1.5"
-                        stroke-linecap="round"
-                        stroke-linejoin="round"
-                      />
-                      <path
-                        d="M3.60392 18.9999H16.3964C17.8139 18.9999 18.9058 17.781 18.2439 16.5276C17.2701 14.6838 15.0501 12.4827 10.0002 12.4827C4.95021 12.4827 2.73019 14.6838 1.75641 16.5276C1.09442 17.781 2.18636 18.9999 3.60392 18.9999Z"
-                        stroke="#0CADBB"
-                        stroke-width="1.5"
-                        stroke-linecap="round"
-                        stroke-linejoin="round"
-                      />
-                    </g>
-                    <defs>
-                      <clipPath id="clip0_5724_48537">
-                        <rect width="20" height="20" fill="white" />
-                      </clipPath>
-                    </defs>
-                  </svg>
-
-                  <span>Mi cuenta</span>
-                </NuxtLink>
-              </li>
-              <li role="none">
-                <NuxtLink
-                  class="dropdown-item user-dropdown__item"
-                  href="/pacientes/ayuda"
-                  role="menuitem"
-                >
-                  <svg
-                    width="18"
-                    height="18"
-                    viewBox="0 0 18 18"
-                    fill="none"
-                    xmlns="http://www.w3.org/2000/svg"
-                  >
-                    <path
-                      d="M9 11.5312C8.53402 11.5312 8.15625 11.909 8.15625 12.375C8.15625 12.841 8.53402 13.2187 9 13.2187V11.5312ZM9.01125 13.2187C9.47722 13.2187 9.855 12.841 9.855 12.375C9.855 11.909 9.47722 11.5312 9.01125 11.5312V13.2187ZM9 13.2187H9.01125V11.5312H9V13.2187Z"
-                      fill="#0CADBB"
-                    />
-                    <path
-                      d="M6.60713 0.99116L0.99116 6.60713L2.1844 7.8004L7.8004 2.1844L6.60713 0.99116ZM0.99116 11.3929L6.60713 17.0088L7.8004 15.8156L2.1844 10.1996L0.99116 11.3929ZM11.3929 17.0088L17.0088 11.3929L15.8156 10.1996L10.1996 15.8156L11.3929 17.0088ZM17.0088 6.60713L11.3929 0.99116L10.1996 2.1844L15.8156 7.8004L17.0088 6.60713ZM17.0088 11.3929C18.3304 10.0713 18.3304 7.92865 17.0088 6.60713L15.8156 7.8004C16.4781 8.46291 16.4781 9.53706 15.8156 10.1996L17.0088 11.3929ZM6.60713 17.0088C7.92865 18.3304 10.0713 18.3304 11.3929 17.0088L10.1996 15.8156C9.53706 16.4781 8.46291 16.4781 7.8004 15.8156L6.60713 17.0088ZM0.99116 6.60713C-0.330387 7.92865 -0.330387 10.0713 0.99116 11.3929L2.1844 10.1996C1.52187 9.53706 1.52187 8.46291 2.1844 7.8004L0.99116 6.60713ZM7.8004 2.1844C8.46291 1.52187 9.53706 1.52187 10.1996 2.1844L11.3929 0.99116C10.0713 -0.330387 7.92865 -0.330387 6.60713 0.99116L7.8004 2.1844Z"
-                      fill="#0CADBB"
-                    />
-                    <path
-                      d="M9 5.34375V9.28124"
-                      stroke="#0CADBB"
-                      stroke-width="1.5"
-                      stroke-linecap="round"
-                      stroke-linejoin="round"
-                    />
-                  </svg>
-
-                  <span>Ayuda y Soporte</span>
-                </NuxtLink>
-              </li>
-              <li role="none">
-                <button
-                  class="dropdown-item user-dropdown__item user-dropdown__item--logout"
-                  @click="logout"
-                  role="menuitem"
-                >
-                  <svg
-                    class="user-dropdown__icon"
-                    width="20"
-                    height="20"
-                    viewBox="0 0 20 20"
-                    fill="none"
-                    xmlns="http://www.w3.org/2000/svg"
-                  >
-                    <path
-                      d="M14.3962 6.1897L18.4997 10L14.3962 13.8104"
-                      stroke="#0CADBB"
-                      stroke-width="1.5"
-                      stroke-linecap="round"
-                      stroke-linejoin="round"
-                    />
-                    <path
-                      d="M18.2071 10H8.53467"
-                      stroke="#0CADBB"
-                      stroke-width="1.5"
-                      stroke-linecap="round"
-                      stroke-linejoin="round"
-                    />
-                    <path
-                      d="M13.8103 1.5H3.84483C2.54981 1.5 1.5 2.54981 1.5 3.84483V16.1552C1.5 17.4502 2.54981 18.5 3.84483 18.5H13.8103"
-                      stroke="#0CADBB"
-                      stroke-width="1.5"
-                      stroke-linecap="round"
-                      stroke-linejoin="round"
-                    />
-                  </svg>
-
-                  <span>Cerrar Sesión</span>
-                </button>
-              </li>
-            </ul>
-          </li>
+          <UiInputDropdownMenu
+            :src="imgVitalinkLogo"
+            :hide-default-items="['perfil', 'configuracion', 'resenas']"
+            :custom-urls="{
+              cuenta: '/pacientes/cuenta',
+              ayuda: '/pacientes/ayuda',
+            }"
+          />
         </ul>
       </div>
     </div>
@@ -245,21 +106,7 @@
 </template>
 
 <script lang="ts" setup>
-const token = useCookie("token");
-const refreshToken = useCookie("refresh_token");
-const role = useCookie("role");
-const authenticated = useCookie("authenticated");
-const user_info = useCookie("user_info");
-const router = useRouter();
-
-const logout = () => {
-  token.value = null;
-  refreshToken.value = null;
-  role.value = null;
-  authenticated.value = null;
-  user_info.value = null;
-  router.push("/pacientes/login");
-};
+import imgVitalinkLogo from "@/src/assets/img-avatar-sm.png";
 </script>
 
 <style lang="scss" scoped>

@@ -11,15 +11,29 @@
   >
     <template #default="{ inputEvents }">
       <div class="date-picker__input-wrapper">
-        <AtomsIconsCalendarIcon size="20" class="date-picker__input-icon" />
+        <AtomsIconsCalendarIcon
+          size="20"
+          class="date-picker__input-icon"
+          :class="{
+            'date-picker__input-icon--placeholder': !props.modelValue,
+          }"
+        />
         <input
-          :value="displayValue"
+          :value="props.modelValue ? formatDate(props.modelValue) : ''"
           :placeholder="placeholder"
           class="date-picker__input"
           readonly
           v-on="inputEvents"
+          @mousedown.prevent
+          @keydown.prevent
         />
-        <AtomsIconsChevronDown size="20" class="date-picker__input-chevron" />
+        <AtomsIconsChevronDown
+          size="20"
+          class="date-picker__input-chevron"
+          :class="{
+            'date-picker__input-chevron--placeholder': !props.modelValue,
+          }"
+        />
       </div>
     </template>
 
@@ -38,7 +52,7 @@
     </template>
 
     <template #footer>
-      <div class="vc-footer">
+      <div v-if="hasConfirmation" class="vc-footer">
         <button
           type="button"
           class="date-picker__confirm-button"
@@ -60,6 +74,7 @@ interface Props {
   placeholder?: string;
   confirmText?: string;
   customClass?: string;
+  hasConfirmation: boolean;
 }
 
 interface Emits {
@@ -72,6 +87,7 @@ const props = withDefaults(defineProps<Props>(), {
   placeholder: "Seleccionar fecha",
   confirmText: "Confirmar",
   customClass: "",
+  hasConfirmation: false,
 });
 
 const emit = defineEmits<Emits>();
@@ -119,6 +135,11 @@ const handleDateConfirm = () => {
   &__input-icon,
   &__input-chevron {
     position: absolute;
+    pointer-events: none;
+
+    &--placeholder {
+      color: #6d758f;
+    }
   }
 
   &__input-icon {
