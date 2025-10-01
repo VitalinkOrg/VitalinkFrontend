@@ -383,6 +383,18 @@
   margin: 0;
 }
 
+@mixin space-y($spacing: 0px, $direction: vertical) {
+  @if $direction == vertical {
+    & > * + * {
+      margin-top: $spacing;
+    }
+  } @else if $direction == horizontal {
+    & > * + * {
+      margin-left: $spacing;
+    }
+  }
+}
+
 // Mixins para responsive
 @mixin respond-to($breakpoint) {
   @if $breakpoint == xs {
