@@ -1,6 +1,6 @@
 <script setup>
-import axios from "axios";
 import { nextTick, onMounted, onUnmounted, reactive, ref, watch } from "vue";
+import { useUdc } from "~/composables/api";
 
 const props = defineProps({
   filters: {
@@ -14,6 +14,8 @@ const props = defineProps({
 });
 
 const emit = defineEmits(["search", "close"]);
+
+const { fetchUdc } = useUdc();
 
 const open = ref(false);
 const specialties = ref([]);
@@ -82,17 +84,10 @@ const handleKeyDown = (event) => {
 
 const getSpecialties = async () => {
   try {
-    const config = useRuntimeConfig();
-    const token = useCookie("token");
+    const api = fetchUdc();
+    await api.request();
 
-    const authHeader = token.value ? { Authorization: token.value } : undefined;
-
-    const response = await axios.get(
-      config.public.API_BASE_URL + "/specialties",
-      {
-        headers: authHeader,
-      }
-    );
+    const response = api.response.value;
 
     specialties.value = response.data.data;
     localFilters.disponibilidad = response.data.data;

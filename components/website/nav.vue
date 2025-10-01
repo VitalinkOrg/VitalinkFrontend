@@ -3,7 +3,6 @@
     class="navbar navbar-expand-lg navbar-light bg-white border-bottom navbar-custom"
   >
     <div class="container-fluid">
-      <!-- Botón Toggler -->
       <button
         class="navbar-toggler"
         type="button"
@@ -16,14 +15,11 @@
         <span class="navbar-toggler-icon"></span>
       </button>
 
-      <!-- Logo -->
       <NuxtLink class="navbar-brand" to="/">
         <img src="@/src/assets/img-vitalink-logo.svg" alt="Vitalink" />
       </NuxtLink>
 
-      <!-- Menú colapsable -->
       <div class="collapse navbar-collapse" id="navbarTogglerDemo03">
-        <!-- Navegación principal -->
         <ul class="navbar-nav mx-auto mb-2 mb-lg-0 nav-list">
           <li class="nav-item">
             <NuxtLink to="/" class="nav-link" active-class="active"
@@ -61,7 +57,6 @@
           </li>
         </ul>
 
-        <!-- Botones de autenticación -->
         <div
           v-if="!authenticated"
           class="auth-buttons d-flex align-items-center gap-3"
@@ -80,9 +75,10 @@
           </NuxtLink>
         </div>
 
-        <!-- Cerrar sesión -->
         <div v-if="authenticated" class="logout-button">
-          <button @click="logout" class="btn btn-primary">Cerrar sesión</button>
+          <button @click="handleLogout" class="btn btn-primary">
+            Cerrar sesión
+          </button>
         </div>
       </div>
     </div>
@@ -90,19 +86,14 @@
 </template>
 
 <script lang="ts" setup>
-const token = useCookie("token");
-const refreshToken = useCookie("refresh_token");
-const role = useCookie("role");
-const authenticated = useCookie("authenticated");
-const user_info = useCookie("user_info");
+import { useAuth } from "@/composables/api";
+
+const { authenticated } = useAuthState();
+const { logout } = useAuth();
 const router = useRouter();
 
-const logout = () => {
-  token.value = null;
-  refreshToken.value = null;
-  role.value = null;
-  authenticated.value = null;
-  user_info.value = null;
+const handleLogout = () => {
+  logout();
   router.push("/pacientes/login");
 };
 </script>

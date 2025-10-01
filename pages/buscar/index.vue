@@ -1,4 +1,3 @@
-<!-- pages/buscar/index.vue -->
 <script setup>
 definePageMeta({
   middleware: ["auth-pacientes"],

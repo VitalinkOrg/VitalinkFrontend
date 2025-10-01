@@ -114,17 +114,9 @@ import AtomsIconsSettingsIcon from "@/components/atoms/icons/settings-icon.vue";
 import AtomsIconsStarIcon from "@/components/atoms/icons/star-icon.vue";
 import AtomsIconsUserAddIcon from "@/components/atoms/icons/user-add-icon.vue";
 import AtomsIconsUserIcon from "@/components/atoms/icons/user-icon.vue";
+import { useAuth } from "~/composables/api";
 
-interface IUserInfo {
-  id: string;
-  email: string;
-}
-
-const token = useCookie("token");
-const refreshToken = useCookie("refresh_token");
-const role = useCookie("role");
-const authenticated = useCookie("authenticated");
-const userInfo = useCookie<IUserInfo | null>("user_info");
+const { logout } = useAuth();
 const router = useRouter();
 
 interface MenuItem {
@@ -217,7 +209,7 @@ const defaultMenuItems: MenuItem[] = [
     label: "Cerrar Sesión",
     iconComponent: AtomsIconsLogOutIcon,
     type: "button",
-    action: logout,
+    action: handleLogout,
     visible: true,
   },
 ];
@@ -245,13 +237,9 @@ function isValidImageUrl(url: string): boolean {
   }
 }
 
-function logout() {
+function handleLogout() {
   try {
-    token.value = null;
-    refreshToken.value = null;
-    role.value = null;
-    authenticated.value = null;
-    userInfo.value = null;
+    logout();
 
     announceText.value = "Sesión cerrada correctamente. Redirigiendo...";
 

@@ -109,7 +109,7 @@ const { login, fetchUserInfo, fetchHospitalInfo } = useAuth();
 const { setUserInfo } = useUserInfo();
 const { fetchSupplier } = useSupplier();
 const { setRole, setAuthenticated } = useAuthState();
-const { setToken, setRefreshToken, getToken } = useAuthToken();
+const { setToken, setRefreshToken } = useAuthToken();
 const router = useRouter();
 
 const email = ref<string>("");
@@ -177,43 +177,40 @@ const handleLoginError = (error: any) => {
 };
 
 const handleSuccessfulLogin = async (data: any) => {
-  setToken(data.access_token);
-  setRefreshToken(data.refresh_token);
+  const accessToken = data.access_token;
+  const refreshToken = data.refresh_token;
+
+  setToken(accessToken);
+  setRefreshToken(refreshToken);
   setAuthenticated(true);
 
-  const token = getToken();
-  if (!token) return;
-
-  const decodedToken = jwtDecode<DecodedToken>(token);
+  const decodedToken = jwtDecode<DecodedToken>(accessToken);
   setRole(decodedToken.role);
 
-  await routeUserByRole(decodedToken);
+  await routeUserByRole(decodedToken, accessToken);
 };
 
-const routeUserByRole = async (decodedToken: DecodedToken) => {
+const routeUserByRole = async (decodedToken: DecodedToken, token: string) => {
   const { id, role } = decodedToken;
 
   switch (role) {
     case "CUSTOMER":
-      await getUserInfo(id);
+      await getUserInfo(id, token);
       break;
     case "LEGAL_REPRESENTATIVE":
-      await getDoctorInfo(id);
+      await getDoctorInfo(id, token);
       break;
     case "FINANCE_ENTITY":
       await getFinanceEntityInfo(decodedToken);
       break;
     default:
-      await getHospitalInfo(id);
+      await getHospitalInfo(token);
       break;
   }
 };
 
-const getUserInfo = async (userId: string) => {
+const getUserInfo = async (userId: string, token: string) => {
   try {
-    const token = getToken();
-    if (!token) throw new Error("No token");
-
     const api = fetchUserInfo(userId, token);
     await api.request();
 
@@ -227,21 +224,16 @@ const getUserInfo = async (userId: string) => {
 
     if (response?.data) {
       setUserInfo(response.data);
-      await nextTick(() => {
-        router.push("/pacientes/inicio");
-      });
+      router.push("/pacientes/inicio");
     }
   } catch (err) {
     console.error("Error en getUserInfo:", err);
   }
 };
 
-const getDoctorInfo = async (userId: string) => {
+const getDoctorInfo = async (userId: string, token: string) => {
   try {
-    const token = getToken();
-    if (!token) throw new Error("No token");
-
-    const api = fetchSupplier(userId, token);
+    const api = fetchUserInfo(userId, token);
     await api.request();
 
     const response = api.response.value;
@@ -255,12 +247,9 @@ const getDoctorInfo = async (userId: string) => {
   }
 };
 
-const getHospitalInfo = async (userId: string) => {
+const getHospitalInfo = async (token: string) => {
   try {
-    const token = getToken();
-    if (!token) throw new Error("No token");
-
-    const api = fetchHospitalInfo(userId, token);
+    const api = fetchHospitalInfo(token);
     await api.request();
 
     const response = api.response.value;

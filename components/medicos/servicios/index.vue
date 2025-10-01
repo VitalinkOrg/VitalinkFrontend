@@ -230,7 +230,7 @@
 </template>
 
 <script lang="ts" setup>
-import { useAssessment, usePackage } from "~/composables/api";
+import { usePackage, useUdc } from "~/composables/api";
 import type { AssessmentDetail, Package, Service, Supplier } from "~/types";
 
 interface Props {
@@ -240,11 +240,9 @@ interface Props {
 
 const props = defineProps<Props>();
 
-const config = useRuntimeConfig();
-const token = useCookie("token");
 const { formatCurrency } = useFormat();
 
-const { fetchAssessmentDetail } = useAssessment();
+const { fetchUdc } = useUdc();
 const { fetchPackages } = usePackage();
 
 const activeTab = ref<"info" | "packs">("info");
@@ -308,7 +306,7 @@ const getAssessmentLabel = (assessmentCode: string) => {
 
 const loadAssessment = async () => {
   try {
-    const api = fetchAssessmentDetail();
+    const api = fetchUdc("ASSESSMENT_DETAIL");
     await api.request();
 
     assessments.value = api.response.value?.data || [];

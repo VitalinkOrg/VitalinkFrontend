@@ -47,7 +47,7 @@
 </template>
 
 <script lang="ts" setup>
-import { useErrorHandler } from "~/composables/api/useErrorHandler";
+import { useAppointment } from "~/composables/api";
 import type { Appointment } from "~/types";
 
 interface Props {
@@ -66,10 +66,7 @@ const closeValorationDetailsModal = inject<() => void>(
 
 const props = defineProps<Props>();
 
-const config = useRuntimeConfig();
-const token = useCookie("token");
-
-const { withErrorHandling } = useErrorHandler();
+const { uploadProforma } = useAppointment();
 
 const isModalOpen = ref<boolean>(false);
 const isLoading = ref<boolean>(false);
@@ -83,11 +80,6 @@ const handleCloseModal = () => {
 };
 
 const handleConfirmValoration = async () => {
-  if (!token.value) {
-    console.error("No token found - User not authenticated");
-    return;
-  }
-
   const payload = {
     price_procedure: props.priceProcedure,
     recommendation_post_appointment: props.recommendation,
@@ -96,32 +88,28 @@ const handleConfirmValoration = async () => {
     proforma_file_code: "PERSONAL_DOCUMENT____6__DOC__652025134811",
   };
 
-  const { data, error } = await withErrorHandling(
-    $fetch(config.public.API_BASE_URL + "/appointment/upload_proforma", {
-      method: "PUT",
-      headers: { Authorization: token.value },
-      params: {
-        id: props.appointment.id,
-      },
-      body: payload,
-    }),
-    isLoading,
-    {
-      customMessage: "Error al cancelar la cita. Por favor intenta nuevamente.",
-      logError: true,
-      redirectOn401: true,
+  try {
+    isLoading.value = true;
+    const api = uploadProforma(payload, props.appointment.id);
+    await api.request();
+
+    const response = api.response.value;
+    const error = api.error.value;
+
+    if (response?.data) {
+      await refreshAppointments?.();
+      closeValorationDetailsModal?.();
+      openSuccessModal?.();
+      handleCloseModal();
     }
-  );
 
-  if (data) {
-    await refreshAppointments?.();
-    closeValorationDetailsModal?.();
-    openSuccessModal?.();
-    handleCloseModal();
-  }
-
-  if (error) {
-    console.error("Error:", error);
+    if (error) {
+      console.error("Error:", error);
+    }
+  } catch (error) {
+    console.error(error);
+  } finally {
+    isLoading.value = false;
   }
 };
 

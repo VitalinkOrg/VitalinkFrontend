@@ -50,8 +50,8 @@
 </template>
 
 <script lang="ts" setup>
-import { useErrorHandler } from "~/composables/api/useErrorHandler";
-import type { Appointment } from "~/types";
+import { useAppointment } from "@/composables/api";
+import type { Appointment } from "@/types";
 
 interface Props {
   appointment: Appointment;
@@ -67,7 +67,7 @@ const props = defineProps<Props>();
 const config = useRuntimeConfig();
 const token = useCookie("token");
 
-const { withErrorHandling } = useErrorHandler();
+const { updateAppointment } = useAppointment();
 
 const isModalOpen = ref<boolean>(false);
 const isLoading = ref<boolean>(false);
@@ -106,32 +106,29 @@ const handleSaveChanges = async () => {
     supplier_id: props.appointment.supplier.id,
   };
 
-  const { data, error } = await withErrorHandling(
-    $fetch(config.public.API_BASE_URL + "/appointment/edit", {
-      method: "PUT",
-      headers: { Authorization: token.value },
-      params: {
-        id: props.appointment.id,
-      },
-      body: payload,
-    }),
-    isLoading,
-    {
-      customMessage: "Error al guardar la cita. Por favor intenta nuevamente.",
-      logError: true,
-      redirectOn401: true,
+  try {
+    isLoading.value = true;
+
+    const api = updateAppointment(payload, props.appointment.id);
+    await api.request();
+
+    const response = api.response.value;
+    const error = api.error.value;
+
+    if (response?.data) {
+      await refreshAppointments?.();
+      handleCloseModal();
+      closeReschedulingModal?.();
+      savedChangesRef.value?.handleOpenModal();
     }
-  );
 
-  if (data) {
-    await refreshAppointments?.();
-    handleCloseModal();
-    closeReschedulingModal?.();
-    savedChangesRef.value?.handleOpenModal();
-  }
-
-  if (error) {
-    console.error("Error saving changes:", error);
+    if (error) {
+      console.error("Error saving changes:", error);
+    }
+  } catch (error) {
+    console.error(error);
+  } finally {
+    isLoading.value = false;
   }
 };
 

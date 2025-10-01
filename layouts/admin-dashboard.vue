@@ -1,10 +1,8 @@
 <script setup>
 import { ref } from "vue";
+import { useAuth } from "~/composables/api";
 const sort = ref(false);
-const token = useCookie("token");
-const refreshToken = useCookie("refresh_token");
-const role = useCookie("role");
-const authenticated = useCookie("authenticated");
+const { logout } = useAuth();
 const isBillingCollapsed = ref(true);
 //const user_info = useCookie("user_info");
 const router = useRouter();
@@ -36,12 +34,8 @@ const user_info = {
   medical_number: "MN-456", // If medical_license_number is undefined
 };
 
-const logout = () => {
-  token.value = null;
-  refreshToken.value = null;
-  role.value = null;
-  authenticated.value = null;
-  user_info.value = null;
+const handleLogout = () => {
+  logout();
   router.push("/pacientes/login");
 };
 </script>
@@ -189,7 +183,7 @@ const logout = () => {
         <li class="nav-item">
           <button
             class="dropdown-item nav-link text-dark d-flex align-items-center"
-            @click="logout"
+            @click="handleLogout"
           >
             <span class="text-success me-3">
               <AtomsIconsLogoutDashboardIcon />
@@ -251,7 +245,7 @@ const logout = () => {
                     >
                   </li>
                   <li>
-                    <button class="dropdown-item" @click="logout">
+                    <button class="dropdown-item" @click="handleLogout">
                       Cerrar Sesión
                     </button>
                   </li>

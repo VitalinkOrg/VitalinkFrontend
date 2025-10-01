@@ -45,22 +45,19 @@
 </template>
 
 <script lang="ts" setup>
-import { useErrorHandler } from "~/composables/api/useErrorHandler";
-import type { Appointment } from "~/types";
+import { useAppointment } from "@/composables/api";
+import type { Appointment } from "@/types";
 
 interface Props {
   appointment: Appointment;
 }
 
+const { updateAppointment } = useAppointment();
+
 const refreshAppointments = inject<() => Promise<void>>("refreshAppointments");
 const closeParentModal = inject<() => void>("closeParentModal");
 
-const props = defineProps<Props>();
-
-const config = useRuntimeConfig();
-const token = useCookie("token");
-
-const { withErrorHandling } = useErrorHandler();
+defineProps<Props>();
 
 const isModalOpen = ref<boolean>(false);
 const isLoading = ref<boolean>(false);
@@ -74,33 +71,17 @@ const handleCloseModal = () => {
 };
 
 const handleCancelAppointment = async () => {
-  if (!token.value) {
-    console.error("No token found - User not authenticated");
-    return;
-  }
-
   const payload = {
     appointment_status_code: "CANCEL_APPOINTMENT",
   };
 
-  const { data, error } = await withErrorHandling(
-    $fetch(config.public.API_BASE_URL + "/appointment/edit", {
-      method: "PUT",
-      headers: { Authorization: token.value },
-      params: {
-        id: props.appointment.id,
-      },
-      body: payload,
-    }),
-    isLoading,
-    {
-      customMessage: "Error al cancelar la cita. Por favor intenta nuevamente.",
-      logError: true,
-      redirectOn401: true,
-    }
-  );
+  const api = updateAppointment(payload);
+  await api.request();
 
-  if (data) {
+  const response = api.response.value;
+  const error = api.error.value;
+
+  if (response?.data) {
     await refreshAppointments?.();
     handleCloseModal();
     closeParentModal?.();

@@ -30,7 +30,7 @@
         <button
           :disabled="isLoading"
           class="confirmation-not-suitable__button--primary"
-          @click="handleCancelAppointment"
+          @click="handleConfirmNotSuitable"
         >
           {{ isLoading ? "Procesando..." : "Sí, confirmar" }}
         </button>
@@ -40,21 +40,19 @@
 </template>
 
 <script lang="ts" setup>
-import type { Appointment } from "~/types";
+import { useAppointment } from "@/composables/api";
+import type { Appointment } from "@/types";
 
 interface Props {
   appointment: Appointment;
 }
 
+const { uploadProforma } = useAppointment();
+
 const refreshAppointments = inject<() => Promise<void>>("refreshAppointments");
 const closeParentModal = inject<() => void>("closeParentModal");
 
 const props = defineProps<Props>();
-
-const config = useRuntimeConfig();
-const token = useCookie("token");
-
-const { withErrorHandling } = useErrorHandler();
 
 const isModalOpen = ref<boolean>(false);
 const isLoading = ref<boolean>(false);
@@ -67,42 +65,34 @@ const handleCloseModal = () => {
   isModalOpen.value = false;
 };
 
-const handleCancelAppointment = async () => {
-  if (!token.value) {
-    console.error("No token found - User not authenticated");
-    return;
-  }
-
+const handleConfirmNotSuitable = async () => {
   const payload = {
     recommendation_post_appointment: "Paciente no apto para procedimiento",
     appointment_result_code: "NOT_FIT_FOR_PROCEDURE",
   };
 
-  const { data, error } = await withErrorHandling(
-    $fetch(config.public.API_BASE_URL + "/appointment/upload_proforma", {
-      method: "PUT",
-      headers: { Authorization: token.value },
-      params: {
-        id: props.appointment.id,
-      },
-      body: payload,
-    }),
-    isLoading,
-    {
-      customMessage: "Error al cancelar la cita. Por favor intenta nuevamente.",
-      logError: true,
-      redirectOn401: true,
+  try {
+    isLoading.value = true;
+
+    const api = uploadProforma(payload, props.appointment.id);
+    await api.request();
+
+    const response = api.response.value;
+    const error = api.error.value;
+
+    if (response?.data) {
+      await refreshAppointments?.();
+      handleCloseModal();
+      closeParentModal?.();
     }
-  );
 
-  if (data) {
-    await refreshAppointments?.();
-    handleCloseModal();
-    closeParentModal?.();
-  }
-
-  if (error) {
-    console.error("Error cancelling appointment:", error);
+    if (error) {
+      console.error(error.raw);
+    }
+  } catch (error) {
+    console.error(error);
+  } finally {
+    isLoading.value = false;
   }
 };
 
