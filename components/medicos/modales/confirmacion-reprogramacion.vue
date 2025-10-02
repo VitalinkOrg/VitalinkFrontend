@@ -64,8 +64,7 @@ const closeReschedulingModal = inject<() => void>("closeReschedulingModal");
 
 const props = defineProps<Props>();
 
-const config = useRuntimeConfig();
-const token = useCookie("token");
+const { confirmValorationAppointment } = useAppointment();
 
 const { updateAppointment } = useAppointment();
 
@@ -88,11 +87,6 @@ const handleCloseModal = () => {
 };
 
 const handleSaveChanges = async () => {
-  if (!token.value) {
-    console.error("No token found - User not authenticated");
-    return;
-  }
-
   if (!props.appointmentDate || !props.appointmentHour) {
     console.error("Missing appointment date or hour");
     return;
@@ -116,10 +110,7 @@ const handleSaveChanges = async () => {
     const error = api.error.value;
 
     if (response?.data) {
-      await refreshAppointments?.();
-      handleCloseModal();
-      closeReschedulingModal?.();
-      savedChangesRef.value?.handleOpenModal();
+      await handleConfirmValorationAppointment();
     }
 
     if (error) {
@@ -129,6 +120,25 @@ const handleSaveChanges = async () => {
     console.error(error);
   } finally {
     isLoading.value = false;
+  }
+};
+
+const handleConfirmValorationAppointment = async () => {
+  const api = confirmValorationAppointment(props.appointment.id);
+  await api.request();
+
+  const response = api.response.value;
+  const error = api.error.value;
+
+  if (response?.data) {
+    await refreshAppointments?.();
+    handleCloseModal();
+    closeReschedulingModal?.();
+    savedChangesRef.value?.handleOpenModal();
+  }
+
+  if (error) {
+    console.error(error);
   }
 };
 
