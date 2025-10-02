@@ -57,7 +57,7 @@ const { updateAppointment } = useAppointment();
 const refreshAppointments = inject<() => Promise<void>>("refreshAppointments");
 const closeParentModal = inject<() => void>("closeParentModal");
 
-defineProps<Props>();
+const props = defineProps<Props>();
 
 const isModalOpen = ref<boolean>(false);
 const isLoading = ref<boolean>(false);
@@ -75,7 +75,7 @@ const handleCancelAppointment = async () => {
     appointment_status_code: "CANCEL_APPOINTMENT",
   };
 
-  const api = updateAppointment(payload);
+  const api = updateAppointment(payload, props.appointment.id);
   await api.request();
 
   const response = api.response.value;
