@@ -44,8 +44,8 @@
 </template>
 
 <script lang="ts" setup>
-import type { ModalName } from "~/types";
-import type { Appointment } from "~/types/appointment";
+import { useAppointment } from "@/composables/api";
+import type { Appointment, ModalName } from "@/types";
 
 const refreshAppointments = inject<() => Promise<void>>("refreshAppointments");
 
@@ -62,8 +62,7 @@ interface Emits {
 const props = defineProps<Props>();
 const emit = defineEmits<Emits>();
 
-const token = useCookie("token");
-const config = useRuntimeConfig();
+const { updateAppointment } = useAppointment();
 const isLoading = ref(false);
 
 const isModalOpen = computed({
@@ -83,27 +82,23 @@ const handleCancelAppointment = async () => {
   isLoading.value = true;
 
   try {
-    const { data, error } = await useFetch(
-      config.public.API_BASE_URL + "/appointment/edit",
-      {
-        method: "PUT",
-        headers: { Authorization: token.value ?? "" },
-        params: {
-          id: props.appointment.id,
-        },
-        body: {
-          appointment_status_code: "CANCEL_APPOINTMENT",
-        },
-      }
-    );
+    const payload = {
+      appointment_status_code: "CANCEL_APPOINTMENT",
+    };
 
-    if (data) {
+    const api = updateAppointment(payload, props.appointment.id);
+    await api.request();
+
+    const response = api.response.value;
+    const error = api.error.value;
+
+    if (response?.data) {
       await refreshAppointments?.();
       handleCloseModal("appointmentDetails");
       handleCloseModal("cancelAppointment");
     }
-    if (error.value) {
-      console.log(error.value, "data");
+    if (error) {
+      console.log(error.info);
     }
   } catch (error) {
     console.error("Error canceling appointment:", error);
@@ -126,39 +121,39 @@ const handleCancelAppointment = async () => {
     display: flex;
     align-items: center;
     justify-content: center;
-    width: 39px;
-    height: 39px;
-    border-radius: 22.75px;
-    background: #ff2d46;
-    border: 6.5px solid #fac6d0;
+    width: 2.4375rem;
+    height: 2.4375rem;
+    border-radius: 1.421875rem;
+    background: $color-danger;
+    border: 0.40625rem solid $color-cancel;
     color: $white;
   }
 
   &__content {
-    max-width: 312px;
-    padding: 20px 24px 0px 24px;
+    max-width: 19.5rem;
+    padding: 1.25rem 1.5rem 0 1.5rem;
   }
 
   &__title {
     @include label-base;
     font-weight: 600;
-    font-size: 20px;
-    line-height: 30px;
-    color: #19213d;
+    font-size: 1.25rem;
+    line-height: 1.875rem;
+    color: $color-foreground;
   }
 
   &__subtext {
     @include label-base;
     font-weight: 500;
-    font-size: 14px;
-    line-height: 24px;
-    color: #6d758f;
+    font-size: 0.875rem;
+    line-height: 1.5rem;
+    color: $color-text-secondary;
   }
 
   &__footer {
     display: flex;
     width: 100%;
-    gap: 12px;
+    gap: 0.75rem;
   }
 
   &__button {
@@ -177,20 +172,20 @@ const handleCancelAppointment = async () => {
     &--danger {
       @include primary-button;
       width: 100%;
-      background-color: #ff2d46;
+      background-color: $color-danger;
 
       &:hover:not(:disabled) {
-        background-color: darken(#ff2d46, 0.8);
+        background-color: darken($color-danger, 0.8);
       }
 
       &:disabled {
-        background-color: darken(#ff2d46, 0.8);
+        background-color: darken($color-danger, 0.8);
         opacity: 0.6;
         cursor: not-allowed;
 
         &:hover {
           opacity: 0.6;
-          background-color: darken(#ff2d46, 0.8);
+          background-color: darken($color-danger, 0.8);
         }
       }
     }
@@ -199,14 +194,14 @@ const handleCancelAppointment = async () => {
   &__loading {
     display: flex;
     align-items: center;
-    gap: 8px;
+    gap: 0.5rem;
   }
 
   &__spinner {
-    width: 14px;
-    height: 14px;
-    border: 2px solid rgba(255, 255, 255, 0.3);
-    border-top: 2px solid white;
+    width: 0.875rem;
+    height: 0.875rem;
+    border: 0.125rem solid rgba(255, 255, 255, 0.3);
+    border-top: 0.125rem solid $white;
     border-radius: 50%;
     animation: spin 1s linear infinite;
   }
