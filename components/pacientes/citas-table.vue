@@ -307,12 +307,7 @@
                 />
               </td>
               <td class="appointments-table__cell--center">
-                <button
-                  class="appointments-table__contact-btn"
-                  @click="openContactModal(appointment)"
-                >
-                  <AtomsIconsPhoneIcon size="20" />
-                </button>
+                <PacientesModalesContactoMedico :appointment="appointment" />
               </td>
 
               <td class="appointments-table__cell">
@@ -328,10 +323,28 @@
 
                   <ul class="dropdown-menu" role="menu">
                     <li role="none">
+                      <PacientesModalesDetallesCita
+                        :appointment="appointment"
+                        :is-open="modals.appointmentDetails === appointment.id"
+                        @open-modal="openModal"
+                        @close-modal="closeModal"
+                      />
+                      <PacientesModalesDejarValoracion
+                        :appointment="appointment"
+                        :is-open="modals.leaveReview === appointment.id"
+                        @open-modal="openModal"
+                        @close-modal="closeModal"
+                      />
+                      <PacientesModalesDejarValoracionExitoso
+                        :appointment="appointment"
+                        :is-open="modals.leaveReviewSuccess === appointment.id"
+                        @open-modal="openModal"
+                        @close-modal="closeModal"
+                      />
                       <button
                         class="dropdown-item"
                         role="menuitem"
-                        @click="showDateDetails(appointment)"
+                        @click="openModal('appointmentDetails', appointment.id)"
                       >
                         <AtomsIconsEyeIcon />
                         Ver más detalles
@@ -344,13 +357,19 @@
                         !['COMPLETED', 'CANCELED'].includes(appointment.status)
                       "
                     >
+                      <PacientesModalesAnularCita
+                        :appointment="appointment"
+                        :is-open="modals.cancelAppointment === appointment.id"
+                        @open-modal="openModal"
+                        @close-modal="closeModal"
+                      />
                       <button
                         class="dropdown-item"
                         role="menuitem"
-                        @click="showDateCancel(appointment)"
+                        @click="openModal('cancelAppointment', appointment.id)"
                       >
-                        <AtomsIconsCircleXIcon />
-                        Anular cita
+                        <AtomsIconsEyeIcon />
+                        Anular Cita
                       </button>
                     </li>
 
@@ -398,175 +417,13 @@
       @page-changed="handlePageChange"
     />
   </section>
-
-  <!-- Modal de Contacto (Existente) -->
-  <PacientesContactoMedicoModal
-    v-if="selectedAppointment"
-    :appointment="selectedAppointment"
-    :open="isContactModalOpen"
-    @close-modal="closeContactModal"
-  />
-
-  <!-- Modal de Detalles Genérico -->
-  <div
-    class="modal fade"
-    :class="{ show: showDetailsModal }"
-    v-if="showDetailsModal"
-    tabindex="-1"
-    aria-labelledby="detailsModalLabel"
-    aria-hidden="true"
-    style="display: block; background-color: rgba(0, 0, 0, 0.5)"
-  >
-    <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
-      <div class="modal-content">
-        <div
-          class="modal-header border-0 align-items-center d-flex justify-content-between"
-        >
-          <h5 class="modal-title fw-bold" id="detailsModalLabel">
-            Detalles de la Cita
-          </h5>
-          <button
-            type="button"
-            class="btn-close btn btn-light me-2"
-            aria-label="Close"
-            @click="closeDetailsModal"
-          ></button>
-        </div>
-        <div class="modal-body" v-if="selectedAppointmentForAction">
-          <table class="table table-borderless">
-            <tbody>
-              <tr>
-                <td><strong>Código de Reserva:</strong></td>
-                <td>{{ selectedAppointmentForAction.appointment_qr_code }}</td>
-              </tr>
-              <tr>
-                <td><strong>Paciente:</strong></td>
-                <td>{{ selectedAppointmentForAction.customer?.name }}</td>
-              </tr>
-              <tr>
-                <td><strong>Doctor:</strong></td>
-                <td>
-                  {{
-                    selectedAppointmentForAction.supplier?.name ||
-                    selectedAppointmentForAction.hospital_name
-                  }}
-                </td>
-              </tr>
-              <tr>
-                <td><strong>Fecha:</strong></td>
-                <td>
-                  {{
-                    new Date(
-                      selectedAppointmentForAction.appointment_date
-                    ).toLocaleDateString()
-                  }}
-                </td>
-              </tr>
-              <tr>
-                <td><strong>Hora:</strong></td>
-                <td>{{ selectedAppointmentForAction.appointment_hour }}</td>
-              </tr>
-              <tr>
-                <td><strong>Procedimiento:</strong></td>
-                <td>
-                  {{ selectedAppointmentForAction.package?.procedure?.name }}
-                </td>
-              </tr>
-              <tr>
-                <td><strong>Estado:</strong></td>
-                <td>
-                  <span
-                    class="appointments-table__status"
-                    :class="
-                      getStatusClass(
-                        selectedAppointmentForAction.appointment_status?.code
-                      )
-                    "
-                  >
-                    {{
-                      selectedAppointmentForAction.appointment_status?.value1
-                    }}
-                  </span>
-                </td>
-              </tr>
-              <tr>
-                <td><strong>Tipo de Reserva:</strong></td>
-                <td>
-                  {{ selectedAppointmentForAction.reservation_type?.name }}
-                </td>
-              </tr>
-              <tr>
-                <td><strong>Teléfono:</strong></td>
-                <td>
-                  {{ selectedAppointmentForAction.customer?.phone_number }}
-                </td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-        <div class="modal-footer">
-          <button
-            type="button"
-            class="btn btn-secondary w-100"
-            @click="closeDetailsModal"
-          >
-            Cerrar
-          </button>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- Modal de Confirmación de Cancelación -->
-  <div
-    class="modal fade"
-    :class="{ show: showCancelModal }"
-    v-if="showCancelModal"
-    tabindex="-1"
-    aria-labelledby="cancelModalLabel"
-    aria-hidden="true"
-    style="display: block; background-color: rgba(0, 0, 0, 0.5)"
-  >
-    <div class="modal-dialog modal-dialog-centered">
-      <div class="modal-content">
-        <div
-          class="modal-header border-0 align-items-center d-flex justify-content-between"
-        >
-          <button
-            type="button"
-            class="btn-close btn btn-light me-2"
-            data-bs-dismiss="modal"
-            aria-label="Close"
-            @click="closeCancelModal"
-          ></button>
-        </div>
-        <div class="modal-body">
-          <h5 class="fw-bold">¿Seguro que quieres cancelar esta cita?</h5>
-          <p class="text-muted">
-            Se le enviará un correo electrónico automático al usuario avisándole
-            que su cita ha sido cancelada.
-          </p>
-          <div class="d-flex justify-content-between gap-2">
-            <button class="btn btn-outline-dark w-50" @click="closeCancelModal">
-              No, volver
-            </button>
-            <button
-              class="btn btn-danger w-50"
-              @click="confirmCancelAppointment"
-            >
-              Sí, cancelar
-            </button>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
 </template>
 
 <script setup>
+import { jsPDF } from "jspdf";
 import { computed, inject, onMounted, onUnmounted, ref } from "vue";
 
-const { emit } = defineEmits(["refreshed"]);
+defineEmits(["refreshed"]);
 const refreshAppointments = inject("refreshAppointments");
 
 const token = useCookie("token");
@@ -591,8 +448,6 @@ const currentPage = ref(1);
 
 const showDetailsModal = ref(false);
 const showCancelModal = ref(false);
-const selectedAppointmentForAction = ref(null);
-const modalStep = ref(1);
 
 const openContactModal = (appointment) => {
   selectedAppointment.value = appointment;
@@ -607,24 +462,6 @@ const closeContactModal = () => {
   selectedAppointment.value = null;
   if (process.client) {
     document.body.style.overflow = "";
-  }
-};
-
-const showDateDetails = (appointment, step = 1) => {
-  selectedAppointmentForAction.value = appointment;
-  modalStep.value = step;
-
-  showDetailsModal.value = true;
-  if (process.client) {
-    document.body.style.overflow = "hidden";
-  }
-};
-
-const showDateCancel = (appointment) => {
-  selectedAppointmentForAction.value = appointment;
-  showCancelModal.value = true;
-  if (process.client) {
-    document.body.style.overflow = "hidden";
   }
 };
 
@@ -658,22 +495,6 @@ const downloadSummary = async (appointment) => {
   }
 };
 
-const getStatusClass = (statusCode) => {
-  const statusClasses = {
-    PENDING_VALORATION_APPOINTMENT: "appointments-table__status--warning",
-    CONFIRM_VALIDATION_APPOINTMENT: "appointments-table__status--success",
-    VALUED_VALORATION_APPOINTMENT: "appointments-table__status--success",
-    PENDING_PROCEDURE: "appointments-table__status--warning",
-    CONFIRM_PROCEDURE: "appointments-table__status--primary",
-    CONCRETED_APPOINTMENT: "appointments-table__status--success",
-    CANCEL_APPOINTMENT: "appointments-table__status--cancelled",
-    COMPLETED: "appointments-table__status--success",
-    CANCELED: "appointments-table__status--cancelled",
-  };
-
-  return statusClasses[statusCode] || "appointments-table__status--primary";
-};
-
 const generateSummaryData = (appointment) => {
   return {
     qrCode: appointment.appointment_qr_code,
@@ -696,46 +517,100 @@ const generateSummaryData = (appointment) => {
 const generateLocalSummary = (data) => {
   if (!process.client) return;
 
-  const content = `
-==============================================
-           RESUMEN DE CITA MÉDICA
-==============================================
+  const doc = new jsPDF();
+  const pageWidth = doc.internal.pageSize.getWidth();
+  const margin = 15;
+  let yPosition = 20;
 
-INFORMACIÓN GENERAL
-Código de Reserva: ${data.qrCode}
-Fecha de Emisión: ${new Date().toLocaleDateString()}
+  doc.setFontSize(18);
+  doc.setFont("helvetica", "bold");
+  doc.text("Resumen de Cita Médica", pageWidth / 2, yPosition, {
+    align: "center",
+  });
+  yPosition += 10;
 
-DATOS DEL PACIENTE
-Nombre: ${data.patientName}
-Teléfono: ${data.phone || "No disponible"}
+  doc.setFontSize(10);
+  doc.setFont("helvetica", "normal");
+  doc.text(
+    `Generado el: ${new Date().toLocaleDateString()}`,
+    pageWidth / 2,
+    yPosition,
+    { align: "center" }
+  );
+  yPosition += 15;
 
-DATOS DE LA CITA
-Doctor/Centro: ${data.doctorName}
-Fecha: ${data.date}
-Hora: ${data.time}
-Procedimiento: ${data.procedure}
-Estado: ${data.status}
-Tipo de Reserva: ${data.reservationType}
+  doc.setFontSize(12);
+  doc.setFont("helvetica", "bold");
+  doc.text("Información General", margin, yPosition);
+  yPosition += 8;
 
-INFORMACIÓN FINANCIERA
-Costo del Servicio: ₡${data.cost || "No disponible"}
-Estado de Pago: ${data.paymentStatus}
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(10);
+  doc.text(`Código de Reserva: ${data.qrCode}`, margin, yPosition);
+  yPosition += 6;
+  doc.text(`Estado: ${data.status}`, margin, yPosition);
+  yPosition += 10;
 
-==============================================
-    Este documento es un resumen oficial
-         de la cita médica registrada
-==============================================
-  `;
+  doc.setFontSize(12);
+  doc.setFont("helvetica", "bold");
+  doc.text("Datos del Paciente", margin, yPosition);
+  yPosition += 8;
 
-  const blob = new Blob([content], { type: "text/plain;charset=utf-8" });
-  const url = window.URL.createObjectURL(blob);
-  const a = document.createElement("a");
-  a.href = url;
-  a.download = `resumen-cita-${data.qrCode}.txt`;
-  document.body.appendChild(a);
-  a.click();
-  document.body.removeChild(a);
-  window.URL.revokeObjectURL(url);
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(10);
+  doc.text(`Nombre: ${data.patientName}`, margin, yPosition);
+  yPosition += 6;
+  doc.text(`Teléfono: ${data.phone || "No disponible"}`, margin, yPosition);
+  yPosition += 10;
+
+  doc.setFontSize(12);
+  doc.setFont("helvetica", "bold");
+  doc.text("Datos de la Cita", margin, yPosition);
+  yPosition += 8;
+
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(10);
+  doc.text(`Doctor/Centro: ${data.doctorName}`, margin, yPosition);
+  yPosition += 6;
+  doc.text(`Fecha: ${data.date}`, margin, yPosition);
+  yPosition += 6;
+  doc.text(`Hora: ${data.time}`, margin, yPosition);
+  yPosition += 6;
+  doc.text(`Procedimiento: ${data.procedure}`, margin, yPosition);
+  yPosition += 6;
+  doc.text(`Tipo de Reserva: ${data.reservationType}`, margin, yPosition);
+  yPosition += 10;
+
+  doc.setFontSize(12);
+  doc.setFont("helvetica", "bold");
+  doc.text("Información Financiera", margin, yPosition);
+  yPosition += 8;
+
+  doc.autoTable({
+    startY: yPosition,
+    head: [["Costo del Servicio", "Estado de Pago"]],
+    body: [[`₡${data.cost || "No disponible"}`, data.paymentStatus]],
+    theme: "grid",
+    styles: { fontSize: 10, halign: "center" },
+    headStyles: { fillColor: [41, 128, 185] },
+  });
+
+  yPosition = doc.lastAutoTable.finalY + 15;
+
+  doc.setFontSize(8);
+  doc.setTextColor(100);
+  doc.text(
+    "Este documento es un resumen oficial de la cita médica registrada",
+    pageWidth / 2,
+    yPosition,
+    { align: "center" }
+  );
+  yPosition += 5;
+  doc.text("Sistema de Gestión Médica - Vitalink", pageWidth / 2, yPosition, {
+    align: "center",
+  });
+
+  doc.save(`resumen-cita-${data.qrCode}.pdf`);
 };
 
 const downloadFile = (fileData, filename) => {
@@ -750,54 +625,6 @@ const downloadFile = (fileData, filename) => {
   a.click();
   document.body.removeChild(a);
   window.URL.revokeObjectURL(url);
-};
-
-const closeDetailsModal = () => {
-  showDetailsModal.value = false;
-  selectedAppointmentForAction.value = null;
-  modalStep.value = 1;
-  if (process.client) {
-    document.body.style.overflow = "";
-  }
-};
-
-const closeCancelModal = () => {
-  showCancelModal.value = false;
-  selectedAppointmentForAction.value = null;
-  if (process.client) {
-    document.body.style.overflow = "";
-  }
-};
-
-const confirmCancelAppointment = async () => {
-  if (!selectedAppointmentForAction.value) return;
-
-  try {
-    const { data, error } = await useFetch(
-      config.public.API_BASE_URL + "/appointment/cancel",
-      {
-        method: "PUT",
-        headers: { Authorization: token.value },
-        params: {
-          id: selectedAppointmentForAction.value.id,
-        },
-      }
-    );
-
-    if (data.value && !error.value) {
-      refreshAppointments();
-      closeCancelModal();
-
-      alert("Cita cancelada exitosamente");
-    } else {
-      throw new Error(
-        error.value?.data?.message || "Error al cancelar la cita"
-      );
-    }
-  } catch (err) {
-    console.error("Error al cancelar cita:", err);
-    alert("Error al cancelar la cita. Por favor, intenta nuevamente.");
-  }
 };
 
 const sortBy = (column) => {
@@ -881,42 +708,32 @@ const handleKeydown = (event) => {
     if (isContactModalOpen.value) {
       closeContactModal();
     } else if (showDetailsModal.value) {
-      closeDetailsModal();
+      closeModal("appointmentDetails");
     } else if (showCancelModal.value) {
-      closeCancelModal();
+      closeModal("cancelAppointment");
     }
   }
 };
 
-const showPaymentModal = (appointment) => {
-  if (
-    appointment.appointment_status?.code === "PENDING_PROCEDURE" &&
-    appointment.payment_status?.code === "PAYMENT_STATUS_NOT_PAID_PROCEDURE"
-  ) {
-    return true;
-  }
+const modals = reactive({
+  appointmentDetails: null,
+  cancelAppointment: null,
+  successfulPayment: null,
+  payAppointment: null,
+  scheduleProcedure: null,
+  scheduleProcedureSuccess: null,
+  leaveReview: null,
+  leaveReviewSuccess: null,
+  applyCredit: null,
+  applyCreditSuccess: null,
+});
 
-  if (
-    appointment.appointment_status?.code === "PENDING_VALORATION_APPOINTMENT"
-  ) {
-    return true;
-  }
+const closeModal = (modalName) => {
+  modals[modalName] = null;
+};
 
-  if (
-    appointment.appointment_status?.code !== "VALUED_VALORATION_APPOINTMENT" &&
-    appointment.appointment_status?.code !== "PENDING_PROCEDURE"
-  ) {
-    return true;
-  }
-
-  if (
-    appointment.appointment_status?.code === "CONFIRM_PROCEDURE" &&
-    appointment.payment_status?.code === "PAYMENT_STATUS_NOT_PAID_PROCEDURE"
-  ) {
-    return true;
-  }
-
-  return false;
+const openModal = (modalName, appointmentId = null) => {
+  modals[modalName] = appointmentId;
 };
 
 onMounted(() => {
@@ -940,25 +757,17 @@ onUnmounted(() => {
 });
 </script>
 
-<style lang="scss">
+<style lang="scss" scoped>
 .sr-only {
-  position: absolute !important;
-  width: 1px !important;
-  height: 1px !important;
-  padding: 0 !important;
-  margin: -1px !important;
-  overflow: hidden !important;
-  clip: rect(0, 0, 0, 0) !important;
-  white-space: nowrap !important;
-  border: 0 !important;
+  @include visually-hidden;
 }
 
 .appointments-table {
   &__container {
     background: $white;
-    border-radius: 10px;
+    border-radius: 0.625rem;
     overflow: hidden;
-    min-height: 400px;
+    min-height: 25rem;
     display: flex;
     flex-direction: column;
   }
@@ -976,7 +785,7 @@ onUnmounted(() => {
 
   &__header {
     background-color: #f8f9fa;
-    border-bottom: 2px solid #dee2e6;
+    border-bottom: 0.125rem solid #dee2e6;
   }
 
   &__header-row {
@@ -986,49 +795,49 @@ onUnmounted(() => {
   &__header-cell {
     padding: 1rem 0.75rem;
     text-align: left;
-    font-size: 12px;
+    font-size: 0.75rem;
     letter-spacing: 0;
     font-weight: 500;
-    color: #6d758f;
+    color: $color-text-secondary;
     border: none;
     background-color: $white;
 
     &:nth-child(1) {
-      width: 150px;
+      width: 9.375rem;
     }
     &:nth-child(2) {
-      width: 120px;
+      width: 7.5rem;
     }
     &:nth-child(3) {
-      width: 120px;
+      width: 7.5rem;
     }
     &:nth-child(4) {
-      width: 180px;
+      width: 11.25rem;
     }
     &:nth-child(5) {
-      width: 120px;
+      width: 7.5rem;
     }
     &:nth-child(6) {
-      width: 160px;
+      width: 10rem;
     }
     &:nth-child(7) {
-      width: 150px;
+      width: 9.375rem;
     }
     &:nth-child(8) {
-      width: 130px;
+      width: 8.125rem;
     }
     &:nth-child(9) {
-      width: 80px;
+      width: 5rem;
     }
     &:nth-child(10) {
-      width: 60px;
+      width: 3.75rem;
     }
 
     &--center {
       font-weight: 500;
       text-align: center;
-      font-size: 12px;
-      color: #6d758f;
+      font-size: 0.75rem;
+      color: $color-text-secondary;
     }
 
     &--checkbox {
@@ -1041,9 +850,9 @@ onUnmounted(() => {
     font-family: $font-family-main;
     font-weight: 500;
     font-style: Medium;
-    font-size: 12px;
-    line-height: 16px;
-    letter-spacing: 0px;
+    font-size: 0.75rem;
+    line-height: 1rem;
+    letter-spacing: 0;
     vertical-align: middle;
     text-align: start;
   }
@@ -1067,8 +876,8 @@ onUnmounted(() => {
     }
 
     &:focus {
-      outline: 2px solid $color-primary;
-      outline-offset: 2px;
+      outline: 0.125rem solid $color-primary;
+      outline-offset: 0.125rem;
     }
   }
 
@@ -1096,7 +905,7 @@ onUnmounted(() => {
   }
 
   &__row {
-    border-bottom: 1px solid #dee2e6;
+    border-bottom: 0.0625rem solid #dee2e6;
     transition: background-color 0.2s ease;
 
     &:hover {
@@ -1130,10 +939,10 @@ onUnmounted(() => {
     font-family: $font-family-main;
     font-weight: 300;
     font-style: Light;
-    font-size: 12px;
-    color: #19213d;
-    line-height: 20px;
-    letter-spacing: 0px;
+    font-size: 0.75rem;
+    color: $color-foreground;
+    line-height: 1.25rem;
+    letter-spacing: 0;
     vertical-align: middle;
   }
 
@@ -1145,20 +954,20 @@ onUnmounted(() => {
     font-family: $font-family-main;
     font-weight: 500;
     font-style: Light;
-    font-size: 12px;
-    color: #19213d;
-    line-height: 18px;
-    letter-spacing: 0px;
-    border-radius: 30px;
-    padding: 6px 10px;
+    font-size: 0.75rem;
+    color: $color-foreground;
+    line-height: 1.125rem;
+    letter-spacing: 0;
+    border-radius: 1.875rem;
+    padding: 0.375rem 0.625rem;
     width: 100%;
 
     &--success {
-      background-color: #d3f2dd;
+      background-color: $color-success;
     }
 
     &--warning {
-      background-color: #faedbf;
+      background-color: $color-warning;
     }
 
     &--primary {
@@ -1166,7 +975,7 @@ onUnmounted(() => {
     }
 
     &--cancelled {
-      background-color: #fac6d0;
+      background-color: $color-cancel;
     }
   }
 
@@ -1185,8 +994,8 @@ onUnmounted(() => {
     height: 0;
 
     &:focus + &-custom {
-      outline: 2px solid $color-primary;
-      outline-offset: 2px;
+      outline: 0.125rem solid $color-primary;
+      outline-offset: 0.125rem;
     }
 
     &:checked + &-custom {
@@ -1202,7 +1011,7 @@ onUnmounted(() => {
   &__checkbox-custom {
     width: 1.125rem;
     height: 1.125rem;
-    border: 2px solid #dee2e6;
+    border: 0.125rem solid #dee2e6;
     border-radius: 0.25rem;
     background: $white;
     position: relative;
@@ -1216,7 +1025,7 @@ onUnmounted(() => {
       width: 0.375rem;
       height: 0.625rem;
       border: solid $white;
-      border-width: 0 2px 2px 0;
+      border-width: 0 0.125rem 0.125rem 0;
       transform: rotate(45deg);
       opacity: 0;
       transition: opacity 0.2s ease;
@@ -1225,13 +1034,13 @@ onUnmounted(() => {
 
   &__contact-btn {
     @include button-base;
-    border-radius: 8px;
+    border-radius: 0.5rem;
     padding: 0;
-    color: #667085;
+    color: $color-text-muted;
 
     svg {
-      width: 20px;
-      height: 20px;
+      width: 1.25rem;
+      height: 1.25rem;
     }
 
     &:hover {
@@ -1242,9 +1051,9 @@ onUnmounted(() => {
   &__action-btn {
     @include outline-button;
     font-weight: 600;
-    font-size: 12px;
-    line-height: 18px;
-    padding: 8px 16px;
+    font-size: 0.75rem;
+    line-height: 1.125rem;
+    padding: 0.5rem 1rem;
     width: 100%;
 
     &--view {
@@ -1252,11 +1061,11 @@ onUnmounted(() => {
     }
 
     &--edit {
-      color: #faedbf;
+      color: $color-warning;
     }
 
     &--cancel {
-      color: #fac6d0;
+      color: $color-cancel;
     }
   }
 
@@ -1288,8 +1097,8 @@ onUnmounted(() => {
     }
 
     &:focus {
-      outline: 2px solid $color-primary;
-      outline-offset: 2px;
+      outline: 0.125rem solid $color-primary;
+      outline-offset: 0.125rem;
     }
   }
 
@@ -1303,7 +1112,7 @@ onUnmounted(() => {
     display: flex;
     align-items: center;
     gap: 2rem;
-    max-width: 600px;
+    max-width: 37.5rem;
     margin: 0 auto;
   }
 
@@ -1341,12 +1150,12 @@ onUnmounted(() => {
     transition: background-color 0.2s ease;
 
     &:hover {
-      background: darken($color-primary, 10%);
+      background: $color-primary-darkened-10;
     }
 
     &:focus {
-      outline: 2px solid $color-primary;
-      outline-offset: 2px;
+      outline: 0.125rem solid $color-primary;
+      outline-offset: 0.125rem;
     }
   }
 
@@ -1360,11 +1169,11 @@ onUnmounted(() => {
     @include label-base;
     display: flex;
     align-items: center;
-    gap: 15px;
+    gap: 0.9375rem;
     font-weight: 400;
-    font-size: 14px;
-    line-height: 20px;
-    padding: 10px 14px;
+    font-size: 0.875rem;
+    line-height: 1.25rem;
+    padding: 0.625rem 0.875rem;
     color: #353e5c;
 
     &:hover {
@@ -1372,9 +1181,9 @@ onUnmounted(() => {
     }
 
     svg {
-      color: #3541b4;
-      width: 16px;
-      height: 16px;
+      color: $color-primary;
+      width: 1rem;
+      height: 1rem;
     }
   }
 
@@ -1400,9 +1209,9 @@ onUnmounted(() => {
   &__pagination-btn {
     display: flex;
     align-items: center;
-    gap: 5px;
+    gap: 0.3125rem;
     padding: 0.5rem 0.75rem;
-    border: 1px solid transparent;
+    border: 0.0625rem solid transparent;
     background: transparent;
     color: #6c757d;
     text-decoration: none;
@@ -1417,8 +1226,8 @@ onUnmounted(() => {
     }
 
     &:focus {
-      outline: 2px solid $color-primary;
-      outline-offset: 2px;
+      outline: 0.125rem solid $color-primary;
+      outline-offset: 0.125rem;
     }
 
     &--active {
@@ -1439,28 +1248,12 @@ onUnmounted(() => {
   }
 }
 
-.modal-content {
-  border-radius: 10px;
-}
-
-.modal-header {
-  padding: 1rem;
-}
-
-.modal-body {
-  padding: 2rem;
-}
-
-.modal-footer {
-  padding: 1rem;
-}
-
-@media (max-width: 768px) {
+@media (max-width: $breakpoint-md) {
   .appointments-table {
     &__container {
       border-radius: 0;
       box-shadow: none;
-      border: 1px solid #dee2e6;
+      border: 0.0625rem solid #dee2e6;
     }
 
     &__table {
@@ -1493,7 +1286,7 @@ onUnmounted(() => {
   }
 }
 
-@media (max-width: 576px) {
+@media (max-width: $breakpoint-sm) {
   .appointments-table {
     &__header-text {
       font-size: 0.625rem;
@@ -1515,15 +1308,15 @@ onUnmounted(() => {
 @media (prefers-contrast: high) {
   .appointments-table {
     &__container {
-      border: 2px solid #dee2e6;
+      border: 0.125rem solid #dee2e6;
     }
 
     &__status {
-      border-width: 2px;
+      border-width: 0.125rem;
     }
 
     &__checkbox-custom {
-      border-width: 2px;
+      border-width: 0.125rem;
     }
   }
 }
@@ -1543,8 +1336,8 @@ onUnmounted(() => {
   }
 
   button:focus-visible {
-    outline: 2px solid $color-primary;
-    outline-offset: 2px;
+    outline: 0.125rem solid $color-primary;
+    outline-offset: 0.125rem;
   }
 }
 </style>

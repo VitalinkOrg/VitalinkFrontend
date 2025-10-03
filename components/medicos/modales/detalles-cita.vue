@@ -181,15 +181,13 @@
 </template>
 
 <script lang="ts" setup>
-import type {
-  ApiResponse,
-  Appointment,
-  AppointmentCredit,
-  AppointmentStatusCode,
-} from "~/types";
+import { useAppointmentCredit } from "@/composables/api";
+import type { Appointment, AppointmentStatusCode } from "~/types";
 import type { TablaBaseRow } from "../tabla-detalles-cita.vue";
 
 const refreshAppointments = inject<() => Promise<void>>("refreshAppointments");
+const { updateAppointmentCredit, fetchAllAppointmentCredit } =
+  useAppointmentCredit();
 
 const isModalOpen = ref<boolean>(false);
 const isLoading = ref<boolean>(false);
@@ -199,9 +197,6 @@ const creditAmount = ref(0);
 const creditUsed = ref(false);
 const creditId = ref<number | null>(null);
 const errorMessage = ref<string>("");
-
-const config = useRuntimeConfig();
-const token = useCookie("token");
 
 const confirmReservationRef = ref();
 const successModalRef = ref();
@@ -347,35 +342,34 @@ const handleValidateQRCode = async () => {
   try {
     isLoading.value = true;
 
-    const response = await $fetch(
-      `${config.public.API_BASE_URL}/appointmentcredit/get_all`,
-      {
-        method: "GET",
-        headers: { Authorization: token.value ?? "" },
-        params: {
-          appointment_qr_code: qrCodeInput.value.trim(),
-        },
+    const api = fetchAllAppointmentCredit(qrCodeInput.value.trim());
+    await api.request();
+
+    const response = api.response.value;
+
+    if (response?.data) {
+      const credits = response.data;
+
+      if (credits.length === 0) {
+        errorMessage.value = "No se encontró crédito asociado a este código QR";
+        return;
       }
-    );
 
-    const data = response as ApiResponse<AppointmentCredit[]>;
-    const credits = data.data || [];
+      const credit = credits[0];
 
-    if (credits.length === 0) {
-      errorMessage.value = "No se encontró crédito asociado a este código QR";
-      return;
+      if (credit.already_been_used === 1) {
+        errorMessage.value = "El código ya fue usado";
+        return;
+      }
+
+      qrValidated.value = true;
+      creditAmount.value = parseFloat(credit.approved_amount);
+      creditId.value = credit.id;
     }
 
-    const credit = credits[0];
-
-    if (credit.already_been_used === 1) {
-      errorMessage.value = "El código ya fue usado";
-      return;
+    if (api.error) {
+      throw new Error(api.error.value.info);
     }
-
-    qrValidated.value = true;
-    creditAmount.value = parseFloat(credit.approved_amount);
-    creditId.value = credit.id;
   } catch (err: any) {
     errorMessage.value = "Error al validar el código QR";
     console.error("Error validating QR code:", err);
@@ -388,19 +382,18 @@ const useCredit = async () => {
   try {
     isLoading.value = true;
 
-    const response = await $fetch(
-      `${config.public.API_BASE_URL}/appointmentcredit/edit`,
-      {
-        method: "PUT",
-        headers: { Authorization: token.value ?? "" },
-        params: {
-          id: creditId.value,
-        },
-        body: {
-          already_been_used: 1,
-        },
-      }
-    );
+    const payload = {
+      already_been_used: 1,
+    };
+
+    if (!creditId.value) throw new Error("No credit found");
+
+    const api = updateAppointmentCredit(payload, creditId.value);
+    await api.request();
+
+    if (api.error) {
+      throw new Error(api.error.value.info);
+    }
 
     creditUsed.value = true;
     await refreshAppointments?.();
@@ -444,18 +437,19 @@ defineExpose({
 .visually-hidden {
   @include visually-hidden;
 }
+
 .appointment-details {
   &__title {
     font-family: $font-family-main;
     font-weight: 600;
-    font-size: 20px;
-    line-height: 28px;
+    font-size: 1.25rem;
+    line-height: 1.75rem;
     color: #353e5c;
     margin: 0;
   }
 
   &__body {
-    padding: 24px;
+    padding: 1.5rem;
   }
 
   &__information-banner {
@@ -465,7 +459,7 @@ defineExpose({
 
   &__validate-qr-wrapper {
     display: flex;
-    gap: 12px;
+    gap: 0.75rem;
   }
 
   &__input {
@@ -475,7 +469,7 @@ defineExpose({
   &__error-message {
     @include label-base;
     color: #dc2626;
-    font-size: 12px;
+    font-size: 0.75rem;
     font-weight: 500;
     margin: 0;
   }
@@ -483,37 +477,37 @@ defineExpose({
   &__credit-info {
     display: flex;
     flex-direction: column;
-    gap: 8px;
+    gap: 0.5rem;
   }
 
   &__used-label {
     @include label-base;
     color: #6b7280;
     font-weight: 500;
-    font-size: 14px;
+    font-size: 0.875rem;
   }
 
   &__credit-details {
     display: flex;
     flex-direction: column;
-    gap: 4px;
+    gap: 0.25rem;
   }
 
   &__credit-amount,
   &__pending-balance {
     @include label-base;
     margin: 0;
-    font-size: 12px;
+    font-size: 0.75rem;
     color: #374151;
   }
 
   &__info-alert {
     display: flex;
     align-items: center;
-    padding: 8px 12px;
+    padding: 0.5rem 0.75rem;
     background-color: #eff8ff;
     color: #175cd3;
-    border-radius: 16px;
+    border-radius: 1rem;
     gap: $spacing-xs;
   }
 
@@ -521,8 +515,8 @@ defineExpose({
     @include label-base;
     margin: 0;
     font-weight: 500;
-    font-size: 12px;
-    line-height: 18px;
+    font-size: 0.75rem;
+    line-height: 1.125rem;
     color: #175cd3;
     flex: 1;
   }
@@ -531,7 +525,7 @@ defineExpose({
     display: flex;
     justify-content: flex-end;
     align-items: center;
-    gap: 12px;
+    gap: 0.75rem;
     width: 100%;
   }
 
