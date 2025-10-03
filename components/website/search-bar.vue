@@ -42,11 +42,14 @@ const loadingProcedures = ref(false);
 const errorLoadingProcedures = ref(false);
 const showSpecialtyDropdown = ref(false);
 const showProcedureDropdown = ref(false);
+const specialtySearchText = ref("");
 const procedureSearchText = ref("");
+const filteredSpecialties = ref<Specialty[]>([]);
 const filteredProcedures = ref<Procedure[]>([]);
 
 const specialtyDropdown = ref<HTMLElement | null>(null);
 const procedureDropdown = ref<HTMLElement | null>(null);
+const specialtySearchInput = ref<HTMLInputElement | null>(null);
 const procedureSearchInput = ref<HTMLInputElement | null>(null);
 
 const loadProcedures = async (specialtyCode: string) => {
@@ -100,6 +103,16 @@ onClickOutside(procedureDropdown, () => {
   showProcedureDropdown.value = false;
 });
 
+const filterSpecialties = (searchText: string) => {
+  if (!searchText.trim()) {
+    filteredSpecialties.value = [...props.specialties];
+  } else {
+    filteredSpecialties.value = props.specialties.filter((specialty) =>
+      specialty.name.toLowerCase().includes(searchText.toLowerCase())
+    );
+  }
+};
+
 const filterProcedures = (searchText: string) => {
   if (!searchText.trim()) {
     filteredProcedures.value = [...filtersData.value.procedures];
@@ -115,6 +128,11 @@ const toggleSpecialtyDropdown = () => {
   if (!props.loading) {
     showSpecialtyDropdown.value = !showSpecialtyDropdown.value;
     showProcedureDropdown.value = false;
+    if (showSpecialtyDropdown.value) {
+      nextTick(() => {
+        specialtySearchInput.value?.focus();
+      });
+    }
   }
 };
 
@@ -137,6 +155,7 @@ const toggleProcedureDropdown = () => {
 const selectSpecialty = (specialty: Specialty) => {
   selectedSpecialty.value = specialty.code;
   selectedSpecialtyName.value = specialty.name;
+  specialtySearchText.value = specialty.name;
   showSpecialtyDropdown.value = false;
   filtersData.value.procedimiento = "";
   selectedProcedureName.value = "Nombre del procedimiento";
@@ -149,6 +168,24 @@ const selectProcedure = (procedure: Procedure) => {
   selectedProcedureName.value = procedure.name;
   showProcedureDropdown.value = false;
   procedureSearchText.value = procedure.name;
+};
+
+const onSpecialtySearchInput = () => {
+  if (!showSpecialtyDropdown.value) {
+    showSpecialtyDropdown.value = true;
+  }
+  if (selectedSpecialty.value) {
+    const currentSpecialty = props.specialties.find(
+      (s) => s.code === selectedSpecialty.value
+    );
+    if (
+      currentSpecialty &&
+      specialtySearchText.value !== currentSpecialty.name
+    ) {
+      selectedSpecialty.value = "";
+      selectedSpecialtyName.value = "Buscar por especialidad";
+    }
+  }
 };
 
 const onProcedureSearchInput = () => {
@@ -166,6 +203,20 @@ const onProcedureSearchInput = () => {
       filtersData.value.procedimiento = "";
       selectedProcedureName.value = "Nombre del procedimiento";
     }
+  }
+};
+
+const onSpecialtyInputClick = () => {
+  if (!showSpecialtyDropdown.value && !props.loading) {
+    showSpecialtyDropdown.value = true;
+    showProcedureDropdown.value = false;
+  }
+};
+
+const onSpecialtyInputFocus = () => {
+  if (!showSpecialtyDropdown.value && !props.loading) {
+    showSpecialtyDropdown.value = true;
+    showProcedureDropdown.value = false;
   }
 };
 
@@ -191,6 +242,18 @@ const onInputFocus = () => {
     showProcedureDropdown.value = true;
     showSpecialtyDropdown.value = false;
   }
+};
+
+const clearSpecialtySelection = () => {
+  selectedSpecialty.value = "";
+  selectedSpecialtyName.value = "Buscar por especialidad";
+  specialtySearchText.value = "";
+  filteredSpecialties.value = [...props.specialties];
+  filtersData.value.procedimiento = "";
+  selectedProcedureName.value = "Nombre del procedimiento";
+  procedureSearchText.value = "";
+  filteredProcedures.value = [];
+  filtersData.value.procedures = [];
 };
 
 const clearProcedureSelection = () => {
@@ -240,6 +303,7 @@ const initializeFiltersFromQuery = async () => {
     );
     if (specialty) {
       selectedSpecialtyName.value = specialty.name;
+      specialtySearchText.value = specialty.name;
     }
     await loadProcedures(selectedSpecialty.value);
 
@@ -267,9 +331,21 @@ watch(selectedSpecialty, async (newVal) => {
   }
 });
 
+watch(specialtySearchText, (newVal) => {
+  filterSpecialties(newVal);
+});
+
 watch(procedureSearchText, (newVal) => {
   filterProcedures(newVal);
 });
+
+watch(
+  () => props.specialties,
+  (newSpecialties) => {
+    filteredSpecialties.value = [...newSpecialties];
+  },
+  { immediate: true }
+);
 
 watch(
   () => route.query,
@@ -279,6 +355,7 @@ watch(
 );
 
 onMounted(async () => {
+  filteredSpecialties.value = [...props.specialties];
   await initializeFiltersFromQuery();
 });
 </script>
@@ -293,41 +370,63 @@ onMounted(async () => {
               >Especialidades</label
             >
             <div class="dropdown search-form__dropdown" ref="specialtyDropdown">
-              <button
-                class="dropdown__toggle"
-                :class="{
-                  'dropdown__toggle--disabled': loading,
-                  'dropdown__toggle--active': showSpecialtyDropdown,
-                }"
-                type="button"
-                @click="toggleSpecialtyDropdown"
-                :disabled="loading"
-              >
-                <span class="dropdown__text">{{ selectedSpecialtyName }}</span>
-                <svg
-                  class="dropdown__arrow"
-                  :class="{ 'dropdown__arrow--rotated': showSpecialtyDropdown }"
-                  width="20"
-                  height="20"
-                  viewBox="0 0 20 20"
-                  fill="none"
+              <div class="dropdown__toggle-container">
+                <div
+                  class="dropdown__toggle dropdown__toggle--with-icon dropdown__toggle--clickable"
+                  :class="{
+                    'dropdown__toggle--disabled': loading,
+                    'dropdown__toggle--active': showSpecialtyDropdown,
+                  }"
+                  @click="toggleSpecialtyDropdown"
                 >
-                  <path
-                    d="M5 7.5L10 12.5L15 7.5"
-                    stroke="currentColor"
-                    stroke-width="1.67"
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
+                  <div class="dropdown__icon">
+                    <AtomsIconsSearchIcon size="20" />
+                  </div>
+                  <input
+                    ref="specialtySearchInput"
+                    class="dropdown__search-input"
+                    type="text"
+                    v-model="specialtySearchText"
+                    :placeholder="
+                      selectedSpecialty ? '' : selectedSpecialtyName
+                    "
+                    @input="onSpecialtySearchInput"
+                    @click.stop="onSpecialtyInputClick"
+                    @focus="onSpecialtyInputFocus"
+                    :disabled="loading"
                   />
-                </svg>
-              </button>
+                  <button
+                    v-if="specialtySearchText || selectedSpecialty"
+                    type="button"
+                    class="dropdown__clear-button"
+                    @click.stop="clearSpecialtySelection"
+                    :disabled="loading"
+                  >
+                    <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                      <path
+                        d="M12 4L4 12M4 4l8 8"
+                        stroke="currentColor"
+                        stroke-width="1.5"
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                      />
+                    </svg>
+                  </button>
+                </div>
+              </div>
 
               <div
                 class="dropdown__menu"
                 :class="{ 'dropdown__menu--show': showSpecialtyDropdown }"
               >
+                <div
+                  v-if="filteredSpecialties.length === 0 && specialtySearchText"
+                  class="dropdown__no-results"
+                >
+                  No se encontraron especialidades
+                </div>
                 <button
-                  v-for="specialty in specialties"
+                  v-for="specialty in filteredSpecialties"
                   :key="specialty.code"
                   class="dropdown__item"
                   :class="{
@@ -470,30 +569,30 @@ onMounted(async () => {
 <style lang="scss" scoped>
 .search-form {
   width: 100%;
-  max-width: 776px;
-  gap: 20px;
-  border-radius: 15px;
-  padding: 20px;
+  max-width: 48.5rem;
+  gap: 1.25rem;
+  border-radius: 0.9375rem;
+  padding: 1.25rem;
   margin: 0 auto;
-  background: #ffffff;
+  background: $white;
   display: flex;
   flex-direction: column;
   align-items: center;
-  box-shadow: 0px 4px 26.8px 0px #00000017;
+  box-shadow: 0 0.25rem 1.675rem 0 #00000017;
 
-  @media (max-width: 768px) {
-    padding: 16px;
-    gap: 16px;
+  @media (max-width: $breakpoint-md) {
+    padding: 1rem;
+    gap: 1rem;
   }
 
   &__form {
     display: grid;
     grid-template-columns: 1fr 1fr auto;
-    gap: 20px;
+    gap: 1.25rem;
     width: 100%;
     align-items: end;
 
-    @media (max-width: 768px) {
+    @media (max-width: $breakpoint-md) {
       grid-template-columns: 1fr;
       grid-template-rows: auto auto auto;
     }
@@ -507,34 +606,34 @@ onMounted(async () => {
     position: relative;
     display: flex;
     flex-direction: column;
-    gap: 6px;
+    gap: 0.375rem;
     min-width: 0;
   }
 
   &__label-container {
     display: flex;
     align-items: center;
-    gap: 8px;
+    gap: 0.5rem;
   }
 
   &__label {
     font-weight: 500;
-    font-size: 14px;
-    line-height: 20px;
+    font-size: 0.875rem;
+    line-height: 1.25rem;
     color: #344054;
   }
 
   &__loading-icon {
-    width: 16px;
-    height: 16px;
-    color: #0cadbb;
+    width: 1rem;
+    height: 1rem;
+    color: $primary-aqua;
     animation: spin 1s linear infinite;
   }
 
   &__dropdown {
     position: relative;
     width: 100%;
-    min-width: 324px;
+    min-width: 20.25rem;
   }
 
   &__button-group {
@@ -543,15 +642,15 @@ onMounted(async () => {
   }
 
   &__submit-button {
-    width: 56px;
-    height: 56px;
-    gap: 8px;
+    width: 3.5rem;
+    height: 3.5rem;
+    gap: 0.5rem;
     opacity: 1;
-    border-radius: 8px;
-    padding: 16px;
-    border: 1px solid #0cadbb;
-    box-shadow: 0px 1px 2px 0px #1018280d;
-    background: #0cadbb;
+    border-radius: 0.5rem;
+    padding: 1rem;
+    border: 1px solid $primary-aqua;
+    box-shadow: 0 0.0625rem 0.125rem 0 #1018280d;
+    background: $primary-aqua;
     cursor: pointer;
     display: flex;
     align-items: center;
@@ -560,11 +659,11 @@ onMounted(async () => {
     flex-shrink: 0;
 
     &:hover {
-      background-color: darken(#0cadbb, 10%);
-      border-color: darken(#0cadbb, 10%);
+      background-color: darken($primary-aqua, 10%);
+      border-color: darken($primary-aqua, 10%);
     }
 
-    @media (max-width: 768px) {
+    @media (max-width: $breakpoint-md) {
       align-self: flex-end;
       width: 100%;
       justify-content: center;
@@ -573,9 +672,9 @@ onMounted(async () => {
 
   &__status-message {
     position: absolute;
-    bottom: -20px;
+    bottom: -1.25rem;
     left: 0;
-    font-size: 12px;
+    font-size: 0.75rem;
 
     &--error {
       color: #dc3545;
@@ -591,11 +690,11 @@ onMounted(async () => {
 
   &__toggle {
     width: 100%;
-    min-height: 56px;
-    padding: 16px;
-    background: #ffffff;
+    min-height: 3.5rem;
+    padding: 1rem;
+    background: $white;
     border: 1px solid #d0d5dd;
-    border-radius: 8px;
+    border-radius: 0.5rem;
     display: flex;
     align-items: center;
     justify-content: space-between;
@@ -605,18 +704,18 @@ onMounted(async () => {
     text-align: left;
 
     &:hover {
-      border-color: #0cadbb;
+      border-color: $primary-aqua;
     }
 
     &:focus {
       outline: none;
-      border-color: #0cadbb;
-      box-shadow: 0 0 0 3px rgba(12, 173, 187, 0.1);
+      border-color: $primary-aqua;
+      box-shadow: 0 0 0 0.1875rem rgba(12, 173, 187, 0.1);
     }
 
     &--active {
-      border-color: #0cadbb;
-      box-shadow: 0 0 0 3px rgba(12, 173, 187, 0.1);
+      border-color: $primary-aqua;
+      box-shadow: 0 0 0 0.1875rem rgba(12, 173, 187, 0.1);
     }
 
     &--disabled {
@@ -635,8 +734,8 @@ onMounted(async () => {
     }
 
     &--with-icon {
-      padding-left: 45px;
-      padding-right: 50px;
+      padding-left: 2.8125rem;
+      padding-right: 3.125rem;
     }
 
     &--clickable {
@@ -647,29 +746,29 @@ onMounted(async () => {
 
   &__icon {
     position: absolute;
-    left: 12px;
+    left: 0.75rem;
     top: 50%;
     transform: translateY(-50%);
-    color: #667085;
+    color: $color-text-muted;
     pointer-events: none;
     z-index: 1;
   }
 
   &__clear-button {
     position: absolute;
-    right: 16px;
+    right: 1rem;
     top: 50%;
     transform: translateY(-50%);
-    width: 24px;
-    height: 24px;
+    width: 1.5rem;
+    height: 1.5rem;
     border: none;
     background: transparent;
-    color: #667085;
+    color: $color-text-muted;
     cursor: pointer;
     display: flex;
     align-items: center;
     justify-content: center;
-    border-radius: 4px;
+    border-radius: 0.25rem;
     transition: all 0.2s ease;
 
     &:hover {
@@ -692,12 +791,12 @@ onMounted(async () => {
     width: 100%;
     font-family: $font-family-main;
     font-weight: 400;
-    font-size: 16px;
-    line-height: 24px;
+    font-size: 1rem;
+    line-height: 1.5rem;
     letter-spacing: 0;
 
     &::placeholder {
-      color: #667085;
+      color: $color-text-muted;
     }
 
     &:disabled {
@@ -708,18 +807,18 @@ onMounted(async () => {
 
   &__text {
     flex: 1;
-    font-size: 16px;
-    line-height: 24px;
-    color: #667085;
+    font-size: 1rem;
+    line-height: 1.5rem;
+    color: $color-text-muted;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
   }
 
   &__arrow {
-    width: 20px;
-    height: 20px;
-    color: #667085;
+    width: 1.25rem;
+    height: 1.25rem;
+    color: $color-text-muted;
     transition: transform 0.2s ease;
     flex-shrink: 0;
 
@@ -734,18 +833,18 @@ onMounted(async () => {
     left: 0;
     right: 0;
     z-index: 1000;
-    background: #ffffff;
+    background: $white;
     border: 1px solid #d0d5dd;
-    border-radius: 8px;
+    border-radius: 0.5rem;
     box-shadow:
-      0 4px 6px -1px rgba(0, 0, 0, 0.1),
-      0 2px 4px -1px rgba(0, 0, 0, 0.06);
-    max-height: 200px;
+      0 0.25rem 0.375rem -0.0625rem rgba(0, 0, 0, 0.1),
+      0 0.125rem 0.25rem -0.0625rem rgba(0, 0, 0, 0.06);
+    max-height: 12.5rem;
     overflow-y: auto;
-    margin-top: 4px;
+    margin-top: 0.25rem;
     opacity: 0;
     visibility: hidden;
-    transform: translateY(-10px);
+    transform: translateY(-0.625rem);
     transition: all 0.2s ease;
 
     &--show {
@@ -755,7 +854,7 @@ onMounted(async () => {
     }
 
     &::-webkit-scrollbar {
-      width: 6px;
+      width: 0.375rem;
     }
 
     &::-webkit-scrollbar-track {
@@ -764,7 +863,7 @@ onMounted(async () => {
 
     &::-webkit-scrollbar-thumb {
       background: #cbd5e1;
-      border-radius: 3px;
+      border-radius: 0.1875rem;
 
       &:hover {
         background: #94a3b8;
@@ -773,8 +872,8 @@ onMounted(async () => {
   }
 
   &__no-results {
-    padding: 12px 16px;
-    font-size: 14px;
+    padding: 0.75rem 1rem;
+    font-size: 0.875rem;
     color: #6b7280;
     font-style: italic;
     text-align: center;
@@ -782,19 +881,19 @@ onMounted(async () => {
 
   &__item {
     width: 100%;
-    padding: 12px 16px;
+    padding: 0.75rem 1rem;
     text-align: left;
     border: none;
     background: transparent;
     cursor: pointer;
-    font-size: 16px;
-    line-height: 24px;
+    font-size: 1rem;
+    line-height: 1.5rem;
     color: $color-foreground;
     transition: all 0.15s ease;
     display: flex;
     align-items: center;
     justify-content: space-between;
-    gap: 8px;
+    gap: 0.5rem;
 
     &:hover {
       background-color: #f9fafb;
@@ -811,13 +910,13 @@ onMounted(async () => {
     }
 
     &:first-child {
-      border-top-left-radius: 7px;
-      border-top-right-radius: 7px;
+      border-top-left-radius: 0.4375rem;
+      border-top-right-radius: 0.4375rem;
     }
 
     &:last-child {
-      border-bottom-left-radius: 7px;
-      border-bottom-right-radius: 7px;
+      border-bottom-left-radius: 0.4375rem;
+      border-bottom-right-radius: 0.4375rem;
     }
   }
 
