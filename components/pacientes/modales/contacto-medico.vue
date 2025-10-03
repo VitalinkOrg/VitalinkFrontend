@@ -60,11 +60,7 @@ const { formatPhone } = useFormat();
 
 const isOpen = ref<boolean>(false);
 
-const phoneNumber = computed(
-  () =>
-    props.appointment.phone_number_external_user ??
-    props.appointment.customer.phone_number
-);
+const phoneNumber = computed(() => props.appointment.supplier.phone_number);
 
 interface Props {
   appointment: Appointment;
