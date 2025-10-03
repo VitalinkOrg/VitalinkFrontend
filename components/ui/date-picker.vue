@@ -113,7 +113,7 @@ const handleDateConfirm = () => {
   &__input-wrapper {
     position: relative;
     background: $white;
-    box-shadow: 0px 1px 2px 0px #1018280d;
+    box-shadow: 0 0.0625rem 0.125rem 0 rgba(16, 24, 40, 0.05);
     display: flex;
     align-items: center;
     border: none;
@@ -125,11 +125,11 @@ const handleDateConfirm = () => {
     width: 100%;
     font-family: $font-family-main;
     font-weight: 400;
-    font-size: 16px;
-    line-height: 24px;
+    font-size: 1rem;
+    line-height: 1.5rem;
     letter-spacing: 0;
     color: #101828;
-    padding: 15px 17px 15px 36px;
+    padding: 0.9375rem 1.0625rem 0.9375rem 2.25rem;
   }
 
   &__input-icon,
@@ -138,23 +138,23 @@ const handleDateConfirm = () => {
     pointer-events: none;
 
     &--placeholder {
-      color: #6d758f;
+      color: $color-text-secondary;
     }
   }
 
   &__input-icon {
-    left: 10px;
+    left: 0.625rem;
   }
 
   &__input-chevron {
-    right: 18px;
+    right: 1.125rem;
   }
 
   &__calendar-title {
-    font-family: Inter;
+    font-family: $font-family-alt;
     font-weight: 400;
-    font-size: 14px;
-    line-height: 21px;
+    font-size: 0.875rem;
+    line-height: 1.3125rem;
     letter-spacing: 0;
     text-align: center;
     color: #040d14;
@@ -166,7 +166,7 @@ const handleDateConfirm = () => {
 
   &__confirm-button {
     @include primary-button;
-    padding: 10px 16px;
+    padding: 0.625rem 1rem;
   }
 }
 </style>
@@ -175,10 +175,10 @@ const handleDateConfirm = () => {
 .vc-title-wrapper {
   .vc-title {
     @include secondary-button;
-    font-family: Inter;
+    font-family: $font-family-alt;
     font-weight: 400;
-    font-size: 14px;
-    line-height: 21px;
+    font-size: 0.875rem;
+    line-height: 1.3125rem;
     letter-spacing: 0;
     text-align: center;
     background-color: $white;
@@ -209,20 +209,20 @@ const handleDateConfirm = () => {
     }
 
     svg {
-      width: 10px;
-      height: 10px;
+      width: 0.625rem;
+      height: 0.625rem;
     }
   }
 }
 
 .vc-popover-content {
-  border-radius: 20px;
-  padding: 8px;
+  border-radius: 1.25rem;
+  padding: 0.5rem;
   overflow: hidden;
   border: none;
   box-shadow:
-    0 12px 42px -4px rgba(24, 39, 75, 0.25),
-    0 8px 18px -6px rgba(24, 39, 75, 0.2);
+    0 0.75rem 2.625rem -0.25rem rgba(24, 39, 75, 0.25),
+    0 0.5rem 1.125rem -0.375rem rgba(24, 39, 75, 0.2);
 }
 
 .vc-popover-caret {
@@ -245,25 +245,25 @@ const handleDateConfirm = () => {
 }
 
 .vc-highlight-content-solid {
-  font-family: Inter;
+  font-family: $font-family-alt;
   font-weight: 400;
-  font-size: 14px;
-  line-height: 21px;
+  font-size: 0.875rem;
+  line-height: 1.3125rem;
   letter-spacing: 0;
   text-align: center;
-  background: #3541b4;
+  background: $color-primary;
   color: $white;
 
   &:hover {
-    background: #3541b4;
+    background: $color-primary;
   }
 }
 
 .vc-disabled {
-  font-family: Inter;
+  font-family: $font-family-alt;
   font-weight: 400;
-  font-size: 14px;
-  line-height: 21px;
+  font-size: 0.875rem;
+  line-height: 1.3125rem;
   letter-spacing: 0;
   text-align: center;
   color: #afafaf;
@@ -276,14 +276,14 @@ const handleDateConfirm = () => {
 .vc-footer {
   display: flex;
   justify-content: flex-end;
-  padding: 16px;
+  padding: 1rem;
 }
 
 .vc-weekday {
-  font-family: Inter;
+  font-family: $font-family-alt;
   font-weight: 400;
-  font-size: 14px;
-  line-height: 21px;
+  font-size: 0.875rem;
+  line-height: 1.3125rem;
   letter-spacing: 0;
   text-align: center;
   color: #040d14;

@@ -58,7 +58,7 @@ import type { TablaBaseRow } from "~/components/medicos/tabla-detalles-cita.vue"
 import { useFormat } from "~/composables/useFormat";
 import type { Appointment, AppointmentStatusCode } from "~/types";
 
-const { formatDate, formatCurrency } = useFormat();
+const { formatDate } = useFormat();
 
 interface Props {
   appointment: Appointment;
@@ -80,7 +80,7 @@ const appointmentRowsWithData = computed((): TablaBaseRow[] => [
   {
     key: "fecha",
     header: "Fecha de la cita:",
-    value: props.appointment.appointment_date,
+    value: formatDate(props.appointment.appointment_date),
     class: "appointment-editor__details-row--editable",
   },
   {
@@ -167,12 +167,12 @@ defineExpose({
     display: flex;
     justify-content: center;
     align-items: center;
-    width: 40px;
-    height: 40px;
-    border: 6.5px solid #fac6d0;
-    background-color: #ff2d46;
+    width: 2.5rem;
+    height: 2.5rem;
+    border: 0.40625rem solid $color-cancel;
+    background-color: $color-danger;
     border-radius: 50%;
-    padding: 6px;
+    padding: 0.375rem;
 
     svg {
       color: $white;
@@ -180,40 +180,39 @@ defineExpose({
   }
 
   &__content {
-    padding: 20px 24px 0px 24px;
+    padding: 1.25rem 1.5rem 0 1.5rem;
   }
 
   &__content-title {
     font-family: $font-family-montserrat-alt;
-    font-family: Montserrat Alternates;
     font-weight: 700;
-    font-size: 28px;
-    line-height: 29.5px;
+    font-size: 1.75rem;
+    line-height: 1.84375rem;
     letter-spacing: 0;
     text-align: center;
-    color: #3541b4;
+    color: $color-primary;
   }
 
   &__description {
     font-family: $font-family-main;
     font-weight: 500;
-    font-size: 18px;
-    line-height: 26px;
+    font-size: 1.125rem;
+    line-height: 1.625rem;
     letter-spacing: 0;
     text-align: center;
-    color: #6d758f;
+    color: $color-text-secondary;
   }
 
   &__table-wrapper {
-    padding: 20px;
+    padding: 1.25rem;
     background-color: #f8faff;
-    border-radius: 20px;
+    border-radius: 1.25rem;
   }
 
   &__actions {
     width: 100%;
     display: flex;
-    gap: 12px;
+    gap: 0.75rem;
   }
 
   &__button {

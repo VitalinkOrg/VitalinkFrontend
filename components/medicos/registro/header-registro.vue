@@ -15,8 +15,8 @@
   &__title {
     font-family: $font-family-main;
     font-weight: 700;
-    font-size: 29.41px;
-    line-height: 136%;
+    font-size: 1.838125rem;
+    line-height: 1.36;
     letter-spacing: 0;
     color: $color-primary;
   }
@@ -24,8 +24,8 @@
   &__description {
     font-family: $font-family-montserrat-alt;
     font-weight: 500;
-    font-size: 16px;
-    line-height: 162%;
+    font-size: 1rem;
+    line-height: 1.62;
     letter-spacing: 0;
     text-align: center;
     color: $color-primary;

@@ -1,6 +1,5 @@
 <template>
   <div class="registration-options">
-    <!-- Opción 1: Cédula -->
     <label
       class="registration-option"
       :class="{ 'is-selected': selectedOption === 'idCard' }"
@@ -14,7 +13,6 @@
       <span class="registration-option-label">Registrarme con cédula</span>
     </label>
 
-    <!-- Opción 2: Email -->
     <label
       class="registration-option"
       :class="{ 'is-selected': selectedOption === 'email' }"
@@ -34,7 +32,10 @@
 import { useState } from "#app";
 import { ref, watchEffect } from "vue";
 
-const lastSelectedOption = useState<"email" | "idCard">("registrationOption", () => "idCard");
+const lastSelectedOption = useState<"email" | "idCard">(
+  "registrationOption",
+  () => "idCard"
+);
 const selectedOption = ref<"email" | "idCard">(lastSelectedOption.value);
 
 watchEffect(() => {
@@ -55,8 +56,8 @@ defineExpose({ selectedOption });
   display: flex;
   align-items: center;
   gap: $spacing-md;
-  padding: 17.5px;
-  border-radius: 20px;
+  padding: 1.09375rem;
+  border-radius: 1.25rem;
   border: 1px solid #e1e4ed;
   cursor: pointer;
   transition: border-color 0.3s ease;
@@ -71,7 +72,7 @@ defineExpose({ selectedOption });
   }
 
   .registration-option-label {
-    font-size: 16px;
+    font-size: 1rem;
     color: #27272e;
     cursor: pointer;
   }

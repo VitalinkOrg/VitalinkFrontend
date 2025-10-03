@@ -320,7 +320,7 @@ defineExpose({
 
 <style lang="scss" scoped>
 $modal-backdrop-color: rgba(0, 0, 0, 0.2);
-$modal-border-radius: 15px;
+$modal-border-radius: 0.9375rem;
 $modal-padding: 1.5rem;
 
 @mixin modal-size($width, $max-height: 90vh) {
@@ -345,32 +345,34 @@ $modal-padding: 1.5rem;
   &__dialog {
     background: white;
     border-radius: $modal-border-radius;
-    box-shadow: 0px 8px 8px -4px #1018280a;
-    box-shadow: 0px 20px 24px -4px #1018281a;
+    box-shadow:
+      0 0.5rem 0.5rem -0.25rem #1018280a,
+      0 1.25rem 1.5rem -0.25rem #1018281a;
     display: flex;
     flex-direction: column;
     outline: none;
     border: none;
-    @include modal-size(500px);
+    padding: 0;
+    @include modal-size(31.25rem);
 
     &--extra-small {
-      @include modal-size(400px);
+      @include modal-size(25rem);
     }
 
     &--small {
-      @include modal-size(536px);
+      @include modal-size(33.5rem);
     }
 
     &--medium {
-      @include modal-size(636px);
+      @include modal-size(39.75rem);
     }
 
     &--large {
-      @include modal-size(718px);
+      @include modal-size(44.875rem);
     }
 
     &--extra-large {
-      @include modal-size(1000px);
+      @include modal-size(62.5rem);
     }
 
     &--fullscreen {
@@ -411,7 +413,7 @@ $modal-padding: 1.5rem;
     border: none;
     cursor: pointer;
     padding: 0.5rem;
-    border-radius: 4px;
+    border-radius: 0.25rem;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -424,8 +426,8 @@ $modal-padding: 1.5rem;
     }
 
     &:focus {
-      outline: 2px solid #3b82f6;
-      outline-offset: 2px;
+      outline: 0.125rem solid #3b82f6;
+      outline-offset: 0.125rem;
     }
   }
 
@@ -438,18 +440,18 @@ $modal-padding: 1.5rem;
     }
 
     &:focus {
-      outline: 2px solid #dc2626;
+      outline: 0.125rem solid #dc2626;
     }
   }
 
   &__close-icon {
-    width: 24px;
-    height: 24px;
+    width: 1.5rem;
+    height: 1.5rem;
   }
 
   &__close-all-icon {
-    width: 20px;
-    height: 20px;
+    width: 1.25rem;
+    height: 1.25rem;
   }
 
   &__content {
@@ -470,7 +472,7 @@ $modal-padding: 1.5rem;
 }
 
 .header-border-bottom {
-  padding-bottom: 10px;
+  padding-bottom: 0.625rem;
   border-bottom: 1px solid #e4e7ec;
 }
 
@@ -479,7 +481,6 @@ $modal-padding: 1.5rem;
 }
 
 .padding-0 {
-  $modal-padding: 0;
   padding: 0;
 }
 
@@ -497,11 +498,11 @@ $modal-padding: 1.5rem;
   opacity: 0;
 
   .modal__dialog {
-    transform: scale(0.9) translateY(-20px);
+    transform: scale(0.9) translateY(-1.25rem);
   }
 }
 
-@media (max-width: 768px) {
+@media (max-width: 48rem) {
   .modal {
     padding: 0.5rem;
 

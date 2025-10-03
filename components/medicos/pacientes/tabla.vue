@@ -438,23 +438,23 @@ const handlePageChange = (page: number) => {
 }
 
 .patients-table {
-  --col-checkbox-width: 60px;
-  --col-id-width: 100px;
-  --col-name-width: 200px;
-  --col-address-width: 180px;
-  --col-phone-width: 160px;
-  --col-email-width: 200px;
-  --col-actions-width: 80px;
+  --col-checkbox-width: 3.75rem;
+  --col-id-width: 6.25rem;
+  --col-name-width: 12.5rem;
+  --col-address-width: 11.25rem;
+  --col-phone-width: 10rem;
+  --col-email-width: 12.5rem;
+  --col-actions-width: 5rem;
 
   &__container {
     background: $white;
-    border-radius: 10px;
+    border-radius: 0.625rem;
     overflow: hidden;
   }
 
   &__wrapper {
     overflow-x: auto;
-    min-height: 400px;
+    min-height: 25rem;
   }
 
   &__table {
@@ -466,7 +466,7 @@ const handlePageChange = (page: number) => {
 
   &__header {
     background-color: #f8f9fa;
-    border-bottom: 2px solid #dee2e6;
+    border-bottom: 0.125rem solid #dee2e6;
   }
 
   &__header-row {
@@ -476,10 +476,10 @@ const handlePageChange = (page: number) => {
   &__header-cell {
     padding: 1rem 0.75rem;
     text-align: left;
-    font-size: 12px;
+    font-size: 0.75rem;
     letter-spacing: 0;
     font-weight: 500;
-    color: #6d758f;
+    color: $color-text-secondary;
     border: none;
     background-color: $white;
 
@@ -519,9 +519,9 @@ const handlePageChange = (page: number) => {
     font-family: $font-family-main;
     font-weight: 500;
     font-style: Medium;
-    font-size: 12px;
-    line-height: 16px;
-    letter-spacing: 0px;
+    font-size: 0.75rem;
+    line-height: 1rem;
+    letter-spacing: 0;
     vertical-align: middle;
     text-align: start;
   }
@@ -531,7 +531,7 @@ const handlePageChange = (page: number) => {
   }
 
   &__row {
-    border-bottom: 1px solid #dee2e6;
+    border-bottom: 0.0625rem solid #dee2e6;
     transition: background-color 0.2s ease;
 
     &:hover {
@@ -575,10 +575,10 @@ const handlePageChange = (page: number) => {
     font-family: $font-family-main;
     font-weight: 300;
     font-style: Light;
-    font-size: 12px;
-    color: #19213d;
-    line-height: 20px;
-    letter-spacing: 0px;
+    font-size: 0.75rem;
+    color: $color-foreground;
+    line-height: 1.25rem;
+    letter-spacing: 0;
     vertical-align: middle;
   }
 
@@ -597,8 +597,8 @@ const handlePageChange = (page: number) => {
     height: 0;
 
     &:focus + &-custom {
-      outline: 2px solid $color-primary;
-      outline-offset: 2px;
+      outline: 0.125rem solid $color-primary;
+      outline-offset: 0.125rem;
     }
 
     &:checked + &-custom {
@@ -614,7 +614,7 @@ const handlePageChange = (page: number) => {
   &__checkbox-custom {
     width: 1.125rem;
     height: 1.125rem;
-    border: 2px solid #dee2e6;
+    border: 0.125rem solid #dee2e6;
     border-radius: 0.25rem;
     background: $white;
     position: relative;
@@ -628,7 +628,7 @@ const handlePageChange = (page: number) => {
       width: 0.375rem;
       height: 0.625rem;
       border: solid $white;
-      border-width: 0 2px 2px 0;
+      border-width: 0 0.125rem 0.125rem 0;
       transform: rotate(45deg);
       opacity: 0;
       transition: opacity 0.2s ease;
@@ -648,13 +648,13 @@ const handlePageChange = (page: number) => {
 
     &:hover {
       svg {
-        transform: scale(110%);
+        transform: scale(1.1);
       }
     }
 
     &:focus {
-      outline: 2px solid $color-primary;
-      outline-offset: 2px;
+      outline: 0.125rem solid $color-primary;
+      outline-offset: 0.125rem;
     }
   }
 
@@ -683,8 +683,8 @@ const handlePageChange = (page: number) => {
     }
 
     &:focus {
-      outline: 2px solid $color-primary;
-      outline-offset: 2px;
+      outline: 0.125rem solid $color-primary;
+      outline-offset: 0.125rem;
     }
   }
 
@@ -705,7 +705,7 @@ const handlePageChange = (page: number) => {
     display: flex;
     align-items: center;
     gap: 2rem;
-    max-width: 600px;
+    max-width: 37.5rem;
     margin: 0 auto;
   }
 
@@ -743,12 +743,12 @@ const handlePageChange = (page: number) => {
     transition: background-color 0.2s ease;
 
     &:hover {
-      background: darken($color-primary, 10%);
+      background: $color-primary-darkened-10;
     }
 
     &:focus {
-      outline: 2px solid $color-primary;
-      outline-offset: 2px;
+      outline: 0.125rem solid $color-primary;
+      outline-offset: 0.125rem;
     }
   }
 
@@ -762,11 +762,11 @@ const handlePageChange = (page: number) => {
     @include label-base;
     display: flex;
     align-items: center;
-    gap: 15px;
+    gap: 0.9375rem;
     font-weight: 400;
-    font-size: 14px;
-    line-height: 20px;
-    padding: 10px 14px;
+    font-size: 0.875rem;
+    line-height: 1.25rem;
+    padding: 0.625rem 0.875rem;
     color: #353e5c;
     border: none;
     background: none;
@@ -778,35 +778,35 @@ const handlePageChange = (page: number) => {
     }
 
     svg {
-      color: #3541b4;
-      width: 16px;
-      height: 16px;
+      color: $color-primary;
+      width: 1rem;
+      height: 1rem;
     }
   }
 }
 
-@media (max-width: 1200px) {
+@media (max-width: $breakpoint-xl) {
   .patients-table {
-    --col-name-width: 160px;
-    --col-address-width: 140px;
-    --col-phone-width: 130px;
-    --col-email-width: 160px;
+    --col-name-width: 10rem;
+    --col-address-width: 8.75rem;
+    --col-phone-width: 8.125rem;
+    --col-email-width: 10rem;
   }
 }
 
-@media (max-width: 768px) {
+@media (max-width: $breakpoint-md) {
   .patients-table {
-    --col-id-width: 80px;
-    --col-name-width: 140px;
-    --col-address-width: 120px;
-    --col-phone-width: 110px;
-    --col-email-width: 140px;
-    --col-actions-width: 60px;
+    --col-id-width: 5rem;
+    --col-name-width: 8.75rem;
+    --col-address-width: 7.5rem;
+    --col-phone-width: 6.875rem;
+    --col-email-width: 8.75rem;
+    --col-actions-width: 3.75rem;
 
     &__container {
       border-radius: 0;
       box-shadow: none;
-      border: 1px solid #dee2e6;
+      border: 0.0625rem solid #dee2e6;
     }
 
     &__table {
@@ -835,7 +835,7 @@ const handlePageChange = (page: number) => {
   }
 }
 
-@media (max-width: 576px) {
+@media (max-width: $breakpoint-sm) {
   .patients-table {
     &__header-text {
       font-size: 0.625rem;
@@ -868,11 +868,11 @@ const handlePageChange = (page: number) => {
 @media (prefers-contrast: high) {
   .patients-table {
     &__container {
-      border: 2px solid #dee2e6;
+      border: 0.125rem solid #dee2e6;
     }
 
     &__checkbox-custom {
-      border-width: 2px;
+      border-width: 0.125rem;
     }
   }
 }
@@ -892,8 +892,8 @@ const handlePageChange = (page: number) => {
   }
 
   button:focus-visible {
-    outline: 2px solid $color-primary;
-    outline-offset: 2px;
+    outline: 0.125rem solid $color-primary;
+    outline-offset: 0.125rem;
   }
 }
 </style>

@@ -1,169 +1,3 @@
-<template>
-  <slot name="trigger" :open="handleOpenModal"></slot>
-
-  <AtomsModalBase
-    :is-open="isModalOpen"
-    size="medium"
-    class="user-information"
-    @close="handleCloseModal"
-  >
-    <template #title>
-      <h2 class="user-information__title">Información del Usuario</h2>
-    </template>
-
-    <div class="user-information__content">
-      <div class="user-information__form-group">
-        <label class="user-information__label">Foto de Perfil Publico</label>
-        <div class="user-information__profile-image">
-          <img :src="profileImage" alt="Profile" />
-        </div>
-      </div>
-
-      <div class="user-information__form-group">
-        <label class="user-information__label">Nombre y Apellido</label>
-        <input
-          type="text"
-          :value="appointment.customer.name"
-          class="user-information__input"
-          disabled
-        />
-      </div>
-
-      <div class="user-information__form-group">
-        <label class="user-information__label">Email</label>
-        <input
-          type="email"
-          :value="appointment.customer.email"
-          class="user-information__input"
-          disabled
-        />
-      </div>
-
-      <div class="user-information__form-group">
-        <label class="user-information__label">Número de teléfono</label>
-        <div class="user-information__phone-input">
-          <div class="user-information__input-wrapper">
-            <div
-              class="user-information__prefix-section"
-              :class="{
-                'user-information__prefix-section--disabled': isPhoneDisabled,
-              }"
-              @click="!isPhoneDisabled && toggleCountryDropdown()"
-            >
-              <span class="user-information__prefix">{{
-                selectedCountry.code
-              }}</span>
-              <svg
-                class="user-information__dropdown-arrow"
-                :class="{
-                  'user-information__dropdown-arrow--open':
-                    isCountryDropdownOpen && !isPhoneDisabled,
-                  'user-information__dropdown-arrow--disabled': isPhoneDisabled,
-                }"
-                width="12"
-                height="12"
-                viewBox="0 0 12 12"
-                fill="none"
-              >
-                <path
-                  d="M3 4.5L6 7.5L9 4.5"
-                  stroke="#7a828a"
-                  stroke-width="1.5"
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                />
-              </svg>
-            </div>
-
-            <input
-              type="tel"
-              :value="displayPhoneNumber"
-              @input="updatePhoneNumber"
-              @focus="handleInputFocus"
-              @blur="handleInputBlur"
-              class="user-information__input user-information__phone-number-input"
-              :placeholder="selectedCountry.placeholder"
-              :disabled="isPhoneDisabled"
-            />
-          </div>
-
-          <div
-            v-if="isCountryDropdownOpen && !isPhoneDisabled"
-            class="user-information__country-dropdown"
-            @click.stop
-          >
-            <div class="user-information__country-search">
-              <input
-                type="text"
-                v-model="countrySearchTerm"
-                placeholder="Buscar país..."
-                class="user-information__search-input"
-                @click.stop
-              />
-            </div>
-            <div class="user-information__country-list">
-              <div
-                v-for="country in filteredCountries"
-                :key="country.code"
-                class="user-information__country-item"
-                :class="{
-                  'user-information__country-item--selected':
-                    country.code === selectedCountry.code,
-                }"
-                @click="selectCountry(country)"
-              >
-                <span class="user-information__country-name">{{
-                  country.name
-                }}</span>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <div class="user-information__form-group">
-        <label class="user-information__label">Dirección</label>
-        <input
-          type="text"
-          :value="appointment.customer.address"
-          class="user-information__input"
-          disabled
-        />
-      </div>
-
-      <div class="form-group d-flex gap-2 justify-content-between">
-        <div class="user-information__form-group">
-          <label class="user-information__label">Código Postal</label>
-          <input
-            type="text"
-            :value="appointment.customer.postal_code"
-            class="user-information__input user-information__input--postal-code"
-            disabled
-          />
-        </div>
-        <div class="user-information__form-group">
-          <label class="user-information__label">Ciudad</label>
-          <input
-            type="text"
-            :value="appointment.customer.city_name"
-            class="user-information__input"
-            disabled
-          />
-        </div>
-        <div class="user-information__form-group">
-          <label class="user-information__label">País</label>
-          <input
-            type="text"
-            :value="getCountryName(appointment.customer.country_iso_code)"
-            class="user-information__input"
-            disabled
-          />
-        </div>
-      </div>
-    </div>
-  </AtomsModalBase>
-</template>
-
 <script lang="ts" setup>
 import { useCountries } from "@/composables/useCountries";
 import defaultAvatar from "@/src/assets/picture.svg";
@@ -189,8 +23,7 @@ const isLoading = ref<boolean>(false);
 const isCountryDropdownOpen = ref<boolean>(false);
 const countrySearchTerm = ref<string>("");
 
-// Variable para controlar si el input de teléfono está deshabilitado
-const isPhoneDisabled = ref<boolean>(true); // Cambia a false si quieres habilitarlo
+const isPhoneDisabled = ref<boolean>(true);
 
 const countries: Country[] = [
   {
@@ -342,25 +175,20 @@ const countries: Country[] = [
   },
 ];
 
-// País seleccionado por defecto (Costa Rica)
 const selectedCountry = ref<Country>(
   countries.find((c) => c.code === "CR") || countries[0]
 );
 
-// Número de teléfono completo para mostrar (con prefijo)
 const displayPhoneNumber = computed(() => {
   const rawNumber = props.appointment.customer.phone_number || "";
-  // Si ya tiene el prefijo, lo mostramos completo
   if (rawNumber.startsWith(selectedCountry.value.dialCode)) {
     return rawNumber;
   }
-  // Si no tiene prefijo, lo agregamos
   return rawNumber
     ? `${selectedCountry.value.dialCode} ${rawNumber}`
     : selectedCountry.value.dialCode;
 });
 
-// Número sin prefijo para operaciones internas
 const phoneNumberWithoutPrefix = computed(() => {
   const fullNumber = props.appointment.customer.phone_number || "";
   if (fullNumber.startsWith(selectedCountry.value.dialCode)) {
@@ -369,7 +197,6 @@ const phoneNumberWithoutPrefix = computed(() => {
   return fullNumber;
 });
 
-// Países filtrados por búsqueda
 const filteredCountries = computed(() => {
   if (!countrySearchTerm.value) return countries;
 
@@ -392,7 +219,6 @@ const handleCloseModal = () => {
 };
 
 const toggleCountryDropdown = () => {
-  // Solo permitir toggle si no está deshabilitado
   if (isPhoneDisabled.value) return;
 
   isCountryDropdownOpen.value = !isCountryDropdownOpen.value;
@@ -408,11 +234,9 @@ const selectCountry = (country: Country) => {
 };
 
 const updatePhoneNumber = (event: Event) => {
-  // Esta función se puede usar para actualizar el número cuando sea editable
   const target = event.target as HTMLInputElement;
   const inputValue = target.value;
 
-  // Extraer solo la parte numérica después del prefijo
   const numberPart = inputValue
     .replace(selectedCountry.value.dialCode, "")
     .trim();
@@ -420,15 +244,10 @@ const updatePhoneNumber = (event: Event) => {
   console.log("Parte numérica:", numberPart);
 };
 
-const handleInputFocus = () => {
-  // Lógica adicional cuando el input recibe foco
-};
+const handleInputFocus = () => {};
 
-const handleInputBlur = () => {
-  // Lógica adicional cuando el input pierde foco
-};
+const handleInputBlur = () => {};
 
-// Cerrar dropdown al hacer clic fuera
 const handleClickOutside = (event: MouseEvent) => {
   const target = event.target as HTMLElement;
   if (!target.closest(".user-information__phone-input")) {
@@ -456,40 +275,211 @@ defineExpose({
 });
 </script>
 
+<template>
+  <slot name="trigger" :open="handleOpenModal"></slot>
+
+  <AtomsModalBase
+    :is-open="isModalOpen"
+    size="medium"
+    class="user-information"
+    @close="handleCloseModal"
+  >
+    <template #title>
+      <h2 class="user-information__title">Información del Usuario</h2>
+    </template>
+
+    <div class="user-information__content">
+      <div class="user-information__form-group">
+        <label class="user-information__label">Foto de Perfil Publico</label>
+        <div class="user-information__profile-image">
+          <img :src="profileImage" alt="Profile" />
+        </div>
+      </div>
+
+      <div class="user-information__form-group">
+        <label class="user-information__label">Nombre y Apellido</label>
+        <input
+          type="text"
+          :value="appointment.customer.name"
+          class="user-information__input"
+          disabled
+        />
+      </div>
+
+      <div class="user-information__form-group">
+        <label class="user-information__label">Email</label>
+        <input
+          type="email"
+          :value="appointment.customer.email"
+          class="user-information__input"
+          disabled
+        />
+      </div>
+
+      <div class="user-information__form-group">
+        <label class="user-information__label">Número de teléfono</label>
+        <div class="user-information__phone-input">
+          <div class="user-information__input-wrapper">
+            <div
+              class="user-information__prefix-section"
+              :class="{
+                'user-information__prefix-section--disabled': isPhoneDisabled,
+              }"
+              @click="!isPhoneDisabled && toggleCountryDropdown()"
+            >
+              <span class="user-information__prefix">{{
+                selectedCountry.code
+              }}</span>
+              <svg
+                class="user-information__dropdown-arrow"
+                :class="{
+                  'user-information__dropdown-arrow--open':
+                    isCountryDropdownOpen && !isPhoneDisabled,
+                  'user-information__dropdown-arrow--disabled': isPhoneDisabled,
+                }"
+                width="12"
+                height="12"
+                viewBox="0 0 12 12"
+                fill="none"
+              >
+                <path
+                  d="M3 4.5L6 7.5L9 4.5"
+                  stroke="#7a828a"
+                  stroke-width="1.5"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                />
+              </svg>
+            </div>
+
+            <input
+              type="tel"
+              :value="displayPhoneNumber"
+              @input="updatePhoneNumber"
+              @focus="handleInputFocus"
+              @blur="handleInputBlur"
+              class="user-information__input user-information__phone-number-input"
+              :placeholder="selectedCountry.placeholder"
+              :disabled="isPhoneDisabled"
+            />
+          </div>
+
+          <div
+            v-if="isCountryDropdownOpen && !isPhoneDisabled"
+            class="user-information__country-dropdown"
+            @click.stop
+          >
+            <div class="user-information__country-search">
+              <input
+                type="text"
+                v-model="countrySearchTerm"
+                placeholder="Buscar país..."
+                class="user-information__search-input"
+                @click.stop
+              />
+            </div>
+            <div class="user-information__country-list">
+              <div
+                v-for="country in filteredCountries"
+                :key="country.code"
+                class="user-information__country-item"
+                :class="{
+                  'user-information__country-item--selected':
+                    country.code === selectedCountry.code,
+                }"
+                @click="selectCountry(country)"
+              >
+                <span class="user-information__country-name">{{
+                  country.name
+                }}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="user-information__form-group">
+        <label class="user-information__label">Dirección</label>
+        <input
+          type="text"
+          :value="appointment.customer.address"
+          class="user-information__input"
+          disabled
+        />
+      </div>
+
+      <div class="user-information__address-row">
+        <div class="user-information__form-group">
+          <label class="user-information__label">Código Postal</label>
+          <input
+            type="text"
+            :value="appointment.customer.postal_code"
+            class="user-information__input user-information__input--postal-code"
+            disabled
+          />
+        </div>
+        <div class="user-information__form-group">
+          <label class="user-information__label">Ciudad</label>
+          <input
+            type="text"
+            :value="appointment.customer.city_name"
+            class="user-information__input"
+            disabled
+          />
+        </div>
+        <div class="user-information__form-group">
+          <label class="user-information__label">País</label>
+          <input
+            type="text"
+            :value="getCountryName(appointment.customer.country_iso_code)"
+            class="user-information__input"
+            disabled
+          />
+        </div>
+      </div>
+    </div>
+  </AtomsModalBase>
+</template>
+
 <style lang="scss" scoped>
 .user-information {
   &__title {
     font-family: $font-family-main;
     font-weight: 400;
-    font-size: 20px;
-    line-height: 28px;
+    font-size: 1.25rem;
+    line-height: 1.75rem;
     letter-spacing: 0;
-    color: #19213d;
+    color: $color-foreground;
   }
 
   &__content {
     display: flex;
     flex-direction: column;
-    padding: 24px;
-    gap: 20px;
+    padding: 1.5rem;
+    gap: 1.25rem;
   }
 
   &__profile-image {
     display: flex;
     justify-content: center;
     align-items: center;
-    width: 130px;
-    height: 132px;
-    border-radius: 18px;
-    border-width: 3px;
-    border: 3px solid #c2c6e9;
+    width: 8.125rem;
+    height: 8.25rem;
+    border-radius: 1.125rem;
+    border: 0.1875rem solid #c2c6e9;
     background-color: #f8faff;
   }
 
   &__form-group {
     display: flex;
     flex-direction: column;
-    gap: 6px;
+    gap: 0.375rem;
+  }
+
+  &__address-row {
+    display: flex;
+    gap: 0.5rem;
+    justify-content: space-between;
   }
 
   &__label {
@@ -498,9 +488,10 @@ defineExpose({
 
   &__input {
     @include input-base;
+    width: 100%;
 
     &--postal-code {
-      max-width: 128px;
+      max-width: 8rem;
     }
   }
 
@@ -516,22 +507,22 @@ defineExpose({
 
   &__prefix-section {
     position: absolute;
-    left: 15px;
+    left: 0.9375rem;
     top: 50%;
     transform: translateY(-50%);
     display: flex;
     align-items: center;
-    gap: 6px;
+    gap: 0.375rem;
     cursor: pointer;
     z-index: 2;
-    padding: 2px 8px 2px 0;
-    background-color: white;
-    border-right: 1px solid #e5e9ef;
-    padding-right: 12px;
+    padding: 0.125rem 0.5rem 0.125rem 0;
+    background-color: $white;
+    border-right: 0.0625rem solid #e5e9ef;
+    padding-right: 0.75rem;
 
     &:hover:not(.user-information__prefix-section--disabled) {
       .user-information__dropdown-arrow path {
-        stroke: #0cadbb;
+        stroke: $primary-aqua;
       }
     }
 
@@ -547,14 +538,14 @@ defineExpose({
 
   &__prefix {
     font-family: $font-family-main;
-    font-size: 14.7px;
+    font-size: 0.91875rem;
     color: #425466;
     font-weight: 500;
   }
 
   &__dropdown-arrow {
     transition: transform 0.3s ease;
-    margin-left: 4px;
+    margin-left: 0.25rem;
 
     &--open {
       transform: rotate(180deg);
@@ -567,7 +558,7 @@ defineExpose({
 
   &__phone-number-input {
     width: 100%;
-    padding-left: 120px !important;
+    padding-left: 7.5rem !important;
 
     &:focus-visible:not(:disabled) {
       + .user-information__prefix-section:not(
@@ -583,40 +574,40 @@ defineExpose({
     top: 100%;
     left: 0;
     right: 0;
-    background: white;
-    border: 1px solid #d4dae0;
+    background: $white;
+    border: 0.0625rem solid #d4dae0;
     border-top: none;
     border-radius: 0 0 $border-radius-md $border-radius-md;
     box-shadow:
-      0 4px 6px rgba(50, 50, 71, 0.1),
-      0 1px 3px rgba(50, 50, 71, 0.08);
+      0 0.25rem 0.375rem rgba(50, 50, 71, 0.1),
+      0 0.0625rem 0.1875rem rgba(50, 50, 71, 0.08);
     z-index: 1000;
-    max-height: 300px;
+    max-height: 18.75rem;
     overflow: hidden;
   }
 
   &__country-search {
-    padding: 12px;
-    border-bottom: 1px solid #e5e9ef;
+    padding: 0.75rem;
+    border-bottom: 0.0625rem solid #e5e9ef;
   }
 
   &__search-input {
     @include input-base;
     width: 100%;
-    padding: 8px 12px;
-    font-size: 14px;
+    padding: 0.5rem 0.75rem;
+    font-size: 0.875rem;
   }
 
   &__country-list {
-    max-height: 240px;
+    max-height: 15rem;
     overflow-y: auto;
   }
 
   &__country-item {
     display: flex;
     align-items: center;
-    gap: 12px;
-    padding: 12px;
+    gap: 0.75rem;
+    padding: 0.75rem;
     cursor: pointer;
     transition: background-color 0.2s ease;
 
@@ -636,12 +627,12 @@ defineExpose({
   &__country-name {
     flex: 1;
     font-family: $font-family-main;
-    font-size: 14px;
+    font-size: 0.875rem;
     color: #425466;
   }
 
   &__country-list::-webkit-scrollbar {
-    width: 6px;
+    width: 0.375rem;
   }
 
   &__country-list::-webkit-scrollbar-track {
@@ -650,7 +641,7 @@ defineExpose({
 
   &__country-list::-webkit-scrollbar-thumb {
     background: #c1c1c1;
-    border-radius: 3px;
+    border-radius: 0.1875rem;
   }
 
   &__country-list::-webkit-scrollbar-thumb:hover {

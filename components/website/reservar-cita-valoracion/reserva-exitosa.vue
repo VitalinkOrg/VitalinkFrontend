@@ -33,7 +33,7 @@
               Fecha de la cita:
             </td>
             <td class="successful-reservation__table--value">
-              {{ formatDate(selectedDay as string) }}
+              {{ formatDate(selectedDay ?? "") }}
             </td>
           </tr>
           <tr class="successful-reservation__table--row">
@@ -41,7 +41,7 @@
               Hora de la cita:
             </td>
             <td class="successful-reservation__table--value">
-              {{ formatTime(selectedHour as string) }}
+              {{ formatTime(selectedHour ?? "", "hs") }}
             </td>
           </tr>
           <tr>
@@ -57,7 +57,7 @@
               Telefono de contacto:
             </td>
             <td class="successful-reservation__table--value">
-              {{ customerPhone }}
+              {{ formatPhone(customerPhone ?? "") }}
             </td>
           </tr>
           <tr>
@@ -113,7 +113,7 @@ import type { Service } from "~/types";
 const route = useRoute();
 const router = useRouter();
 
-const { formatCurrency } = useFormat();
+const { formatCurrency, formatPhone, formatDate, formatTime } = useFormat();
 
 interface Props {
   isOpen: boolean;
@@ -164,33 +164,6 @@ const getSelectedProcedureName = computed(() => {
     return "N/A";
   }
 });
-
-function formatDate(dateStr: string): string {
-  const date = new Date(dateStr);
-
-  const dayOptions: Intl.DateTimeFormatOptions = { weekday: "long" };
-  const monthOptions: Intl.DateTimeFormatOptions = { month: "long" };
-
-  const dayName = new Intl.DateTimeFormat("es-ES", dayOptions).format(date);
-  const dayNumber = date.getDate();
-  const monthName = new Intl.DateTimeFormat("es-ES", monthOptions).format(date);
-
-  const capitalizedDayName = dayName.charAt(0).toUpperCase() + dayName.slice(1);
-
-  return `${capitalizedDayName}, ${dayNumber} de ${monthName}`;
-}
-
-const formatTime = (time: string): string => {
-  if (!time) return "";
-
-  const parts = time.split(":");
-  if (parts.length < 2) return time;
-
-  const hours = parts[0];
-  const minutes = parts[1];
-
-  return `${hours}:${minutes} hs`;
-};
 </script>
 
 <style lang="scss" scoped>

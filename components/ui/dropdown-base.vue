@@ -304,40 +304,40 @@ onUnmounted(() => {
 
   &--sm {
     .dropdown__toggle {
-      min-height: 40px;
-      padding: 8px 12px;
-      font-size: 14px;
+      min-height: 2.5rem;
+      padding: 0.5rem 0.75rem;
+      font-size: 0.875rem;
     }
   }
 
   &--md {
     .dropdown__toggle {
-      min-height: 56px;
-      padding: 16px;
-      font-size: 16px;
+      min-height: 3.5rem;
+      padding: 1rem;
+      font-size: 1rem;
     }
   }
 
   &--lg {
     .dropdown__toggle {
-      min-height: 64px;
-      padding: 20px;
-      font-size: 18px;
+      min-height: 4rem;
+      padding: 1.25rem;
+      font-size: 1.125rem;
     }
   }
 
   &--outline {
     .dropdown__toggle {
       background: transparent;
-      border: 2px solid var(--dropdown-accent-color, #0cadbb);
+      border: 0.125rem solid var(--dropdown-accent-color, $primary-aqua);
     }
   }
 
   &--filled {
     .dropdown__toggle {
-      background: var(--dropdown-accent-color, #0cadbb);
-      color: white;
-      border: 1px solid var(--dropdown-accent-color, #0cadbb);
+      background: var(--dropdown-accent-color, $primary-aqua);
+      color: $white;
+      border: 1px solid var(--dropdown-accent-color, $primary-aqua);
 
       .dropdown__text--placeholder {
         color: rgba(255, 255, 255, 0.7);
@@ -350,7 +350,7 @@ onUnmounted(() => {
     width: 100%;
     display: flex;
     align-items: center;
-    gap: 8px;
+    gap: 0.5rem;
     cursor: pointer;
 
     &--disabled {
@@ -373,13 +373,13 @@ onUnmounted(() => {
     }
 
     &--searchable {
-      padding-right: 50px;
+      padding-right: 3.125rem;
     }
   }
 
   &__icon {
     flex-shrink: 0;
-    color: #667085;
+    color: $color-text-muted;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -392,12 +392,12 @@ onUnmounted(() => {
     outline: none;
     background: transparent;
     color: #374151;
-    font-size: 16px;
-    line-height: 24px;
+    font-size: 1rem;
+    line-height: 1.5rem;
     min-width: 0;
 
     &::placeholder {
-      color: #667085;
+      color: $color-text-muted;
     }
 
     &:disabled {
@@ -408,8 +408,8 @@ onUnmounted(() => {
 
   &__text {
     flex: 1;
-    font-size: 16px;
-    line-height: 24px;
+    font-size: 1rem;
+    line-height: 1.5rem;
     color: #374151;
     text-align: left;
     white-space: nowrap;
@@ -417,23 +417,23 @@ onUnmounted(() => {
     text-overflow: ellipsis;
 
     &--placeholder {
-      color: #667085;
+      color: $color-text-muted;
     }
   }
 
   &__clear-button {
     position: absolute;
-    right: 45px;
-    width: 24px;
-    height: 24px;
+    right: 2.8125rem;
+    width: 1.5rem;
+    height: 1.5rem;
     border: none;
     background: transparent;
-    color: #667085;
+    color: $color-text-muted;
     cursor: pointer;
     display: flex;
     align-items: center;
     justify-content: center;
-    border-radius: 4px;
+    border-radius: 0.25rem;
     transition: all 0.2s ease;
     flex-shrink: 0;
 
@@ -444,9 +444,9 @@ onUnmounted(() => {
   }
 
   &__arrow {
-    width: 20px;
-    height: 20px;
-    color: #667085;
+    width: 1.25rem;
+    height: 1.25rem;
+    color: $color-text-muted;
     transition: transform 0.2s ease;
     flex-shrink: 0;
     display: flex;
@@ -460,16 +460,16 @@ onUnmounted(() => {
 
   &__loading {
     position: absolute;
-    right: 45px;
+    right: 2.8125rem;
     display: flex;
     align-items: center;
     justify-content: center;
-    width: 20px;
-    height: 20px;
+    width: 1.25rem;
+    height: 1.25rem;
   }
 
   &__loading-spinner {
-    color: #0cadbb;
+    color: $primary-aqua;
     animation: spin 1s linear infinite;
   }
 
@@ -479,18 +479,18 @@ onUnmounted(() => {
     left: 0;
     right: 0;
     z-index: 1000;
-    background: #ffffff;
+    background: $white;
     border: 1px solid #d0d5dd;
-    border-radius: 8px;
+    border-radius: 0.5rem;
     box-shadow:
-      0 4px 6px -1px rgba(0, 0, 0, 0.1),
-      0 2px 4px -1px rgba(0, 0, 0, 0.06);
-    max-height: 200px;
+      0 0.25rem 0.375rem -0.0625rem rgba(0, 0, 0, 0.1),
+      0 0.125rem 0.25rem -0.0625rem rgba(0, 0, 0, 0.06);
+    max-height: 12.5rem;
     overflow-y: auto;
-    margin-top: 4px;
+    margin-top: 0.25rem;
     opacity: 0;
     visibility: hidden;
-    transform: translateY(-10px);
+    transform: translateY(-0.625rem);
     transition: all 0.2s ease;
 
     &--show {
@@ -500,7 +500,7 @@ onUnmounted(() => {
     }
 
     &::-webkit-scrollbar {
-      width: 6px;
+      width: 0.375rem;
     }
 
     &::-webkit-scrollbar-track {
@@ -509,7 +509,7 @@ onUnmounted(() => {
 
     &::-webkit-scrollbar-thumb {
       background: #cbd5e1;
-      border-radius: 3px;
+      border-radius: 0.1875rem;
 
       &:hover {
         background: #94a3b8;
@@ -518,8 +518,8 @@ onUnmounted(() => {
   }
 
   &__no-results {
-    padding: 12px 16px;
-    font-size: 14px;
+    padding: 0.75rem 1rem;
+    font-size: 0.875rem;
     color: #6b7280;
     font-style: italic;
     text-align: center;
@@ -527,19 +527,19 @@ onUnmounted(() => {
 
   &__item {
     width: 100%;
-    padding: 12px 16px;
+    padding: 0.75rem 1rem;
     text-align: left;
     border: none;
     background: transparent;
     cursor: pointer;
-    font-size: 16px;
-    line-height: 24px;
+    font-size: 1rem;
+    line-height: 1.5rem;
     color: #374151;
     transition: all 0.15s ease;
     display: flex;
     align-items: center;
     justify-content: space-between;
-    gap: 8px;
+    gap: 0.5rem;
 
     &:hover:not(&--disabled) {
       background-color: #f9fafb;
@@ -562,13 +562,13 @@ onUnmounted(() => {
     }
 
     &:first-child {
-      border-top-left-radius: 7px;
-      border-top-right-radius: 7px;
+      border-top-left-radius: 0.4375rem;
+      border-top-right-radius: 0.4375rem;
     }
 
     &:last-child {
-      border-bottom-left-radius: 7px;
-      border-bottom-right-radius: 7px;
+      border-bottom-left-radius: 0.4375rem;
+      border-bottom-right-radius: 0.4375rem;
     }
   }
 

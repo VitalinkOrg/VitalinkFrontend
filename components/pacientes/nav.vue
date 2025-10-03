@@ -112,21 +112,20 @@ import imgVitalinkLogo from "@/src/assets/img-avatar-sm.png";
 <style lang="scss" scoped>
 .header {
   width: 100%;
-  background-color: #fff;
-  box-shadow: 0px 4.2px 31.51px 0px #00000014;
-
-  padding: 15px 20px;
+  background-color: $white;
+  box-shadow: 0 0.2625rem 1.969375rem 0 rgba(0, 0, 0, 0.078125);
+  padding: 0.9375rem 1.25rem;
 
   @include respond-to(sm) {
-    padding: 18px 30px;
+    padding: 1.125rem 1.875rem;
   }
 
   @include respond-to(md) {
-    padding: 20px 40px;
+    padding: 1.25rem 2.5rem;
   }
 
   @include respond-to(lg) {
-    padding: 22.5px 60px;
+    padding: 1.40625rem 3.75rem;
   }
 }
 
@@ -142,23 +141,22 @@ import imgVitalinkLogo from "@/src/assets/img-avatar-sm.png";
     align-items: center;
     justify-content: center;
     flex-shrink: 0;
-
-    width: 80px;
-    height: 26px;
+    width: 5rem;
+    height: 1.625rem;
 
     @include respond-to(sm) {
-      width: 100px;
-      height: 33px;
+      width: 6.25rem;
+      height: 2.0625rem;
     }
 
     @include respond-to(md) {
-      width: 120px;
-      height: 40px;
+      width: 7.5rem;
+      height: 2.5rem;
     }
 
     @include respond-to(lg) {
-      width: 135px;
-      height: 45px;
+      width: 8.4375rem;
+      height: 2.8125rem;
     }
 
     img {
@@ -172,7 +170,7 @@ import imgVitalinkLogo from "@/src/assets/img-avatar-sm.png";
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: 6.3px;
+    gap: 0.39375rem;
 
     @include respond-to-max(lg) {
       .navbar-collapse {
@@ -180,16 +178,16 @@ import imgVitalinkLogo from "@/src/assets/img-avatar-sm.png";
         top: 100%;
         left: 0;
         right: 0;
-        background-color: #fff;
-        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-        border-radius: 0 0 8px 8px;
-        margin-top: 15px;
-        padding: 20px;
+        background-color: $white;
+        box-shadow: 0 0.25rem 0.375rem rgba(0, 0, 0, 0.1);
+        border-radius: 0 0 0.5rem 0.5rem;
+        margin-top: 0.9375rem;
+        padding: 1.25rem;
         z-index: 1000;
 
         .navbar-nav {
           flex-direction: column;
-          gap: 10px;
+          gap: 0.625rem;
 
           .header-container__nav-item {
             width: 100%;
@@ -202,30 +200,29 @@ import imgVitalinkLogo from "@/src/assets/img-avatar-sm.png";
 
   &__nav-link {
     @include label-base;
-    border-radius: 13px;
-    padding: 10px 15px;
+    border-radius: 0.8125rem;
+    padding: 0.625rem 0.9375rem;
     font-weight: 300;
-    font-style: Light;
+    font-style: normal;
     text-align: center;
     display: block;
     width: 100%;
-
-    font-size: 13px;
-    line-height: 20px;
+    font-size: 0.8125rem;
+    line-height: 1.25rem;
 
     @include respond-to(sm) {
-      font-size: 14px;
-      line-height: 22px;
+      font-size: 0.875rem;
+      line-height: 1.375rem;
     }
 
     @include respond-to(lg) {
-      font-size: 14.7px;
-      line-height: 23.1px;
+      font-size: 0.91875rem;
+      line-height: 1.44375rem;
     }
   }
 
   &__nav-link--active {
-    background-color: #e2e4fa4d;
+    background-color: rgba(226, 228, 250, 0.3);
     color: #6c78e8;
     font-weight: 400;
   }
@@ -237,21 +234,20 @@ import imgVitalinkLogo from "@/src/assets/img-avatar-sm.png";
     margin: 0;
     padding: 0;
     flex-shrink: 0;
-
-    gap: 15px;
+    gap: 0.9375rem;
 
     @include respond-to(sm) {
-      gap: 20px;
+      gap: 1.25rem;
     }
 
     @include respond-to(md) {
-      gap: 25px;
-      margin-left: 20px;
+      gap: 1.5625rem;
+      margin-left: 1.25rem;
     }
 
     @include respond-to(lg) {
-      gap: 31px;
-      margin-left: 34px;
+      gap: 1.9375rem;
+      margin-left: 2.125rem;
     }
   }
 
@@ -270,7 +266,7 @@ import imgVitalinkLogo from "@/src/assets/img-avatar-sm.png";
 
 .navbar-toggler {
   border: none;
-  padding: 4px 8px;
+  padding: 0.25rem 0.5rem;
 
   &:focus {
     box-shadow: none;
@@ -282,40 +278,38 @@ import imgVitalinkLogo from "@/src/assets/img-avatar-sm.png";
 }
 
 .user-dropdown {
-  min-width: 200px;
+  min-width: 12.5rem;
   border: 1px solid #e5e7eb;
-  border-radius: 8px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-  padding: 8px 0;
-  margin-top: 8px;
-  background-color: #ffffff;
+  border-radius: 0.5rem;
+  box-shadow: 0 0.25rem 0.75rem rgba(0, 0, 0, 0.1);
+  padding: 0.5rem 0;
+  margin-top: 0.5rem;
+  background-color: $white;
 
   @include respond-to-max(sm) {
     position: absolute;
     right: 0;
     left: auto;
-    min-width: 180px;
-    transform: translateX(10px);
+    min-width: 11.25rem;
+    transform: translateX(0.625rem);
   }
 
   &__item {
     @include label-base;
-    padding: 12px 16px;
+    padding: 0.75rem 1rem;
     display: flex;
     align-items: center;
-    gap: 12px;
+    gap: 0.75rem;
     border: none;
     background: transparent;
     width: 100%;
-    color: #374151;
+    color: $color-foreground;
     transition: all 0.2s ease;
     font-weight: 500;
-    font-style: Medium;
-    font-size: 14px;
-    line-height: 20px;
+    font-style: normal;
+    font-size: 0.875rem;
+    line-height: 1.25rem;
     letter-spacing: 0;
-
-    color: #19213d;
 
     &:hover {
       background-color: #e7f7f8;
@@ -333,8 +327,8 @@ import imgVitalinkLogo from "@/src/assets/img-avatar-sm.png";
   }
 
   &__icon {
-    width: 20px;
-    height: 20px;
+    width: 1.25rem;
+    height: 1.25rem;
     flex-shrink: 0;
     color: #6b7280;
     transition: color 0.2s ease;
@@ -356,7 +350,7 @@ import imgVitalinkLogo from "@/src/assets/img-avatar-sm.png";
 @keyframes dropdownFadeIn {
   from {
     opacity: 0;
-    transform: translateY(-8px) scale(0.98);
+    transform: translateY(-0.5rem) scale(0.98);
   }
   to {
     opacity: 1;
@@ -366,33 +360,34 @@ import imgVitalinkLogo from "@/src/assets/img-avatar-sm.png";
 
 .nav-link {
   svg {
-    width: 20px;
-    height: 20px;
+    width: 1.25rem;
+    height: 1.25rem;
 
     @include respond-to(sm) {
-      width: 22px;
-      height: 22px;
+      width: 1.375rem;
+      height: 1.375rem;
     }
 
     @include respond-to(md) {
-      width: 24px;
-      height: 24px;
+      width: 1.5rem;
+      height: 1.5rem;
     }
   }
 }
+
 .avatar-container {
   display: inline-block;
-  padding: 2px;
+  padding: 0.125rem;
   border-radius: 50%;
   background: linear-gradient(182.01deg, #04bfae 1.69%, #6c78e8 72.38%);
 }
 
 .rounded-circle {
-  width: 39px;
-  height: 39px;
+  width: 2.4375rem;
+  height: 2.4375rem;
   @include respond-to-max(sm) {
-    width: 28px !important;
-    height: 28px !important;
+    width: 1.75rem !important;
+    height: 1.75rem !important;
   }
 }
 </style>

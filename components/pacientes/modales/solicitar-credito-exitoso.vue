@@ -81,53 +81,55 @@ const handleNavigateToHome = () => {
   &__content {
     display: flex;
     flex-direction: column;
-    padding: 20px 24px;
-    gap: 20px;
+    padding: 1.25rem 1.5rem;
+    gap: 1.25rem;
   }
 
   &__icon-wrapper {
     display: flex;
     justify-content: center;
-    margin-bottom: 20px;
+    margin-bottom: 1.25rem;
   }
 
   &__icon {
-    width: 48px;
-    height: 48px;
+    width: 3rem;
+    height: 3rem;
     color: $white;
     border-radius: 50%;
-    background: #0cadbb;
-    border: 8px solid #c2ebee;
-    padding: 4px;
+    background: $primary-aqua;
+    border: 0.5rem solid $primary-aqua-light;
+    padding: 0.25rem;
   }
+
   &__title {
     @include label-base;
     font-weight: 600;
-    font-size: 20px;
-    line-height: 28px;
+    font-size: 1.25rem;
+    line-height: 1.75rem;
     color: #353e5c;
   }
 
   &__highlight {
     @include label-base;
     font-weight: 600;
-    font-size: 24px;
-    line-height: 32px;
+    font-size: 1.5rem;
+    line-height: 2rem;
     text-align: center;
     color: $color-foreground;
   }
+
   &__text {
     @include label-base;
     font-weight: 600;
-    font-size: 16px;
-    line-height: 20px;
+    font-size: 1rem;
+    line-height: 1.25rem;
     text-align: center;
-    color: #6d758f;
+    color: $color-text-secondary;
   }
 
   &__footer {
     display: flex;
-    gap: 12px;
+    gap: 0.75rem;
     width: 100%;
   }
 

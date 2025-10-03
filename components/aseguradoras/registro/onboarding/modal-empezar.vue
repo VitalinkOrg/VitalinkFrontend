@@ -87,19 +87,19 @@ defineExpose({
   &__title {
     @include text-base;
     font-weight: 600;
-    font-size: 20px;
-    line-height: 28px;
+    font-size: 1.25rem;
+    line-height: 1.75rem;
     color: #353e5c;
 
     @include respond-to-max(md) {
-      font-size: 18px;
-      line-height: 24px;
+      font-size: 1.125rem;
+      line-height: 1.5rem;
     }
   }
 
   &__content {
     background: $white;
-    padding: 20px;
+    padding: 1.25rem;
     flex: 1;
     height: 100%;
     width: 100%;
@@ -109,7 +109,7 @@ defineExpose({
     @include respond-to-max(md) {
       padding: $spacing-md;
       height: auto;
-      min-height: calc(100vh - 200px);
+      min-height: calc(100vh - 12.5rem);
     }
 
     @include respond-to-max(sm) {
@@ -123,20 +123,20 @@ defineExpose({
     align-items: center;
     justify-content: center;
     background-color: #ebecf7;
-    border-radius: 15px;
+    border-radius: 0.9375rem;
     flex: 1;
     overflow: hidden;
     width: 100%;
     height: 100%;
 
     @include respond-to-max(md) {
-      min-height: 400px;
+      min-height: 25rem;
       padding: $spacing-lg;
     }
 
     @include respond-to-max(sm) {
-      border-radius: 8px;
-      min-height: 300px;
+      border-radius: 0.5rem;
+      min-height: 18.75rem;
       padding: $spacing-md;
     }
   }
@@ -147,8 +147,8 @@ defineExpose({
     align-items: center;
     justify-content: center;
     flex-direction: column;
-    max-width: 564px;
-    gap: 10px;
+    max-width: 35.25rem;
+    gap: 0.625rem;
 
     @include respond-to-max(md) {
       text-align: center;
@@ -173,45 +173,45 @@ defineExpose({
   }
 
   &__illustration {
-    width: 176px;
+    width: 11rem;
     height: auto;
 
     @include respond-to-max(lg) {
-      width: 300px;
+      width: 18.75rem;
     }
 
     @include respond-to-max(md) {
-      width: 250px;
+      width: 15.625rem;
     }
 
     @include respond-to-max(sm) {
-      width: 200px;
+      width: 12.5rem;
     }
   }
 
   &__greeting {
     font-family: $font-family-montserrat-alt;
     font-weight: 800;
-    font-size: 48px;
-    line-height: 39px;
+    font-size: 3rem;
+    line-height: 2.4375rem;
     letter-spacing: 0;
     color: $color-primary;
-    padding: 0px 0px 10px 0px;
+    padding: 0 0 0.625rem 0;
     margin: 0;
 
     @include respond-to-max(lg) {
-      font-size: 52px;
-      line-height: 48px;
+      font-size: 3.25rem;
+      line-height: 3rem;
     }
 
     @include respond-to-max(md) {
-      font-size: 40px;
-      line-height: 36px;
+      font-size: 2.5rem;
+      line-height: 2.25rem;
     }
 
     @include respond-to-max(sm) {
-      font-size: 32px;
-      line-height: 28px;
+      font-size: 2rem;
+      line-height: 1.75rem;
       padding-bottom: $spacing-sm;
     }
   }
@@ -219,17 +219,17 @@ defineExpose({
   &__description {
     font-family: $font-family-main;
     font-weight: 400;
-    font-size: 16px;
-    line-height: 22px;
+    font-size: 1rem;
+    line-height: 1.375rem;
     letter-spacing: 0;
-    color: #6d758f;
+    color: $color-text-secondary;
     padding: 0;
     margin: 0;
     text-align: center;
 
     @include respond-to-max(sm) {
-      font-size: 14px;
-      line-height: 20px;
+      font-size: 0.875rem;
+      line-height: 1.25rem;
     }
   }
 
@@ -255,7 +255,7 @@ defineExpose({
 
       @include respond-to-max(sm) {
         padding: $spacing-sm $spacing-md;
-        font-size: 14px;
+        font-size: 0.875rem;
       }
     }
 
@@ -265,7 +265,7 @@ defineExpose({
 
       @include respond-to-max(sm) {
         padding: $spacing-sm $spacing-md;
-        font-size: 14px;
+        font-size: 0.875rem;
       }
     }
   }

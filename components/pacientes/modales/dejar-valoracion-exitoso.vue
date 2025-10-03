@@ -87,40 +87,40 @@ const handleNavigateToHome = () => {
     display: flex;
     flex-direction: column;
     align-items: center;
-    padding: 24px;
-    gap: 20px;
+    padding: 1.5rem;
+    gap: 1.25rem;
   }
 
   &__icon-wrapper {
     display: flex;
     justify-content: center;
-    margin-bottom: 20px;
+    margin-bottom: 1.25rem;
   }
 
   &__icon {
-    width: 48px;
-    height: 48px;
+    width: 3rem;
+    height: 3rem;
     color: $white;
     border-radius: 50%;
-    background: #0cadbb;
-    border: 8px solid #c2ebee;
-    padding: 6px;
+    background: $primary-aqua;
+    border: 0.5rem solid $primary-aqua-light;
+    padding: 0.375rem;
   }
 
   &__title {
     @include label-base;
     font-weight: 600;
-    font-size: 24px;
-    line-height: 32px;
+    font-size: 1.5rem;
+    line-height: 2rem;
     text-align: center;
     color: $color-foreground;
-    margin-bottom: 8px;
+    margin-bottom: 0.5rem;
   }
 
   &____message {
     display: flex;
     flex-direction: column;
-    gap: 10px;
+    gap: 0.625rem;
     text-align: center;
   }
 
@@ -128,11 +128,11 @@ const handleNavigateToHome = () => {
     @include label-base;
     display: block;
     font-weight: 500;
-    font-size: 16px;
-    line-height: 24px;
+    font-size: 1rem;
+    line-height: 1.5rem;
     letter-spacing: 0;
     text-align: center;
-    color: #6d758f;
+    color: $color-text-secondary;
   }
 
   &__footer {
@@ -140,7 +140,7 @@ const handleNavigateToHome = () => {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    gap: 12px;
+    gap: 0.75rem;
   }
 
   &__button {

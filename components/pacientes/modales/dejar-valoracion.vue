@@ -240,45 +240,45 @@ watch(
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 10px;
-    padding: 20px 24px;
+    gap: 0.625rem;
+    padding: 1.25rem 1.5rem;
   }
 
   &__highlight {
     @include label-base;
     font-weight: 600;
-    font-size: 16px;
-    line-height: 28px;
-    color: #3541b4;
+    font-size: 1rem;
+    line-height: 1.75rem;
+    color: $color-primary;
     text-align: center;
   }
 
   &__title {
     @include label-base;
     font-weight: 600;
-    font-size: 24px;
-    line-height: 37px;
-    letter-spacing: -1px;
+    font-size: 1.5rem;
+    line-height: 2.3125rem;
+    letter-spacing: -0.0625rem;
     text-align: center;
     color: #353e5c;
-    max-width: 360px;
+    max-width: 22.5rem;
   }
 
   &__stars {
     display: flex;
     justify-content: center;
-    gap: 8px;
-    max-width: 360px;
+    gap: 0.5rem;
+    max-width: 22.5rem;
     width: 100%;
-    margin: 10px 0;
+    margin: 0.625rem 0;
   }
 
   &__star-button {
     background: none;
     border: none;
-    padding: 8px;
+    padding: 0.5rem;
     cursor: pointer;
-    border-radius: 4px;
+    border-radius: 0.25rem;
     transition: transform 0.2s ease;
 
     &:hover:not(:disabled) {
@@ -286,8 +286,8 @@ watch(
     }
 
     &:focus:not(:disabled) {
-      outline: 2px solid #3541b4;
-      outline-offset: 2px;
+      outline: 0.125rem solid $color-primary;
+      outline-offset: 0.125rem;
     }
 
     &:active:not(:disabled) {
@@ -300,8 +300,8 @@ watch(
   }
 
   &__stars--icon {
-    width: 40px;
-    height: 40px;
+    width: 2.5rem;
+    height: 2.5rem;
     transition:
       color 0.2s ease,
       opacity 0.2s ease;
@@ -322,38 +322,38 @@ watch(
   &__rating-text {
     @include label-base;
     font-weight: 500;
-    font-size: 16px;
-    line-height: 24px;
-    color: #667085;
+    font-size: 1rem;
+    line-height: 1.5rem;
+    color: $color-text-muted;
     text-align: center;
-    margin: 5px 0 10px 0;
-    min-height: 24px; // Para evitar saltos de layout
+    margin: 0.3125rem 0 0.625rem 0;
+    min-height: 1.5rem;
   }
 
   &__textarea {
     width: 100%;
-    height: 128px;
-    padding: 10px 14px;
-    border: 1px solid #d0d5dd;
-    border-radius: 8px;
+    height: 8rem;
+    padding: 0.625rem 0.875rem;
+    border: 0.0625rem solid #d0d5dd;
+    border-radius: 0.5rem;
     font-family: inherit;
-    font-size: 16px;
-    line-height: 24px;
+    font-size: 1rem;
+    line-height: 1.5rem;
     color: $color-foreground;
-    box-shadow: 0px 1px 2px 0px #1018280d;
+    box-shadow: 0 0.0625rem 0.125rem 0 rgba(16, 24, 40, 0.05);
     resize: vertical;
     transition:
       opacity 0.2s ease,
       border-color 0.2s ease;
 
     &::placeholder {
-      color: #667085;
+      color: $color-text-muted;
     }
 
     &:focus:not(:disabled) {
       outline: none;
-      border-color: #3541b4;
-      box-shadow: 0 0 0 4px rgba(53, 65, 180, 0.1);
+      border-color: $color-primary;
+      box-shadow: 0 0 0 0.25rem rgba(53, 65, 180, 0.1);
     }
 
     &--disabled {
@@ -374,28 +374,28 @@ watch(
     &--text {
       @include label-base;
       font-weight: 400;
-      font-size: 16px;
-      line-height: 24px;
-      color: #667085;
+      font-size: 1rem;
+      line-height: 1.5rem;
+      color: $color-text-muted;
     }
   }
 
   &__buttons {
     display: flex;
-    gap: 12px;
+    gap: 0.75rem;
   }
 
   &__loading {
     display: flex;
     align-items: center;
-    gap: 8px;
+    gap: 0.5rem;
   }
 
   &__spinner {
-    width: 14px;
-    height: 14px;
-    border: 2px solid rgba(255, 255, 255, 0.3);
-    border-top: 2px solid white;
+    width: 0.875rem;
+    height: 0.875rem;
+    border: 0.125rem solid rgba(255, 255, 255, 0.3);
+    border-top: 0.125rem solid $white;
     border-radius: 50%;
     animation: spin 1s linear infinite;
   }

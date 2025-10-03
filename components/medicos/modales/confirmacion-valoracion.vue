@@ -127,9 +127,9 @@ defineExpose({
     display: flex;
     justify-content: center;
     align-items: center;
-    width: 48px;
-    height: 48px;
-    border: 8px solid #fffaeb;
+    width: 3rem;
+    height: 3rem;
+    border: 0.5rem solid $color-warning;
     background-color: #fef0c7;
     border-radius: 50%;
 
@@ -139,29 +139,29 @@ defineExpose({
   }
 
   &__content {
-    padding: 20px 24px 0px 24px;
+    padding: 1.25rem 1.5rem 0 1.5rem;
   }
 
   &__content-title {
     @include label-base;
     font-weight: 600;
-    font-size: 20px;
-    line-height: 30px;
-    color: #19213d;
+    font-size: 1.25rem;
+    line-height: 1.875rem;
+    color: $color-foreground;
   }
 
   &__description {
     @include label-base;
     font-weight: 500;
-    font-size: 14px;
-    line-height: 24px;
-    color: #6d758f;
+    font-size: 0.875rem;
+    line-height: 1.5rem;
+    color: $color-text-secondary;
   }
 
   &__actions {
     width: 100%;
     display: flex;
-    gap: 12px;
+    gap: 0.75rem;
   }
 
   &__button {

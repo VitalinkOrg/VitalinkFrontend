@@ -653,12 +653,12 @@ defineExpose({
 
   &__wrapper {
     position: relative;
-    max-width: 255px;
+    max-width: 15.9375rem;
     min-height: fit-content;
     background: #ebecf7;
-    border-radius: 15px;
-    margin: 10px;
-    padding: 20px;
+    border-radius: 0.9375rem;
+    margin: 0.625rem;
+    padding: 1.25rem;
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -677,8 +677,8 @@ defineExpose({
     @include text-base;
     z-index: 10;
     font-weight: 800;
-    font-size: 20px;
-    line-height: 27px;
+    font-size: 1.25rem;
+    line-height: 1.6875rem;
     letter-spacing: 0;
     margin-top: 6rem;
     color: $color-primary;
@@ -688,11 +688,11 @@ defineExpose({
     display: flex;
     flex-direction: column;
     flex: 1;
-    gap: 20px;
-    margin: 10px;
-    border-radius: 15px;
+    gap: 1.25rem;
+    margin: 0.625rem;
+    border-radius: 0.9375rem;
     background-color: #f8faff;
-    padding: 20px;
+    padding: 1.25rem;
     min-height: fit-content;
   }
 
@@ -712,9 +712,9 @@ defineExpose({
   &__field-group {
     display: grid;
     grid-template-columns: 1fr 1fr;
-    gap: 10px;
+    gap: 0.625rem;
 
-    @media (max-width: 768px) {
+    @media (max-width: $breakpoint-md) {
       grid-template-columns: 1fr;
     }
   }
@@ -722,8 +722,8 @@ defineExpose({
   &__label {
     @include form-label;
     font-weight: 500;
-    font-size: 14px;
-    line-height: 20px;
+    font-size: 0.875rem;
+    line-height: 1.25rem;
     letter-spacing: 0;
     width: min-content;
     text-wrap: nowrap;
@@ -739,8 +739,8 @@ defineExpose({
 
     &--number {
       text-align: center;
-      max-width: 40px;
-      padding: 10px 14px;
+      max-width: 2.5rem;
+      padding: 0.625rem 0.875rem;
 
       appearance: textfield;
       -moz-appearance: textfield;
@@ -755,14 +755,14 @@ defineExpose({
 
   &__textarea {
     @extend .onboarding-modal__input;
-    min-height: 128px;
+    min-height: 8rem;
     resize: vertical;
   }
 
   &__services {
     display: flex;
     flex-direction: column;
-    gap: 20px;
+    gap: 1.25rem;
   }
 
   &__services-title {
@@ -770,7 +770,7 @@ defineExpose({
     font-weight: 600;
     color: #2d3748;
     margin: 0;
-    padding: 0 0 4px 0;
+    padding: 0 0 0.25rem 0;
   }
 
   &__button {
@@ -797,14 +797,14 @@ defineExpose({
     width: 100%;
     text-align: left;
 
-    padding: 15px 17px;
+    padding: 0.9375rem 1.0625rem;
     font-family: $font-family-main;
-    font-size: 14.7px;
+    font-size: 0.91875rem;
     background: $white;
     border: 1px solid #d4dae0;
     box-shadow:
-      0 0 1.05px rgba(50, 50, 71, 0.2),
-      0 1.05px 2.1px rgba(50, 50, 71, 0.08);
+      0 0 0.065625rem rgba(50, 50, 71, 0.2),
+      0 0.065625rem 0.13125rem rgba(50, 50, 71, 0.08);
     transition: all 0.3s ease;
     border-radius: $border-radius-md;
     span {
@@ -821,11 +821,11 @@ defineExpose({
     }
 
     &:hover:not(.dropdown__trigger--disabled) {
-      border: 1px solid #0cadbb;
+      border: 1px solid $primary-aqua;
     }
 
     &--active {
-      border-color: #0cadbb;
+      border-color: $primary-aqua;
     }
   }
 
@@ -860,21 +860,21 @@ defineExpose({
 
   &__menu {
     position: absolute;
-    top: calc(100% + 4px);
+    top: calc(100% + 0.25rem);
     left: 0;
     right: 0;
-    max-height: 200px;
+    max-height: 12.5rem;
     overflow-y: auto;
-    background-color: white;
+    background-color: $white;
     border: 1px solid #e2e8f0;
-    border-radius: 6px;
+    border-radius: 0.375rem;
     box-shadow:
-      0 10px 15px -3px rgba(0, 0, 0, 0.1),
-      0 4px 6px -2px rgba(0, 0, 0, 0.05);
+      0 0.625rem 0.9375rem -0.1875rem rgba(0, 0, 0, 0.1),
+      0 0.25rem 0.375rem -0.125rem rgba(0, 0, 0, 0.05);
     z-index: 1000;
     opacity: 0;
     visibility: hidden;
-    transform: translateY(-8px);
+    transform: translateY(-0.5rem);
     transition:
       opacity 0.2s,
       visibility 0.2s,
@@ -902,13 +902,13 @@ defineExpose({
     }
 
     &:first-child {
-      border-top-left-radius: 6px;
-      border-top-right-radius: 6px;
+      border-top-left-radius: 0.375rem;
+      border-top-right-radius: 0.375rem;
     }
 
     &:last-child {
-      border-bottom-left-radius: 6px;
-      border-bottom-right-radius: 6px;
+      border-bottom-left-radius: 0.375rem;
+      border-bottom-right-radius: 0.375rem;
     }
 
     &[aria-selected="true"] {
@@ -922,7 +922,7 @@ defineExpose({
   width: 100%;
   border-collapse: collapse;
   border: 1px solid #e2e8f0;
-  border-radius: 6px;
+  border-radius: 0.375rem;
   overflow: hidden;
 
   &__row {
@@ -934,15 +934,15 @@ defineExpose({
   &__header {
     @include label-base;
     font-weight: 500;
-    font-size: 14px;
-    line-height: 20px;
+    font-size: 0.875rem;
+    line-height: 1.25rem;
     letter-spacing: 0;
     width: 60%;
     color: #344054;
   }
 
   &__cell {
-    padding: 8px;
+    padding: 0.5rem;
     border-right: 1px solid #e2e8f0;
     width: 40%;
   }

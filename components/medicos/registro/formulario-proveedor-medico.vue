@@ -341,15 +341,12 @@ onMounted(async () => {
 
   &__main {
     flex: 1;
-
-    & > * + * {
-      margin-top: 20px;
-    }
+    @include space-y(1.25rem);
   }
 
   &__title {
     @include label-base;
-    font-size: 15px;
+    font-size: 0.9375rem;
     color: #353e5c;
     font-weight: 600;
   }
@@ -359,17 +356,14 @@ onMounted(async () => {
     gap: 1rem;
     margin-bottom: 1.5rem;
 
-    @media (max-width: 768px) {
+    @media (max-width: 48rem) {
       flex-direction: column;
     }
   }
 
   &__group {
     flex: 1;
-
-    & > * + * {
-      margin-top: 6px;
-    }
+    @include space-y(0.375rem);
   }
 
   &__label {
@@ -377,26 +371,26 @@ onMounted(async () => {
     color: #344054;
     display: flex;
     align-items: center;
-    gap: 6px;
-    max-height: 20px;
+    gap: 0.375rem;
+    max-height: 1.25rem;
   }
 
   &__input-text,
   &__input-select {
     @include input-base;
     width: 100%;
-    margin-top: 6px;
+    margin-top: 0.375rem;
   }
 
   &__button-next {
     @include primary-button;
-    margin-top: 20px;
+    margin-top: 1.25rem;
   }
 
   &__error-message {
     color: #dc2626;
-    font-size: 14px;
-    margin-top: 4px;
+    font-size: 0.875rem;
+    margin-top: 0.25rem;
   }
 }
 
@@ -417,22 +411,22 @@ onMounted(async () => {
 
   .tooltip-content {
     position: absolute;
-    top: calc(100% + 8px);
+    top: calc(100% + 0.5rem);
     left: 50%;
     transform: translateX(-50%);
     background: #1f2937;
-    color: white;
-    padding: 10px 14px;
-    border-radius: 8px;
-    font-size: 13px;
+    color: $white;
+    padding: 0.625rem 0.875rem;
+    border-radius: 0.5rem;
+    font-size: 0.8125rem;
     font-weight: 400;
-    max-width: 280px;
+    max-width: 17.5rem;
     white-space: normal;
     line-height: 1.4;
     z-index: 1000;
     box-shadow:
-      0 10px 15px -3px rgba(0, 0, 0, 0.1),
-      0 4px 6px -2px rgba(0, 0, 0, 0.05);
+      0 0.625rem 0.9375rem -0.1875rem rgba(0, 0, 0, 0.1),
+      0 0.25rem 0.375rem -0.125rem rgba(0, 0, 0, 0.05);
 
     &::before {
       content: "";
@@ -440,13 +434,13 @@ onMounted(async () => {
       bottom: 100%;
       left: 50%;
       transform: translateX(-50%);
-      border: 6px solid transparent;
+      border: 0.375rem solid transparent;
       border-bottom-color: #1f2937;
     }
 
     opacity: 0;
     visibility: hidden;
-    transform: translateX(-50%) translateY(-5px);
+    transform: translateX(-50%) translateY(-0.3125rem);
     transition: all 0.2s ease;
     pointer-events: none;
   }
@@ -464,7 +458,7 @@ onMounted(async () => {
       transform: translateX(0);
 
       &::before {
-        left: 20px;
+        left: 1.25rem;
         transform: translateX(0);
       }
 
@@ -479,7 +473,7 @@ onMounted(async () => {
       transform: translateX(0);
 
       &::before {
-        right: 20px;
+        right: 1.25rem;
         left: auto;
         transform: translateX(0);
       }
@@ -490,13 +484,13 @@ onMounted(async () => {
     }
   }
 
-  @media (max-width: 768px) {
+  @media (max-width: 48rem) {
     .tooltip-content {
       position: fixed;
       top: 50%;
       left: 50%;
       transform: translate(-50%, -50%);
-      max-width: calc(100vw - 40px);
+      max-width: calc(100vw - 2.5rem);
 
       &::before {
         display: none;
@@ -515,16 +509,16 @@ onMounted(async () => {
   align-items: center;
   width: 100%;
   margin-top: auto;
-  padding: 20px 0;
+  padding: 1.25rem 0;
 
   .auth-already-account {
     display: flex;
     align-items: center;
-    gap: 4px;
+    gap: 0.25rem;
     margin: 0;
     font-family: $font-family-alt;
     font-weight: 400;
-    font-size: 14px;
+    font-size: 0.875rem;
     color: $color-text-muted;
   }
 
@@ -536,7 +530,7 @@ onMounted(async () => {
 
     &:hover {
       text-decoration: underline;
-      color: darken($color-primary, 10%);
+      color: $color-primary-darkened-10;
     }
   }
 }

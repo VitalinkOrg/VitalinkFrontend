@@ -149,7 +149,7 @@ const register = async () => {
 .registration-label {
   font-family: $font-family-main;
   font-weight: 500;
-  font-size: 14.7px;
+  font-size: 0.91875rem;
   color: #425466;
 }
 
@@ -159,14 +159,14 @@ const register = async () => {
 
 .registration-hint {
   font-family: $font-family-alt;
-  font-size: 11.55px;
+  font-size: 0.721875rem;
   color: #718096;
 }
 
 .registration-options-group {
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 0.625rem;
   margin-top: $spacing-lg;
 }
 
@@ -178,7 +178,7 @@ const register = async () => {
 
 .registration-option-label {
   font-family: $font-family-main;
-  font-size: 13.65px;
+  font-size: 0.853125rem;
   line-height: 1.4;
   color: #353e5c;
 
@@ -207,35 +207,35 @@ const register = async () => {
 .registration-social-login__label {
   margin: 0;
   font-family: $font-family-main;
-  font-size: 10.5px;
+  font-size: 0.65625rem;
   color: #718096;
 }
 
 .registration-social-buttons {
   display: flex;
   justify-content: center;
-  gap: 12px;
+  gap: 0.75rem;
 }
 
 .registration-social-button {
-  width: 71.41px;
-  height: 55.99px;
-  border-radius: 8.4px;
-  background: #ffffff;
+  width: 4.463125rem;
+  height: 3.499375rem;
+  border-radius: 0.525rem;
+  background: $white;
   border: 1px solid #dee2e6;
   display: flex;
   align-items: center;
   justify-content: center;
   box-shadow:
-    0 1.05px 3.15px rgba(50, 50, 71, 0.1),
-    0 0 1.05px rgba(12, 26, 75, 0.2);
+    0 0.065625rem 0.196875rem rgba(50, 50, 71, 0.1),
+    0 0 0.065625rem rgba(12, 26, 75, 0.2);
   cursor: pointer;
   transition: all 0.2s ease;
 
   &:hover {
     box-shadow:
-      0 2px 4px rgba(50, 50, 71, 0.1),
-      0 0 2px rgba(12, 26, 75, 0.2);
+      0 0.125rem 0.25rem rgba(50, 50, 71, 0.1),
+      0 0 0.125rem rgba(12, 26, 75, 0.2);
   }
 
   &:active {
@@ -254,11 +254,11 @@ const register = async () => {
 .registration-already-account {
   display: flex;
   align-items: center;
-  gap: 4px;
+  gap: 0.25rem;
   margin: 0;
   font-family: $font-family-alt;
   font-weight: 400;
-  font-size: 14px;
+  font-size: 0.875rem;
   color: $color-text-muted;
 }
 
