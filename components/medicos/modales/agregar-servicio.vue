@@ -795,7 +795,7 @@ const saveService = (): void => {
   &__time-slot {
     display: flex;
     gap: 0.75rem;
-    align-items: end;
+    align-items: flex-end;
     width: 50%;
   }
 
