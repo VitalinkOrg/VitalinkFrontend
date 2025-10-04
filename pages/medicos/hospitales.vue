@@ -103,21 +103,7 @@ const openAddModal = () => {
 
       <div class="row mb-2">
         <div class="col-10">
-          <div class="input-group shadow-sm">
-            <span
-              class="input-group-text bg-transparent border-end-0 rounded-start-3"
-              id="basic-addon1"
-            >
-              <AtomsIconsSearchIcon />
-            </span>
-            <input
-              type="text"
-              class="form-control border-start-0 rounded-end-3"
-              placeholder="Buscar"
-              aria-label="Buscar"
-              aria-describedby="basic-addon1"
-            />
-          </div>
+          <UiSearchBar placeholder="Buscar" aria-label="Buscar en hospitales" />
         </div>
         <div class="col-2 ms-auto d-flex">
           <div class="dropdown me-2 w-100">

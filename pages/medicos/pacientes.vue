@@ -259,20 +259,11 @@ const downloadAllPatients = (): void => {
     <MedicosCommonPageHeader title="Mis Pacientes" />
 
     <div class="patients__actions--wrapper">
-      <div class="col-auto">
-        <div class="patients__search-group">
-          <span class="patients__search-group--icon" id="basic-addon1">
-            <AtomsIconsSearchIcon />
-          </span>
-          <input
-            type="text"
-            class="patients__search-group--input"
-            placeholder="Buscar"
-            aria-label="Buscar"
-            aria-describedby="basic-addon1"
-          />
-        </div>
-      </div>
+      <UiSearchBar
+        placeholder="Buscar"
+        aria-label="Buscar en mis citas"
+        max-width="320px"
+      />
       <div class="patients__actions">
         <button disabled class="patients__button--outline">
           + Nuevo Paciente
@@ -306,44 +297,15 @@ const downloadAllPatients = (): void => {
 
 <style lang="scss" scoped>
 .patients {
-  &__search-group {
-    @include input-base;
-    position: relative;
-    display: flex;
-    align-items: center;
-    padding: 0px;
-
-    &--icon {
-      position: absolute;
-      left: 12px;
-      pointer-events: none;
-      svg {
-        width: 20px;
-        height: 20px;
-      }
-    }
-
-    &--input {
-      @include input-reset;
-      width: 100%;
-      padding: 10px 14px 10px 42px;
-      background-color: transparent;
-      font-weight: 300;
-      font-size: 16px;
-      line-height: 24px;
-      letter-spacing: 0;
-    }
-  }
-
   &__actions {
     display: flex;
-    gap: 12px;
+    gap: 0.75rem;
 
     &--wrapper {
       display: flex;
       justify-content: space-between;
       align-items: center;
-      padding: 12px 0px;
+      padding: 0.75rem 0;
     }
   }
 

@@ -163,21 +163,11 @@ onUnmounted(() => {
           </svg>
         </button>
 
-        <div class="dashboard__search" role="search">
-          <label for="search-input" class="sr-only">Buscar en el panel</label>
-          <span class="dashboard__search-icon" aria-hidden="true">
-            <AtomsIconsSearchIcon size="20" />
-          </span>
-          <input
-            id="search-input"
-            ref="searchInput"
-            type="search"
-            class="dashboard__search-input"
-            placeholder="Buscar"
-            aria-label="Campo de búsqueda"
-            autocomplete="off"
-          />
-        </div>
+        <UiSearchBar
+          placeholder="Buscar"
+          aria-label="Buscar"
+          max-width="320px"
+        />
 
         <button
           class="dashboard__notification-btn"
@@ -846,87 +836,6 @@ onUnmounted(() => {
 
     @include respond-to-max(sm) {
       order: 1;
-    }
-  }
-
-  &__search {
-    @include input-base;
-    position: relative;
-    display: flex;
-    align-items: center;
-    background-color: $white;
-    border-radius: $border-radius-md;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-    width: auto;
-    flex: 1;
-    max-width: 24rem;
-    padding: 0;
-
-    @include respond-to-max(md) {
-      flex: 1;
-      max-width: none;
-      order: 2;
-      margin: 0 $spacing-sm;
-    }
-
-    @include respond-to-max(sm) {
-      width: 100%;
-      max-width: 20rem;
-      margin: 0;
-      order: 3;
-    }
-  }
-
-  &__search-icon {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    width: 1.25rem;
-    height: 1.25rem;
-    color: $color-text-muted;
-    background-color: transparent;
-    border-right: none;
-    margin-left: 0.875rem;
-    flex-shrink: 0;
-
-    @include respond-to-max(sm) {
-      margin-left: 0.75rem;
-    }
-  }
-
-  &__search-input {
-    border: none;
-    border-left: none;
-    box-shadow: none;
-    padding: 0;
-    font-weight: 300;
-    font-size: 1rem;
-    line-height: 1.5;
-    width: 100%;
-    min-width: 0;
-    background: transparent;
-    padding: 10px 14px;
-
-    &:focus-within,
-    &:focus-visible,
-    &:focus-within {
-      border: none;
-      outline: none;
-    }
-
-    @include respond-to-max(lg) {
-      font-size: 0.9rem;
-      padding: 0.5rem 0.75rem;
-    }
-
-    @include respond-to-max(sm) {
-      font-size: 0.875rem;
-      padding: 0.5rem 0.625rem;
-    }
-
-    &::placeholder {
-      color: $color-text-muted;
-      opacity: 0.8;
     }
   }
 }
