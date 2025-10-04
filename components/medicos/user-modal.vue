@@ -80,7 +80,6 @@
 </template>
 
 <script setup>
-import { defineProps } from "vue";
 const emit = defineEmits(["close-modal"]);
 const props = defineProps(["appointment", "open"]);
 </script>

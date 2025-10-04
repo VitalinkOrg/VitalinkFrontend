@@ -2,7 +2,6 @@
 definePageMeta({
   middleware: ["auth-doctors-hospitals"],
 });
-import { ref, defineProps } from "vue";
 const open = ref(false);
 const remove = ref(false);
 const selectedHospital = ref(null); // To track which hospital is being edited

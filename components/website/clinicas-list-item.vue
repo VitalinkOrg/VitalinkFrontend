@@ -1,5 +1,4 @@
 <script setup>
-import { defineProps, ref } from "vue";
 const panel = ref(false);
 const props = defineProps(["clinica"]);
 const offers = ref([]);
