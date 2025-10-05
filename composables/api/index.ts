@@ -2,6 +2,7 @@ export { default as useApi } from "./useApi";
 export { useAppointment } from "./useAppointment";
 export { useAppointmentCredit } from "./useAppointmentCredit";
 export { useAuth } from "./useAuth";
+export { useAvailability } from "./useAvailability";
 export { useDocuments } from "./useDocuments";
 export { useErrorHandler } from "./useErrorHandler";
 export { usePackage } from "./usePackage";
