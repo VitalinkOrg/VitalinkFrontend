@@ -48,6 +48,7 @@
 
       <WebsiteReservarCitaValoracionFormularioReserva
         v-if="internalCurrentStep === 2"
+        :loading="isLoading"
         :phone-number="phoneNumber"
         :alternative-phone-number="alternativePhoneNumber"
         @set-alternative-phone-number="setAlternativePhoneNumber"
@@ -123,10 +124,10 @@
 </template>
 
 <script lang="ts" setup>
-import type { ApiResponse, Package, Service } from "~/types";
+import { useAppointment } from "~/composables/api";
+import type { Package, Service } from "~/types";
 
-const config = useRuntimeConfig();
-const token = useCookie("token");
+const { createAppointment } = useAppointment();
 
 interface Props {
   selectedDay: string | null;
@@ -151,7 +152,6 @@ const isOpenSuccessModal = ref<boolean>(false);
 
 const isLoading = ref<boolean>(false);
 
-const phoneNumber = ref<string>(props.customerPhone || "");
 const alternativePhoneNumber = ref<string | null>(null);
 const isForExternalUser = ref<"me" | "someoneElse">("me");
 const userDescription = ref<string>("");
@@ -162,6 +162,7 @@ const localSelectedDay = ref<string | null>(props.selectedDay || null);
 const localSelectedHour = ref<string | null>(props.selectedHour || null);
 
 const modalRef = ref();
+const phoneNumber = computed(() => props.customerPhone ?? "");
 
 const openModal = (): void => {
   isOpen.value = true;
@@ -231,12 +232,21 @@ const setAlternativePhoneNumber = (phone: string): void => {
 };
 
 const handleConfirmReservation = async () => {
+  if (props.selectedPackage?.id == null) {
+    console.error("Package ID is required");
+    return;
+  }
+  if (props.selectedProcedureId == null) {
+    console.error("Procedure ID is required");
+    return;
+  }
+
   const payload = {
     customer_id: props.customerId,
-    appointment_date: localSelectedDay.value ?? props.selectedDay,
-    appointment_hour: localSelectedHour.value ?? props.selectedHour,
+    appointment_date: (localSelectedDay.value ?? props.selectedDay) || "",
+    appointment_hour: (localSelectedHour.value ?? props.selectedHour) || "",
     supplier_id: props.supplierId,
-    package_id: props.selectedPackage?.id,
+    package_id: props.selectedPackage.id,
     user_description: userDescription.value,
     is_for_external_user: isForExternalUser.value === "someoneElse",
     phone_number_external_user:
@@ -246,17 +256,16 @@ const handleConfirmReservation = async () => {
 
   try {
     isLoading.value = true;
+    const api = createAppointment(payload);
+    await api.request();
 
-    await $fetch<ApiResponse>(config.public.API_BASE_URL + "/appointment/add", {
-      method: "POST",
-      body: payload,
-      headers: {
-        Authorization: token.value ?? "",
-        "Content-Type": "application/json",
-      },
-    });
+    if (api.response.value?.data) {
+      openSuccessModal();
+    }
 
-    openSuccessModal();
+    if (api.error.value) {
+      throw new Error(api.error.value.info);
+    }
   } catch (err: any) {
     console.error("Error al confirmar la reservación:", err);
   } finally {

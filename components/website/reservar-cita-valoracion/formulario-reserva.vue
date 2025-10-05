@@ -22,6 +22,7 @@
             placeholder="Escribe alguna descripción..."
             rows="4"
             @change="setUserDescription"
+            :disabled="isLoading"
           ></textarea>
         </div>
 
@@ -40,6 +41,7 @@
                 class="reservation-form__radio"
                 @change="setIsForExternalUser"
                 checked
+                :disabled="isLoading"
               />
               <label for="forMe" class="reservation-form__radio-label"
                 >Para mi</label
@@ -54,6 +56,7 @@
                 value="someoneElse"
                 class="reservation-form__radio"
                 @change="setIsForExternalUser"
+                :disabled="isLoading"
               />
               <label for="forSomeoneElse" class="reservation-form__radio-label"
                 >Para otra persona</label
@@ -89,6 +92,7 @@
               id="useAlternativeNumber"
               class="reservation-form__switch"
               @change="toggleAlternativeNumber"
+              :disabled="isLoading"
             />
             <label
               for="useAlternativeNumber"
@@ -110,6 +114,7 @@
               class="reservation-form__input"
               placeholder="+506 8765-4321"
               :value="alternativePhoneNumber"
+              :disabled="isLoading"
               @input="
                 if ($event.target) {
                   $emit(
@@ -179,6 +184,7 @@
 interface Props {
   phoneNumber: string;
   alternativePhoneNumber: string | null;
+  loading: boolean;
 }
 
 interface Emits {
@@ -188,6 +194,15 @@ interface Emits {
 }
 const props = defineProps<Props>();
 const emit = defineEmits<Emits>();
+
+const isLoading = ref<boolean>(false);
+
+watch(
+  () => props.loading,
+  (newValue) => {
+    isLoading.value = newValue;
+  }
+);
 
 const setIsForExternalUser = (event: Event) => {
   const value = (event.target as HTMLInputElement).value as
