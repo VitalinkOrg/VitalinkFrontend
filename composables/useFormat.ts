@@ -42,7 +42,22 @@ export const useFormat = () => {
     date: string | Date,
     format: "full" | "short" = "full"
   ): string => {
-    const dateObj = typeof date === "string" ? new Date(date) : date;
+    let dateObj: Date;
+
+    if (typeof date === "string") {
+      if (date.includes("/")) {
+        const [day, month, year] = date.split("/");
+        dateObj = new Date(parseInt(year), parseInt(month) - 1, parseInt(day));
+      } else {
+        dateObj = new Date(date);
+      }
+    } else {
+      dateObj = date;
+    }
+
+    if (isNaN(dateObj.getTime())) {
+      throw new Error(`Invalid date format: ${date}`);
+    }
 
     if (format === "short") {
       const day = dateObj.getDate().toString().padStart(2, "0");
