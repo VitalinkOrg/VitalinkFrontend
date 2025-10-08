@@ -231,7 +231,7 @@
   transition: all 0.3s ease;
 
   &:hover {
-    border: 1px solid #0cadbb;
+    border: 1px solid $color-primary;
   }
 
   &::placeholder {

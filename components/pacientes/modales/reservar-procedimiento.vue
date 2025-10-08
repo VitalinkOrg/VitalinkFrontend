@@ -25,16 +25,20 @@
               {{ appointment.supplier.name }}
             </td>
           </tr>
-          <tr>
+          <tr v-if="canShowCreditStatus">
             <td class="schedule-procedure-modal__label">Apto para crédito:</td>
             <td class="schedule-procedure-modal__value">
-              {{ isCreditDisabled ? "No" : "Sí" }}
+              {{ isCreditDisabled ? "Sí" : "No" }}
             </td>
           </tr>
           <tr class="schedule-procedure-modal__row">
             <td class="schedule-procedure-modal__label">Costo del servicio:</td>
             <td class="schedule-procedure-modal__value">
-              {{ formatCurrency(appointment.price_valoration_appointment) }}
+              {{
+                formatCurrency(appointment.price_procedure, {
+                  decimalPlaces: 0,
+                })
+              }}
             </td>
           </tr>
           <tr>
@@ -214,9 +218,20 @@ const handleCloseModal = (modalName: ModalName): void => {
 };
 
 const isCreditDisabled = computed(() => {
-  return (
-    props.appointment.appointment_credit?.credit_status?.code === "REQUIRED"
-  );
+  if (!props.appointment.appointment_credit) return false;
+  if (props.appointment.appointment_credit.credit_status?.code === "REJECTED")
+    return false;
+  return true;
+});
+
+const canShowCreditStatus = computed(() => {
+  if (!props.appointment.appointment_credit) return false;
+  if (
+    props.appointment.appointment_status.code ===
+      "VALUED_VALORATION_APPOINTMENT" &&
+    props.appointment.appointment_credit?.credit_status_code !== "REQUIRED"
+  )
+    return true;
 });
 
 const formatDisplayDate = (dateString: string) => {
@@ -326,14 +341,14 @@ watch(
 <style lang="scss" scoped>
 .schedule-procedure-modal {
   &__content {
-    padding: 24px;
+    padding: 1.5rem;
   }
 
   &__title {
     @include label-base;
     font-weight: 600;
-    font-size: 18px;
-    line-height: 28px;
+    font-size: 1.125rem;
+    line-height: 1.75rem;
     color: $color-foreground;
   }
 
@@ -344,27 +359,27 @@ watch(
     border-spacing: 0;
 
     tr.schedule-procedure-modal__row td {
-      border-bottom: 1px solid #e1e4ed;
+      border-bottom: 0.0625rem solid #e1e4ed;
     }
 
     td {
-      padding: 6px 0px;
+      padding: 0.375rem 0;
       vertical-align: middle;
     }
 
     &__label {
       font-family: $font-family-main;
       font-weight: 300;
-      font-size: 16px;
-      line-height: 20px;
-      color: #6d758f;
+      font-size: 1rem;
+      line-height: 1.25rem;
+      color: $color-text-secondary;
     }
 
     &__value {
       font-family: $font-family-main;
       font-weight: 500;
-      font-size: 16px;
-      line-height: 20px;
+      font-size: 1rem;
+      line-height: 1.25rem;
       color: $color-foreground;
     }
   }
@@ -374,7 +389,7 @@ watch(
     display: inline-block;
     width: 100%;
     &:first-child {
-      padding-top: 8px;
+      padding-top: 0.5rem;
     }
   }
 
@@ -383,26 +398,26 @@ watch(
     align-items: center;
     justify-content: space-between;
     width: 100%;
-    padding: 12px 16px;
-    background-color: #fff;
-    border: 1px solid #d1d5db;
-    border-radius: 8px;
-    font-size: 14px;
+    padding: 0.75rem 1rem;
+    background-color: $white;
+    border: 0.0625rem solid #d1d5db;
+    border-radius: 0.5rem;
+    font-size: 0.875rem;
     font-weight: 400;
     color: $color-foreground;
     cursor: pointer;
     transition: all 0.2s ease;
-    gap: 8px;
+    gap: 0.5rem;
 
     &:hover:not(:disabled) {
       border-color: #9ca3af;
-      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+      box-shadow: 0 0.0625rem 0.1875rem rgba(0, 0, 0, 0.1);
     }
 
     &:focus {
       outline: none;
       border-color: #3b82f6;
-      box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+      box-shadow: 0 0 0 0.1875rem rgba(59, 130, 246, 0.1);
     }
 
     &:disabled {
@@ -424,8 +439,8 @@ watch(
   }
 
   &__dropdown-arrow {
-    width: 16px;
-    height: 16px;
+    width: 1rem;
+    height: 1rem;
     color: #6b7280;
     transition: transform 0.2s ease;
     flex-shrink: 0;
@@ -441,20 +456,20 @@ watch(
     left: 0;
     right: 0;
     z-index: 1000;
-    margin-top: 4px;
-    background-color: #fff;
-    border: 1px solid #e5e7eb;
-    border-radius: 8px;
+    margin-top: 0.25rem;
+    background-color: $white;
+    border: 0.0625rem solid #e5e7eb;
+    border-radius: 0.5rem;
     box-shadow:
-      0 10px 15px -3px rgba(0, 0, 0, 0.1),
-      0 4px 6px -2px rgba(0, 0, 0, 0.05);
-    max-height: 200px;
+      0 0.625rem 0.9375rem -0.1875rem rgba(0, 0, 0, 0.1),
+      0 0.25rem 0.375rem -0.125rem rgba(0, 0, 0, 0.05);
+    max-height: 12.5rem;
     overflow-y: auto;
 
     min-width: auto;
-    padding: 4px 0;
+    padding: 0.25rem 0;
     margin: 0;
-    font-size: 14px;
+    font-size: 0.875rem;
     text-align: left;
     list-style: none;
     background-clip: padding-box;
@@ -468,7 +483,7 @@ watch(
   &__dropdown-item {
     display: block;
     width: 100%;
-    padding: 8px 16px;
+    padding: 0.5rem 1rem;
     clear: both;
     font-weight: 400;
     color: $color-foreground;
@@ -493,34 +508,34 @@ watch(
   &__footer {
     width: 100%;
     display: flex;
-    gap: 12px;
+    gap: 0.75rem;
   }
 
   &__button {
     &--primary {
       @include primary-button;
       width: 100%;
-      padding: 12px 12px;
+      padding: 0.75rem;
     }
 
     &--outline {
       @include outline-button;
       width: 100%;
-      padding: 12px 12px;
+      padding: 0.75rem;
     }
   }
 
   &__loading {
     display: flex;
     align-items: center;
-    gap: 8px;
+    gap: 0.5rem;
   }
 
   &__spinner {
-    width: 14px;
-    height: 14px;
-    border: 2px solid rgba(255, 255, 255, 0.3);
-    border-top: 2px solid white;
+    width: 0.875rem;
+    height: 0.875rem;
+    border: 0.125rem solid rgba(255, 255, 255, 0.3);
+    border-top: 0.125rem solid $white;
     border-radius: 50%;
     animation: spin 1s linear infinite;
   }

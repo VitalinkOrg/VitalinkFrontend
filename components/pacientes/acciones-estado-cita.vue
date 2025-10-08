@@ -314,9 +314,9 @@ const buttonConfig = computed((): ButtonConfig | null => {
     &--outline {
       @include outline-button;
       font-weight: 600;
-      font-size: 12px;
-      line-height: 18px;
-      padding: 8px 16px;
+      font-size: 0.75rem;
+      line-height: 1.125rem;
+      padding: 0.5rem 1rem;
       width: 100%;
 
       &:disabled {
@@ -329,32 +329,32 @@ const buttonConfig = computed((): ButtonConfig | null => {
   &__status {
     text-align: center;
     text-wrap: nowrap;
-    padding: 6px 10px;
+    padding: 0.375rem 0.625rem;
     cursor: pointer;
-    border-radius: 30px;
+    border-radius: 1.875rem;
     font-family: $font-family-main;
     font-weight: 500;
-    font-style: Medium;
-    font-size: 12px;
-    line-height: 18px;
-    letter-spacing: 0px;
+    font-style: normal;
+    font-size: 0.75rem;
+    line-height: 1.125rem;
+    letter-spacing: 0;
     text-align: center;
     color: $color-foreground;
 
     &--success {
-      background-color: #d3f2dd;
+      background-color: $color-success;
     }
 
     &--warning {
-      background-color: #faedbf;
+      background-color: $color-warning;
     }
 
     &--primary {
-      background-color: rgba(#3541b4, 0.1);
+      background-color: rgba($color-primary, 0.1);
     }
 
     &--cancelled {
-      background-color: #fac6d0;
+      background-color: $color-cancel;
     }
   }
 
@@ -362,7 +362,7 @@ const buttonConfig = computed((): ButtonConfig | null => {
     display: flex;
     justify-content: center;
     align-items: center;
-    gap: 8px;
+    gap: 0.5rem;
     cursor: pointer;
     transition: opacity 0.2s ease;
 

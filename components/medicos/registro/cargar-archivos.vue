@@ -179,8 +179,8 @@ const removeFile = () => {
     color: #344054;
     display: flex;
     align-items: center;
-    gap: 6px;
-    margin-bottom: 12px;
+    gap: 0.375rem;
+    margin-bottom: 0.75rem;
   }
 
   &__input {
@@ -188,23 +188,23 @@ const removeFile = () => {
   }
 
   &__loading {
-    width: 275px;
-    height: 141px;
-    border-radius: 4px;
-    border: 2px solid #e0e7ff;
+    width: 17.1875rem;
+    height: 8.8125rem;
+    border-radius: 0.25rem;
+    border: 0.125rem solid #e0e7ff;
     background-color: #f8faff;
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    gap: 12px;
+    gap: 0.75rem;
     animation: loading-pulse 2s infinite ease-in-out;
 
     &-spinner {
-      width: 32px;
-      height: 32px;
-      border: 3px solid #e0e7ff;
-      border-top: 3px solid $color-primary;
+      width: 2rem;
+      height: 2rem;
+      border: 0.1875rem solid #e0e7ff;
+      border-top: 0.1875rem solid $color-primary;
       border-radius: 50%;
       animation: loading-spin 1s linear infinite;
     }
@@ -212,23 +212,23 @@ const removeFile = () => {
     &-text {
       font-family: $font-family-mulish;
       font-weight: 600;
-      font-size: 14px;
-      line-height: 20px;
+      font-size: 0.875rem;
+      line-height: 1.25rem;
       color: #4338ca;
       text-align: center;
     }
   }
 
   &__dropzone {
-    width: 275px;
-    height: 141px;
-    border-radius: 4px;
+    width: 17.1875rem;
+    height: 8.8125rem;
+    border-radius: 0.25rem;
 
     display: flex;
     align-items: center;
     justify-content: space-between;
     padding: 1rem;
-    border: 2px dashed #ebecf7;
+    border: 0.125rem dashed #ebecf7;
     cursor: pointer;
     transition: all 0.3s ease;
     background-color: #f8f8ff;
@@ -245,7 +245,7 @@ const removeFile = () => {
     }
 
     &--uploaded {
-      border: 2px solid #28a745;
+      border: 0.125rem solid #28a745;
       background-color: #e6ffe6;
 
       &:hover {
@@ -268,8 +268,8 @@ const removeFile = () => {
       flex-direction: column;
 
       p {
-        font-size: 14px;
-        line-height: 24px;
+        font-size: 0.875rem;
+        line-height: 1.5rem;
         font-weight: 700;
         font-family: $font-family-mulish;
         margin: 0;
@@ -283,8 +283,8 @@ const removeFile = () => {
       small {
         font-family: $font-family-mulish;
         font-weight: 400;
-        font-size: 11px;
-        line-height: 18px;
+        font-size: 0.6875rem;
+        line-height: 1.125rem;
         letter-spacing: 0;
         text-align: center;
         color: #676767;
@@ -295,18 +295,18 @@ const removeFile = () => {
   &__success {
     display: flex;
     align-items: center;
-    gap: 10px;
-    margin-bottom: 20px;
+    gap: 0.625rem;
+    margin-bottom: 1.25rem;
 
     img {
-      height: 43px;
+      height: 2.6875rem;
     }
     span {
       font-weight: 400;
-      font-size: 14px;
-      line-height: 24px;
+      font-size: 0.875rem;
+      line-height: 1.5rem;
       letter-spacing: 0;
-      color: #19213d;
+      color: $color-foreground;
     }
   }
 
@@ -327,7 +327,7 @@ const removeFile = () => {
     color: #dc3545;
     background-color: #fee;
     border: 1px solid #fcc;
-    border-radius: 4px;
+    border-radius: 0.25rem;
   }
 }
 

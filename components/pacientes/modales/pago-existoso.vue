@@ -155,83 +155,83 @@ const closeModal = (): void => {
     @include label-base;
     font-family: Montserrat;
     font-weight: 600;
-    font-size: 20px;
-    line-height: 28px;
+    font-size: 1.25rem;
+    line-height: 1.75rem;
     color: #353e5c;
   }
 
   &__content {
     display: flex;
     flex-direction: column;
-    gap: 26px;
-    padding: 24px;
+    gap: 1.625rem;
+    padding: 1.5rem;
   }
 
   &__icon {
     border-radius: 50%;
-    width: 48px;
-    height: 48px;
+    width: 3rem;
+    height: 3rem;
     background: #d1fadf;
-    border: 8px solid #ecfdf3;
+    border: 0.5rem solid #ecfdf3;
     color: #039855;
-    margin-bottom: 12px;
-    padding: 3.6px;
+    margin-bottom: 0.75rem;
+    padding: 0.225rem;
   }
 
   &__title {
     @include label-base;
     font-weight: 700;
-    font-size: 24px;
-    line-height: 29.5px;
+    font-size: 1.5rem;
+    line-height: 1.84375rem;
     color: $color-foreground;
   }
 
   &__subtext {
     @include label-base;
     font-weight: 400;
-    font-size: 18px;
-    line-height: 24px;
-    color: #6d758f;
+    font-size: 1.125rem;
+    line-height: 1.5rem;
+    color: $color-text-secondary;
   }
 
   &__table {
     width: 100%;
     border-collapse: separate;
-    padding: 20px;
+    padding: 1.25rem;
     background-color: #f8faff;
-    border-radius: 20px;
+    border-radius: 1.25rem;
 
     &--row {
       td {
-        border-bottom: 1px solid #e1e4ed;
+        border-bottom: 0.0625rem solid #e1e4ed;
       }
     }
 
     &--label {
       font-family: $font-family-main;
       font-weight: 300;
-      font-size: 16px;
-      line-height: 20px;
+      font-size: 1rem;
+      line-height: 1.25rem;
       letter-spacing: 0;
-      color: #6d758f;
-      padding: 6px 0px;
+      color: $color-text-secondary;
+      padding: 0.375rem 0;
     }
 
     &--value {
       font-family: $font-family-main;
       font-weight: 500;
-      font-size: 16px;
-      line-height: 20px;
+      font-size: 1rem;
+      line-height: 1.25rem;
       letter-spacing: 0;
       color: $color-foreground;
-      padding: 6px 0px;
+      padding: 0.375rem 0;
     }
   }
 
   &__footer {
     width: 100%;
     display: flex;
-    gap: 12px;
+    gap: 0.75rem;
   }
 
   &__button {
@@ -239,19 +239,19 @@ const closeModal = (): void => {
       @include outline-button;
       width: 100%;
       font-weight: 600;
-      font-size: 16px;
-      line-height: 24px;
-      padding: 12px 0px;
+      font-size: 1rem;
+      line-height: 1.5rem;
+      padding: 0.75rem 0;
     }
 
     &--primary {
       @include primary-button;
       width: 100%;
       font-weight: 600;
-      font-size: 16px;
-      line-height: 24px;
+      font-size: 1rem;
+      line-height: 1.5rem;
       letter-spacing: 0;
-      padding: 12px 0px;
+      padding: 0.75rem 0;
     }
   }
 }

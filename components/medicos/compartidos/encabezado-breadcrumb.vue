@@ -86,12 +86,12 @@ const breadcrumbs = generateBreadcrumbs();
 
   &__item {
     font-family: $font-family-main;
-    font-size: 14px;
-    line-height: 20px;
+    font-size: 0.875rem;
+    line-height: 1.25rem;
 
     &:not(:last-child)::after {
       content: var(--breadcrumb-divider);
-      margin: 0 6px 0 3px;
+      margin: 0 0.375rem 0 0.1875rem;
       color: #353e5c;
     }
 
@@ -124,8 +124,8 @@ const breadcrumbs = generateBreadcrumbs();
   &__text {
     @include text-base;
     font-weight: 600;
-    font-size: 20px;
-    line-height: 20px;
+    font-size: 1.25rem;
+    line-height: 1.25rem;
     letter-spacing: 0;
   }
 }

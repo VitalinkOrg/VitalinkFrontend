@@ -570,25 +570,25 @@ const balanceToPay = (appointment: Appointment) => {
 <style lang="scss" scoped>
 .pay-appointment-modal {
   &__icon {
-    width: 48px;
-    height: 48px;
+    width: 3rem;
+    height: 3rem;
     border-radius: 50%;
     background: #f4ebff;
-    border: 8px solid #f9f5ff;
-    color: #3541b4;
+    border: 0.5rem solid #f9f5ff;
+    color: $color-primary;
   }
 
   &__content {
     display: flex;
     flex-direction: column;
-    padding: 24px;
-    gap: 20px;
+    padding: 1.5rem;
+    gap: 1.25rem;
 
     &__title {
       @include label-base;
       font-weight: 600;
-      font-size: 18px;
-      line-height: 28px;
+      font-size: 1.125rem;
+      line-height: 1.75rem;
       color: #101828;
     }
 
@@ -596,30 +596,30 @@ const balanceToPay = (appointment: Appointment) => {
       @include label-base;
       font-family: Montserrat;
       font-weight: 400;
-      font-size: 14px;
-      line-height: 20px;
-      color: #667085;
+      font-size: 0.875rem;
+      line-height: 1.25rem;
+      color: $color-text-muted;
     }
 
     &__payment-summary {
       @include label-base;
       font-weight: 700;
-      font-size: 14px;
-      line-height: 20px;
+      font-size: 0.875rem;
+      line-height: 1.25rem;
       color: #353e5c;
     }
   }
 
   &__form-row {
     display: flex;
-    gap: 12px;
-    margin-bottom: 24px;
+    gap: 0.75rem;
+    margin-bottom: 1.5rem;
   }
 
   &__form-group {
     display: flex;
     flex-direction: column;
-    gap: 6px;
+    gap: 0.375rem;
 
     &--large {
       width: 70%;
@@ -637,8 +637,8 @@ const balanceToPay = (appointment: Appointment) => {
   &__label {
     @include label-base;
     font-weight: 500;
-    font-size: 14px;
-    line-height: 20px;
+    font-size: 0.875rem;
+    line-height: 1.25rem;
     color: #344054;
   }
 
@@ -654,12 +654,12 @@ const balanceToPay = (appointment: Appointment) => {
     width: 100%;
 
     &--with-icon {
-      padding-left: 40px;
+      padding-left: 2.5rem;
     }
 
     &--error {
-      border-color: #dc2626;
-      box-shadow: 0 0 0 1px #dc2626;
+      border-color: $color-error;
+      box-shadow: 0 0 0 0.0625rem $color-error;
     }
 
     &--disabled {
@@ -669,16 +669,16 @@ const balanceToPay = (appointment: Appointment) => {
   }
 
   &__field-error {
-    color: #dc2626;
-    font-size: 12px;
+    color: $color-error;
+    font-size: 0.75rem;
     font-weight: 400;
-    margin: 2px 0 0 0;
-    line-height: 16px;
+    margin: 0.125rem 0 0 0;
+    line-height: 1rem;
   }
 
   &__card-icon {
     position: absolute;
-    left: 12px;
+    left: 0.75rem;
     top: 50%;
     transform: translateY(-50%);
     display: flex;
@@ -688,21 +688,21 @@ const balanceToPay = (appointment: Appointment) => {
   }
 
   &__card-svg {
-    width: 24px;
-    height: 24px;
+    width: 1.5rem;
+    height: 1.5rem;
   }
 
   &__loading {
     display: flex;
     align-items: center;
-    gap: 8px;
+    gap: 0.5rem;
   }
 
   &__spinner {
-    width: 14px;
-    height: 14px;
-    border: 2px solid rgba(255, 255, 255, 0.3);
-    border-top: 2px solid white;
+    width: 0.875rem;
+    height: 0.875rem;
+    border: 0.125rem solid rgba(255, 255, 255, 0.3);
+    border-top: 0.125rem solid $white;
     border-radius: 50%;
     animation: spin 1s linear infinite;
   }
@@ -714,36 +714,36 @@ const balanceToPay = (appointment: Appointment) => {
     &--header {
       font-family: $font-family-main;
       font-weight: 400;
-      font-size: 14px;
-      line-height: 20px;
-      color: #6d758f;
+      font-size: 0.875rem;
+      line-height: 1.25rem;
+      color: $color-text-secondary;
       vertical-align: middle;
     }
 
     &--cell {
       font-family: $font-family-main;
       font-weight: 700;
-      font-size: 14px;
-      line-height: 20px;
+      font-size: 0.875rem;
+      line-height: 1.25rem;
       letter-spacing: 0%;
       text-align: right;
       vertical-align: middle;
-      color: #19213d;
+      color: $color-foreground;
     }
   }
 
   &__buttons {
     display: flex;
     justify-content: space-between;
-    gap: 8px;
-    margin-top: 16px;
+    gap: 0.5rem;
+    margin-top: 1rem;
   }
 
   &__button {
     &--outline {
       @include outline-button;
       flex: 1;
-      padding: 10px 18px;
+      padding: 0.625rem 1.125rem;
 
       &:disabled {
         opacity: 0.6;
@@ -754,7 +754,7 @@ const balanceToPay = (appointment: Appointment) => {
     &--primary {
       @include primary-button;
       flex: 1;
-      padding: 10px 18px;
+      padding: 0.625rem 1.125rem;
 
       &:disabled {
         opacity: 0.8;
@@ -766,12 +766,12 @@ const balanceToPay = (appointment: Appointment) => {
   &__footer {
     display: flex;
     justify-content: center;
-    margin-top: 16px;
+    margin-top: 1rem;
   }
 
   &__error {
-    color: #dc2626;
-    font-size: 14px;
+    color: $color-error;
+    font-size: 0.875rem;
     font-weight: 500;
     margin: 0;
   }

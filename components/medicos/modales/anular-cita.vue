@@ -71,24 +71,31 @@ const handleCloseModal = () => {
 };
 
 const handleCancelAppointment = async () => {
-  const payload = {
-    appointment_status_code: "CANCEL_APPOINTMENT",
-  };
+  try {
+    isLoading.value = true;
 
   const api = updateAppointment(payload, props.appointment.id);
   await api.request();
 
-  const response = api.response.value;
-  const error = api.error.value;
+    const api = updateAppointment(payload, props.appointment.id);
+    await api.request();
 
-  if (response?.data) {
-    await refreshAppointments?.();
-    handleCloseModal();
-    closeParentModal?.();
-  }
+    const response = api.response.value;
+    const error = api.error.value;
 
-  if (error) {
-    console.error("Error cancelling appointment:", error);
+    if (response?.data) {
+      await refreshAppointments?.();
+      handleCloseModal();
+      closeParentModal?.();
+    }
+
+    if (error) {
+      throw new Error("Error cancelling appointment:" + error.info);
+    }
+  } catch (error) {
+    console.error(error);
+  } finally {
+    isLoading.value = false;
   }
 };
 
@@ -106,12 +113,12 @@ defineExpose({
     display: flex;
     justify-content: center;
     align-items: center;
-    width: 40px;
-    height: 40px;
-    border: 6.5px solid #fac6d0;
-    background-color: #ff2d46;
+    width: 2.5rem;
+    height: 2.5rem;
+    border: 0.40625rem solid $color-cancel;
+    background-color: $color-danger;
     border-radius: 50%;
-    padding: 6px;
+    padding: 0.375rem;
 
     svg {
       color: $white;
@@ -119,29 +126,29 @@ defineExpose({
   }
 
   &__content {
-    padding: 20px 24px 0px 24px;
+    padding: 1.25rem 1.5rem 0 1.5rem;
   }
 
   &__content-title {
     @include label-base;
     font-weight: 600;
-    font-size: 20px;
-    line-height: 30px;
-    color: #19213d;
+    font-size: 1.25rem;
+    line-height: 1.875rem;
+    color: $color-foreground;
   }
 
   &__description {
     @include label-base;
     font-weight: 500;
-    font-size: 14px;
-    line-height: 24px;
-    color: #6d758f;
+    font-size: 0.875rem;
+    line-height: 1.5rem;
+    color: $color-text-secondary;
   }
 
   &__actions {
     width: 100%;
     display: flex;
-    gap: 12px;
+    gap: 0.75rem;
   }
 
   &__button {

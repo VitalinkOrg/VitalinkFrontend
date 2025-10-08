@@ -461,16 +461,16 @@ const handleRegister = async () => {
 .registration {
   &__form {
     width: 100%;
-    max-width: 620px;
+    max-width: 38.75rem;
   }
 
   &__title {
     @include text-base;
     font-weight: 600;
-    font-size: 24px;
-    line-height: 140%;
+    font-size: 1.5rem;
+    line-height: 1.4;
     letter-spacing: -0.02em;
-    margin-bottom: 24px;
+    margin-bottom: 1.5rem;
     color: #1a1a1a;
   }
 
@@ -483,30 +483,30 @@ const handleRegister = async () => {
   &__legend {
     @include text-base;
     font-weight: 600;
-    font-size: 14px;
-    line-height: 140%;
+    font-size: 0.875rem;
+    line-height: 1.4;
     letter-spacing: -0.02em;
     color: #333333;
-    margin-bottom: 8px;
+    margin-bottom: 0.5rem;
     padding: 0;
   }
 
   &__separator {
     background-color: #e1e4ed;
-    height: 1px;
+    height: 0.0625rem;
     width: 100%;
-    margin-bottom: 16px;
+    margin-bottom: 1rem;
   }
 
   &__row {
     display: grid;
-    gap: 16px;
-    margin-bottom: 16px;
+    gap: 1rem;
+    margin-bottom: 1rem;
 
     &--two-columns {
       grid-template-columns: repeat(2, 1fr);
 
-      @media (max-width: 768px) {
+      @media (max-width: 48rem) {
         grid-template-columns: 1fr;
       }
     }
@@ -514,11 +514,11 @@ const handleRegister = async () => {
     &--three-columns {
       grid-template-columns: repeat(3, 1fr);
 
-      @media (max-width: 768px) {
+      @media (max-width: 48rem) {
         grid-template-columns: 1fr;
       }
 
-      @media (min-width: 769px) and (max-width: 1024px) {
+      @media (min-width: 48.0625rem) and (max-width: 64rem) {
         grid-template-columns: repeat(2, 1fr);
       }
     }
@@ -528,24 +528,24 @@ const handleRegister = async () => {
     display: flex;
     flex-direction: column;
     width: 100%;
-    gap: 6px;
-    margin-bottom: 16px;
+    gap: 0.375rem;
+    margin-bottom: 1rem;
   }
 
   &__label {
     @include form-label;
     font-weight: 500;
-    font-size: 14px;
-    line-height: 20px;
+    font-size: 0.875rem;
+    line-height: 1.25rem;
     color: #344054;
   }
 
   &__input {
     @include input-base;
-    padding: 10px 14px;
+    padding: 0.625rem 0.875rem;
     font-weight: 300;
-    font-size: 16px;
-    line-height: 24px;
+    font-size: 1rem;
+    line-height: 1.5rem;
     letter-spacing: 0;
     width: 100%;
 
@@ -555,45 +555,45 @@ const handleRegister = async () => {
 
     &--error {
       border-color: #dc2626;
-      box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.1);
+      box-shadow: 0 0 0 0.1875rem rgba(220, 38, 38, 0.1);
     }
   }
 
   &__error {
-    font-size: 12px;
+    font-size: 0.75rem;
     color: #dc2626;
-    margin-top: 4px;
+    margin-top: 0.25rem;
     font-weight: 400;
-    line-height: 16px;
+    line-height: 1rem;
   }
 
   &__button {
     width: 100%;
-    margin-bottom: 24px;
+    margin-bottom: 1.5rem;
 
     &--primary {
       @include primary-button;
-      padding: 16px 28px;
-      border-radius: 20px;
+      padding: 1rem 1.75rem;
+      border-radius: 1.25rem;
     }
   }
 
   &__login-prompt {
     text-align: center;
     margin: 0;
-    padding: 16px 0 0 0;
+    padding: 1rem 0 0 0;
   }
 
   &__login-text {
     color: #6b7280;
-    font-size: 14px;
+    font-size: 0.875rem;
   }
 
   &__login-link {
     color: #1f2937;
     font-weight: 500;
     text-decoration: none;
-    font-size: 14px;
+    font-size: 0.875rem;
 
     &:hover {
       text-decoration: underline;
@@ -606,7 +606,7 @@ const handleRegister = async () => {
   &.registration__input--error {
     .date-picker__input {
       border-color: #dc2626;
-      box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.1);
+      box-shadow: 0 0 0 0.1875rem rgba(220, 38, 38, 0.1);
     }
   }
 }
@@ -617,10 +617,10 @@ const handleRegister = async () => {
 
 :deep(.date-picker__input-icon) {
   left: auto;
-  right: 18px;
+  right: 1.125rem;
 }
 
 :deep(.date-picker__input) {
-  padding: 15px 36px 15px 17px;
+  padding: 0.9375rem 2.25rem 0.9375rem 1.0625rem;
 }
 </style>

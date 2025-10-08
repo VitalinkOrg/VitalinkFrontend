@@ -118,7 +118,7 @@ export default {
   position: relative;
   display: flex;
   justify-content: space-between;
-  margin: 12px 0;
+  margin: 0.75rem 0;
   width: 100%;
 
   &__step {
@@ -138,22 +138,22 @@ export default {
   }
 
   &__circle {
-    width: 31px;
-    height: 31px;
+    width: 1.9375rem;
+    height: 1.9375rem;
     border-radius: 50%;
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 14px;
-    background-color: #fff;
-    color: #fff;
-    margin-bottom: 8px;
+    font-size: 0.875rem;
+    background-color: $white;
+    color: $white;
+    margin-bottom: 0.5rem;
     flex-shrink: 0;
   }
 
   &__icon {
-    width: 31px;
-    height: 31px;
+    width: 1.9375rem;
+    height: 1.9375rem;
 
     &-bg {
       fill: $primary-aqua-light;
@@ -172,15 +172,15 @@ export default {
 
   &__line {
     position: absolute;
-    top: 14.5px;
-    height: 2px;
+    top: 0.90625rem;
+    height: 0.125rem;
     background-color: $primary-aqua;
     z-index: 0;
   }
 
   &__label {
     font-family: $font-family-montserrat-alt;
-    font-size: 16px;
+    font-size: 1rem;
     color: $primary-aqua-light;
     white-space: normal;
     word-break: break-word;
@@ -188,10 +188,10 @@ export default {
     position: relative;
     max-width: max-content;
     font-weight: 600;
-    line-height: 18px;
+    line-height: 1.125rem;
     letter-spacing: 0;
     vertical-align: middle;
-    max-width: 281px;
+    max-width: 17.5625rem;
   }
 
   &__step--completed {

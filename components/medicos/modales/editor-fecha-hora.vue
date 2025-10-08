@@ -403,14 +403,14 @@ defineExpose({
   &__title {
     font-family: $font-family-main;
     font-weight: 600;
-    font-size: 20px;
-    line-height: 28px;
+    font-size: 1.25rem;
+    line-height: 1.75rem;
     color: #353e5c;
     margin: 0;
   }
 
   &__content {
-    padding: 24px;
+    padding: 1.5rem;
   }
 
   &__date-picker {
@@ -431,10 +431,10 @@ defineExpose({
   }
 
   &__error {
-    margin-top: 4px;
-    font-size: 12px;
-    line-height: 16px;
-    color: #dc2626;
+    margin-top: 0.25rem;
+    font-size: 0.75rem;
+    line-height: 1rem;
+    color: $color-error;
     font-weight: 500;
   }
 
@@ -449,9 +449,9 @@ defineExpose({
   &__alert {
     display: inline-flex;
     align-items: center;
-    gap: 4px;
-    padding: 2px 8px;
-    border-radius: 16px;
+    gap: 0.25rem;
+    padding: 0.125rem 0.5rem;
+    border-radius: 1rem;
 
     &--info {
       background-color: #dbeafe;
@@ -459,7 +459,7 @@ defineExpose({
 
     &--error {
       background-color: #fef2f2;
-      padding: 8px 12px;
+      padding: 0.5rem 0.75rem;
     }
   }
 
@@ -468,21 +468,21 @@ defineExpose({
     color: #1d4ed8;
 
     .appointment-editor__alert--error & {
-      color: #dc2626;
+      color: $color-error;
     }
   }
 
   &__alert-text {
     @include label-base;
     font-weight: 500;
-    font-size: 12px;
-    line-height: 18px;
+    font-size: 0.75rem;
+    line-height: 1.125rem;
     letter-spacing: 0;
     text-align: center;
     color: #1e40af;
 
     .appointment-editor__alert--error & {
-      color: #dc2626;
+      color: $color-error;
       text-align: left;
     }
   }

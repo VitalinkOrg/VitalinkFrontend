@@ -117,6 +117,7 @@ import AtomsIconsUserIcon from "@/components/atoms/icons/user-icon.vue";
 import { useAuth } from "~/composables/api";
 
 const { logout } = useAuth();
+const { getUserInfo } = useUserInfo();
 const router = useRouter();
 
 interface MenuItem {
@@ -154,7 +155,7 @@ const dropdownTrigger = ref<HTMLButtonElement>();
 const dropdownMenu = ref<HTMLUListElement>();
 const menuItems = ref<(HTMLElement | null)[]>([]);
 const currentFocusIndex = ref(-1);
-const userName = ref<string>("");
+const userName = ref<string>(getUserInfo().email);
 
 const triggerId = `dropdown-trigger-${Math.random().toString(36).substr(2, 9)}`;
 const ariaDescribedBy = `dropdown-description-${Math.random().toString(36).substr(2, 9)}`;
@@ -466,27 +467,28 @@ onMounted(async () => {
 
 .dropdown-menu {
   background-color: $white;
-  border: 1px solid #f1f3f7;
-  box-shadow: 0px 4px 6px -2px #1018281f;
-  box-shadow: -8px 12px 16px -4px #1018281f;
+  border: 0.0625rem solid #f1f3f7;
+  box-shadow:
+    0 0.25rem 0.375rem -0.125rem #1018281f,
+    -0.5rem 0.75rem 1rem -0.25rem #1018281f;
 }
 
 .input-dropdown-menu {
   &__trigger {
     background: none;
     border: none;
-    padding: 4px;
+    padding: 0.25rem;
     margin: 0;
     display: flex;
     align-items: center;
-    gap: 8px;
+    gap: 0.5rem;
     cursor: pointer;
-    border-radius: 6px;
+    border-radius: 0.375rem;
     transition: all 0.2s ease;
 
     &:focus {
-      outline: 2px solid $primary-aqua;
-      outline-offset: 2px;
+      outline: 0.125rem solid $primary-aqua;
+      outline-offset: 0.125rem;
     }
 
     &:hover {
@@ -495,15 +497,15 @@ onMounted(async () => {
 
     &--avatar-container {
       position: relative;
-      height: 39px;
-      width: 39px;
+      height: 2.4375rem;
+      width: 2.4375rem;
     }
 
     &--avatar {
-      height: 39px;
-      width: 39px;
+      height: 2.4375rem;
+      width: 2.4375rem;
       border-radius: 50%;
-      padding: 2px;
+      padding: 0.125rem;
       background: linear-gradient(182.01deg, #04bfae 1.69%, #6c78e8 72.38%);
       display: flex;
       align-items: center;
@@ -521,21 +523,21 @@ onMounted(async () => {
 
     &--avatar-fallback {
       font-weight: bold;
-      font-size: 12px;
+      font-size: 0.75rem;
       color: $color-primary;
 
       span {
         font-family: $font-family-montserrat-alt;
         font-weight: 700;
-        font-size: 13.13px;
-        line-height: 19.69px;
+        font-size: 0.8203125rem;
+        line-height: 1.230625rem;
         letter-spacing: 0;
       }
 
       &--background {
         border-radius: 50%;
-        width: 34px;
-        height: 34px;
+        width: 2.125rem;
+        height: 2.125rem;
         display: flex;
         justify-content: center;
         align-items: center;
@@ -555,8 +557,8 @@ onMounted(async () => {
 
   &__item {
     display: flex;
-    gap: 8px;
-    padding: 12px 16px;
+    gap: 0.5rem;
+    padding: 0.75rem 1rem;
     border: none;
     width: 100%;
     text-align: left;
@@ -567,8 +569,8 @@ onMounted(async () => {
     color: inherit;
 
     &:focus {
-      outline: 2px solid $primary-aqua;
-      outline-offset: -2px;
+      outline: 0.125rem solid $primary-aqua;
+      outline-offset: -0.125rem;
       background-color: #e7f7f8;
     }
 
@@ -589,12 +591,12 @@ onMounted(async () => {
     &--label {
       font-family: $font-family-main;
       font-weight: 500;
-      font-size: 14px;
-      line-height: 20px;
+      font-size: 0.875rem;
+      line-height: 1.25rem;
       letter-spacing: 0;
       text-wrap: nowrap;
       color: $color-foreground;
-      min-height: 20px;
+      min-height: 1.25rem;
       display: flex;
       align-items: center;
     }
@@ -609,7 +611,7 @@ onMounted(async () => {
 
 @media (prefers-contrast: high) {
   .input-dropdown-menu__item {
-    border: 1px solid transparent;
+    border: 0.0625rem solid transparent;
 
     &:focus,
     &:hover {

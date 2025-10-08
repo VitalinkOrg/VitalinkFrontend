@@ -64,10 +64,8 @@ const closeReschedulingModal = inject<() => void>("closeReschedulingModal");
 
 const props = defineProps<Props>();
 
-const config = useRuntimeConfig();
-const token = useCookie("token");
-
-const { updateAppointment } = useAppointment();
+const { confirmValorationAppointment, updateAppointment, confirmProcedure } =
+  useAppointment();
 
 const isModalOpen = ref<boolean>(false);
 const isLoading = ref<boolean>(false);
@@ -88,11 +86,6 @@ const handleCloseModal = () => {
 };
 
 const handleSaveChanges = async () => {
-  if (!token.value) {
-    console.error("No token found - User not authenticated");
-    return;
-  }
-
   if (!props.appointmentDate || !props.appointmentHour) {
     console.error("Missing appointment date or hour");
     return;
@@ -116,10 +109,20 @@ const handleSaveChanges = async () => {
     const error = api.error.value;
 
     if (response?.data) {
-      await refreshAppointments?.();
-      handleCloseModal();
-      closeReschedulingModal?.();
-      savedChangesRef.value?.handleOpenModal();
+      if (
+        props.appointment.appointment_status.code ===
+        "CONFIRM_VALIDATION_APPOINTMENT"
+      ) {
+        await refreshAppointments?.();
+        savedChangesRef.value?.handleOpenModal();
+        return;
+      }
+
+      if (props.appointment.appointment_status.code === "PENDING_PROCEDURE") {
+        await handleConfirmProcedure();
+      } else {
+        await handleConfirmValorationAppointment();
+      }
     }
 
     if (error) {
@@ -129,6 +132,44 @@ const handleSaveChanges = async () => {
     console.error(error);
   } finally {
     isLoading.value = false;
+  }
+};
+
+const handleConfirmValorationAppointment = async () => {
+  const api = confirmValorationAppointment(props.appointment.id);
+  await api.request();
+
+  const response = api.response.value;
+  const error = api.error.value;
+
+  if (response?.data) {
+    await refreshAppointments?.();
+    handleCloseModal();
+    closeReschedulingModal?.();
+    savedChangesRef.value?.handleOpenModal();
+  }
+
+  if (error) {
+    console.error(error);
+  }
+};
+
+const handleConfirmProcedure = async () => {
+  const api = confirmProcedure(props.appointment.id);
+  await api.request();
+
+  const response = api.response.value;
+  const error = api.error.value;
+
+  if (response?.data) {
+    await refreshAppointments?.();
+    handleCloseModal();
+    closeReschedulingModal?.();
+    savedChangesRef.value?.handleOpenModal();
+  }
+
+  if (error) {
+    console.error(error);
   }
 };
 
@@ -146,12 +187,12 @@ defineExpose({
     display: flex;
     justify-content: center;
     align-items: center;
-    width: 40px;
-    height: 40px;
-    border: 6.5px solid #fffaeb;
+    width: 2.5rem;
+    height: 2.5rem;
+    border: 0.40625rem solid $color-warning;
     background-color: #fef0c7;
     border-radius: 50%;
-    padding: 6px;
+    padding: 0.375rem;
 
     svg {
       color: #dc6803;
@@ -159,30 +200,30 @@ defineExpose({
   }
 
   &__content {
-    padding: 20px 24px 0px 24px;
+    padding: 1.25rem 1.5rem 0 1.5rem;
   }
 
   &__content-title {
     @include label-base;
     font-weight: 600;
-    font-size: 20px;
-    line-height: 30px;
-    color: #19213d;
+    font-size: 1.25rem;
+    line-height: 1.875rem;
+    color: $color-foreground;
   }
 
   &__description {
     @include label-base;
     font-weight: 500;
-    font-size: 14px;
-    line-height: 24px;
-    color: #6d758f;
-    margin-bottom: 16px;
+    font-size: 0.875rem;
+    line-height: 1.5rem;
+    color: $color-text-secondary;
+    margin-bottom: 1rem;
   }
 
   &__actions {
     width: 100%;
     display: flex;
-    gap: 12px;
+    gap: 0.75rem;
   }
 
   &__button {

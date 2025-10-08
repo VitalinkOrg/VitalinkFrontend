@@ -478,21 +478,17 @@ onMounted(async () => {
 
 <style lang="scss" scoped>
 .registro-form {
-  & > * + * {
-    margin-top: 20px;
-  }
+  @include space-y(1.25rem);
 
   &__title {
     @include label-base;
-    font-size: 15px;
+    font-size: 0.9375rem;
     color: #353e5c;
     font-weight: 600;
   }
 
   &__doctor-section {
-    & > * + * {
-      margin-top: 20px;
-    }
+    @include space-y(1.25rem);
   }
 
   &__row {
@@ -500,27 +496,25 @@ onMounted(async () => {
     gap: 1rem;
     margin-bottom: 1.5rem;
 
-    @media (max-width: 768px) {
+    @media (max-width: $breakpoint-md) {
       flex-direction: column;
     }
   }
 
   &__add-button {
     @include primary-button;
-    margin-top: 10px;
+    margin-top: 0.625rem;
   }
 
   &__remove-doctor-button {
     @include outline-danger-button;
-    margin-top: 10px;
-    padding: 10px 14px;
+    margin-top: 0.625rem;
+    padding: 0.625rem 0.875rem;
   }
 
   &__group {
     flex: 1;
-    & > * + * {
-      margin-top: 6px;
-    }
+    @include space-y(0.375rem);
   }
 
   &__input-group {
@@ -537,8 +531,8 @@ onMounted(async () => {
     @include button-base;
     padding: 0;
     font-weight: 500;
-    font-size: 14px;
-    line-height: 20px;
+    font-size: 0.875rem;
+    line-height: 1.25rem;
     letter-spacing: 0;
     color: $color-primary;
 
@@ -571,12 +565,12 @@ onMounted(async () => {
     color: #344054;
     display: flex;
     align-items: center;
-    gap: 6px;
+    gap: 0.375rem;
     svg {
-      width: 18px;
-      height: 18px;
+      width: 1.125rem;
+      height: 1.125rem;
       fill: #344054;
-      margin-right: 4px;
+      margin-right: 0.25rem;
     }
   }
 
@@ -588,13 +582,13 @@ onMounted(async () => {
 
   &__button-next {
     @include primary-button;
-    margin-top: 20px;
+    margin-top: 1.25rem;
   }
 
   &__error-message {
     color: #dc2626;
-    font-size: 14px;
-    margin-top: 4px;
+    font-size: 0.875rem;
+    margin-top: 0.25rem;
   }
 
   &__navigation {
@@ -618,12 +612,12 @@ onMounted(async () => {
 .checkbox-group {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 0.75rem;
 
   &__label {
     @include label-base;
     font-weight: 500;
-    line-height: 20px;
+    line-height: 1.25rem;
     color: #344054;
     letter-spacing: 0;
   }
@@ -654,11 +648,11 @@ onMounted(async () => {
     border-radius: 50%;
     transition: all 0.2s ease;
     flex-shrink: 0;
-    padding: 4px;
+    padding: 0.25rem;
 
     &:hover {
       background-color: #1d4ed8;
-      color: white;
+      color: $white;
     }
   }
 }
@@ -666,12 +660,12 @@ onMounted(async () => {
 .navigation-buttons {
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 0.625rem;
 
   &__button {
     @include button-base;
     padding: 0.75rem 1.5rem;
-    border-radius: 4px;
+    border-radius: 0.25rem;
     font-weight: 500;
     transition: all 0.2s ease;
     display: flex;

@@ -27,6 +27,22 @@ interface UploadProforma {
   proforma_file_code?: string;
 }
 
+interface GetDocumentResponse {
+  id: number;
+  name: string;
+  code: string;
+  file_name: string;
+  type: string;
+  extension: string;
+  description: string;
+  url: string;
+  id_for_table: number;
+  table: string;
+  user_id: string;
+  is_public: number;
+  created_date: string;
+}
+
 export const useAppointment = () => {
   const config = useRuntimeConfig();
   const { getToken } = useAuthToken();
@@ -41,6 +57,7 @@ export const useAppointment = () => {
       method: "PUT",
       headers: {
         Authorization: token,
+        "Content-Type": "application/json",
       },
     });
   };
@@ -55,6 +72,7 @@ export const useAppointment = () => {
       method: "PUT",
       headers: {
         Authorization: token,
+        "Content-Type": "application/json",
       },
     });
   };
@@ -69,6 +87,7 @@ export const useAppointment = () => {
       method: "PUT",
       headers: {
         Authorization: token,
+        "Content-Type": "application/json",
       },
     });
   };
@@ -87,6 +106,7 @@ export const useAppointment = () => {
       body: JSON.stringify(body),
       headers: {
         Authorization: token,
+        "Content-Type": "application/json",
       },
     });
   };
@@ -102,6 +122,22 @@ export const useAppointment = () => {
       body: JSON.stringify(body),
       headers: {
         Authorization: token,
+        "Content-Type": "application/json",
+      },
+    });
+  };
+
+  const fetchDocumentByCode = (proformaFileCode: string) => {
+    const token = getToken();
+    if (!token) throw new Error("No authentication token found");
+
+    const url = `${config.public.API_BASE_URL}/document/get_by_code?code=${proformaFileCode}`;
+
+    return useApi<ApiResponse<GetDocumentResponse>>(url, {
+      method: "GET",
+      headers: {
+        Authorization: token,
+        "Content-Type": "application/json",
       },
     });
   };
@@ -112,5 +148,6 @@ export const useAppointment = () => {
     confirmProcedure,
     setProcedureRealized,
     confirmValorationAppointment,
+    fetchDocumentByCode,
   };
 };

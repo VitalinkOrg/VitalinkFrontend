@@ -190,9 +190,9 @@ defineExpose({
     flex-direction: column;
     width: 50%;
     background: #ebecf7;
-    border-radius: 15px;
-    margin: 10px;
-    padding: 20px;
+    border-radius: 0.9375rem;
+    margin: 0.625rem;
+    padding: 1.25rem;
     overflow: hidden;
   }
 
@@ -200,7 +200,7 @@ defineExpose({
     z-index: 0;
     position: absolute;
     height: 100%;
-    min-height: 800px;
+    min-height: 50rem;
   }
 
   &__step-image {
@@ -214,25 +214,25 @@ defineExpose({
     flex-direction: column;
     justify-content: center;
     width: 50%;
-    margin: 10px;
-    padding: 20px;
+    margin: 0.625rem;
+    padding: 1.25rem;
     background-color: #f8faff;
-    box-shadow: 0px 1px 4px 0px #19213d14;
-    border-radius: 15px;
+    box-shadow: 0 0.0625rem 0.25rem 0 #19213d14;
+    border-radius: 0.9375rem;
   }
 
   &__text-wrapper {
     display: flex;
     flex-direction: column;
-    margin-bottom: 20px;
-    height: 244px;
+    margin-bottom: 1.25rem;
+    height: 15.25rem;
   }
 
   &__main-title {
     font-family: $font-family-montserrat-alt;
     font-weight: 800;
-    font-size: 36px;
-    line-height: 49px;
+    font-size: 2.25rem;
+    line-height: 3.0625rem;
     letter-spacing: 0;
     color: $color-primary;
     padding-bottom: $spacing-md;
@@ -242,10 +242,10 @@ defineExpose({
   &__description {
     @include text-base;
     font-weight: 300;
-    font-size: 15px;
-    line-height: 23px;
+    font-size: 0.9375rem;
+    line-height: 1.4375rem;
     letter-spacing: 0;
-    color: #6d758f;
+    color: $color-text-secondary;
   }
 
   &__step-navigation {
@@ -254,13 +254,13 @@ defineExpose({
 
   &__step-button {
     position: relative;
-    width: 16px;
-    height: 16px;
+    width: 1rem;
+    height: 1rem;
     border-radius: 50%;
-    margin: 0 5px;
+    margin: 0 0.3125rem;
     cursor: pointer;
     background: transparent;
-    border: 1px solid $primary-aqua;
+    border: 0.0625rem solid $primary-aqua;
 
     &--active {
       &::after {
@@ -270,8 +270,8 @@ defineExpose({
         top: 50%;
         left: 50%;
         transform: translate(-50%, -50%);
-        width: 8px;
-        height: 8px;
+        width: 0.5rem;
+        height: 0.5rem;
         border-radius: 50%;
         background: $primary-aqua;
       }

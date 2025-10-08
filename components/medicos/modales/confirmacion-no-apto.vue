@@ -50,7 +50,7 @@ interface Props {
 const { uploadProforma } = useAppointment();
 
 const refreshAppointments = inject<() => Promise<void>>("refreshAppointments");
-const closeParentModal = inject<() => void>("closeParentModal");
+const closeParentModal = inject<() => void>("closeUploadProformaModal");
 
 const props = defineProps<Props>();
 
@@ -110,12 +110,12 @@ defineExpose({
     display: flex;
     justify-content: center;
     align-items: center;
-    width: 40px;
-    height: 40px;
-    border: 6.5px solid #fac6d0;
-    background-color: #ff2d46;
+    width: 2.5rem;
+    height: 2.5rem;
+    border: 0.40625rem solid $color-cancel;
+    background-color: $color-danger;
     border-radius: 50%;
-    padding: 6px;
+    padding: 0.375rem;
 
     svg {
       color: $white;
@@ -123,29 +123,29 @@ defineExpose({
   }
 
   &__content {
-    padding: 20px 24px 0px 24px;
+    padding: 1.25rem 1.5rem 0 1.5rem;
   }
 
   &__title {
     @include label-base;
     font-weight: 600;
-    font-size: 20px;
-    line-height: 30px;
-    color: #19213d;
+    font-size: 1.25rem;
+    line-height: 1.875rem;
+    color: $color-foreground;
   }
 
   &__description {
     @include label-base;
     font-weight: 500;
-    font-size: 14px;
-    line-height: 24px;
-    color: #6d758f;
+    font-size: 0.875rem;
+    line-height: 1.5rem;
+    color: $color-text-secondary;
   }
 
   &__actions {
     width: 100%;
     display: flex;
-    gap: 12px;
+    gap: 0.75rem;
   }
 
   &__button {

@@ -20,14 +20,14 @@
       <tr v-if="!canShowHourAndTime">
         <td class="appointment-table__label">Fecha de la cita:</td>
         <td class="appointment-table__value">
-          {{ formatDate(appointment.appointment_date) }}
+          {{ formatDate(appointment.application_date) }}
         </td>
       </tr>
 
       <tr v-if="!canShowHourAndTime" class="appointment-table__row">
         <td class="appointment-table__label">Hora de la cita:</td>
         <td class="appointment-table__value">
-          {{ formatTime(appointment.appointment_hour) }}
+          {{ formatTime(appointment.appointment_hour, "hs") }}
         </td>
       </tr>
 
@@ -41,7 +41,12 @@
       <tr>
         <td class="appointment-table__label">Teléfono de Contacto:</td>
         <td class="appointment-table__value">
-          {{ appointment.customer.phone_number }}
+          {{
+            formatPhone(
+              appointment.phone_number_external_user ??
+                appointment.customer.phone_number
+            )
+          }}
         </td>
       </tr>
 
@@ -95,7 +100,8 @@
         <td class="appointment-table__value">
           <button
             class="appointment-table__button--outline"
-            @click="downloadProform"
+            :disabled="isLoadingProforma"
+            @click="downloadProforma"
           >
             <AtomsIconsDownloadIcon />
             Descargar Proforma
@@ -103,15 +109,10 @@
         </td>
       </tr>
 
-      <tr
-        v-if="
-          appointment.appointment_status.code ===
-          'VALUED_VALORATION_APPOINTMENT'
-        "
-      >
+      <tr v-if="canShowCreditStatus">
         <td class="appointment-table__label">Apto para crédito:</td>
         <td class="appointment-table__value">
-          {{ isCreditDisabled ? "No" : "Sí" }}
+          {{ isCreditDisabled ? "Sí" : "No" }}
         </td>
       </tr>
 
@@ -138,14 +139,27 @@
         </td>
         <td class="appointment-table__value">
           {{
-            appointment.appointment_type.code === "PROCEDURE_APPOINTMENT"
-              ? formatCurrency(appointment.price_procedure)
-              : formatCurrency(appointment.price_valoration_appointment)
+            appointment.appointment_type.code === "PROCEDURE_APPOINTMENT" ||
+            appointment.appointment_status.code ===
+              "VALUED_VALORATION_APPOINTMENT"
+              ? formatCurrency(appointment.price_procedure, {
+                  decimalPlaces: 0,
+                })
+              : formatCurrency(appointment.price_valoration_appointment, {
+                  decimalPlaces: 0,
+                })
           }}
         </td>
       </tr>
 
-      <tr>
+      <tr
+        v-if="
+          appointment.appointment_status.code !==
+            'VALUED_VALORATION_APPOINTMENT' &&
+          appointment.appointment_status.code !==
+            'PENDING_VALORATION_APPOINTMENT'
+        "
+      >
         <td class="appointment-table__label">Estado de pago:</td>
         <td
           v-if="!appointment.appointment_credit"
@@ -189,8 +203,9 @@
         <td class="appointment-table__label">Crédito aprobado:</td>
         <td class="appointment-table__value">
           {{
-            formatCurrency(appointment.appointment_credit?.approved_amount) ||
-            formatCurrency("0.00")
+            formatCurrency(appointment.appointment_credit?.approved_amount, {
+              decimalPlaces: 0,
+            }) || formatCurrency("0", { decimalPlaces: 0 })
           }}
         </td>
       </tr>
@@ -203,7 +218,7 @@
       >
         <td class="appointment-table__label">Saldo pendiente:</td>
         <td class="appointment-table__value">
-          {{ formatCurrency(calculateBalance()) }}
+          {{ formatCurrency(calculateBalance(), { decimalPlaces: 0 }) }}
         </td>
       </tr>
     </tbody>
@@ -211,10 +226,11 @@
 </template>
 
 <script lang="ts" setup>
-import type { Appointment } from "~/types/appointment";
+import { useAppointment } from "@/composables/api";
+import type { Appointment } from "@/types/appointment";
 
-const token = useCookie("token");
-const config = useRuntimeConfig();
+const { formatCurrency, formatPhone, formatDate, formatTime } = useFormat();
+const { fetchDocumentByCode } = useAppointment();
 
 interface Props {
   appointment: Appointment;
@@ -237,6 +253,8 @@ const canShowHourAndTime = computed(() => {
     props.appointment.appointment_result?.code === "FIT_FOR_PROCEDURE"
   );
 });
+
+const isLoadingProforma = ref<boolean>(false);
 
 const getStatusClass = () => {
   const statusMap: Record<
@@ -333,79 +351,52 @@ const setPaymentValueName = (appointment: Appointment) => {
   return "No Pagada";
 };
 
-const formatCurrency = (amount: number | string): string => {
-  const numericAmount = Number(amount) || 0;
-  return (
-    "₡" +
-    numericAmount.toLocaleString("es-CR", {
-      minimumFractionDigits: 2,
-      maximumFractionDigits: 2,
-    })
-  );
-};
-
-const downloadProform = async () => {
+const downloadProforma = async () => {
   try {
-    const response = await $fetch<ArrayBuffer>(
-      config.public.API_BASE_URL + "/document/get_by_code",
-      {
-        method: "GET",
-        headers: {
-          Authorization: token.value ?? "",
-        },
-        query: {
-          code: props.appointment.proforma_file_code,
-        },
-        responseType: "blob",
-      }
-    );
+    isLoadingProforma.value = true;
+    if (!props.appointment.proforma_file_code)
+      throw new Error("No proforma file code");
 
-    const blob = new Blob([response]);
-    const url = window.URL.createObjectURL(blob);
+    const api = fetchDocumentByCode(props.appointment.proforma_file_code);
+    await api.request();
 
-    const link = document.createElement("a");
-    link.href = url;
+    const response = api.response.value;
+    const error = api.error.value;
 
-    link.download = `proforma_${props.appointment.proforma_file_code}.pdf`;
+    if (response?.data?.url) {
+      const link = document.createElement("a");
+      link.href = response.data.url;
+      link.target = "_blank";
+      link.rel = "noopener noreferrer";
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    }
 
-    document.body.appendChild(link);
-    link.click();
-
-    document.body.removeChild(link);
-    window.URL.revokeObjectURL(url);
+    if (error) throw new Error(error.raw);
   } catch (error) {
     console.error("Error descargando archivo:", error);
+  } finally {
+    isLoadingProforma.value = false;
   }
 };
 
 const isCreditDisabled = computed(() => {
-  return (
-    props.appointment.appointment_credit?.credit_status?.code === "REQUIRED"
-  );
+  if (!props.appointment.appointment_credit) return false;
+  if (props.appointment.appointment_credit.credit_status?.code === "REJECTED")
+    return false;
+  return true;
 });
 
-const formatDate = (date: string | Date): string => {
-  const dateObj = new Date(date);
-  const formatted = dateObj.toLocaleDateString("es-ES", {
-    weekday: "long",
-    day: "numeric",
-    month: "long",
-  });
-
-  return formatted.charAt(0).toUpperCase() + formatted.slice(1);
-};
-
-const formatTime = (time: string): string => {
-  if (!time) return "";
-
-  const parts = time.split(":");
-  if (parts.length < 2) return time;
-
-  const hours = parts[0];
-  const minutes = parts[1];
-
-  return `${hours}:${minutes} hs`;
-};
+const canShowCreditStatus = computed(() => {
+  if (!props.appointment.appointment_credit) return false;
+  if (
+    props.appointment.appointment_status.code ===
+      "VALUED_VALORATION_APPOINTMENT" &&
+    props.appointment.appointment_credit?.credit_status_code !== "REQUIRED"
+  )
+    return true;
+});
 </script>
 
 <style lang="scss" scoped>
@@ -415,15 +406,15 @@ const formatTime = (time: string): string => {
   border-collapse: separate;
   font-size: 0.9rem;
   background-color: #f8faff;
-  border-radius: 20px;
-  gap: 5px;
-  padding: 10px 20px;
+  border-radius: 1.25rem;
+  gap: 0.3125rem;
+  padding: 0.625rem 1.25rem;
   border-spacing: 0;
   overflow: hidden;
 
   &__row {
     td {
-      border-bottom: 1px solid #e1e4ed;
+      border-bottom: 0.0625rem solid #e1e4ed;
     }
   }
 
@@ -431,32 +422,32 @@ const formatTime = (time: string): string => {
   &__value {
     padding: $spacing-sm 0;
     vertical-align: top;
-    font-size: 14px;
+    font-size: 0.875rem;
   }
 
   &__label {
     font-family: $font-family-main;
     font-weight: 300;
-    font-size: 16px;
-    line-height: 20px;
-    color: #6d758f;
-    padding: 10px;
+    font-size: 1rem;
+    line-height: 1.25rem;
+    color: $color-text-secondary;
+    padding: 0.625rem;
   }
 
   &__value {
     font-family: $font-family-main;
     font-weight: 500;
-    font-size: 16px;
-    line-height: 20px;
+    font-size: 1rem;
+    line-height: 1.25rem;
     color: $color-foreground;
-    padding: 10px;
+    padding: 0.625rem;
   }
 
   &__payment-status {
     display: inline-block;
-    margin-right: 6px;
-    width: 8px;
-    height: 8px;
+    margin-right: 0.375rem;
+    width: 0.5rem;
+    height: 0.5rem;
     border-radius: 50%;
 
     &--pending {
@@ -474,25 +465,25 @@ const formatTime = (time: string): string => {
   &__button {
     &--outline {
       @include outline-button;
-      padding: 8px 14px;
+      padding: 0.5rem 0.875rem;
     }
   }
 
   &__textarea {
     width: 100%;
-    height: 128px;
-    border-radius: 8px;
-    border: 1px solid #d0d5dd;
+    height: 8rem;
+    border-radius: 0.5rem;
+    border: 0.0625rem solid #d0d5dd;
     background-color: #f9fafb;
-    box-shadow: 0px 1px 2px 0px #1018280d;
-    padding: 10px 14px;
+    box-shadow: 0 0.0625rem 0.125rem 0 #1018280d;
+    padding: 0.625rem 0.875rem;
 
     font-family: $font-family-main;
-    font-size: 16px;
+    font-size: 1rem;
     font-weight: 400;
-    line-height: 24px;
+    line-height: 1.5rem;
     letter-spacing: 0;
-    color: #667085;
+    color: $color-text-muted;
 
     resize: vertical;
     outline: none;
@@ -502,9 +493,9 @@ const formatTime = (time: string): string => {
 
     &:focus {
       border-color: #4338ca;
-      box-shadow: 0 0 0 3px rgba(67, 56, 202, 0.3);
-      outline: 2px solid transparent;
-      outline-offset: 2px;
+      box-shadow: 0 0 0 0.1875rem rgba(67, 56, 202, 0.3);
+      outline: 0.125rem solid transparent;
+      outline-offset: 0.125rem;
     }
 
     &:disabled {
@@ -523,9 +514,9 @@ const formatTime = (time: string): string => {
 
 .status-badge {
   display: inline-block;
-  padding: 4px 12px;
-  border-radius: 12px;
-  font-size: 12px;
+  padding: 0.25rem 0.75rem;
+  border-radius: 0.75rem;
+  font-size: 0.75rem;
   font-weight: 500;
 
   &--success {
@@ -544,7 +535,7 @@ const formatTime = (time: string): string => {
   }
 
   &--cancelled {
-    background-color: #fac6d0;
+    background-color: $color-cancel;
     color: $color-foreground;
   }
 }

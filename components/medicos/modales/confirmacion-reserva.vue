@@ -295,29 +295,29 @@ defineExpose({
 <style lang="scss" scoped>
 .confirm-reservation {
   &__content {
-    padding: 24px;
+    padding: 1.5rem;
     display: flex;
     flex-direction: column;
-    gap: 16px;
+    gap: 1rem;
   }
 
   &__title {
     @include label-base;
     font-weight: 600;
-    font-size: 24px;
-    line-height: 32px;
-    color: #19213d;
+    font-size: 1.5rem;
+    line-height: 2rem;
+    color: $color-foreground;
     margin: 0;
   }
 
   &__description {
     @include label-base;
     font-weight: 600;
-    font-size: 14px;
-    line-height: 24px;
+    font-size: 0.875rem;
+    line-height: 1.5rem;
     display: flex;
     flex-direction: column;
-    gap: 8px;
+    gap: 0.5rem;
     margin: 0;
   }
 
@@ -328,24 +328,24 @@ defineExpose({
 
   &__highlight {
     font-weight: 500;
-    color: #6d758f;
+    color: $color-text-secondary;
   }
 
   &__warning {
     display: flex;
     align-items: center;
-    gap: 12px;
-    padding: 12px;
-    border-radius: 12px;
-    background-color: #fffaeb;
+    gap: 0.75rem;
+    padding: 0.75rem;
+    border-radius: 0.75rem;
+    background-color: $color-warning;
   }
 
   &__warning-icon {
     display: flex;
     align-items: center;
     justify-content: center;
-    width: 48px;
-    height: 48px;
+    width: 3rem;
+    height: 3rem;
     border-radius: 50%;
     background-color: #fef0c7;
     color: #dc6803;
@@ -355,8 +355,8 @@ defineExpose({
   &__warning-text {
     @include label-base;
     font-weight: 500;
-    font-size: 14px;
-    line-height: 20px;
+    font-size: 0.875rem;
+    line-height: 1.25rem;
     color: #dc6803;
     margin: 0;
   }
@@ -365,8 +365,8 @@ defineExpose({
     width: 100%;
     display: flex;
     align-items: center;
-    gap: 12px;
-    border-top: 1px solid #e5e7eb;
+    gap: 0.75rem;
+    border-top: 0.0625rem solid #e5e7eb;
   }
 
   &__button {
@@ -389,48 +389,48 @@ defineExpose({
 
 .no-payment-recorded {
   &__content {
-    padding: 0px 24px;
+    padding: 0 1.5rem;
     display: flex;
     flex-direction: column;
-    gap: 8px;
+    gap: 0.5rem;
   }
 
   &__title {
     @include label-base;
     font-weight: 600;
-    font-size: 24px;
-    line-height: 24px;
-    color: #19213d;
+    font-size: 1.5rem;
+    line-height: 1.5rem;
+    color: $color-foreground;
   }
 
   &__description {
     @include label-base;
     font-weight: 500;
-    font-size: 14px;
-    line-height: 24px;
-    color: #6d758f;
+    font-size: 0.875rem;
+    line-height: 1.5rem;
+    color: $color-text-secondary;
   }
 
   &__payment-warning {
     width: 100%;
-    padding: 12px;
-    border-radius: 12px;
-    background-color: #fffaeb;
+    padding: 0.75rem;
+    border-radius: 0.75rem;
+    background-color: $color-warning;
 
     &--title {
       @include label-base;
       font-weight: 600;
-      font-size: 14px;
-      line-height: 20px;
+      font-size: 0.875rem;
+      line-height: 1.25rem;
       color: #dc6803;
-      margin: 0 0 4px 0;
+      margin: 0 0 0.25rem 0;
     }
 
     &--text {
       @include label-base;
       font-weight: 500;
-      font-size: 13px;
-      line-height: 18px;
+      font-size: 0.8125rem;
+      line-height: 1.125rem;
       color: #dc6803;
       margin: 0;
     }

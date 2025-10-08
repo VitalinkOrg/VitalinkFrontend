@@ -15,7 +15,7 @@ const navigationItems = [
     visible: true,
   },
   {
-    href: "/socio-financiero/servicios",
+    href: "/socio-financiero/creditos",
     label: "Gestor de crédito",
     icon: AtomsIconsReceiptIcon,
     visible: true,

@@ -1,7 +1,7 @@
 <template>
   <AtomsModalBase
     :isOpen="isOpen"
-    size="small"
+    size="medium"
     @close="handleCloseModal('appointmentDetails')"
     header-class="header-border-bottom"
     :footer-class="
@@ -71,8 +71,8 @@
           class="appointment-details-modal__button--outline"
           @click="
             () => {
+              handleOpenModal('leaveReview', props.appointment.id);
               handleCloseModal('appointmentDetails');
-              handleOpenModal('leaveReview');
             }
           "
         >
@@ -118,7 +118,7 @@
         </button>
       </div>
       <div
-        v-else-if="!isCreditDisabled"
+        v-else-if="!waitingForCreditResponse"
         class="appointment-details-modal__footer appointment-details-modal__footer--full-width"
       >
         <button
@@ -128,6 +128,7 @@
           Reservar procedimiento
         </button>
         <button
+          v-if="canRequestCredit"
           class="appointment-details-modal__button--primary"
           @click="handleOpenModal('applyCredit')"
         >
@@ -159,15 +160,15 @@ interface Props {
 }
 
 interface Emits {
-  (e: "open-modal", modalName: ModalName): void;
+  (e: "open-modal", modalName: ModalName, appointmentId?: number): void;
   (e: "close-modal", modalName: ModalName): void;
 }
 
 const props = defineProps<Props>();
 const emit = defineEmits<Emits>();
 
-const handleOpenModal = (modalName: ModalName) => {
-  emit("open-modal", modalName);
+const handleOpenModal = (modalName: ModalName, appointmentId?: number) => {
+  emit("open-modal", modalName, appointmentId);
 };
 
 const handleCloseModal = (modalName: ModalName) => {
@@ -202,11 +203,10 @@ const isProcedureDetails = computed(() => {
   );
 });
 
-const isCreditDisabled = computed(() => {
-  return (
-    props.appointment.appointment_credit?.credit_status?.code === "REQUIRED"
-  );
-});
+const waitingForCreditResponse = computed(
+  () => props.appointment.appointment_credit?.credit_status_code === "REQUIRED"
+);
+const canRequestCredit = computed(() => !props.appointment.appointment_credit);
 
 const canShowPaymentMethods = computed(() => {
   const paymentStatusCode = props.appointment.payment_status.code;
@@ -245,13 +245,13 @@ const canLeaveRating = computed(() => {
   &__title {
     @include label-base;
     font-weight: 600;
-    font-size: 18px;
-    line-height: 28px;
+    font-size: 1.125rem;
+    line-height: 1.75rem;
     color: $color-foreground;
   }
 
   &__content {
-    padding: 24px;
+    padding: 1.5rem;
   }
 
   &__payment-information {
@@ -259,47 +259,47 @@ const canLeaveRating = computed(() => {
     flex-direction: column;
     width: 100%;
     background-color: #f8faff;
-    border-radius: 20px;
-    gap: 10px;
-    padding: 10px 20px;
+    border-radius: 1.25rem;
+    gap: 0.625rem;
+    padding: 0.625rem 1.25rem;
 
     &--content {
       display: flex;
-      gap: 10px;
+      gap: 0.625rem;
     }
 
     &--icon {
-      width: 23px;
-      height: 23px;
-      border: 4px solid #d1fadf;
+      width: 1.4375rem;
+      height: 1.4375rem;
+      border: 0.25rem solid #d1fadf;
       color: #039855;
       border-radius: 50%;
-      padding: 1px;
+      padding: 0.0625rem;
     }
 
     &--title {
       @include label-base;
       font-weight: 600;
-      font-size: 14px;
-      line-height: 24px;
+      font-size: 0.875rem;
+      line-height: 1.5rem;
       color: $black;
     }
 
     &--subtitle {
       @include label-base;
-      font-family: Montserrat;
+      font-family: $font-family-main;
       font-weight: 600;
-      font-size: 14px;
-      line-height: 24px;
+      font-size: 0.875rem;
+      line-height: 1.5rem;
       color: $black;
     }
 
     &--subtext {
       @include label-base;
       font-weight: 500;
-      font-size: 14px;
-      line-height: 24px;
-      color: #6d758f;
+      font-size: 0.875rem;
+      line-height: 1.5rem;
+      color: $color-text-secondary;
     }
   }
 
@@ -308,8 +308,8 @@ const canLeaveRating = computed(() => {
     &--text {
       @include label-base;
       font-weight: 600;
-      font-size: 16px;
-      line-height: 24px;
+      font-size: 1rem;
+      line-height: 1.5rem;
       color: $color-foreground;
       text-align: center;
       display: block;
@@ -318,24 +318,24 @@ const canLeaveRating = computed(() => {
     &--subtext {
       @include label-base;
       font-weight: 500;
-      font-size: 14px;
-      line-height: 20px;
-      color: #6d758f;
+      font-size: 0.875rem;
+      line-height: 1.25rem;
+      color: $color-text-secondary;
       display: block;
       text-align: center;
-      margin-top: 4px;
+      margin-top: 0.25rem;
     }
   }
 
   &__button {
     &--primary {
       @include primary-button;
-      padding: 12px 0px;
+      padding: 0.75rem 0;
     }
 
     &--outline {
       @include outline-button;
-      padding: 12px 0px;
+      padding: 0.75rem 0;
     }
 
     &--danger {
@@ -346,7 +346,7 @@ const canLeaveRating = computed(() => {
   &__footer {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(0, 1fr));
-    gap: 12px;
+    gap: 0.75rem;
     width: 100%;
 
     &:has(button:only-child) {

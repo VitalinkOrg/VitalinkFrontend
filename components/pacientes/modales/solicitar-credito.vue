@@ -265,21 +265,21 @@ const handleSendRequest = async () => {
   &__title {
     @include label-base;
     font-weight: 600;
-    font-size: 20px;
-    line-height: 28px;
+    font-size: 1.25rem;
+    line-height: 1.75rem;
     color: #353e5c;
   }
 
   &__content {
     display: flex;
     flex-direction: column;
-    padding: 20px 24px;
-    gap: 20px;
+    padding: 1.25rem 1.5rem;
+    gap: 1.25rem;
   }
 
   &__input {
     @include input-base;
-    width: 320px;
+    width: 20rem;
 
     transition: border-color 0.2s ease;
 
@@ -308,79 +308,79 @@ const handleSendRequest = async () => {
   &__highlight {
     @include label-base;
     font-weight: 300;
-    font-size: 16px;
-    line-height: 20px;
+    font-size: 1rem;
+    line-height: 1.25rem;
     color: #353e5c;
   }
 
   &__table {
     border-collapse: separate;
-    gap: 5px;
+    gap: 0.3125rem;
     border-spacing: 0;
 
     td {
-      padding: 6px 0px;
+      padding: 0.375rem 0;
       vertical-align: middle;
     }
 
     &--label {
       font-family: $font-family-main;
       font-weight: 300;
-      font-size: 16px;
-      line-height: 20px;
-      color: #6d758f;
-      padding: 10px 0px;
+      font-size: 1rem;
+      line-height: 1.25rem;
+      color: $color-text-secondary;
+      padding: 0.625rem 0;
     }
 
     &--value {
       font-family: $font-family-main;
       font-weight: 500;
-      font-size: 16px;
-      line-height: 20px;
+      font-size: 1rem;
+      line-height: 1.25rem;
       color: $color-foreground;
-      padding: 10px 0px;
+      padding: 0.625rem 0;
     }
   }
 
   &__input-wrapper {
     display: flex;
     flex-direction: column;
-    gap: 5px;
+    gap: 0.3125rem;
   }
 
   &__info {
     @include label-base;
     font-weight: 400;
-    font-size: 12px;
-    line-height: 16px;
-    color: #6d758f;
+    font-size: 0.75rem;
+    line-height: 1rem;
+    color: $color-text-secondary;
     display: flex;
     align-items: center;
-    gap: 4px;
+    gap: 0.25rem;
   }
 
   &__error {
     @include label-base;
     font-weight: 400;
-    font-size: 12px;
-    line-height: 16px;
+    font-size: 0.75rem;
+    line-height: 1rem;
     color: #dc3545;
     display: flex;
     align-items: center;
-    gap: 4px;
+    gap: 0.25rem;
   }
 
   &__loading {
     display: flex;
     align-items: center;
-    gap: 8px;
+    gap: 0.5rem;
   }
 
   &__spinner {
-    width: 14px;
-    height: 14px;
-    border: 2px solid rgba(255, 255, 255, 0.3);
-    border-top: 2px solid white;
+    width: 0.875rem;
+    height: 0.875rem;
+    border: 0.125rem solid rgba(255, 255, 255, 0.3);
+    border-top: 0.125rem solid $white;
     border-radius: 50%;
     animation: spin 1s linear infinite;
   }
@@ -389,7 +389,7 @@ const handleSendRequest = async () => {
     &--cancel {
       @include secondary-button;
       width: 100%;
-      color: #b42318;
+      color: $color-error;
       background-color: #fffafa;
 
       &:hover:not(:disabled) {

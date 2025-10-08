@@ -9,6 +9,9 @@
     @close="handleCloseModal"
   >
     <div class="upload-proforma__content">
+      <div class="upload-proforma__icon-wrapper">
+        <AtomsIconsCircleCheckBigIcon class="upload-proforma__icon" />
+      </div>
       <h2 class="upload-proforma__content-title">¡Bien hecho!</h2>
       <p class="upload-proforma__description">
         El cambio de estado de la cita se ha realizado con éxito:
@@ -68,7 +71,7 @@ import { useFormat } from "~/composables/useFormat";
 import type { Appointment, AppointmentStatusCode } from "~/types";
 import type { TablaBaseRow } from "../tabla-detalles-cita.vue";
 
-const { formatDate } = useFormat();
+const { formatDate, formatTime } = useFormat();
 
 interface Props {
   appointment: Appointment;
@@ -85,13 +88,13 @@ const appointmentRowsWithData = computed((): TablaBaseRow[] => [
   {
     key: "fecha",
     header: "Fecha de la cita:",
-    value: props.appointment.appointment_date,
+    value: formatDate(props.appointment.appointment_date),
     class: "appointment-editor__details-row--editable",
   },
   {
     key: "hora",
     header: "Hora de la cita:",
-    value: props.appointment.appointment_hour,
+    value: formatTime(props.appointment.appointment_hour, "hs"),
     class: "appointment-editor__details-row--editable",
   },
   {
@@ -165,6 +168,8 @@ const getStatusClass = (status: AppointmentStatusCode) => {
   return statusClassMap[status] || "";
 };
 
+provide("closeUploadProformaModal", handleCloseModal);
+
 defineExpose({
   handleOpenModal,
   handleCloseModal,
@@ -175,16 +180,27 @@ defineExpose({
 
 <style lang="scss" scoped>
 .upload-proforma {
+  &__icon {
+    border-radius: 50%;
+    width: 3rem;
+    height: 3rem;
+    background: #d1fadf;
+    border: 0.5rem solid #ecfdf3;
+    color: #039855;
+    margin-bottom: 0.75rem;
+    padding: 0.225rem;
+  }
+
   &__title-icon {
     display: flex;
     justify-content: center;
     align-items: center;
-    width: 40px;
-    height: 40px;
-    border: 6.5px solid #fac6d0;
-    background-color: #ff2d46;
+    width: 2.5rem;
+    height: 2.5rem;
+    border: 0.40625rem solid $color-cancel;
+    background-color: $color-danger;
     border-radius: 50%;
-    padding: 6px;
+    padding: 0.375rem;
 
     svg {
       color: $white;
@@ -192,37 +208,37 @@ defineExpose({
   }
 
   &__content {
-    padding: 20px 24px 0px 24px;
+    padding: 1.25rem 1.5rem 0 1.5rem;
   }
 
   &__content-title {
     font-family: $font-family-main;
     font-weight: 600;
-    font-size: 24px;
-    line-height: 20px;
+    font-size: 1.5rem;
+    line-height: 1.25rem;
     letter-spacing: 0;
     color: #027a48;
   }
 
   &__table-wrapper {
-    padding: 20px;
+    padding: 1.25rem;
     background-color: #f8faff;
-    border-radius: 20px;
+    border-radius: 1.25rem;
   }
 
   &__description {
     font-family: $font-family-main;
     font-weight: 400;
-    font-size: 16px;
-    line-height: 20px;
+    font-size: 1rem;
+    line-height: 1.25rem;
     letter-spacing: 0;
-    color: #19213d;
+    color: $color-foreground;
   }
 
   &__actions {
     width: 100%;
     display: flex;
-    gap: 12px;
+    gap: 0.75rem;
   }
 
   &__button {

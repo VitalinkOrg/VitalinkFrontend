@@ -554,51 +554,51 @@ const saveService = (): void => {
   &__header-title {
     @include label-base;
     font-weight: 600;
-    font-size: 20px;
-    line-height: 28px;
+    font-size: 1.25rem;
+    line-height: 1.75rem;
     letter-spacing: 0;
     color: #353e5c;
     margin: 0;
   }
 
   &__content {
-    padding: 24px;
+    padding: 1.5rem;
   }
 
   &__step {
-    padding: 20px 0;
+    padding: 1.25rem 0;
   }
 
   &__form {
     display: flex;
     flex-direction: column;
-    gap: 20px;
+    gap: 1.25rem;
   }
 
   &__field {
     display: flex;
     flex-direction: column;
-    gap: 8px;
+    gap: 0.5rem;
   }
 
   &__label {
     @include label-base;
     font-weight: 600;
-    font-size: 14px;
+    font-size: 0.875rem;
     color: #344054;
   }
 
   &__description {
     @include text-base;
-    font-size: 14px;
-    color: #667085;
+    font-size: 0.875rem;
+    color: $color-text-muted;
     margin: 0;
   }
 
   &__subtitle {
     @include label-base;
     font-weight: 600;
-    font-size: 16px;
+    font-size: 1rem;
     color: #101828;
     margin: 0;
   }
@@ -615,19 +615,19 @@ const saveService = (): void => {
   &__textarea {
     @extend .add-service__input;
     resize: vertical;
-    min-height: 120px;
+    min-height: 7.5rem;
   }
 
   &__hospitals {
     display: flex;
     flex-direction: column;
-    gap: 12px;
+    gap: 0.75rem;
     width: 50%;
   }
 
   &__hospital-item {
     display: flex;
-    gap: 8px;
+    gap: 0.5rem;
     align-items: center;
   }
 
@@ -635,11 +635,11 @@ const saveService = (): void => {
     @include button-base;
     background: none;
     border: none;
-    font-size: 20px;
+    font-size: 1.25rem;
     color: #f04438;
     cursor: pointer;
-    padding: 8px;
-    border-radius: 4px;
+    padding: 0.5rem;
+    border-radius: 0.25rem;
 
     &:hover {
       background-color: #fef3f2;
@@ -649,10 +649,10 @@ const saveService = (): void => {
   &__add-button {
     @include button-base;
     background-color: #0ea5e9;
-    color: white;
+    color: $white;
     border: none;
-    padding: 12px 16px;
-    border-radius: 8px;
+    padding: 0.75rem 1rem;
+    border-radius: 0.5rem;
     font-weight: 500;
     cursor: pointer;
     align-self: flex-start;
@@ -664,35 +664,35 @@ const saveService = (): void => {
 
   &__pack {
     background-color: #f9f9f9;
-    border: 1px solid #e4e7ec;
-    border-radius: 8px;
-    padding: 20px;
-    margin-bottom: 16px;
+    border: 0.0625rem solid #e4e7ec;
+    border-radius: 0.5rem;
+    padding: 1.25rem;
+    margin-bottom: 1rem;
   }
 
   &__pack-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 16px;
+    margin-bottom: 1rem;
   }
 
   &__pack-title {
     @include label-base;
     font-weight: 500;
-    font-size: 16px;
-    color: #667085;
+    font-size: 1rem;
+    color: $color-text-muted;
     margin: 0;
   }
 
   &__pack-remove {
     @include button-base;
     background: none;
-    border: 1px solid #f04438;
+    border: 0.0625rem solid #f04438;
     color: #f04438;
-    padding: 8px 12px;
-    border-radius: 6px;
-    font-size: 14px;
+    padding: 0.5rem 0.75rem;
+    border-radius: 0.375rem;
+    font-size: 0.875rem;
     cursor: pointer;
 
     &:hover {
@@ -703,53 +703,53 @@ const saveService = (): void => {
   &__price-group {
     display: flex;
     align-items: center;
-    gap: 12px;
+    gap: 0.75rem;
   }
 
   &__price-label {
     @include text-base;
-    font-size: 14px;
-    color: #667085;
+    font-size: 0.875rem;
+    color: $color-text-muted;
   }
 
   &__price-inputs {
     display: flex;
     align-items: center;
-    gap: 8px;
+    gap: 0.5rem;
   }
 
   &__price-input {
     @extend .add-service__input;
-    width: 150px;
+    width: 9.375rem;
   }
 
   &__currency-select {
     @extend .add-service__input;
-    width: 100px;
+    width: 6.25rem;
   }
 
   &__day {
-    background-color: white;
-    border: 1px solid #e4e7ec;
-    border-radius: 8px;
-    padding: 16px;
-    margin-bottom: 12px;
+    background-color: $white;
+    border: 0.0625rem solid #e4e7ec;
+    border-radius: 0.5rem;
+    padding: 1rem;
+    margin-bottom: 0.75rem;
   }
 
   &__day-header {
-    margin-bottom: 12px;
+    margin-bottom: 0.75rem;
   }
 
   &__switch {
     display: flex;
     align-items: center;
-    gap: 12px;
+    gap: 0.75rem;
   }
 
   &__switch-input {
-    width: 40px;
-    height: 20px;
-    border-radius: 10px;
+    width: 2.5rem;
+    height: 1.25rem;
+    border-radius: 0.625rem;
     border: none;
     background-color: #e4e7ec;
     cursor: pointer;
@@ -764,24 +764,24 @@ const saveService = (): void => {
     &::before {
       content: "";
       position: absolute;
-      width: 16px;
-      height: 16px;
+      width: 1rem;
+      height: 1rem;
       border-radius: 50%;
-      background-color: white;
-      top: 2px;
-      left: 2px;
+      background-color: $white;
+      top: 0.125rem;
+      left: 0.125rem;
       transition: transform 0.2s;
     }
 
     &:checked::before {
-      transform: translateX(20px);
+      transform: translateX(1.25rem);
     }
   }
 
   &__switch-label {
     @include label-base;
     font-weight: 500;
-    font-size: 14px;
+    font-size: 0.875rem;
     color: #344054;
     cursor: pointer;
   }
@@ -789,12 +789,12 @@ const saveService = (): void => {
   &__time-slots {
     display: flex;
     flex-direction: column;
-    gap: 12px;
+    gap: 0.75rem;
   }
 
   &__time-slot {
     display: flex;
-    gap: 12px;
+    gap: 0.75rem;
     align-items: end;
     width: 50%;
   }
@@ -803,13 +803,13 @@ const saveService = (): void => {
     flex: 1;
     display: flex;
     flex-direction: column;
-    gap: 4px;
+    gap: 0.25rem;
   }
 
   &__time-label {
     @include label-base;
-    font-size: 12px;
-    color: #667085;
+    font-size: 0.75rem;
+    color: $color-text-muted;
   }
 
   &__time {
@@ -824,11 +824,11 @@ const saveService = (): void => {
   &__time-add {
     @include button-base;
     background: none;
-    border: 1px solid #d0d5dd;
+    border: 0.0625rem solid #d0d5dd;
     color: #344054;
-    padding: 8px 12px;
-    border-radius: 6px;
-    font-size: 14px;
+    padding: 0.5rem 0.75rem;
+    border-radius: 0.375rem;
+    font-size: 0.875rem;
     cursor: pointer;
     align-self: flex-start;
 
@@ -840,11 +840,11 @@ const saveService = (): void => {
   &__add-pack {
     @include button-base;
     background: none;
-    border: 1px solid #d0d5dd;
+    border: 0.0625rem solid #d0d5dd;
     color: #344054;
-    padding: 12px 16px;
-    border-radius: 8px;
-    font-size: 14px;
+    padding: 0.75rem 1rem;
+    border-radius: 0.5rem;
+    font-size: 0.875rem;
     cursor: pointer;
     align-self: flex-start;
 
@@ -857,7 +857,7 @@ const saveService = (): void => {
     display: flex;
     flex-direction: column;
     align-items: center;
-    padding: 40px 20px;
+    padding: 2.5rem 1.25rem;
     text-align: center;
   }
 
@@ -865,46 +865,46 @@ const saveService = (): void => {
     display: flex;
     justify-content: center;
     align-items: center;
-    width: 80px;
-    height: 80px;
+    width: 5rem;
+    height: 5rem;
     background-color: #f0f9ff;
     border-radius: 50%;
-    margin-bottom: 24px;
+    margin-bottom: 1.5rem;
   }
 
   &__success-title {
     @include label-base;
     font-weight: 600;
-    font-size: 20px;
+    font-size: 1.25rem;
     color: #101828;
-    margin: 0 0 12px 0;
+    margin: 0 0 0.75rem 0;
   }
 
   &__success-description {
     @include text-base;
-    font-size: 16px;
-    color: #667085;
-    margin: 0 0 32px 0;
-    max-width: 400px;
+    font-size: 1rem;
+    color: $color-text-muted;
+    margin: 0 0 2rem 0;
+    max-width: 25rem;
   }
 
   &__actions {
     display: flex;
-    gap: 12px;
+    gap: 0.75rem;
     justify-content: flex-end;
   }
 
   &__button {
     &--outline {
       @include outline-button;
-      padding: 12px 20px;
-      border-radius: 8px;
+      padding: 0.75rem 1.25rem;
+      border-radius: 0.5rem;
     }
 
     &--primary {
       @include primary-button;
-      padding: 12px 20px;
-      border-radius: 8px;
+      padding: 0.75rem 1.25rem;
+      border-radius: 0.5rem;
     }
 
     &--full {
