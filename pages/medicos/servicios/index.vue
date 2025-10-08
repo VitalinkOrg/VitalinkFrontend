@@ -91,19 +91,7 @@ onMounted(async () => {
     </div>
 
     <div class="services-controls">
-      <div class="services-controls__search-wrapper">
-        <div class="search-input__wrapper">
-          <span class="search-input__icon">
-            <AtomsIconsSearchIcon size="20" />
-          </span>
-          <input
-            type="text"
-            class="search-input__field"
-            placeholder="Buscar"
-            aria-label="Buscar"
-          />
-        </div>
-      </div>
+      <UiSearchBar placeholder="Buscar" aria-label="Buscar en servicios" />
 
       <div class="services-controls__sort-wrapper">
         <div class="sort-dropdown">
@@ -170,8 +158,8 @@ onMounted(async () => {
     }
     &--primary {
       @include primary-button;
-      padding: 8px 14px;
-      gap: 8px;
+      padding: 0.5rem 0.875rem;
+      gap: 0.5rem;
     }
   }
 }
@@ -203,17 +191,17 @@ onMounted(async () => {
 
   &__icon {
     position: absolute;
-    left: 16px;
+    left: 1rem;
     color: #667085;
   }
 
   &__field {
     @include input-base;
     width: 100%;
-    padding: 10px 14px 10px 48px;
+    padding: 0.625rem 0.875rem 0.625rem 3rem;
     font-weight: 300;
-    font-size: 16px;
-    line-height: 24px;
+    font-size: 1rem;
+    line-height: 1.5rem;
     letter-spacing: 0;
   }
 }

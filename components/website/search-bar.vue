@@ -590,7 +590,7 @@ onMounted(async () => {
     grid-template-columns: 1fr 1fr auto;
     gap: 1.25rem;
     width: 100%;
-    align-items: end;
+    align-items: flex-end;
 
     @media (max-width: $breakpoint-md) {
       grid-template-columns: 1fr;

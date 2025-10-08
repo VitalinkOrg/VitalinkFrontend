@@ -28,6 +28,7 @@
             aria-required="true"
             :aria-invalid="!!emailError"
             autocomplete="username"
+            :disabled="isLoading"
           />
           <span v-if="emailError" class="form-field__error" role="alert">
             {{ emailError }}
@@ -47,6 +48,7 @@
             aria-required="true"
             :aria-invalid="!!passwordError"
             autocomplete="current-password"
+            :disabled="isLoading"
           />
           <span v-if="passwordError" class="form-field__error" role="alert">
             {{ passwordError }}
@@ -62,6 +64,7 @@
               type="button"
               class="social-login__button"
               aria-labelledby="social-login-label google-login-label"
+              :disabled="isLoading"
             >
               <AtomsIconsGoogleIcon />
               <span id="google-login-label">Ingresar con Google</span>

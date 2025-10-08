@@ -21,16 +21,16 @@ export default defineNuxtConfig({
   css: ['@/assets/main.scss'],
   devtools: { enabled: true },
 
-  modules: [
-    'nuxt-icon',
-    '@samk-dev/nuxt-vcalendar'
-  ],
+  modules: ['nuxt-icon'],
 
   runtimeConfig: {
     public: {
       API_BASE_URL: process.env.API_BASE_URL,
-
     },
+  },
+
+  build: {
+    transpile: ['@vuepic/vue-datepicker'],
   },
 
   vite: {

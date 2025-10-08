@@ -154,8 +154,6 @@ const filteredPackages = computed<Package[]>(() => {
   }
 });
 
-console.log("filteredPackages: ", filteredPackages.value);
-
 const getAssessmentLabel = (assessmentCode: string): string => {
   if (!assessmentCode || !Array.isArray(assessmentDetails.value)) {
     return assessmentCode || "Código desconocido";

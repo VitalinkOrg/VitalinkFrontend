@@ -464,36 +464,12 @@ provide("refreshAppointments", refreshAppointments);
         class="appointments-toolbar"
         aria-label="Herramientas de filtrado y búsqueda"
       >
-        <form
-          class="appointments-toolbar__search"
-          role="search"
-          @submit.prevent
-        >
-          <div class="search-input">
-            <label
-              for="search-field"
-              class="search-input__icon"
-              id="search-icon"
-            >
-              <AtomsIconsSearchIcon
-                size="20"
-                aria-hidden="true"
-                focusable="false"
-              />
-              <span class="visually-hidden">Buscar</span>
-            </label>
-            <input
-              type="search"
-              id="search-field"
-              class="search-input__field"
-              placeholder="Buscar"
-              aria-label="Buscar citas por paciente, servicio o código"
-              aria-describedby="search-icon"
-              v-model="searchQuery"
-              autocomplete="off"
-            />
-          </div>
-        </form>
+        <UiSearchBar
+          v-model="searchQuery"
+          placeholder="Buscar"
+          aria-label="Buscar en mis citas"
+          max-width="320px"
+        />
 
         <div class="appointments-toolbar__actions">
           <button

@@ -1,5 +1,4 @@
 <script setup>
-import { ref, defineProps, watch } from "vue";
 const emit = defineEmits(["close-modal"]);
 const token = useCookie("token");
 const user_info = useCookie("user_info");
@@ -44,7 +43,7 @@ const createAppointment = async () => {
         patient_id: user_info.value.id,
         is_in_person: 1,
       },
-    },
+    }
   );
   if (data.value) {
     step.value = 5;
@@ -77,7 +76,7 @@ watch(
       // Execute modal logic here
       console.log("Modal is open");
     }
-  },
+  }
 );
 </script>
 <template>

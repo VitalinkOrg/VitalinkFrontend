@@ -1,4 +1,4 @@
-import type { ApiResponse } from "~/types";
+import type { ApiResponse, Appointment } from "@/types";
 import useApi from "./useApi";
 
 interface AppointmentPayload {
@@ -43,9 +43,52 @@ interface GetDocumentResponse {
   created_date: string;
 }
 
+interface CreateAppointment {
+  customer_id: string;
+  appointment_date: string;
+  appointment_hour: string;
+  supplier_id: number;
+  package_id?: number;
+  user_description: string;
+  is_for_external_user: boolean;
+  phone_number_external_user: string;
+  procedure_id?: number;
+}
+
 export const useAppointment = () => {
   const config = useRuntimeConfig();
   const { getToken } = useAuthToken();
+
+  const fetchAllAppointments = () => {
+    const token = getToken();
+    if (!token) throw new Error("No authentication token found");
+
+    const url = `${config.public.API_BASE_URL}/appointment/get_all`;
+
+    return useApi<ApiResponse<Appointment[]>>(url, {
+      method: "GET",
+      headers: {
+        Authorization: token,
+        "Content-Type": "application/json",
+      },
+    });
+  };
+
+  const createAppointment = (body: CreateAppointment) => {
+    const token = getToken();
+    if (!token) throw new Error("No authentication token found");
+
+    const url = `${config.public.API_BASE_URL}/appointment/add`;
+
+    return useApi<ApiResponse<any>>(url, {
+      method: "POST",
+      body: JSON.stringify(body),
+      headers: {
+        Authorization: token,
+        "Content-Type": "application/json",
+      },
+    });
+  };
 
   const confirmProcedure = (appointmentId: number) => {
     const token = getToken();
@@ -149,5 +192,7 @@ export const useAppointment = () => {
     setProcedureRealized,
     confirmValorationAppointment,
     fetchDocumentByCode,
+    fetchAllAppointments,
+    createAppointment,
   };
 };

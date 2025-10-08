@@ -1,5 +1,4 @@
 <script setup>
-import { defineProps } from "vue";
 const emit = defineEmits(["close-modal"]);
 const props = defineProps(["voucher", "open"]);
 </script>
@@ -33,7 +32,9 @@ const props = defineProps(["voucher", "open"]);
           ></button>
         </div>
         <div class="modal-body bg-light m-3">
-          <label for="" class="form-label text-capitalize fw-normal">Descripción</label>
+          <label for="" class="form-label text-capitalize fw-normal"
+            >Descripción</label
+          >
           <textarea
             type="text"
             class="form-control"

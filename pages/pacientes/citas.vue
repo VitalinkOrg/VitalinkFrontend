@@ -485,40 +485,13 @@ provide("handleRefresh", handleRefresh);
         </div>
 
         <div class="appointments-page__toolbar">
-          <div class="search-input">
-            <div class="search-input__wrapper">
-              <label
-                for="search-field"
-                class="search-input__icon"
-                id="search-icon"
-              >
-                <AtomsIconsSearchIcon
-                  size="20"
-                  aria-hidden="true"
-                  focusable="false"
-                />
-                <span class="visually-hidden">Buscar</span>
-              </label>
-              <input
-                type="text"
-                id="search-field"
-                class="search-input__field"
-                placeholder="Buscar"
-                aria-label="Buscar"
-                aria-describedby="search-icon"
-                v-model="searchQuery"
-              />
-              <button
-                v-if="searchQuery"
-                class="search-input__clear"
-                @click="clearSearch"
-                type="button"
-                aria-label="Limpiar búsqueda"
-              >
-                ×
-              </button>
-            </div>
-          </div>
+          <UiSearchBar
+            v-model="searchQuery"
+            placeholder="Buscar"
+            aria-label="Buscar en mis citas"
+            max-width="320px"
+            @clear="clearSearch"
+          />
 
           <div class="toolbar-actions">
             <button
@@ -578,20 +551,20 @@ provide("handleRefresh", handleRefresh);
   }
 
   &__content {
-    padding: $spacing-lg;
+    padding: 1.5rem;
 
     @include respond-to-max(md) {
-      padding: $spacing-md;
+      padding: 1rem;
     }
   }
 
   &__header {
-    margin-bottom: $spacing-lg;
+    margin-bottom: 1.5rem;
   }
 
   &__title {
     font-family: $font-family-main;
-    font-size: 20px;
+    font-size: 1.25rem;
     font-weight: 600;
     color: $color-foreground;
     margin: 0;
@@ -601,13 +574,13 @@ provide("handleRefresh", handleRefresh);
     display: flex;
     justify-content: space-between;
     align-items: flex-end;
-    margin-bottom: $spacing-lg;
-    gap: $spacing-md;
+    margin-bottom: 1.5rem;
+    gap: 1rem;
 
     @include respond-to-max(md) {
       flex-direction: column;
       align-items: stretch;
-      gap: $spacing-md;
+      gap: 1rem;
     }
   }
 
@@ -615,13 +588,13 @@ provide("handleRefresh", handleRefresh);
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: $spacing-lg;
-    gap: $spacing-md;
+    margin-bottom: 1.5rem;
+    gap: 1rem;
 
     @include respond-to-max(md) {
       flex-direction: column;
       align-items: stretch;
-      gap: $spacing-md;
+      gap: 1rem;
     }
   }
 }
@@ -632,7 +605,7 @@ provide("handleRefresh", handleRefresh);
     list-style: none;
     margin: 0;
     padding: 0;
-    gap: $spacing-sm;
+    gap: 0.5rem;
     overflow-x: auto;
 
     @include respond-to-max(sm) {
@@ -648,9 +621,9 @@ provide("handleRefresh", handleRefresh);
     @include button-base;
     background: none;
     border: none;
-    border-bottom: 2px solid transparent;
+    border-bottom: 0.125rem solid transparent;
     border-radius: 0;
-    padding: 12px 16px;
+    padding: 0.75rem 1rem;
     font-weight: 500;
     color: $color-text-muted;
     white-space: nowrap;
@@ -666,8 +639,8 @@ provide("handleRefresh", handleRefresh);
     }
 
     @include respond-to-max(sm) {
-      padding: 8px 12px;
-      font-size: 14px;
+      padding: 0.5rem 0.75rem;
+      font-size: 0.875rem;
     }
   }
 }
@@ -676,8 +649,8 @@ provide("handleRefresh", handleRefresh);
   @include primary-button;
   white-space: nowrap;
   min-width: fit-content;
-  padding: 8px 14px;
-  gap: 8px;
+  padding: 0.5rem 0.875rem;
+  gap: 0.5rem;
 
   @include respond-to-max(md) {
     width: 100%;
@@ -694,10 +667,10 @@ provide("handleRefresh", handleRefresh);
     display: flex;
     align-items: center;
     background: $white;
-    border-radius: $border-radius-md;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    border-radius: 0.5rem;
+    box-shadow: 0 0.0625rem 0.1875rem rgba(0, 0, 0, 0.1);
     overflow: hidden;
-    max-width: 300px;
+    max-width: 18.75rem;
     width: 100%;
     position: relative;
 
@@ -708,7 +681,7 @@ provide("handleRefresh", handleRefresh);
 
   &__icon {
     position: absolute;
-    left: 12px;
+    left: 0.75rem;
     display: flex;
     align-items: center;
     color: #6c757d;
@@ -717,13 +690,13 @@ provide("handleRefresh", handleRefresh);
 
   &__field {
     @include input-base;
-    padding: 10px 14px 10px 40px;
+    padding: 0.625rem 0.875rem 0.625rem 2.5rem;
     font-weight: 300;
-    font-size: 16px;
+    font-size: 1rem;
     color: #6d758f;
-    border-radius: 8px;
-    border: 1px solid #f1f3f7;
-    box-shadow: 0 1px 2px #1018280d;
+    border-radius: 0.5rem;
+    border: 0.0625rem solid #f1f3f7;
+    box-shadow: 0 0.0625rem 0.125rem #1018280d;
     background-color: #fff;
     width: 100%;
 
@@ -735,20 +708,20 @@ provide("handleRefresh", handleRefresh);
 
   &__clear {
     position: absolute;
-    right: 8px;
+    right: 0.5rem;
     top: 50%;
     transform: translateY(-50%);
     background: none;
     border: none;
-    width: 20px;
-    height: 20px;
+    width: 1.25rem;
+    height: 1.25rem;
     border-radius: 50%;
     display: flex;
     align-items: center;
     justify-content: center;
     color: $color-text-muted;
     cursor: pointer;
-    font-size: 16px;
+    font-size: 1rem;
     font-weight: bold;
     line-height: 1;
 
@@ -758,8 +731,8 @@ provide("handleRefresh", handleRefresh);
     }
 
     &:focus {
-      outline: 2px solid $color-primary;
-      outline-offset: 1px;
+      outline: 0.125rem solid $color-primary;
+      outline-offset: 0.0625rem;
     }
   }
 }
@@ -767,7 +740,7 @@ provide("handleRefresh", handleRefresh);
 .toolbar-actions {
   display: flex;
   align-items: center;
-  gap: $spacing-sm;
+  gap: 0.5rem;
   margin-left: auto;
 
   @include respond-to-max(md) {
@@ -806,18 +779,18 @@ provide("handleRefresh", handleRefresh);
     right: 0;
     z-index: 1000;
     display: none;
-    min-width: 160px;
-    padding: $spacing-sm 0;
-    margin: 2px 0 0;
-    font-size: 14px;
+    min-width: 10rem;
+    padding: 0.5rem 0;
+    margin: 0.125rem 0 0;
+    font-size: 0.875rem;
     color: $color-foreground;
     text-align: left;
     list-style: none;
     background-color: $white;
     background-clip: padding-box;
-    border: 1px solid #d0d5dd;
-    border-radius: $border-radius-md;
-    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.175);
+    border: 0.0625rem solid #d0d5dd;
+    border-radius: 0.5rem;
+    box-shadow: 0 0.375rem 0.75rem rgba(0, 0, 0, 0.175);
 
     &--show {
       display: block;
@@ -833,7 +806,7 @@ provide("handleRefresh", handleRefresh);
   &__item {
     @include link-base;
     display: block;
-    padding: 6px $spacing-md;
+    padding: 0.375rem 1rem;
     clear: both;
     font-weight: 400;
     color: $color-foreground;
@@ -854,8 +827,8 @@ provide("handleRefresh", handleRefresh);
 
 .appointments-table-container {
   background: $white;
-  border-radius: $border-radius-md;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  border-radius: 0.5rem;
+  box-shadow: 0 0.0625rem 0.1875rem rgba(0, 0, 0, 0.1);
   overflow: hidden;
 }
 
