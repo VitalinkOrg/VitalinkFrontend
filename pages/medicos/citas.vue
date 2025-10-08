@@ -2,7 +2,6 @@
 import { jsPDF } from "jspdf";
 import "jspdf-autotable";
 import { computed, ref, watch, type Ref } from "vue";
-import { useErrorHandler } from "~/composables/api/useErrorHandler";
 import type { Appointment } from "~/types";
 
 definePageMeta({
@@ -13,7 +12,6 @@ const config = useRuntimeConfig();
 const token = useCookie("token");
 const role = useCookie("role");
 const { formatDate } = useFormat();
-const { handleApiError } = useErrorHandler();
 
 const tab: Ref<number> = ref(1);
 const searchQuery: Ref<string> = ref("");
@@ -73,7 +71,7 @@ try {
     useRefreshToken();
   }
 } catch (error) {
-  console.error("Initial fetch error:", handleApiError(error));
+  console.error("Initial fetch error:", error);
 }
 
 const fetchAppointments = async (isRefresh: boolean = false): Promise<void> => {
@@ -103,7 +101,7 @@ const fetchAppointments = async (isRefresh: boolean = false): Promise<void> => {
       useRefreshToken();
     }
   } catch (error) {
-    console.error("Fetch error:", handleApiError(error));
+    console.error("Fetch error:", error);
   } finally {
     loading.value = false;
     isRefreshing.value = false;

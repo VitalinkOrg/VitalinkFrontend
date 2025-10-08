@@ -1,7 +1,7 @@
 <script lang="ts" setup>
 import { jwtDecode } from "jwt-decode";
 import { onMounted, ref } from "vue";
-import { useErrorHandler } from "~/composables/api/useErrorHandler";
+import { useSupplier } from "~/composables/api";
 import type { Service, Supplier } from "~/types";
 
 definePageMeta({
@@ -12,10 +12,10 @@ interface DecodedToken {
   id: string;
 }
 
-const config = useRuntimeConfig();
-const token = useCookie("token");
+const { getToken } = useAuthToken();
+const { fetchAllSuppliers, fetchSupplier } = useSupplier();
 
-const decodedToken = jwtDecode<DecodedToken>(token.value!);
+const decodedToken = jwtDecode<DecodedToken>(getToken()!);
 const userId = decodedToken.id;
 
 const isLoading = ref<boolean>(false);
@@ -24,35 +24,24 @@ const services = ref<Service[]>([]);
 const supplier = ref<Supplier | null>(null);
 const supplierId = ref<number | null>(null);
 
-const { withErrorHandling } = useErrorHandler();
-
 const fetchSupplierId = async (): Promise<number | null> => {
-  const fetchOperation = $fetch<{ data: Supplier[] }>(
-    `${config.public.API_BASE_URL}/supplier/get_all`,
-    {
-      headers: {
-        Authorization: token.value!,
-      },
-      params: {
-        legal_representative_id: userId,
-      },
-    }
-  );
+  const api = fetchAllSuppliers();
+  await api.request();
 
-  const { data, error } = await withErrorHandling(fetchOperation, isLoading, {
-    customMessage:
-      "Error al cargar el proveedor. Por favor intenta nuevamente.",
-    logError: true,
-  });
+  const response = api.response.value;
+  const apiError = api.error.value;
 
-  if (error || !data?.data || data.data.length === 0) {
-    errorMessage.value = "No se encontró un proveedor asociado a este usuario.";
-    return null;
+  if (response?.data) {
+    supplier.value = response.data[0];
+    supplierId.value = supplier.value.id;
+    return supplier.value.id;
   }
 
-  supplier.value = data.data[0];
-  supplierId.value = supplier.value.id;
-  return supplier.value.id;
+  if (apiError) {
+    errorMessage.value = "No se encontró un proveedor asociado a este usuario.";
+  }
+
+  return null;
 };
 
 const fetchServices = async (): Promise<void> => {
@@ -61,31 +50,20 @@ const fetchServices = async (): Promise<void> => {
     return;
   }
 
-  const fetchOperation = $fetch<{ data: Supplier }>(
-    `${config.public.API_BASE_URL}/supplier/get`,
-    {
-      headers: {
-        Authorization: token.value!,
-      },
-      params: {
-        id: supplierId.value,
-      },
-    }
-  );
+  const api = fetchSupplier(supplierId.value);
+  await api.request();
 
-  const { data, error } = await withErrorHandling(fetchOperation, isLoading, {
-    customMessage:
-      "Error al cargar los servicios. Por favor intenta nuevamente.",
-    logError: true,
-  });
+  const response = api.response.value;
+  const error = api.error.value;
 
-  if (error) {
-    errorMessage.value = error;
-    return;
+  if (response?.data) {
+    services.value = response.data.services;
   }
 
-  const supplier = data?.data;
-  services.value = supplier?.services || [];
+  if (error) {
+    errorMessage.value = error.info;
+    return;
+  }
 };
 
 onMounted(async () => {

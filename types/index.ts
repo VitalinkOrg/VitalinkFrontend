@@ -1,5 +1,8 @@
 //
 // Clinicas
+
+import type { MedicalSpecialty } from "./supplier";
+
 //
 export interface IServicioClinica {
   id: string;
@@ -113,12 +116,81 @@ export enum EVaucherEstado {
   UTILIZADA = "Utilizado",
 }
 
+interface FinanceEntity {
+  id: string;
+  card_id: string;
+  name: string;
+  email: string;
+  user_name: string;
+  phone_number: string;
+  gender: string | null;
+  birth_date: string | null;
+  country_iso_code: string;
+  province: string;
+  address: string;
+  city_name: string;
+  postal_code: string;
+  role_code: string;
+  is_deleted: number;
+  is_active_from_email: number;
+  account_status: string;
+  fail_login_number: number;
+  forgot_password_token: string | null;
+  active_register_token: string | null;
+  latitude: number | null;
+  longitude: number | null;
+  code_contract: string | null;
+  language: string;
+  profile_picture_url: string | null;
+  last_login_at: string | null;
+  login_ip_address: string | null;
+  created_at: string;
+  updated_at: string;
+  verified_at: string | null;
+  id_type: IUdc;
+}
+
+export interface UserInformation {
+  id: string;
+  card_id: string;
+  id_type: IdType;
+  name: string;
+  user_name: string;
+  email: string;
+  phone_number: string;
+  country_iso_code: string;
+  city_name: string;
+  postal_code: string;
+  latitude: number | null;
+  longitude: number | null;
+  gender: string | null;
+  birth_date: string | null;
+  role: string;
+  finance_entity: FinanceEntity;
+  code_contract: string | null;
+  language: string;
+  profile_picture_url: string | null;
+  account_status: string;
+}
+
 //
 // Aseguradora
 //
 export interface IAseguradora {
   id: string;
   nombre: string;
+}
+
+export interface InsuranceRegisterData {
+  password: string;
+  email: string;
+  name: string;
+  phone_number: string;
+  birthdate: string;
+  address: string;
+  city: string;
+  country: string;
+  postal_code: string;
 }
 
 export type ModalName =
@@ -133,42 +205,56 @@ export type ModalName =
   | "applyCredit"
   | "applyCreditSuccess";
 
+export interface IUdc {
+  id: number;
+  code: string;
+  name: string;
+  type: string;
+  description: string | null;
+  father_code: string | null;
+  value1: string | null;
+  created_date: string;
+  updated_date: string | null;
+  is_deleted: number;
+}
+export interface ISupplierFormData {
+  documentType: string;
+  documentNumber: string;
+  fullName: string;
+  codeContract: string;
+  contratcFile: File | null;
+  contratcId: number;
+  email: string;
+  phone: string;
+  password: string;
+}
+
+export interface IRelatedMedicalFormData {
+  documentType: string;
+  documentNumber: string;
+  fullName: string;
+  identityDocumentFile: File | null;
+  medicalCode: string;
+  validLicenseFile: File | null;
+  medicalType: string;
+  specialties: MedicalSpecialty[];
+  useSameDataAsSupplier?: boolean;
+}
+
 export interface ApiResponse<T = any> {
   success: boolean;
   message?: string;
   data?: T;
 }
 
-export interface IdType {
-  id: number;
-  code: string;
-  name: string;
-  type: string;
-  description: string | null;
-  father_code: string | null;
-  value1: string | null;
-  created_date: string;
-  updated_date: string | null;
-  is_deleted: number;
-}
+export interface IdType extends IUdc {}
 
 export interface Procedures {
   procedure: Procedure;
   packages: Package[];
 }
 
-export interface Procedure {
-  id: number;
-  code: string;
-  name: string;
-  type: string;
-  description: string | null;
-  father_code: string | null;
-  value1: string | null;
-  created_date: string;
-  updated_date: string | null;
-  is_deleted: number;
-}
+export interface Procedure extends IUdc {}
 
 export interface Package {
   id: number;

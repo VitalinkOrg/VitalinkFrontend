@@ -4,31 +4,50 @@ import { useErrorHandler } from "./useErrorHandler";
 export interface UsableAPI<T> {
   response: Ref<T | undefined>;
   request: () => Promise<void>;
-  error: Ref<string | null>;
+  error: Ref<ApiErrorResponse>;
   loading: Ref<boolean>;
+}
+
+export interface ApiErrorResponse {
+  httpCode: number;
+  info: string;
+  message: string;
+  raw: string;
+  statusId: number;
 }
 
 export default function useApi<T>(
   url: RequestInfo,
-  options?: RequestInit
+  options?: RequestInit & { params?: Record<string, any> }
 ): UsableAPI<T> {
   const response = ref<T>();
-  const error = ref<string | null>(null);
+  const error = ref<any>(null);
   const loading = ref(false);
-  const { withErrorHandling } = useErrorHandler();
+  const { parseError, logError } = useErrorHandler();
 
   const request = async () => {
-    const { data, error: apiError } = await withErrorHandling(
-      fetch(url, options).then((res) => {
-        if (!res.ok) throw new Error(`HTTP ${res.status}`);
-        return res.json();
-      }),
-      loading,
-      { context: `API Request to ${url}` }
-    );
+    loading.value = true;
+    error.value = null;
 
-    if (apiError) error.value = apiError;
-    else response.value = data as T;
+    try {
+      const res = await fetch(url, options);
+
+      if (!res.ok) {
+        const errorData = await res.text().catch(() => null);
+        throw new Error(`HTTP ${res.status}: ${errorData || res.statusText}`);
+      }
+
+      const data = await res.json();
+      response.value = data as T;
+      error.value = null;
+    } catch (err) {
+      const parsedError = parseError(err);
+      logError(parsedError, `API Request to ${url}`);
+      error.value = parsedError;
+      response.value = undefined;
+    } finally {
+      loading.value = false;
+    }
   };
 
   return { response, request, error, loading };

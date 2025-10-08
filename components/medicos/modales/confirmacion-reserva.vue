@@ -101,8 +101,8 @@
 </template>
 
 <script lang="ts" setup>
-import { useErrorHandler } from "~/composables/api/useErrorHandler";
-import type { Appointment, AppointmentStatusCode } from "~/types";
+import { useAppointment } from "@/composables/api";
+import type { Appointment, AppointmentStatusCode } from "@/types";
 
 interface Props {
   appointment: Appointment;
@@ -115,9 +115,8 @@ const closeAppointmentDetailsModal = inject<() => void>(
 );
 const refreshAppointments = inject<() => Promise<void>>("refreshAppointments");
 
-const config = useRuntimeConfig();
-const token = useCookie("token");
-const { withErrorHandling } = useErrorHandler();
+const { confirmProcedure, setProcedureRealized, confirmValorationAppointment } =
+  useAppointment();
 
 const isModalOpen = ref<boolean>(false);
 const isLoading = ref<boolean>(false);
@@ -203,32 +202,33 @@ const handleCloseModal = () => {
 
 const handleConfirmAction = async () => {
   const actionMap: Record<AppointmentStatusCode, () => Promise<void>> = {
-    PENDING_VALORATION_APPOINTMENT: confirmValorationAppointment,
-    PENDING_PROCEDURE: confirmProcedure,
-    WAITING_PROCEDURE: finishProcedure,
-    CONFIRM_PROCEDURE: finishProcedure,
-    CONCRETED_APPOINTMENT: finishProcedure,
+    PENDING_VALORATION_APPOINTMENT: handleConfirmValorationAppointment,
+    PENDING_PROCEDURE: handleConfirmProcedure,
+    WAITING_PROCEDURE: handleFinishProcedure,
+    CONFIRM_PROCEDURE: handleFinishProcedure,
+    CONCRETED_APPOINTMENT: handleFinishProcedure,
     CONFIRM_VALIDATION_APPOINTMENT: confirmValoration,
-    CANCEL_APPOINTMENT: confirmValorationAppointment,
-    VALUED_VALORATION_APPOINTMENT: confirmValorationAppointment,
-    VALUATION_PENDING_VALORATION_APPOINTMENT: confirmValorationAppointment,
+    CANCEL_APPOINTMENT: handleConfirmValorationAppointment,
+    VALUED_VALORATION_APPOINTMENT: handleConfirmValorationAppointment,
+    VALUATION_PENDING_VALORATION_APPOINTMENT:
+      handleConfirmValorationAppointment,
   };
 
   const action =
-    actionMap[appointmentStatus.value] || confirmValorationAppointment;
+    actionMap[appointmentStatus.value] || handleConfirmValorationAppointment;
   await action();
 };
 
-const confirmValorationAppointment = async () => {
-  await executeApiCall("/appointment/confirm_valoration_appointment");
+const handleConfirmValorationAppointment = async () => {
+  await executeApiCall("confirm_valoration_appointment");
 };
 
-const confirmProcedure = async () => {
-  await executeApiCall("/appointment/confirm_procedure");
+const handleConfirmProcedure = async () => {
+  await executeApiCall("confirm_procedure");
 };
 
-const finishProcedure = async () => {
-  await executeApiCall("/appointment/set_procedure_realized");
+const handleFinishProcedure = async () => {
+  await executeApiCall("set_procedure_realized");
 };
 
 const confirmValoration = async () => {
@@ -237,51 +237,51 @@ const confirmValoration = async () => {
   closeAppointmentDetailsModal?.();
 };
 
-const executeApiCall = async (endpoint: string) => {
-  if (!token.value) {
-    throw new Error("Token de autenticación no disponible");
-  }
+const executeApiCall = async (action: string) => {
+  try {
+    isLoading.value = true;
 
-  const { data, error } = await withErrorHandling(
-    $fetch(`${config.public.API_BASE_URL}${endpoint}`, {
-      method: "PUT",
-      headers: { Authorization: token.value },
-      params: { id: props.appointment.id },
-    }),
-    isLoading,
-    {
-      customMessage: `Error al ${getActionDescription()}`,
+    let api;
+
+    switch (action) {
+      case "confirm_procedure":
+        api = confirmProcedure(props.appointment.id);
+        break;
+
+      case "set_procedure_realized":
+        api = setProcedureRealized(props.appointment.id);
+        break;
+
+      case "confirm_valoration_appointment":
+        api = confirmValorationAppointment(props.appointment.id);
+        break;
+
+      default:
+        break;
     }
-  );
 
-  console.log({ data });
+    if (!api) return;
 
-  if (data) {
-    await refreshAppointments?.();
+    await api.request();
 
-    handleCloseModal();
-    closeAppointmentDetailsModal?.();
+    const response = api.response.value;
+    const error = api.error.value;
+
+    if (response?.data) {
+      await refreshAppointments?.();
+
+      handleCloseModal();
+      closeAppointmentDetailsModal?.();
+    }
+
+    if (error) {
+      console.error("Error en la operación:", error);
+    }
+  } catch (error) {
+    console.error(error);
+  } finally {
+    isLoading.value = false;
   }
-
-  if (error) {
-    console.error("Error en la operación:", error);
-  }
-};
-
-const getActionDescription = (): string => {
-  const descriptions: Record<AppointmentStatusCode, string> = {
-    PENDING_VALORATION_APPOINTMENT: "confirmar la valoración",
-    PENDING_PROCEDURE: "confirmar el procedimiento",
-    WAITING_PROCEDURE: "finalizar el procedimiento",
-    CONFIRM_PROCEDURE: "finalizar el procedimiento",
-    CONCRETED_APPOINTMENT: "finalizar el procedimiento",
-    CONFIRM_VALIDATION_APPOINTMENT: "confirmar la valoración",
-    CANCEL_APPOINTMENT: "procesar la solicitud",
-    VALUED_VALORATION_APPOINTMENT: "procesar la solicitud",
-    VALUATION_PENDING_VALORATION_APPOINTMENT: "procesar la solicitud",
-  };
-
-  return descriptions[appointmentStatus.value] || "procesar la solicitud";
 };
 
 defineExpose({

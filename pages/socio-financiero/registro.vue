@@ -1,302 +1,393 @@
 <template>
   <NuxtLayout name="web">
-    <div class="header d-grid">
-      <div class="container my-5">
-        <div class="row my-3">
-          <div class="col">
-            <h1 class="display-5 text-center">
-              Maximiza tu Presencia Médica Online
-            </h1>
-            <p class="text-center text-muted mb-0 lead">
-              Registrate ahora para gestionar tu actividad y la de tus
-              asegurados dentro de Vitalink.
-            </p>
-            <img
-              src="@/src/assets/img-login-aseguradoras.png"
-              class="img-fluid"
-              alt=""
-            />
-          </div>
-          <div class="col">
-            <div class="card p-5">
-              <form @submit.prevent="register">
-                <div>
-                  <h5 class="mt-0">Crear cuenta</h5>
-                  <label class="form-label mb-0 text-dark text-capitalize"
-                    >Datos del usuario</label
-                  >
-                  <hr class="my-1" />
-                  <div class="row row-cols-2 my-3">
-                    <div class="form-group mb-2">
-                      <label for="nombre" class="form-label text-capitalize"
-                        >Nombre</label
-                      >
-                      <input
-                        v-model="name"
-                        type="text"
-                        class="form-control"
-                        placeholder="Escribe tu nombre"
-                        id="nombre"
-                        required
-                      />
-                      <!-- <div id="nombreHelp" class="form-text">We'll never share your email with anyone else.</div> -->
-                    </div>
-                    <div class="form-group mb-2">
-                      <label for="telefono" class="form-label text-capitalize"
-                        >Número de teléfono</label
-                      >
-                      <input
-                        v-model="phone_number"
-                        type="phone"
-                        class="form-control"
-                        placeholder="0000-0000"
-                        id="telefono"
-                        required
-                      />
-                      <!-- <div id="nombreHelp" class="form-text">We'll never share your email with anyone else.</div> -->
-                    </div>
-                    <div class="form-group mb-2">
-                      <label for="dob" class="form-label text-capitalize"
-                        >Fecha de nacimiento</label
-                      >
-                      <input
-                        v-model="birthdate"
-                        type="date"
-                        class="form-control"
-                        placeholder="15/06/1996"
-                        id="dob"
-                        required
-                      />
-                      <!-- <div id="nombreHelp" class="form-text">We'll never share your email with anyone else.</div> -->
-                    </div>
-                    <div class="form-group mb-2">
-                      <label for="dob" class="form-label text-capitalize"
-                        >Dirección</label
-                      >
-                      <input
-                        v-model="address"
-                        type="text"
-                        class="form-control"
-                        placeholder="Dirección"
-                        id="dob"
-                        required
-                      />
-                      <!-- <div id="nombreHelp" class="form-text">We'll never share your email with anyone else.</div> -->
-                    </div>
-                  </div>
-                  <div class="row row-cols-3">
-                    <div class="form-group mb-2">
-                      <label for="apellido" class="form-label text-capitalize"
-                        >Código Postal</label
-                      >
-                      <input
-                        v-model="postal_code"
-                        type="number"
-                        class="form-control"
-                        placeholder="000000"
-                        id="apellido"
-                        required
-                      />
-                      <!-- <div id="nombreHelp" class="form-text">We'll never share your email with anyone else.</div> -->
-                    </div>
-                    <div class="form-group mb-2">
-                      <label for="apellido" class="form-label text-capitalize"
-                        >Ciudad</label
-                      >
-                      <input
-                        v-model="city"
-                        type="text"
-                        class="form-control"
-                        placeholder="Ciudad"
-                        id="apellido"
-                        required
-                      />
-                      <!-- <div id="nombreHelp" class="form-text">We'll never share your email with anyone else.</div> -->
-                    </div>
-                    <div class="form-group mb-2">
-                      <label for="apellido" class="form-label text-capitalize"
-                        >País</label
-                      >
-                      <input
-                        v-model="country"
-                        type="text"
-                        class="form-control"
-                        placeholder="País"
-                        id="apellido"
-                        required
-                      />
-                      <!-- <div id="nombreHelp" class="form-text">We'll never share your email with anyone else.</div> -->
-                    </div>
-                  </div>
-                  <label class="form-label mb-0 text-dark text-capitalize"
-                    >Datos del usuario</label
-                  >
-                  <hr class="my-1" />
-                  <div class="form-group my-3">
-                    <label for="email" class="form-label text-capitalize"
-                      >Correo Electrónico</label
-                    >
-                    <input
-                      v-model="email"
-                      type="email"
-                      class="form-control"
-                      placeholder="Escribe tu correo electrónico"
-                      id="email"
-                      required
-                    />
-                    <!-- <div id="nombreHelp" class="form-text">We'll never share your email with anyone else.</div> -->
-                  </div>
-                  <div class="row row-cols-2">
-                    <div class="form-group mb-2">
-                      <label for="password" class="form-label text-capitalize"
-                        >Contraseña</label
-                      >
-                      <input
-                        v-model="password"
-                        type="password"
-                        class="form-control"
-                        id="password"
-                        placeholder="Escribe tu contraseña"
-                        aria-describedby="passwordHelp"
-                        required
-                      />
-                      <!-- <div id="passwordHelp" class="form-text">Deben ser 8 caracteres como mínimo</div> -->
-                    </div>
-                    <div class="form-group mb-2">
-                      <label
-                        for="confirmPassword"
-                        class="form-label text-capitalize"
-                        >Confirmar Contraseña</label
-                      >
-                      <input
-                        v-model="passwordConfirmation"
-                        type="password"
-                        class="form-control"
-                        id="confirmPassword"
-                        placeholder="Escribe tu contraseña"
-                        aria-describedby="confirmPasswordHelp"
-                        name="confirmPassword"
-                        required
-                      />
-                      <!-- <div id="passwordHelp" class="form-text">Deben ser 8 caracteres como mínimo</div> -->
-                    </div>
-                  </div>
-                  <div v-if="errorPassword">
-                    <p>{{ errorPassword }}</p>
-                  </div>
-
-                  <button type="submit" class="btn btn-primary w-100">
-                    Crear
-                  </button>
-                  <hr />
-                  <p class="text-center mt-3 mb-0">
-                    <span class="text-muted">Ya tienes Cuenta? </span>
-                    <NuxtLink
-                      href="/pacientes/login"
-                      class="btn-link text-dark fw-medium"
-                      >Iniciar Sesión</NuxtLink
-                    >
-                  </p>
-                </div>
-                <div
-                  class="modal-footer justify-content-center"
-                  v-if="errorText"
-                >
-                  <p>{{ errorText }}</p>
-                </div>
-              </form>
+    <main class="insurance-register">
+      <img
+        src="@/src/assets/background-pattern.svg"
+        alt=""
+        class="insurance-register__background-pattern"
+      />
+      <section class="insurance-register__container">
+        <div class="insurance-register__content">
+          <article class="insurance-register__information">
+            <header class="insurance-register__header">
+              <h1 class="insurance-register__title">
+                Maximiza tu Presencia Médica Online
+              </h1>
+              <p class="insurance-register__description">
+                Registrate ahora para gestionar tu actividad y la de tus
+                asegurados dentro de Vitalink.
+              </p>
+            </header>
+            <figure class="insurance-register__image-wrapper">
+              <img
+                src="@/src/assets/img-login-aseguradoras.png"
+                class="insurance-register__main-image"
+                alt="Ilustración de registro para aseguradoras médicas"
+              />
+            </figure>
+          </article>
+          <aside class="insurance-register__form-wrapper">
+            <div class="insurance-register__form-container">
+              <AseguradorasRegistroFormulario />
             </div>
-          </div>
+          </aside>
         </div>
-      </div>
-    </div>
+      </section>
+    </main>
   </NuxtLayout>
 </template>
 
-<script setup>
+<script lang="ts" setup>
 definePageMeta({
   middleware: ["auth-login"],
 });
-const config = useRuntimeConfig();
-const router = useRouter();
-const email = ref("");
-const password = ref("");
-const passwordConfirmation = ref("");
-const name = ref("");
-const phone_number = ref("");
-const birthdate = ref("");
-const address = ref("");
-const postal_code = ref("");
-const city = ref("");
-const country = ref("");
-const errorPassword = ref("");
-const errorText = ref(null);
-
-const register = async () => {
-  const { value: nameValue } = name;
-  const { value: phoneNumberValue } = phone_number;
-  const { value: dateOfBirthValue } = birthdate;
-  const { value: emailValue } = email;
-  const { value: passwordValue } = password;
-  const { value: passwordConfirmationValue } = passwordConfirmation;
-  const { value: addressValue } = address;
-  const { value: cityValue } = city;
-  const { value: postalCodeValue } = postal_code;
-  const { value: countryValue } = country;
-
-  if (
-    nameValue &&
-    phoneNumberValue &&
-    dateOfBirthValue &&
-    emailValue &&
-    passwordValue &&
-    passwordConfirmationValue &&
-    addressValue &&
-    cityValue &&
-    postalCodeValue &&
-    countryValue
-  ) {
-    if (passwordValue !== passwordConfirmationValue) {
-      return (errorPassword.value = "Passwords do not match");
-    }
-  }
-
-  const { data, error } = await useFetch(
-    config.public.API_BASE_URL + "/users/register_insurance",
-    {
-      method: "POST",
-      body: {
-        password,
-        email,
-        name,
-        phone_number,
-        birthdate,
-        address,
-        city,
-        country,
-        postal_code,
-      },
-    }
-  );
-  if (data.value) {
-    router.push("/");
-  }
-  if (error.value) {
-    console.log(error.value, "data");
-    errorText.value = error.value.data.info;
-  }
-};
 </script>
 
-<style scoped lang="scss">
-.header {
-  min-height: 100vh;
-  background-color: #e2e4fa;
+<style lang="scss" scoped>
+@mixin mobile {
+  @media (max-width: #{$breakpoint-md}) {
+    @content;
+  }
 }
 
-.card {
-  border-radius: 25px;
-  background: var(--Gray-Scale-White, #fff);
-  box-shadow: 0px 0px 35.8px 0px rgba(0, 0, 0, 0.1);
+@mixin tablet {
+  @media (max-width: #{$breakpoint-lg}) {
+    @content;
+  }
+}
+
+@mixin tablet-up {
+  @media (min-width: #{$breakpoint-lg + 1px}) {
+    @content;
+  }
+}
+
+@mixin desktop {
+  @media (min-width: #{$breakpoint-xl}) {
+    @content;
+  }
+}
+
+@mixin desktop-large {
+  @media (min-width: #{$breakpoint-xxl}) {
+    @content;
+  }
+}
+
+.insurance-register {
+  position: relative;
+  min-height: 100vh;
+  background-color: #e2e4fa;
+  display: grid;
+
+  &__background-pattern {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    z-index: 0;
+    top: 0;
+    left: 0;
+    object-fit: cover;
+
+    @include mobile {
+      object-position: center;
+    }
+  }
+
+  &__container {
+    padding: 1.25rem 3.75rem;
+    position: relative;
+    z-index: 1;
+
+    @include tablet {
+      padding: 1.25rem 2rem;
+    }
+
+    @include mobile {
+      padding: 1rem 1.25rem;
+    }
+  }
+
+  &__content {
+    position: relative;
+    z-index: 10;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 2rem;
+    margin: 1.5rem 0;
+    align-items: center;
+
+    @include desktop-large {
+      gap: 3rem;
+      margin: 2rem 0;
+    }
+
+    @include tablet {
+      grid-template-columns: 1fr;
+      gap: 2rem;
+      margin: 1rem 0;
+    }
+
+    @include mobile {
+      gap: 1.5rem;
+      margin: 0.5rem 0;
+    }
+  }
+
+  &__information {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+
+    @include tablet {
+      order: 2;
+      gap: 1.5rem;
+    }
+
+    @include mobile {
+      gap: 1rem;
+    }
+  }
+
+  &__header {
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1rem;
+
+    @include mobile {
+      gap: 0.75rem;
+    }
+  }
+
+  &__title {
+    @include text-base;
+    font-family: $font-family-montserrat-alt;
+    font-weight: 800;
+    font-size: 2.734rem;
+    line-height: 127%;
+    letter-spacing: -0.125rem;
+    text-align: center;
+    max-width: 34rem;
+    margin: 0;
+
+    @include desktop-large {
+      font-size: 3rem;
+      max-width: 40rem;
+    }
+
+    @include tablet {
+      font-size: 2.25rem;
+      max-width: 30rem;
+      letter-spacing: -0.0625rem;
+    }
+
+    @include mobile {
+      font-size: 1.75rem;
+      max-width: 100%;
+      line-height: 120%;
+      letter-spacing: -0.03125rem;
+    }
+  }
+
+  &__description {
+    @include text-base;
+    font-weight: 300;
+    font-size: 1.25rem;
+    line-height: 150%;
+    letter-spacing: -0.125rem;
+    text-align: center;
+    color: #353e5c;
+    max-width: 28.1875rem;
+    margin: 0;
+
+    @include desktop-large {
+      font-size: 1.375rem;
+      max-width: 32rem;
+    }
+
+    @include tablet {
+      font-size: 1.125rem;
+      max-width: 26rem;
+      letter-spacing: -0.0625rem;
+    }
+
+    @include mobile {
+      font-size: 1rem;
+      max-width: 100%;
+      line-height: 140%;
+      letter-spacing: normal;
+    }
+  }
+
+  &__image-wrapper {
+    width: 100%;
+    margin: 0;
+    display: flex;
+    justify-content: center;
+
+    @include tablet {
+      max-width: 400px;
+      margin: 0 auto;
+    }
+
+    @include mobile {
+      max-width: 300px;
+    }
+  }
+
+  &__main-image {
+    width: 100%;
+    height: auto;
+    display: block;
+    max-width: 100%;
+  }
+
+  &__form-wrapper {
+    display: flex;
+    align-items: flex-start;
+    justify-content: center;
+
+    @include tablet {
+      order: 1;
+      align-items: center;
+    }
+
+    @include mobile {
+      align-items: stretch;
+    }
+  }
+
+  &__form-container {
+    padding: 1.5rem 2.1875rem;
+    border-radius: 1.5625rem;
+    background: $white;
+    box-shadow: 0px 0px 2.2375rem 0px rgba(0, 0, 0, 0.1);
+    width: 100%;
+
+    @include desktop-large {
+      padding: 2rem 2.5rem;
+      border-radius: 2rem;
+    }
+
+    @include tablet {
+      max-width: 600px;
+      padding: 2rem;
+      border-radius: 1.25rem;
+    }
+
+    @include mobile {
+      padding: 1.5rem 1.25rem;
+      border-radius: 1rem;
+      box-shadow: 0px 0px 1.5rem 0px rgba(0, 0, 0, 0.1);
+    }
+  }
+}
+
+.insurance-register {
+  &--dark-mode {
+    background-color: #1a1a2e;
+
+    .insurance-register__title {
+      color: #fff;
+    }
+
+    .insurance-register__description {
+      color: #b8b8d1;
+    }
+  }
+
+  &--compact {
+    .insurance-register__container {
+      padding: 1rem 2rem;
+    }
+
+    .insurance-register__content {
+      gap: 1.5rem;
+      margin: 1rem 0;
+    }
+  }
+}
+
+.insurance-register__form-container {
+  &--loading {
+    opacity: 0.7;
+    pointer-events: none;
+
+    &::after {
+      content: "";
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      width: 2rem;
+      height: 2rem;
+      margin: -1rem 0 0 -1rem;
+      border: 0.125rem solid transparent;
+      border-top: 0.125rem solid #007bff;
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+    }
+  }
+
+  &--error {
+    border: 0.125rem solid #dc3545;
+    box-shadow: 0px 0px 2.2375rem 0px rgba(220, 53, 69, 0.2);
+  }
+}
+
+@keyframes spin {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .insurance-register__form-container--loading::after {
+    animation: none;
+  }
+}
+
+@media (min-width: 1600px) {
+  .insurance-register {
+    &__container {
+      max-width: 1400px;
+      margin: 0 auto;
+    }
+
+    &__content {
+      gap: 4rem;
+    }
+  }
+}
+
+@media (max-width: 768px) and (orientation: landscape) {
+  .insurance-register {
+    &__content {
+      grid-template-columns: 1fr 1fr;
+      gap: 1.5rem;
+      align-items: stretch;
+    }
+
+    &__information {
+      order: 1;
+    }
+
+    &__form-wrapper {
+      order: 2;
+    }
+
+    &__title {
+      font-size: 1.5rem;
+    }
+
+    &__description {
+      font-size: 0.875rem;
+    }
+  }
 }
 </style>

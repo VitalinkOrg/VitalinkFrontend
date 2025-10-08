@@ -195,13 +195,11 @@
 </template>
 
 <script lang="ts" setup>
-import { useErrorHandler } from "~/composables/api/useErrorHandler";
 import type { Appointment, AppointmentStatusCode } from "~/types";
 import type { TablaBaseRow } from "../tabla-detalles-cita.vue";
 
 const config = useRuntimeConfig();
 const token = useCookie("token");
-const { handleApiError } = useErrorHandler();
 
 const isModalOpen = ref<boolean>(false);
 const isLoading = ref<boolean>(false);
@@ -423,11 +421,9 @@ const handleSaveChanges = async () => {
 
     await refreshAppointments?.();
   } catch (error: any) {
-    const errorMessage = handleApiError(error, {
-      customMessage:
-        "Error al guardar los cambios. Por favor intenta nuevamente.",
-    });
-    proformaError.value = errorMessage;
+    console.error("Error al guardar los cambios:", error);
+    proformaError.value =
+      "Error al guardar los cambios. Por favor intenta nuevamente.";
   } finally {
     isLoading.value = false;
   }

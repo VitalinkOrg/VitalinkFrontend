@@ -149,7 +149,6 @@ const emit = defineEmits(["toggle-favorite", "show-packages"]);
 
 const route = useRoute();
 
-// Check if a procedure was searched
 const searchProcedureCode = computed(() => route.query.procedure_code);
 
 const citaValoracionPackage = computed(() => {
@@ -171,11 +170,7 @@ const citaValoracionPackage = computed(() => {
     discount: 0,
     discounted_price: 18000,
     services_offer: {
-      ASSESSMENT_DETAILS: [
-        "MEDICAL_CONSULTATION",
-        "CLINICAL_EVALUATION",
-        "INITIAL_DIAGNOSIS",
-      ],
+      ASSESSMENT_DETAILS: [],
     },
     is_king: 0,
     observations: "",
@@ -204,7 +199,7 @@ const toggleFavorite = () => {
 };
 
 const getDoctorData = () => {
-  emit("show-packages", { medico: props.medico });
+  emit("show-packages", { selectedSupplier: props.medico });
 };
 </script>
 

@@ -1,5 +1,5 @@
 <script lang="ts" setup>
-import { useErrorHandler } from "~/composables/api/useErrorHandler";
+import { useUdc } from "@/composables/api";
 import type {
   AssessmentDetail,
   Customer,
@@ -9,7 +9,7 @@ import type {
   ReviewDetail,
   Service,
   Supplier,
-} from "~/types";
+} from "@/types";
 
 interface Props {
   supplier?: Supplier | Partial<Supplier> | null;
@@ -29,7 +29,7 @@ interface AppointmentForm {
 const props = defineProps<Props>();
 
 const { createAssessmentPackage } = useAssessmentPackage();
-const { withErrorHandling } = useErrorHandler();
+const { fetchUdc } = useUdc();
 
 const panel = ref<boolean>(false);
 const user = useCookie<Customer>("user_info");
@@ -279,65 +279,29 @@ const initializeDefaults = (): void => {
 };
 
 const loadAssessmentDetails = async (): Promise<void> => {
-  const token = useCookie<string>("token");
-  const config = useRuntimeConfig();
+  const api = fetchUdc("ASSESSMENT_DETAIL");
+  await api.request();
 
-  if (!token.value) {
-    console.warn("No authorization token available");
-    return;
+  const response = api.response.value;
+  const error = api.error.value;
+
+  if (response?.data) {
+    assessmentDetails.value = response.data;
   }
 
-  const assessmentOperation = $fetch<{ data: AssessmentDetail[] }>(
-    config.public.API_BASE_URL + "/udc/get_all",
-    {
-      headers: { Authorization: token.value },
-      params: { type: "ASSESSMENT_DETAIL" },
-    }
-  );
-
-  const { data: assessmentData, error: assessmentError } =
-    await withErrorHandling(assessmentOperation, isLoadingData, {
-      customMessage: "Error al cargar detalles de evaluación",
-    });
-
-  if (assessmentData?.data && Array.isArray(assessmentData.data)) {
-    assessmentDetails.value = assessmentData.data;
-  }
-
-  if (assessmentError) {
-    console.error("Assessment details loading error:", assessmentError);
+  if (error) {
+    console.error("Assessment details loading error:", error.info);
   }
 };
 
 const loadApiData = async (): Promise<void> => {
-  const token = useCookie<string>("token");
-  const config = useRuntimeConfig();
+  const api = fetchUdc("REVIEW");
+  await api.request();
 
-  if (!token.value) {
-    console.warn("No authorization token available");
-    return;
-  }
+  const response = api.response.value;
 
-  const reviewOperation = $fetch<{ data: ReviewDetail[] }>(
-    config.public.API_BASE_URL + "/udc/get_all",
-    {
-      headers: { Authorization: token.value },
-      params: { type: "REVIEW" },
-    }
-  );
-
-  const { data: reviewData, error: reviewError } = await withErrorHandling(
-    reviewOperation,
-    isLoadingData,
-    { customMessage: "Error al cargar detalles de reseñas" }
-  );
-
-  if (reviewData?.data && Array.isArray(reviewData.data)) {
-    reviewDetails.value = reviewData.data;
-  }
-
-  if (reviewError) {
-    console.error("Review details loading error:", reviewError);
+  if (response?.data) {
+    reviewDetails.value = response.data;
   }
 
   await loadAssessmentDetails();

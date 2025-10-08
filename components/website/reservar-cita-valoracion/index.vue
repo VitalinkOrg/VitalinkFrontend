@@ -125,10 +125,6 @@
 <script lang="ts" setup>
 import type { ApiResponse, Package, Service } from "~/types";
 
-import { useErrorHandler } from "~/composables/api/useErrorHandler";
-
-const { withErrorHandling } = useErrorHandler();
-
 const config = useRuntimeConfig();
 const token = useCookie("token");
 
@@ -248,23 +244,23 @@ const handleConfirmReservation = async () => {
     procedure_id: props.selectedProcedureId,
   };
 
-  const { error } = await withErrorHandling(
-    $fetch<ApiResponse>(config.public.API_BASE_URL + "/appointment/add", {
+  try {
+    isLoading.value = true;
+
+    await $fetch<ApiResponse>(config.public.API_BASE_URL + "/appointment/add", {
       method: "POST",
       body: payload,
       headers: {
         Authorization: token.value ?? "",
         "Content-Type": "application/json",
       },
-    }),
-    isLoading,
-    {
-      customMessage: "Error al confirmar la reservación",
-    }
-  );
+    });
 
-  if (!error) {
     openSuccessModal();
+  } catch (err: any) {
+    console.error("Error al confirmar la reservación:", err);
+  } finally {
+    isLoading.value = false;
   }
 };
 </script>

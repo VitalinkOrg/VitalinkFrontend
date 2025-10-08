@@ -12,63 +12,88 @@
       required
     />
 
-    <label
-      :for="inputId"
-      class="file-upload__dropzone"
-      :class="{
-        'file-upload__dropzone--uploaded': uploadedFile,
-        'file-upload__dropzone--dragover': isDragOver,
-      }"
-      @dragover.prevent="handleDragOver"
-      @dragleave.prevent="handleDragLeave"
-      @drop.prevent="handleDrop"
-      v-if="!uploadedFile"
-    >
-      <div class="file-upload__content">
-        <AtomsIconsUploadContractIcon />
-        <div>
-          <p>Arrastra para subir un <span>Archivo</span></p>
-          <small>Limitado a PDF y word</small>
-        </div>
-      </div>
-    </label>
-
-    <div v-else class="file-upload__success">
-      <img
-        v-if="uploadedFile.type === 'application/pdf'"
-        src="@/src/assets/pdf-file.png"
-      />
-      <img v-else src="@/src/assets/docx-file.png" />
-      {{ uploadedFile.name }}
+    <div v-if="isLoading" class="file-upload__loading">
+      <div class="file-upload__loading-spinner"></div>
+      <span class="file-upload__loading-text">Cargando archivo...</span>
     </div>
 
-    <button
-      v-if="uploadedFile"
-      @click.stop="removeFile"
-      class="file-upload__delete"
-      type="button"
-    >
-      Eliminar contrato
-    </button>
+    <div v-else>
+      <label
+        :for="inputId"
+        class="file-upload__dropzone"
+        :class="{
+          'file-upload__dropzone--uploaded': uploadedFile,
+          'file-upload__dropzone--dragover': isDragOver,
+        }"
+        @dragover.prevent="handleDragOver"
+        @dragleave.prevent="handleDragLeave"
+        @drop.prevent="handleDrop"
+        v-if="!uploadedFile"
+      >
+        <div class="file-upload__content">
+          <AtomsIconsUploadContractIcon />
+          <div>
+            <p>Arrastra para subir un <span>Archivo</span></p>
+            <small>Limitado a PDF y word</small>
+          </div>
+        </div>
+      </label>
 
-    <div v-if="fileError" class="file-upload__error">
-      {{ fileError }}
+      <div v-else v-if="uploadedFile" class="file-upload__success">
+        <img
+          v-if="uploadedFile.type === 'application/pdf'"
+          src="@/src/assets/pdf-file.png"
+        />
+        <img v-else src="@/src/assets/docx-file.png" />
+        {{ uploadedFile.name }}
+      </div>
+
+      <button
+        v-if="uploadedFile"
+        @click.stop="removeFile"
+        class="file-upload__delete"
+        type="button"
+      >
+        Eliminar contrato
+      </button>
+
+      <div v-if="fileError" class="file-upload__error">
+        {{ fileError }}
+      </div>
     </div>
   </div>
 </template>
 
-<script setup lang="ts">
-import { ref } from "vue";
+<script lang="ts" setup>
+import { ref, watch } from "vue";
 
-const uploadedFile = ref<File | null>(null);
+interface Props {
+  label: string;
+  inputId: string;
+  uploadedFile?: File | null;
+  isLoading?: boolean;
+}
+
+interface Emits {
+  (e: "update:file", file: File | null): void;
+  (e: "delete:contract-file"): void;
+}
+
+const emit = defineEmits<Emits>();
+const props = defineProps<Props>();
+
+const uploadedFile = ref<File | null>(props.uploadedFile || null);
 const fileError = ref<string>("");
 const isDragOver = ref<boolean>(false);
 const fileInput = ref<HTMLInputElement | null>(null);
+const isLoading = ref<boolean>(false);
 
-defineProps({
-  label: String,
-  inputId: String,
-});
+watch(
+  () => props.isLoading,
+  (newFile) => {
+    isLoading.value = newFile || false;
+  }
+);
 
 const validTypes = [
   "application/pdf",
@@ -102,10 +127,6 @@ const processFile = (file: File) => {
     if (fileInput.value) fileInput.value.value = "";
   }
 };
-
-const emit = defineEmits<{
-  (e: "update:file", file: File | null): void;
-}>();
 
 const handleFileUpload = (event: Event) => {
   const target = event.target as HTMLInputElement;
@@ -147,6 +168,7 @@ const removeFile = () => {
   fileError.value = "";
   if (fileInput.value) fileInput.value.value = "";
   emit("update:file", null);
+  emit("delete:contract-file");
 };
 </script>
 
@@ -163,6 +185,38 @@ const removeFile = () => {
 
   &__input {
     display: none;
+  }
+
+  &__loading {
+    width: 275px;
+    height: 141px;
+    border-radius: 4px;
+    border: 2px solid #e0e7ff;
+    background-color: #f8faff;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    animation: loading-pulse 2s infinite ease-in-out;
+
+    &-spinner {
+      width: 32px;
+      height: 32px;
+      border: 3px solid #e0e7ff;
+      border-top: 3px solid $color-primary;
+      border-radius: 50%;
+      animation: loading-spin 1s linear infinite;
+    }
+
+    &-text {
+      font-family: $font-family-mulish;
+      font-weight: 600;
+      font-size: 14px;
+      line-height: 20px;
+      color: #4338ca;
+      text-align: center;
+    }
   }
 
   &__dropzone {
@@ -274,6 +328,30 @@ const removeFile = () => {
     background-color: #fee;
     border: 1px solid #fcc;
     border-radius: 4px;
+  }
+}
+
+@keyframes loading-spin {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes loading-pulse {
+  0% {
+    background-color: #f8faff;
+    border-color: #e0e7ff;
+  }
+  50% {
+    background-color: #eef2ff;
+    border-color: #c7d2fe;
+  }
+  100% {
+    background-color: #f8faff;
+    border-color: #e0e7ff;
   }
 }
 </style>

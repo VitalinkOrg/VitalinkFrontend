@@ -362,12 +362,28 @@ const selectedProcedureName = computed(() => {
 
   &__packages {
     display: flex;
-    flex-wrap: wrap;
+    flex-direction: row;
+    flex-wrap: nowrap;
     gap: 20px;
+    width: 100%;
+    align-items: stretch;
+    padding: 10px 0px;
+    overflow: auto;
+    margin-top: 20px;
+    -webkit-overflow-scrolling: touch;
 
     @include respond-to-max(sm) {
-      grid-template-columns: 1fr;
+      flex-direction: column;
       gap: $spacing-md;
+    }
+
+    &::-webkit-scrollbar {
+      height: 6px;
+    }
+
+    &::-webkit-scrollbar-thumb {
+      background: #ccc;
+      border-radius: 4px;
     }
   }
 

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-interface DropdownItem {
+export interface DropdownItem {
   value: string | number;
   label: string;
   disabled?: boolean;
@@ -295,6 +295,7 @@ onUnmounted(() => {
 .dropdown {
   position: relative;
   width: 100%;
+  margin: 0;
 
   &--disabled {
     opacity: 0.6;
@@ -345,33 +346,12 @@ onUnmounted(() => {
   }
 
   &__toggle {
+    @include input-base;
     width: 100%;
-    min-height: 56px;
-    padding: 16px;
-    background: #ffffff;
-    border: 1px solid #d0d5dd;
-    border-radius: 8px;
     display: flex;
     align-items: center;
     gap: 8px;
     cursor: pointer;
-    transition: all 0.2s ease;
-    position: relative;
-
-    &:hover:not(&--disabled) {
-      border-color: #0cadbb;
-    }
-
-    &:focus-within {
-      outline: none;
-      border-color: #0cadbb;
-      box-shadow: 0 0 0 3px rgba(12, 173, 187, 0.1);
-    }
-
-    &--active {
-      border-color: #0cadbb;
-      box-shadow: 0 0 0 3px rgba(12, 173, 187, 0.1);
-    }
 
     &--disabled {
       background-color: #f9fafb;
@@ -406,6 +386,7 @@ onUnmounted(() => {
   }
 
   &__search-input {
+    @include input-base;
     flex: 1;
     border: none;
     outline: none;

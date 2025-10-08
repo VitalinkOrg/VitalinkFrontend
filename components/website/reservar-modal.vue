@@ -650,7 +650,6 @@
 </template>
 
 <script lang="ts" setup>
-import { useErrorHandler } from "~/composables/api/useErrorHandler";
 import type { ApiResponse, Customer, Package, Supplier } from "~/types";
 
 interface Props {
@@ -696,7 +695,6 @@ const props = withDefaults(defineProps<Props>(), {
 const emit = defineEmits<Emits>();
 
 const { formatTime, formatDate } = useFormat();
-const { withErrorHandling } = useErrorHandler();
 
 const isConfirmationModalOpen = ref<boolean>(false);
 const isLoading = ref<boolean>(false);
@@ -953,36 +951,35 @@ const confirmReservation = async (): Promise<void> => {
     procedure_id: props.selectedProcedureId,
   };
 
-  const appointmentOperation = $fetch<ApiResponse>(
-    config.public.API_BASE_URL + "/appointment/add",
-    {
-      method: "POST",
-      body: payload,
-      headers: { Authorization: token.value ?? "" },
+  try {
+    isLoading.value = true;
+
+    const data = await $fetch<ApiResponse>(
+      config.public.API_BASE_URL + "/appointment/add",
+      {
+        method: "POST",
+        body: payload,
+        headers: { Authorization: token.value ?? "" },
+      }
+    );
+
+    if (data) {
+      goToStep(4);
     }
-  );
+  } catch (error: any) {
+    console.error("Error al confirmar la reservación:", error);
 
-  const { data, error } = await withErrorHandling(
-    appointmentOperation,
-    isLoading,
-    {
-      customMessage: undefined,
-      redirectOn401: true,
-      logError: true,
+    if (error?.status === 401) {
+      navigateTo("/login");
+      return;
     }
-  );
 
-  if (error) {
-    alert(error);
-    return;
-  }
-
-  if (data) {
-    goToStep(4);
+    alert("Error al confirmar la reservación. Por favor, intente nuevamente.");
+  } finally {
+    isLoading.value = false;
   }
 };
 
-// Watchers
 watch(
   () => props.currentStep,
   (newVal) => {
@@ -995,8 +992,6 @@ watch(
   () => props.isOpen,
   (newVal) => {
     if (!newVal) {
-      // Cuando el modal se cierra, limpiar los datos después de un pequeño delay
-      // para evitar que se vea el reseteo antes de que el modal se cierre
       setTimeout(() => {
         resetModalData();
       }, 300);

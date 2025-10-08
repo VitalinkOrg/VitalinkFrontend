@@ -1,17 +1,17 @@
 <script setup>
-import { Bar, Doughnut } from "vue-chartjs";
 import {
-  Chart as ChartJS,
-  Title,
-  Tooltip,
-  Legend,
   ArcElement,
   BarElement,
   CategoryScale,
-  LinearScale,
+  Chart as ChartJS,
   Colors,
+  Legend,
+  LinearScale,
+  Title,
+  Tooltip,
 } from "chart.js";
-import { ref, watch, computed } from "vue";
+import { ref } from "vue";
+import { Bar, Doughnut } from "vue-chartjs";
 
 definePageMeta({
   middleware: ["auth-insurances"],
@@ -473,6 +473,8 @@ const chartOptions = {
       </div>
     </div>
   </NuxtLayout>
+
+  <AseguradorasRegistroOnboarding />
 </template>
 <style lang="scss" scoped>
 .square {

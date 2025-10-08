@@ -1,77 +1,86 @@
-<script setup>
+<script lang="ts" setup>
 definePageMeta({
   middleware: ["auth-pacientes"],
 });
 
+import { useSupplier, useUdc } from "@/composables/api";
+import type { IUdc, Supplier } from "@/types";
 import { useRoute, useRouter } from "vue-router";
 
 const route = useRoute();
 const router = useRouter();
+const { fetchUdc } = useUdc();
+const { fetchAllMain } = useSupplier();
+const { getUserInfo } = useUserInfo();
 
-const config = useRuntimeConfig();
-const token = useCookie("token");
-const user_info = useCookie("user_info");
+const userInfo = getUserInfo();
 
-const doctorData = ref(null);
-const loadingPackages = ref(false);
 const openPackagesModal = ref(false);
-const modalHasBeenOpened = ref(false);
 
-const procedureCode = computed(() => route.query.procedure_code);
-const specialtyCode = computed(() => route.query.specialty_code);
+const supplier = ref<Supplier | null>(null);
 
-const { data: specialties } = await useFetch(
-  config.public.API_BASE_URL + "/udc/get_all?type=MEDICAL_SPECIALTY",
-  {
-    headers: { Authorization: token.value },
-    transform: (res) =>
-      res.data.map((item) => ({ code: item.code, name: item.name })),
-    server: false,
+const getQueryParam = (param: string): string => {
+  const value = route.query[param];
+  if (Array.isArray(value)) return value[0] ?? "";
+  return typeof value === "string" ? value : "";
+};
+
+const procedureCode = computed(() => getQueryParam("procedure_code"));
+const specialtyCode = computed(() => getQueryParam("specialty_code"));
+
+const specialties = ref<IUdc[]>([]);
+const history = ref<any[]>([]);
+
+const handleGetSpecialities = async () => {
+  const api = fetchUdc("MEDICAL_SPECIALTY");
+  await api.request();
+
+  const response = api.response.value;
+
+  if (response?.data) {
+    specialties.value = response.data;
   }
-);
+};
 
-const { data: historial } = await useFetch(
-  config.public.API_BASE_URL + "/supplier/get_all_main",
-  {
-    headers: { Authorization: token.value },
-    transform: (_historial) => _historial.data,
+const handleGetHistory = async () => {
+  const api = fetchAllMain();
+  await api.request();
+
+  const response = api.response.value;
+
+  if (response?.data) {
+    console.log({ history });
+    history.value = response.data;
   }
-);
-console.log(historial);
+};
+
 const genderWelcome = computed(() => {
-  const gender = user_info.value?.gender;
+  const gender = userInfo.value?.gender;
   if (!gender) return "Bienvenido/a";
   if (gender.toLowerCase() === "male") return "Bienvenido";
   if (gender.toLowerCase() === "female") return "Bienvenida";
 });
 
-const selectDoctor = async ({ medico }) => {
-  modalHasBeenOpened.value = true;
+const selectDoctor = async ({
+  selectedSupplier,
+}: {
+  selectedSupplier: Supplier;
+}) => {
   openPackagesModal.value = true;
 
-  try {
-    loadingPackages.value = true;
-    const { data } = await useLazyFetch(
-      config.public.API_BASE_URL + "/supplier/get",
-      {
-        headers: { Authorization: token.value },
-        params: { id: medico.id },
-        transform: (_doctor) => _doctor.data,
-      }
-    );
-
-    doctorData.value = data.value;
-  } catch (error) {
-    console.error("Error obteniendo datos del doctor", error);
-  } finally {
-    loadingPackages.value = false;
-  }
+  supplier.value = selectedSupplier;
 };
 
 const closePackagesModal = () => {
   openPackagesModal.value = false;
+  supplier.value = null;
   router.replace({ query: {} });
 };
+
+onMounted(async () => {
+  await handleGetSpecialities();
+  await handleGetHistory();
+});
 </script>
 
 <template>
@@ -81,17 +90,13 @@ const closePackagesModal = () => {
         <div class="hero__container">
           <h1 class="hero__title">
             <span class="hero__greeting">
-              {{ genderWelcome }} {{ user_info.name }}
+              {{ genderWelcome }} {{ userInfo.name }}
             </span>
             <span class="hero__question">
               ¿Qué servicio médico estás buscando?
             </span>
           </h1>
-          <WebsiteSearchBar
-            :solicitar="true"
-            :specialties="specialties || []"
-            :token="token.value"
-          />
+          <WebsiteSearchBar :specialties="specialties" />
         </div>
       </header>
 
@@ -104,7 +109,7 @@ const closePackagesModal = () => {
               </div>
               <div class="cards-grid">
                 <WebsiteTarjetaMedico
-                  v-for="medico in historial"
+                  v-for="medico in history"
                   :key="medico.id"
                   :medico="medico"
                   @toggle-favorite="() => {}"
@@ -121,7 +126,7 @@ const closePackagesModal = () => {
               </div>
               <div class="cards-grid">
                 <WebsiteTarjetaMedico
-                  v-for="medico in historial"
+                  v-for="medico in history"
                   :key="medico.id"
                   :medico="medico"
                   @toggle-favorite="() => {}"
@@ -134,10 +139,10 @@ const closePackagesModal = () => {
       </main>
 
       <WebsitePackTratamientos
-        v-if="!loadingPackages && doctorData"
-        :supplier="doctorData"
+        v-if="supplier"
+        :supplier-id="supplier.id"
         :open="openPackagesModal"
-        :user-info="user_info"
+        :user-info="userInfo"
         :procedure-code="procedureCode"
         :specialty-code="specialtyCode"
         @close-modal="closePackagesModal"
@@ -301,6 +306,7 @@ const closePackagesModal = () => {
 
   &__content {
     margin-top: 1rem;
+    min-height: 400px;
   }
 }
 

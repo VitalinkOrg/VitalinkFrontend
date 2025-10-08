@@ -1,5 +1,5 @@
-<script setup lang="ts">
-import { useErrorHandler } from "~/composables/api/useErrorHandler";
+<script lang="ts" setup>
+import { useSupplier } from "~/composables/api";
 import type { Supplier } from "~/types";
 
 interface SupplierResponse {
@@ -12,11 +12,8 @@ definePageMeta({
   middleware: ["auth-pacientes"],
 });
 
-const config = useRuntimeConfig();
-const token = useCookie("token");
 const route = useRoute();
-
-const { withErrorHandling } = useErrorHandler();
+const { fetchSupplier } = useSupplier();
 
 const supplierId = route.params.doctor as string | undefined;
 const searchSpecialtyCode = route.query.specialty_code as string | undefined;
@@ -41,84 +38,27 @@ const fetchSupplierData = async (): Promise<void> => {
     return;
   }
 
-  if (!token.value) {
-    error.value = "Token de autorización requerido";
+  const api = fetchSupplier(supplierId);
+  await api.request();
+
+  const response = api.response.value;
+  const apiError = api.error.value;
+
+  if (apiError) {
+    error.value = apiError.info;
     return;
   }
 
-  const supplierOperation = $fetch<SupplierResponse>(
-    config.public.API_BASE_URL + "/supplier/get",
-    {
-      headers: { Authorization: token.value },
-      params: {
-        id: supplierId,
-      },
-    }
-  );
-
-  const { data, error: fetchError } = await withErrorHandling(
-    supplierOperation,
-    isLoading,
-    {
-      customMessage: "Error al cargar los datos del proveedor médico",
-      redirectOn401: true,
-      logError: true,
-    }
-  );
-
-  if (fetchError) {
-    error.value = fetchError;
-    return;
-  }
-
-  if (data?.data) {
-    supplierData.value = data.data;
+  if (response?.data) {
+    supplierData.value = response.data;
     error.value = null;
   } else {
     error.value = "No se encontraron datos del proveedor";
   }
 };
 
-// Mock supplier for fallback (remove when real API is working)
-const mockSupplier = ref<Partial<Supplier>>({
-  services: [
-    {
-      id: 1,
-      medical_specialty: {
-        id: 1,
-        code: "CARDIOLOGY",
-        name: "Cardiología",
-        type: "specialty",
-        description: null,
-        father_code: null,
-        value1: null,
-        created_date: new Date().toISOString(),
-        updated_date: null,
-        is_deleted: 0,
-      },
-      procedures: [],
-    },
-    {
-      id: 2,
-      medical_specialty: {
-        id: 2,
-        code: "INTERNAL_MEDICINE",
-        name: "Medicina Interna",
-        type: "specialty",
-        description: null,
-        father_code: null,
-        value1: null,
-        created_date: new Date().toISOString(),
-        updated_date: null,
-        is_deleted: 0,
-      },
-      procedures: [],
-    },
-  ],
-});
-
 const currentSupplier = computed<Supplier | Partial<Supplier> | null>(() => {
-  return supplierData.value || mockSupplier.value || null;
+  return supplierData.value || null;
 });
 
 const hasSupplierData = computed<boolean>(() => {

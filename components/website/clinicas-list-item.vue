@@ -3,7 +3,6 @@ import { defineProps, ref } from "vue";
 const panel = ref(false);
 const props = defineProps(["clinica"]);
 const offers = ref([]);
-const config = useRuntimeConfig();
 const router = useRouter();
 const route = useRoute();
 const user_info = useCookie("user_info");
@@ -11,9 +10,7 @@ const user_info = useCookie("user_info");
 const searchProcedureCode = computed(() => route.query.procedure_code);
 const searchSpecialtyCode = computed(() => route.query.specialty_code);
 
-const token = useCookie("token");
-const doctorData = ref(null);
-const loadingPackages = ref(false);
+const supplier = ref(null);
 const openPackagesModal = ref(false);
 
 function goTo(type, id) {
@@ -22,29 +19,14 @@ function goTo(type, id) {
   });
 }
 
-const showPackages = async ({ medico }) => {
+const showPackages = async ({ selectedSupplier }) => {
   openPackagesModal.value = true;
-  try {
-    loadingPackages.value = true;
-    const { data } = await useLazyFetch(
-      config.public.API_BASE_URL + "/supplier/get",
-      {
-        headers: { Authorization: token.value },
-        params: { id: medico.id },
-        transform: (_doctor) => _doctor.data,
-      }
-    );
-
-    doctorData.value = data.value;
-  } catch (error) {
-    console.error("Error obteniendo datos del doctor", error);
-  } finally {
-    loadingPackages.value = false;
-  }
+  supplier.value = selectedSupplier;
 };
 
 const closePackagesModal = () => {
   openPackagesModal.value = false;
+  supplier.value = false;
 };
 </script>
 
@@ -124,7 +106,8 @@ const closePackagesModal = () => {
   </div>
 
   <WebsitePackTratamientos
-    :supplier="doctorData"
+    v-if="supplier"
+    :supplier-id="supplier.id"
     :open="openPackagesModal"
     :procedure-code="searchProcedureCode"
     :specialty-code="searchSpecialtyCode"

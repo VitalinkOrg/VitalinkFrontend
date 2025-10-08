@@ -13,7 +13,6 @@ import {
   type ChartOptions,
 } from "chart.js";
 import { Bar, Doughnut } from "vue-chartjs";
-import { useErrorHandler } from "~/composables/api/useErrorHandler";
 import type { Appointment, Supplier } from "~/types";
 
 definePageMeta({
@@ -24,7 +23,6 @@ const config = useRuntimeConfig();
 const token = useCookie("token");
 const role = useCookie("role");
 const { formatNumber } = useFormat();
-const { handleApiError } = useErrorHandler();
 
 interface Procedures {
   pending_appointments: number;
@@ -126,9 +124,8 @@ const loadDashboardData = async () => {
 
     useRefreshToken();
   } catch (err: any) {
-    error.value = handleApiError(err, {
-      customMessage: "Error al cargar los datos del dashboard",
-    });
+    console.error("Error al cargar los datos del dashboard:", err);
+    error.value = "Error al cargar los datos del dashboard";
   } finally {
     isLoading.value = false;
   }

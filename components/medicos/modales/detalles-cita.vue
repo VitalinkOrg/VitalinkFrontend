@@ -181,7 +181,6 @@
 </template>
 
 <script lang="ts" setup>
-import { useErrorHandler } from "~/composables/api/useErrorHandler";
 import type {
   ApiResponse,
   Appointment,
@@ -189,10 +188,6 @@ import type {
   AppointmentStatusCode,
 } from "~/types";
 import type { TablaBaseRow } from "../tabla-detalles-cita.vue";
-
-const config = useRuntimeConfig();
-const token = useCookie("token");
-const { withErrorHandling } = useErrorHandler();
 
 const refreshAppointments = inject<() => Promise<void>>("refreshAppointments");
 
@@ -204,6 +199,9 @@ const creditAmount = ref(0);
 const creditUsed = ref(false);
 const creditId = ref<number | null>(null);
 const errorMessage = ref<string>("");
+
+const config = useRuntimeConfig();
+const token = useCookie("token");
 
 const confirmReservationRef = ref();
 const successModalRef = ref();
@@ -346,74 +344,73 @@ const handleValidateQRCode = async () => {
     return;
   }
 
-  const { data, error } = await withErrorHandling<
-    ApiResponse<AppointmentCredit[]>
-  >(
-    $fetch(`${config.public.API_BASE_URL}/appointmentcredit/get_all`, {
-      method: "GET",
-      headers: { Authorization: token.value ?? "" },
-      params: {
-        appointment_qr_code: qrCodeInput.value.trim(),
-      },
-    }),
-    isLoading,
-    {
-      customMessage: "Error al validar el código QR",
+  try {
+    isLoading.value = true;
+
+    const response = await $fetch(
+      `${config.public.API_BASE_URL}/appointmentcredit/get_all`,
+      {
+        method: "GET",
+        headers: { Authorization: token.value ?? "" },
+        params: {
+          appointment_qr_code: qrCodeInput.value.trim(),
+        },
+      }
+    );
+
+    const data = response as ApiResponse<AppointmentCredit[]>;
+    const credits = data.data || [];
+
+    if (credits.length === 0) {
+      errorMessage.value = "No se encontró crédito asociado a este código QR";
+      return;
     }
-  );
 
-  if (error || !data) {
-    errorMessage.value = error || "Error al validar el código QR";
-    return;
+    const credit = credits[0];
+
+    if (credit.already_been_used === 1) {
+      errorMessage.value = "El código ya fue usado";
+      return;
+    }
+
+    qrValidated.value = true;
+    creditAmount.value = parseFloat(credit.approved_amount);
+    creditId.value = credit.id;
+  } catch (err: any) {
+    errorMessage.value = "Error al validar el código QR";
+    console.error("Error validating QR code:", err);
+  } finally {
+    isLoading.value = false;
   }
-
-  const credits = data.data || [];
-
-  if (credits.length === 0) {
-    errorMessage.value = "No se encontró crédito asociado a este código QR";
-    return;
-  }
-
-  const credit = credits[0];
-
-  if (credit.already_been_used === 1) {
-    errorMessage.value = "El código ya fue usado";
-    return;
-  }
-
-  qrValidated.value = true;
-  creditAmount.value = parseFloat(credit.approved_amount);
-  creditId.value = credit.id;
 };
 
 const useCredit = async () => {
-  const { data, error } = await withErrorHandling<
-    ApiResponse<AppointmentCredit>
-  >(
-    $fetch(`${config.public.API_BASE_URL}/appointmentcredit/edit`, {
-      method: "PUT",
-      headers: { Authorization: token.value ?? "" },
-      params: {
-        id: creditId.value,
-      },
-      body: {
-        already_been_used: 1,
-      },
-    }),
-    isLoading,
-    {
-      customMessage: "Error al utilizar el crédito",
-    }
-  );
+  try {
+    isLoading.value = true;
 
-  if (error) {
-    errorMessage.value = error;
-    return;
+    const response = await $fetch(
+      `${config.public.API_BASE_URL}/appointmentcredit/edit`,
+      {
+        method: "PUT",
+        headers: { Authorization: token.value ?? "" },
+        params: {
+          id: creditId.value,
+        },
+        body: {
+          already_been_used: 1,
+        },
+      }
+    );
+
+    creditUsed.value = true;
+    await refreshAppointments?.();
+    handleCloseModal();
+  } catch (err: any) {
+    errorMessage.value = "Error al utilizar el crédito";
+    console.error("Error using credit:", err);
+  } finally {
+    isLoading.value = false;
   }
-
-  creditUsed.value = true;
-  await refreshAppointments?.();
-  handleCloseModal();
 };
 
 const getStatusClass = (status: AppointmentStatusCode) => {

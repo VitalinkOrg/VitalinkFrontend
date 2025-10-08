@@ -1,274 +1,286 @@
-<script>
-export default {
-  props: {
-    solicitar: Boolean,
-    specialties: {
-      type: Array,
-      default: () => [],
-    },
-    loading: {
-      type: Boolean,
-      default: false,
-    },
-    token: String,
-  },
-  data() {
-    return {
-      filtersData: {
-        procedimiento: "",
-        procedures: [],
-      },
-      selectedSpecialty: "",
-      selectedSpecialtyName: "Buscar por especialidad",
-      selectedProcedureName: "Nombre del procedimiento",
-      loadingProcedures: false,
-      errorLoadingProcedures: false,
-      showSpecialtyDropdown: false,
-      showProcedureDropdown: false,
-      procedureSearchText: "",
-      filteredProcedures: [],
-    };
-  },
-  async mounted() {
-    await this.initializeFiltersFromQuery();
-    document.addEventListener("click", this.handleClickOutside);
-  },
-  beforeUnmount() {
-    document.removeEventListener("click", this.handleClickOutside);
-  },
-  watch: {
-    async selectedSpecialty(newVal) {
-      if (newVal) {
-        await this.loadProcedures(newVal);
-      } else {
-        this.filtersData.procedures = [];
-        this.filtersData.procedimiento = "";
-        this.selectedProcedureName = "Nombre del procedimiento";
-        this.procedureSearchText = "";
-        this.filteredProcedures = [];
-      }
-    },
-    procedureSearchText(newVal) {
-      this.filterProcedures(newVal);
-    },
-    "$route.query": {
-      handler: "initializeFiltersFromQuery",
-      immediate: false,
-    },
-  },
-  methods: {
-    async initializeFiltersFromQuery() {
-      const query = this.$route.query;
+<script lang="ts" setup>
+interface Specialty {
+  code: string;
+  name: string;
+}
 
-      this.filtersData.procedimiento = query.procedure_code || "";
-      this.selectedSpecialty = query.specialty_code || "";
+interface Procedure {
+  code: string;
+  name: string;
+}
 
-      if (this.selectedSpecialty) {
-        const specialty = this.specialties.find(
-          (s) => s.code === this.selectedSpecialty
+interface Props {
+  specialties?: Specialty[];
+  loading?: boolean;
+}
+
+const props = withDefaults(defineProps<Props>(), {
+  specialties: () => [],
+  loading: false,
+});
+
+const emit = defineEmits<{
+  search: [query: Record<string, string>];
+}>();
+
+import { onClickOutside } from "@vueuse/core";
+import { useUdc } from "~/composables/api";
+
+const route = useRoute();
+const router = useRouter();
+const { fetchUdc } = useUdc();
+
+const filtersData = ref({
+  procedimiento: "",
+  procedures: [] as Procedure[],
+});
+
+const selectedSpecialty = ref("");
+const selectedSpecialtyName = ref("Buscar por especialidad");
+const selectedProcedureName = ref("Nombre del procedimiento");
+const loadingProcedures = ref(false);
+const errorLoadingProcedures = ref(false);
+const showSpecialtyDropdown = ref(false);
+const showProcedureDropdown = ref(false);
+const procedureSearchText = ref("");
+const filteredProcedures = ref<Procedure[]>([]);
+
+const specialtyDropdown = ref<HTMLElement | null>(null);
+const procedureDropdown = ref<HTMLElement | null>(null);
+const procedureSearchInput = ref<HTMLInputElement | null>(null);
+
+const loadProcedures = async (specialtyCode: string) => {
+  loadingProcedures.value = true;
+  errorLoadingProcedures.value = false;
+
+  if (!filtersData.value.procedimiento) {
+    filtersData.value.procedimiento = "";
+  }
+
+  try {
+    const api = fetchUdc("MEDICAL_PROCEDURE", {
+      father_code: specialtyCode,
+    });
+    await api.request();
+
+    const response = api.response.value;
+
+    if (response?.data) {
+      filtersData.value.procedures = response.data.map((item: any) => ({
+        code: item.code,
+        name: item.name,
+      }));
+      filteredProcedures.value = [...filtersData.value.procedures];
+
+      const queryProcedure = route.query.procedure_code as string;
+      if (queryProcedure && !procedureSearchText.value) {
+        filtersData.value.procedimiento = queryProcedure;
+        const procedure = filtersData.value.procedures.find(
+          (p) => p.code === queryProcedure
         );
-        if (specialty) {
-          this.selectedSpecialtyName = specialty.name;
-        }
-        await this.loadProcedures(this.selectedSpecialty);
-
-        if (this.filtersData.procedimiento) {
-          const procedure = this.filtersData.procedures.find(
-            (p) => p.code === this.filtersData.procedimiento
-          );
-          if (procedure) {
-            this.selectedProcedureName = procedure.name;
-            this.procedureSearchText = procedure.name;
-          }
+        if (procedure) {
+          selectedProcedureName.value = procedure.name;
+          procedureSearchText.value = procedure.name;
         }
       }
-    },
-
-    async loadProcedures(specialtyCode) {
-      const config = useRuntimeConfig();
-      const token = useCookie("token");
-      this.loadingProcedures = true;
-      this.errorLoadingProcedures = false;
-
-      if (!this.filtersData.procedimiento) {
-        this.filtersData.procedimiento = "";
-      }
-
-      try {
-        const { data, error } = await useFetch(
-          `${config.public.API_BASE_URL}/udc/get_all?father_code=${specialtyCode}&type=MEDICAL_PROCEDURE`,
-          {
-            method: "GET",
-            headers: { Authorization: token.value },
-          }
-        );
-
-        if (data.value?.data) {
-          this.filtersData.procedures = data.value.data.map((item) => ({
-            code: item.code,
-            name: item.name,
-          }));
-          this.filteredProcedures = [...this.filtersData.procedures];
-
-          const queryProcedure = this.$route.query.procedure_code;
-          if (queryProcedure && !this.procedureSearchText) {
-            this.filtersData.procedimiento = queryProcedure;
-            const procedure = this.filtersData.procedures.find(
-              (p) => p.code === queryProcedure
-            );
-            if (procedure) {
-              this.selectedProcedureName = procedure.name;
-              this.procedureSearchText = procedure.name;
-            }
-          }
-        }
-      } catch (err) {
-        console.error("Error loading procedures:", err);
-        this.errorLoadingProcedures = true;
-      } finally {
-        this.loadingProcedures = false;
-      }
-    },
-
-    handleClickOutside(event) {
-      if (!this.$refs.specialtyDropdown?.contains(event.target)) {
-        this.showSpecialtyDropdown = false;
-      }
-      if (!this.$refs.procedureDropdown?.contains(event.target)) {
-        this.showProcedureDropdown = false;
-      }
-    },
-
-    filterProcedures(searchText) {
-      if (!searchText.trim()) {
-        this.filteredProcedures = [...this.filtersData.procedures];
-      } else {
-        this.filteredProcedures = this.filtersData.procedures.filter(
-          (procedure) =>
-            procedure.name.toLowerCase().includes(searchText.toLowerCase())
-        );
-      }
-    },
-
-    toggleSpecialtyDropdown() {
-      if (!this.loading) {
-        this.showSpecialtyDropdown = !this.showSpecialtyDropdown;
-        this.showProcedureDropdown = false;
-      }
-    },
-
-    toggleProcedureDropdown() {
-      if (
-        !this.loadingProcedures &&
-        !this.errorLoadingProcedures &&
-        this.selectedSpecialty
-      ) {
-        this.showProcedureDropdown = !this.showProcedureDropdown;
-        this.showSpecialtyDropdown = false;
-        if (this.showProcedureDropdown) {
-          this.$nextTick(() => {
-            this.$refs.procedureSearchInput?.focus();
-          });
-        }
-      }
-    },
-
-    selectSpecialty(specialty) {
-      this.selectedSpecialty = specialty.code;
-      this.selectedSpecialtyName = specialty.name;
-      this.showSpecialtyDropdown = false;
-      this.filtersData.procedimiento = "";
-      this.selectedProcedureName = "Nombre del procedimiento";
-      this.procedureSearchText = "";
-      this.filteredProcedures = [];
-    },
-
-    selectProcedure(procedure) {
-      this.filtersData.procedimiento = procedure.code;
-      this.selectedProcedureName = procedure.name;
-      this.showProcedureDropdown = false;
-      this.procedureSearchText = procedure.name;
-    },
-
-    onProcedureSearchInput() {
-      if (!this.showProcedureDropdown) {
-        this.showProcedureDropdown = true;
-      }
-      if (this.filtersData.procedimiento) {
-        const currentProcedure = this.filtersData.procedures.find(
-          (p) => p.code === this.filtersData.procedimiento
-        );
-        if (
-          currentProcedure &&
-          this.procedureSearchText !== currentProcedure.name
-        ) {
-          this.filtersData.procedimiento = "";
-          this.selectedProcedureName = "Nombre del procedimiento";
-        }
-      }
-    },
-
-    onInputClick() {
-      if (
-        !this.showProcedureDropdown &&
-        !this.loadingProcedures &&
-        !this.errorLoadingProcedures &&
-        this.selectedSpecialty
-      ) {
-        this.showProcedureDropdown = true;
-        this.showSpecialtyDropdown = false;
-      }
-    },
-
-    onInputFocus() {
-      if (
-        !this.showProcedureDropdown &&
-        !this.loadingProcedures &&
-        !this.errorLoadingProcedures &&
-        this.selectedSpecialty
-      ) {
-        this.showProcedureDropdown = true;
-        this.showSpecialtyDropdown = false;
-      }
-    },
-
-    clearProcedureSelection() {
-      this.filtersData.procedimiento = "";
-      this.selectedProcedureName = "Nombre del procedimiento";
-      this.procedureSearchText = "";
-      this.filteredProcedures = [...this.filtersData.procedures];
-    },
-
-    searchResults() {
-      const newQuery = {
-        ...(this.filtersData.procedimiento && {
-          procedure_code: this.filtersData.procedimiento,
-        }),
-        ...(this.selectedSpecialty && {
-          specialty_code: this.selectedSpecialty,
-        }),
-      };
-
-      if (Object.keys(newQuery).length === 0) {
-        this.$router.push({ path: "/buscar" });
-        return;
-      }
-
-      const currentQuery = this.$route.query;
-      const isSameQuery =
-        JSON.stringify(currentQuery) === JSON.stringify(newQuery);
-
-      if (!isSameQuery) {
-        this.$router.push({
-          path: "/buscar",
-          query: newQuery,
-        });
-      } else {
-        this.$emit("search", newQuery);
-      }
-    },
-  },
+    }
+  } catch (err) {
+    console.error("Error loading procedures:", err);
+    errorLoadingProcedures.value = true;
+  } finally {
+    loadingProcedures.value = false;
+  }
 };
+
+onClickOutside(specialtyDropdown, () => {
+  showSpecialtyDropdown.value = false;
+});
+
+onClickOutside(procedureDropdown, () => {
+  showProcedureDropdown.value = false;
+});
+
+const filterProcedures = (searchText: string) => {
+  if (!searchText.trim()) {
+    filteredProcedures.value = [...filtersData.value.procedures];
+  } else {
+    filteredProcedures.value = filtersData.value.procedures.filter(
+      (procedure) =>
+        procedure.name.toLowerCase().includes(searchText.toLowerCase())
+    );
+  }
+};
+
+const toggleSpecialtyDropdown = () => {
+  if (!props.loading) {
+    showSpecialtyDropdown.value = !showSpecialtyDropdown.value;
+    showProcedureDropdown.value = false;
+  }
+};
+
+const toggleProcedureDropdown = () => {
+  if (
+    !loadingProcedures.value &&
+    !errorLoadingProcedures.value &&
+    selectedSpecialty.value
+  ) {
+    showProcedureDropdown.value = !showProcedureDropdown.value;
+    showSpecialtyDropdown.value = false;
+    if (showProcedureDropdown.value) {
+      nextTick(() => {
+        procedureSearchInput.value?.focus();
+      });
+    }
+  }
+};
+
+const selectSpecialty = (specialty: Specialty) => {
+  selectedSpecialty.value = specialty.code;
+  selectedSpecialtyName.value = specialty.name;
+  showSpecialtyDropdown.value = false;
+  filtersData.value.procedimiento = "";
+  selectedProcedureName.value = "Nombre del procedimiento";
+  procedureSearchText.value = "";
+  filteredProcedures.value = [];
+};
+
+const selectProcedure = (procedure: Procedure) => {
+  filtersData.value.procedimiento = procedure.code;
+  selectedProcedureName.value = procedure.name;
+  showProcedureDropdown.value = false;
+  procedureSearchText.value = procedure.name;
+};
+
+const onProcedureSearchInput = () => {
+  if (!showProcedureDropdown.value) {
+    showProcedureDropdown.value = true;
+  }
+  if (filtersData.value.procedimiento) {
+    const currentProcedure = filtersData.value.procedures.find(
+      (p) => p.code === filtersData.value.procedimiento
+    );
+    if (
+      currentProcedure &&
+      procedureSearchText.value !== currentProcedure.name
+    ) {
+      filtersData.value.procedimiento = "";
+      selectedProcedureName.value = "Nombre del procedimiento";
+    }
+  }
+};
+
+const onInputClick = () => {
+  if (
+    !showProcedureDropdown.value &&
+    !loadingProcedures.value &&
+    !errorLoadingProcedures.value &&
+    selectedSpecialty.value
+  ) {
+    showProcedureDropdown.value = true;
+    showSpecialtyDropdown.value = false;
+  }
+};
+
+const onInputFocus = () => {
+  if (
+    !showProcedureDropdown.value &&
+    !loadingProcedures.value &&
+    !errorLoadingProcedures.value &&
+    selectedSpecialty.value
+  ) {
+    showProcedureDropdown.value = true;
+    showSpecialtyDropdown.value = false;
+  }
+};
+
+const clearProcedureSelection = () => {
+  filtersData.value.procedimiento = "";
+  selectedProcedureName.value = "Nombre del procedimiento";
+  procedureSearchText.value = "";
+  filteredProcedures.value = [...filtersData.value.procedures];
+};
+
+const searchResults = () => {
+  const newQuery: Record<string, string> = {
+    ...(filtersData.value.procedimiento && {
+      procedure_code: filtersData.value.procedimiento,
+    }),
+    ...(selectedSpecialty.value && {
+      specialty_code: selectedSpecialty.value,
+    }),
+  };
+
+  if (Object.keys(newQuery).length === 0) {
+    router.push({ path: "/buscar" });
+    return;
+  }
+
+  const currentQuery = route.query;
+  const isSameQuery = JSON.stringify(currentQuery) === JSON.stringify(newQuery);
+
+  if (!isSameQuery) {
+    router.push({
+      path: "/buscar",
+      query: newQuery,
+    });
+  } else {
+    emit("search", newQuery);
+  }
+};
+
+const initializeFiltersFromQuery = async () => {
+  const query = route.query;
+
+  filtersData.value.procedimiento = (query.procedure_code as string) || "";
+  selectedSpecialty.value = (query.specialty_code as string) || "";
+
+  if (selectedSpecialty.value) {
+    const specialty = props.specialties.find(
+      (s) => s.code === selectedSpecialty.value
+    );
+    if (specialty) {
+      selectedSpecialtyName.value = specialty.name;
+    }
+    await loadProcedures(selectedSpecialty.value);
+
+    if (filtersData.value.procedimiento) {
+      const procedure = filtersData.value.procedures.find(
+        (p) => p.code === filtersData.value.procedimiento
+      );
+      if (procedure) {
+        selectedProcedureName.value = procedure.name;
+        procedureSearchText.value = procedure.name;
+      }
+    }
+  }
+};
+
+watch(selectedSpecialty, async (newVal) => {
+  if (newVal) {
+    await loadProcedures(newVal);
+  } else {
+    filtersData.value.procedures = [];
+    filtersData.value.procedimiento = "";
+    selectedProcedureName.value = "Nombre del procedimiento";
+    procedureSearchText.value = "";
+    filteredProcedures.value = [];
+  }
+});
+
+watch(procedureSearchText, (newVal) => {
+  filterProcedures(newVal);
+});
+
+watch(
+  () => route.query,
+  () => {
+    initializeFiltersFromQuery();
+  }
+);
+
+onMounted(async () => {
+  await initializeFiltersFromQuery();
+});
 </script>
 
 <template>
@@ -276,7 +288,6 @@ export default {
     <div class="search-form__card">
       <div class="search-form__body">
         <form class="search-form__form" @submit.prevent="searchResults">
-          <!-- Specialties Dropdown -->
           <div class="search-form__group">
             <label for="especialidad" class="search-form__label"
               >Especialidades</label
@@ -337,7 +348,6 @@ export default {
             </div>
           </div>
 
-          <!-- Procedures Dropdown -->
           <div class="search-form__group">
             <div class="search-form__label-container">
               <label for="procedimiento" class="search-form__label"

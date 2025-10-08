@@ -1,4 +1,4 @@
-import type { IdType, Procedures } from "~/types";
+import type { IdType, IUdc, Procedures } from "~/types";
 
 export interface Supplier {
   id: number;
@@ -39,6 +39,7 @@ export interface Supplier {
   reviews: Review[];
   review_details_summary: ReviewDetailSummary[];
   services: Service[];
+  services_names: string[];
   availabilities: Availability[];
   locations: Location[];
   is_deleted: 0 | 1;
@@ -80,7 +81,7 @@ export interface LegalRepresentative {
 
 export interface Service {
   id: number;
-  medical_specialty: IdType;
+  medical_specialty: IUdc;
   procedures: Procedures[];
 }
 

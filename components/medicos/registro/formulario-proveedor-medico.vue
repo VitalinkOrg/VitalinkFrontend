@@ -6,65 +6,51 @@
           >Completa los datos de registro</label
         >
 
-        <!-- Tipo de documento -->
         <div class="registro-form__row">
           <div class="registro-form__group">
             <label for="documentType" class="registro-form__label">
               Tipo de documento de identidad
               <div class="tooltip-container">
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  width="24"
-                  height="24"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  stroke-width="2"
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
+                <AtomsIconsInfoIcon
+                  size="20"
                   class="icon icon-tabler icons-tabler-outline icon-tabler-info-circle tooltip-trigger"
-                >
-                  <path stroke="none" d="M0 0h24v24H0z" fill="none" />
-                  <path d="M3 12a9 9 0 1 0 18 0a9 9 0 0 0 -18 0" />
-                  <path d="M12 9h.01" />
-                  <path d="M11 12h1v4h1" />
-                </svg>
+                />
+
                 <div class="tooltip-content">
                   Selecciona el tipo de documento de identidad que utilizarás
                   para el registro
                 </div>
               </div>
             </label>
-            <select
-              :value="documentType"
-              @input="
-                $emit(
-                  'update:document-type',
-                  ($event.target as HTMLSelectElement).value
-                )
+            <UiDropdownBase
+              :model-value="supplierFormData.documentType"
+              :items="
+                documentTypeOptions.map((s) => ({
+                  value: s.code,
+                  label: s.name,
+                }))
               "
-              id="documentType"
-              class="registro-form__input-select"
-              required
-            >
-              <option value="" disabled>Seleccione tipo de documento</option>
-              <option value="dni">DNI</option>
-              <option value="passport">Pasaporte</option>
-              <option value="ruc">RUC</option>
-              <option value="other">Otro</option>
-            </select>
+              :loading="isLoadingDocumentTypes"
+              placeholder="Seleccione tipo de documento"
+              @update:model-value="
+                updateSupplierFormData({
+                  ...supplierFormData,
+                  documentType: ($event as string) ?? '',
+                })
+              "
+            />
           </div>
           <div class="registro-form__group">
             <label for="documentNumber" class="registro-form__label"
               >Número de documento:</label
             >
             <input
-              :value="documentNumber"
+              :value="supplierFormData.documentNumber"
               @input="
-                $emit(
-                  'update:document-number',
-                  ($event.target as HTMLSelectElement).value
-                )
+                updateSupplierFormData({
+                  ...supplierFormData,
+                  documentNumber: ($event.target as HTMLSelectElement).value,
+                })
               "
               type="text"
               class="registro-form__input-text"
@@ -75,18 +61,17 @@
           </div>
         </div>
 
-        <!-- Nombre completo -->
         <div class="registro-form__group">
           <label for="fullName" class="registro-form__label">
             Nombre y Apellidos / Razón Social (En caso de personas jurídicas)
           </label>
           <input
-            :value="fullName"
+            :value="supplierFormData.fullName"
             @input="
-              $emit(
-                'update:full-name',
-                ($event.target as HTMLSelectElement).value
-              )
+              updateSupplierFormData({
+                ...supplierFormData,
+                fullName: ($event.target as HTMLSelectElement).value,
+              })
             "
             type="text"
             class="registro-form__input-text"
@@ -96,39 +81,30 @@
           />
         </div>
 
-        <!-- Cargar contrato -->
-        <CargarArchivos
+        <MedicosRegistroCargarArchivos
           label="Contrato"
           inputId="contact"
-          :uploadedFile="uploadedFile"
-          @update:file="$emit('update:uploaded-file', $event)"
+          :uploadedFile="supplierFormData.contratcFile"
+          @update:file="
+            updateSupplierFormData({
+              ...supplierFormData,
+              contratcFile: $event,
+            })
+          "
         />
 
         <hr class="registro-form__divider" />
 
-        <!-- Correo -->
         <div class="registro-form__row">
           <div class="registro-form__group">
             <label for="email" class="registro-form__label">
               Correo Electrónico
               <div class="tooltip-container">
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  width="24"
-                  height="24"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  stroke-width="2"
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
+                <AtomsIconsInfoIcon
+                  size="20"
                   class="icon icon-tabler icons-tabler-outline icon-tabler-info-circle tooltip-trigger"
-                >
-                  <path stroke="none" d="M0 0h24v24H0z" fill="none" />
-                  <path d="M3 12a9 9 0 1 0 18 0a9 9 0 0 0 -18 0" />
-                  <path d="M12 9h.01" />
-                  <path d="M11 12h1v4h1" />
-                </svg>
+                />
+
                 <div class="tooltip-content">
                   Utiliza un correo electrónico válido. Recibirás notificaciones
                   importantes en esta dirección.
@@ -136,12 +112,12 @@
               </div>
             </label>
             <input
-              :value="email"
+              :value="supplierFormData.email"
               @input="
-                $emit(
-                  'update:email',
-                  ($event.target as HTMLSelectElement).value
-                )
+                updateSupplierFormData({
+                  ...supplierFormData,
+                  email: ($event.target as HTMLSelectElement).value,
+                })
               "
               type="email"
               class="registro-form__input-text"
@@ -156,7 +132,7 @@
             >
             <input
               :value="confirmEmail"
-              @input="handleConfirmEmailChange"
+              @input="confirmEmail = ($event.target as HTMLSelectElement).value"
               type="email"
               class="registro-form__input-text"
               placeholder="Confirma tu correo electrónico"
@@ -169,15 +145,17 @@
           </div>
         </div>
 
-        <!-- Teléfono -->
         <div class="registro-form__group">
           <label for="phone" class="registro-form__label"
             >Teléfono de contacto</label
           >
           <input
-            :value="phone"
+            :value="supplierFormData.phone"
             @input="
-              $emit('update:phone', ($event.target as HTMLSelectElement).value)
+              updateSupplierFormData({
+                ...supplierFormData,
+                phone: ($event.target as HTMLSelectElement).value,
+              })
             "
             type="tel"
             class="registro-form__input-text"
@@ -185,6 +163,57 @@
             id="phone"
             required
           />
+        </div>
+
+        <div class="registro-form__row">
+          <div class="registro-form__group">
+            <label for="password" class="registro-form__label">
+              Contraseña Nueva
+              <div class="tooltip-container">
+                <AtomsIconsInfoIcon
+                  size="20"
+                  class="icon icon-tabler icons-tabler-outline icon-tabler-info-circle tooltip-trigger"
+                />
+
+                <div class="tooltip-content">
+                  La contraseña debe tener al menos 8 caracteres
+                </div>
+              </div>
+            </label>
+            <input
+              :value="supplierFormData.password"
+              @input="
+                updateSupplierFormData({
+                  ...supplierFormData,
+                  password: ($event.target as HTMLSelectElement).value,
+                })
+              "
+              type="password"
+              class="registro-form__input-text"
+              placeholder="Ingrese su contraseña"
+              id="password"
+              required
+            />
+          </div>
+          <div class="registro-form__group">
+            <label for="confirmPassword" class="registro-form__label"
+              >Confirmar Contraseña</label
+            >
+            <input
+              :value="confirmPassword"
+              @input="
+                confirmPassword = ($event.target as HTMLSelectElement).value
+              "
+              type="password"
+              class="registro-form__input-text"
+              placeholder="Confirma tu contraseña"
+              id="confirmPassword"
+              required
+            />
+            <div v-if="passwordMismatch" class="registro-form__error-message">
+              Las contraseñas no coinciden
+            </div>
+          </div>
         </div>
 
         <button
@@ -213,50 +242,78 @@
 </template>
 
 <script lang="ts" setup>
-import { computed } from "vue";
-import CargarArchivos from "./cargar-archivos.vue";
+import { useUdc } from "@/composables/api";
+import type { IdType, ISupplierFormData } from "@/types";
 
-const props = defineProps<{
-  documentType: string;
-  documentNumber: string;
-  fullName: string;
-  email: string;
-  confirmEmail: string;
-  phone: string;
-  uploadedFile: File | null;
-  emailMismatch: boolean;
-}>();
+interface Props {
+  supplierFormData: ISupplierFormData;
+}
 
-const emit = defineEmits<{
-  (e: "update:document-type", value: string): void;
-  (e: "update:document-number", value: string): void;
-  (e: "update:full-name", value: string): void;
-  (e: "update:email", value: string): void;
-  (e: "update:confirm-email", value: string): void;
-  (e: "update:phone", value: string): void;
-  (e: "update:uploaded-file", value: File | null): void;
-  (e: "update:email-mismatch", value: boolean): void;
+interface Emits {
+  (e: "update:supplierFormData", value: ISupplierFormData): void;
   (e: "next"): void;
-}>();
+}
 
-const isStep1Valid = computed(() => {
+const props = defineProps<Props>();
+const emit = defineEmits<Emits>();
+
+const { fetchUdc } = useUdc();
+
+const confirmEmail = ref<string>("");
+const confirmPassword = ref<string>("");
+const documentTypeOptions = ref<IdType[]>([]);
+const isLoadingDocumentTypes = ref<boolean>(false);
+
+const emailMismatch = computed(() => {
   return (
-    props.documentType &&
-    props.documentNumber &&
-    props.fullName &&
-    props.email &&
-    props.confirmEmail &&
-    props.phone &&
-    props.uploadedFile &&
-    !props.emailMismatch
+    props.supplierFormData.email.trim() !== "" &&
+    props.supplierFormData.email !== confirmEmail.value &&
+    confirmEmail.value !== ""
   );
 });
 
-const handleConfirmEmailChange = (event: Event) => {
-  const target = event.target as HTMLInputElement;
-  const value = target.value;
-  emit("update:confirm-email", value);
-  emit("update:email-mismatch", props.email !== value);
+const passwordMismatch = computed(() => {
+  return (
+    props.supplierFormData.password.trim() !== "" &&
+    props.supplierFormData.password !== confirmPassword.value &&
+    confirmPassword.value !== ""
+  );
+});
+
+const isStep1Valid = computed(() => {
+  return (
+    props.supplierFormData.documentType.trim() !== "" &&
+    props.supplierFormData.documentNumber.trim() !== "" &&
+    props.supplierFormData.fullName.trim() !== "" &&
+    props.supplierFormData.contratcFile !== null &&
+    props.supplierFormData.email.trim() !== "" &&
+    props.supplierFormData.phone.trim() !== "" &&
+    props.supplierFormData.password.trim() !== "" &&
+    !emailMismatch.value &&
+    !passwordMismatch.value
+  );
+});
+
+const updateSupplierFormData = (newData: ISupplierFormData) => {
+  emit("update:supplierFormData", { ...newData });
+};
+
+const loadIdType = async () => {
+  try {
+    isLoadingDocumentTypes.value = true;
+    const api = fetchUdc("ID_TYPE", {}, { authRequired: false });
+    await api.request();
+
+    const response = api.response.value;
+    if (response && response.data) {
+      documentTypeOptions.value = response.data;
+    }
+  } catch (error) {
+    console.error("Error loading document type options:", error);
+    documentTypeOptions.value = [];
+  } finally {
+    isLoadingDocumentTypes.value = false;
+  }
 };
 
 const handleNext = () => {
@@ -264,6 +321,10 @@ const handleNext = () => {
     emit("next");
   }
 };
+
+onMounted(async () => {
+  await loadIdType();
+});
 </script>
 
 <style lang="scss" scoped>
@@ -305,6 +366,7 @@ const handleNext = () => {
 
   &__group {
     flex: 1;
+
     & > * + * {
       margin-top: 6px;
     }
@@ -316,12 +378,14 @@ const handleNext = () => {
     display: flex;
     align-items: center;
     gap: 6px;
+    max-height: 20px;
   }
 
   &__input-text,
   &__input-select {
     @include input-base;
     width: 100%;
+    margin-top: 6px;
   }
 
   &__button-next {
@@ -370,7 +434,6 @@ const handleNext = () => {
       0 10px 15px -3px rgba(0, 0, 0, 0.1),
       0 4px 6px -2px rgba(0, 0, 0, 0.05);
 
-    // Flecha del tooltip
     &::before {
       content: "";
       position: absolute;
@@ -381,7 +444,6 @@ const handleNext = () => {
       border-bottom-color: #1f2937;
     }
 
-    // Ocultar por defecto
     opacity: 0;
     visibility: hidden;
     transform: translateX(-50%) translateY(-5px);
@@ -389,7 +451,6 @@ const handleNext = () => {
     pointer-events: none;
   }
 
-  // Mostrar en hover
   &:hover .tooltip-content {
     opacity: 1;
     visibility: visible;
@@ -397,9 +458,7 @@ const handleNext = () => {
     pointer-events: auto;
   }
 
-  // Ajuste para evitar que se salga de la pantalla
   .tooltip-content {
-    // Si está muy a la izquierda
     &.tooltip-left {
       left: 0;
       transform: translateX(0);
@@ -414,7 +473,6 @@ const handleNext = () => {
       }
     }
 
-    // Si está muy a la derecha
     &.tooltip-right {
       right: 0;
       left: auto;
@@ -432,7 +490,6 @@ const handleNext = () => {
     }
   }
 
-  // Responsivo para móviles
   @media (max-width: 768px) {
     .tooltip-content {
       position: fixed;
