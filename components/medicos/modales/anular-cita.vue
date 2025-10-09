@@ -74,8 +74,9 @@ const handleCancelAppointment = async () => {
   try {
     isLoading.value = true;
 
-  const api = updateAppointment(payload, props.appointment.id);
-  await api.request();
+    const payload = {
+      appointment_status_code: "CANCEL_APPOINTMENT",
+    };
 
     const api = updateAppointment(payload, props.appointment.id);
     await api.request();
