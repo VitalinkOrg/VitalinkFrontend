@@ -1,51 +1,82 @@
-<script setup>
-import { ref, watch, computed } from "vue";
+<script lang="ts" setup>
+import { useAppointmentCredit } from "@/composables/api";
+import type { Credit } from "@/types";
 import { jsPDF } from "jspdf";
 import "jspdf-autotable";
-import { useRefreshToken } from "#imports";
 
 definePageMeta({
   middleware: ["auth-insurances"],
 });
 
-const config = useRuntimeConfig();
-const token = useCookie("token");
+const loading = ref<boolean>(false);
+const isRefreshing = ref<boolean>(false);
+const creditsData = ref<Credit[]>([]);
+const activeStatus = ref<string>("Todos");
 
-// Enhanced loading states
-const loading = ref(false);
-const isRefreshing = ref(false); // Separate loading state for refresh
-const previousCredits = ref([]); // Initialize previous data store
+const statusMap: Record<string, string> = {
+  Todos: "Todos",
+  Pendiente: "PENDING",
+  Aprobada: "APPROVED",
+  Rechazada: "REJECTED",
+  Requerida: "REQUIREDA",
+  "Aprobada Parcial": "APPROVED_PERCENTAGE",
+};
 
-// First declare creditsResponse
-const creditsData = ref(null);
+const { fetchAllAppointmentCredit } = useAppointmentCredit();
 
-// Then declare computed property for credits data
-const creditsDataComputed = computed(() => {
-  return creditsData.value || previousCredits.value;
+const filteredCredits = computed<Credit[]>(() => {
+  console.log("creditsData.value:", creditsData.value);
+  console.log("activeStatus.value:", activeStatus.value);
+
+  if (!creditsData.value || creditsData.value.length === 0) {
+    return [];
+  }
+
+  if (activeStatus.value === "Todos") {
+    return creditsData.value;
+  }
+
+  const filtered = creditsData.value.filter((credit) => {
+    const statusCode = credit?.credit_status?.code;
+    console.log("Comparando:", statusCode, "con", activeStatus.value);
+    return statusCode === activeStatus.value;
+  });
+
+  console.log("Créditos filtrados:", filtered.length);
+  return filtered;
 });
 
-// Original useFetch for initial data load
-const { data: vouchersResponse, pending: pendingVouchers } = await useFetch(
-  config.public.API_BASE_URL + "/appointmentcredit/get_all",
-  {
-    headers: { Authorization: token.value },
-    transform: (_vouchers) => _vouchers.data,
+const loadCredits = async () => {
+  loading.value = true;
+  try {
+    const api = fetchAllAppointmentCredit();
+    await api.request();
+
+    const response = api.response.value;
+    const error = api.error.value;
+
+    if (error) {
+      console.error("Error al cargar créditos:", error);
+      creditsData.value = [];
+      return;
+    }
+
+    if (response?.data && Array.isArray(response.data)) {
+      creditsData.value = response.data;
+      console.log("Créditos cargados:", response.data.length);
+    } else {
+      console.warn("No se recibieron datos de créditos");
+      creditsData.value = [];
+    }
+  } catch (error) {
+    console.error("Error al cargar créditos:", error);
+    creditsData.value = [];
+  } finally {
+    loading.value = false;
   }
-);
+};
 
-// Initialize data
-if (vouchersResponse.value) {
-  creditsData.value = vouchersResponse.value;
-  previousCredits.value = vouchersResponse.value; // Store initial data
-  useRefreshToken();
-} else {
-  // Initialize with empty array if no data
-  creditsData.value = [];
-  previousCredits.value = [];
-}
-
-// Create refresh function
-const fetchCredits = async (isRefresh = false) => {
+const fetchCredits = async (isRefresh: boolean = false) => {
   if (isRefresh) {
     isRefreshing.value = true;
   } else {
@@ -53,25 +84,20 @@ const fetchCredits = async (isRefresh = false) => {
   }
 
   try {
-    const { data } = await useFetch(
-      config.public.API_BASE_URL + "/appointmentcredit/get_all",
-      {
-        headers: { Authorization: token.value },
-        transform: (_vouchers) => _vouchers.data,
-        server: false,
-        // Add a unique key to prevent caching during refresh
-        key: isRefresh ? `credits-${Date.now()}` : "credits",
-      }
-    );
+    const api = fetchAllAppointmentCredit();
+    await api.request();
 
-    if (data.value) {
-      // Store previous data before updating
-      if (creditsData.value) {
-        previousCredits.value = creditsData.value;
-      }
+    const response = api.response.value;
+    const error = api.error.value;
 
-      creditsData.value = data.value;
-      useRefreshToken();
+    if (error) {
+      console.error("Error al actualizar créditos:", error);
+      return;
+    }
+
+    if (response?.data && Array.isArray(response.data)) {
+      creditsData.value = response.data;
+      console.log("Créditos actualizados:", response.data.length);
     }
   } catch (error) {
     console.error("Fetch error:", error);
@@ -81,72 +107,34 @@ const fetchCredits = async (isRefresh = false) => {
   }
 };
 
-// Watch for changes and store previous data
-watch(
-  creditsData,
-  (newVal, oldVal) => {
-    if (oldVal && newVal !== oldVal) {
-      previousCredits.value = oldVal;
-    }
-  },
-  { deep: true }
-);
-
-// Refresh function to expose (optimized for smooth refresh)
 const refreshCredits = async () => {
-  await fetchCredits(true); // Pass true to indicate this is a refresh
+  await fetchCredits(true);
 };
 
-// Provide the refresh function to child components
 provide("refreshCredits", refreshCredits);
 
-// Handle refresh events from child components
 const handleRefresh = async () => {
   await refreshCredits();
 };
 
-// Expose handler for child components
 provide("handleRefresh", handleRefresh);
 
-// Computed property for vouchers (using the enhanced data source)
-const vouchers = computed(() => {
-  return creditsDataComputed.value || [];
-});
-
-// Filter logic
-const activeStatus = ref("Todos"); // Default filter
-
-const filteredVouchers = computed(() => {
-  let filtered = vouchers.value;
-
-  if (activeStatus.value === "Todos") {
-    return filtered;
-  } else {
-    return filtered.filter((voucher) => {
-      // Handle different status labels if needed
-      if (activeStatus.value === "Completada")
-        return voucher.status === "Confirmada";
-      if (activeStatus.value === "Cancelada")
-        return voucher.status === "Rechazada";
-      return voucher.status === activeStatus.value;
-    });
-  }
-});
-
-const setStatusFilter = (status) => {
+const setStatusFilter = (status: string) => {
   activeStatus.value = status;
 };
 
 const downloadAllCredits = () => {
-  const currentVouchers = vouchers.value;
-  if (!currentVouchers || currentVouchers.length === 0) return;
+  const currentCredits = filteredCredits.value;
+  if (!currentCredits || currentCredits.length === 0) {
+    console.warn("No hay créditos para descargar");
+    return;
+  }
 
   const doc = new jsPDF();
   const pageWidth = doc.internal.pageSize.getWidth();
   const margin = 15;
   let yPosition = 20;
 
-  // Add title
   doc.setFontSize(18);
   doc.setFont("helvetica", "bold");
   doc.text("Reporte de Solicitudes de Crédito", pageWidth / 2, yPosition, {
@@ -154,7 +142,6 @@ const downloadAllCredits = () => {
   });
   yPosition += 10;
 
-  // Add date
   doc.setFontSize(10);
   doc.setFont("helvetica", "normal");
   doc.text(
@@ -165,7 +152,6 @@ const downloadAllCredits = () => {
   );
   yPosition += 15;
 
-  // Table headers - Adjusted column widths
   doc.setFontSize(12);
   doc.setFont("helvetica", "bold");
   const headers = [
@@ -176,28 +162,24 @@ const downloadAllCredits = () => {
     "Proveedor",
     "Fecha",
   ];
-  const columnWidths = [30, 40, 20, 25, 45, 25]; // More space for provider
+  const columnWidths = [30, 40, 20, 25, 45, 25];
   const columnPositions = [margin];
   for (let i = 1; i < columnWidths.length; i++) {
     columnPositions[i] = columnPositions[i - 1] + columnWidths[i - 1];
   }
 
-  // Draw headers
   headers.forEach((header, i) => {
     doc.text(header, columnPositions[i], yPosition);
   });
   yPosition += 8;
 
-  // Draw line under headers
   doc.line(margin, yPosition, pageWidth - margin, yPosition);
   yPosition += 10;
 
-  // Table content
   doc.setFontSize(10);
   doc.setFont("helvetica", "normal");
 
-  currentVouchers.forEach((credit, index) => {
-    // Check if we need a new page
+  currentCredits.forEach((credit, index) => {
     if (yPosition > 270) {
       doc.addPage();
       yPosition = 20;
@@ -206,37 +188,40 @@ const downloadAllCredits = () => {
     const originalY = yPosition;
     let maxLines = 1;
 
-    // Process each cell with text wrapping
     const cells = [
-      { text: credit.patient_name || "N/A", width: columnWidths[0] },
-      { text: credit.reason_for_request || "N/A", width: columnWidths[1] },
-      { text: `$${credit.requested_amount || 0}`, width: columnWidths[2] },
-      { text: credit.status || "N/A", width: columnWidths[3] },
-      { text: credit.service_provider || "N/A", width: columnWidths[4] },
       {
-        text: credit.created_at
-          ? new Date(credit.created_at).toLocaleDateString("es-ES")
+        text: credit.appointment?.customer?.name || "N/A",
+        width: columnWidths[0],
+      },
+      { text: credit.credit_observations || "N/A", width: columnWidths[1] },
+      { text: `$${credit.requested_amount || 0}`, width: columnWidths[2] },
+      { text: credit.credit_status?.code || "N/A", width: columnWidths[3] },
+      {
+        text:
+          credit.appointment?.supplier?.services?.[0]?.medical_specialty
+            ?.name || "N/A",
+        width: columnWidths[4],
+      },
+      {
+        text: credit.created_date
+          ? new Date(credit.created_date).toLocaleDateString("es-ES")
           : new Date().toLocaleDateString("es-ES"),
         width: columnWidths[5],
       },
     ];
 
-    // First pass to calculate needed lines
     cells.forEach((cell, i) => {
       if (i !== 2 && i !== 3 && i !== 5) {
-        // Skip wrapping for amount, status and date
         const lines = doc.splitTextToSize(cell.text, cell.width - 2);
         maxLines = Math.max(maxLines, lines.length);
       }
     });
 
-    // Draw cells
     cells.forEach((cell, i) => {
       doc.setFontSize(10);
-      if (i === 2) doc.setTextColor(40, 100, 40); // Green for amounts
+      if (i === 2) doc.setTextColor(40, 100, 40);
 
       if (i !== 2 && i !== 3 && i !== 5) {
-        // Wrap these columns
         const lines = doc.splitTextToSize(cell.text, cell.width - 2);
         doc.text(
           lines,
@@ -247,13 +232,12 @@ const downloadAllCredits = () => {
         doc.text(cell.text, columnPositions[i], yPosition);
       }
 
-      if (i === 2) doc.setTextColor(0); // Reset color
+      if (i === 2) doc.setTextColor(0);
     });
 
     yPosition += maxLines * 6;
 
-    // Add light gray line between rows
-    if (index < currentVouchers.length - 1) {
+    if (index < currentCredits.length - 1) {
       doc.setDrawColor(220, 220, 220);
       doc.line(margin, yPosition - 2, pageWidth - margin, yPosition - 2);
       doc.setDrawColor(0, 0, 0);
@@ -261,134 +245,328 @@ const downloadAllCredits = () => {
     }
   });
 
-  // Footer
   doc.setFontSize(8);
   doc.setTextColor(100);
-  doc.text(`Total solicitudes: ${currentVouchers.length}`, margin, 280);
+  doc.text(`Total solicitudes: ${currentCredits.length}`, margin, 280);
   doc.text("Sistema de Gestión Médica - Vitalink", pageWidth / 2, 280, {
     align: "center",
   });
 
   doc.save(`Reporte_Creditos_${new Date().toISOString().slice(0, 10)}.pdf`);
 };
+
 provide("refreshAppointments", refreshCredits);
+
+onMounted(async () => {
+  await loadCredits();
+});
 </script>
 
 <template>
   <NuxtLayout name="aseguradoras-dashboard">
-    <nav style="--bs-breadcrumb-divider: &quot;/&quot;" aria-label="breadcrumb">
-      <ol class="breadcrumb">
-        <li class="breadcrumb-item">
-          <NuxtLink href="/socio-financiero/inicio" class="text-muted"
-            >Inicio</NuxtLink
-          >
-        </li>
-      </ol>
-    </nav>
-    <p>
-      <span class="fw-medium fs-4">Solicitudes de Crédito de Pacientes</span>
-    </p>
-
-    <div class="row mb-4">
-      <div class="col-auto">
-        <div class="input-group shadow-sm">
-          <span
-            class="input-group-text bg-transparent border-end-0 rounded-start-3"
-            id="basic-addon1"
-          >
-            <AtomsIconsSearchIcon />
-          </span>
-          <input
-            type="text"
-            class="form-control border-start-0 rounded-end-3"
+    <UiHeaderBreadcrumb title="Solicitudes de Crédito de Pacientes" />
+    <div class="credits-page">
+      <div class="credits-page__header">
+        <div class="credits-page__search">
+          <UiSearchInput
             placeholder="Buscar"
             aria-label="Buscar"
-            aria-describedby="basic-addon1"
+            max-width="320px"
           />
         </div>
-      </div>
-      <div class="col-auto ms-auto d-flex">
-        <button
-          class="btn btn-outline-dark text-nowrap me-2"
-          @click="downloadAllCredits"
-        >
-          <AtomsIconsDownloadIcon /> Descargar
-        </button>
-        <div class="dropdown me-2">
+        <div class="credits-page__actions">
           <button
-            class="btn btn-outline-dark dropdown-toggle"
+            class="credits-page__button credits-page__button--download"
+            @click="downloadAllCredits"
+            :disabled="filteredCredits.length === 0"
+          >
+            <AtomsIconsDownloadIcon />
+            <span class="credits-page__button-text">Descargar</span>
+          </button>
+          <button
+            class="credits-page__button credits-page__button--dropdown"
             type="button"
             data-bs-toggle="dropdown"
             aria-expanded="false"
           >
-            Ordenar por
+            <span class="credits-page__button-text">Ordenar por</span>
+            <span class="credits-page__button-text--short">Ordenar</span>
           </button>
-          <ul class="dropdown-menu">
-            <li><a class="dropdown-item" href="#">Action</a></li>
-            <li><a class="dropdown-item" href="#">Another action</a></li>
-            <li><a class="dropdown-item" href="#">Something else here</a></li>
+          <ul class="credits-page__dropdown-menu">
+            <li>
+              <a class="credits-page__dropdown-item" href="#">Action</a>
+            </li>
+            <li>
+              <a class="credits-page__dropdown-item" href="#">Another action</a>
+            </li>
+            <li>
+              <a class="credits-page__dropdown-item" href="#"
+                >Something else here</a
+              >
+            </li>
           </ul>
-        </div>
-        <div class="dropdown">
           <button
-            class="btn btn-outline-dark dropdown-toggle"
+            class="credits-page__button credits-page__button--dropdown"
             type="button"
             data-bs-toggle="dropdown"
             aria-expanded="false"
           >
-            Estado de solicitud:
-            <span class="badge text-muted">{{ activeStatus }}</span>
+            <span class="credits-page__button-text">Estado de solicitud:</span>
+            <span class="credits-page__button-text--short">Estado:</span>
+            <span class="credits-page__badge">{{ activeStatus }}</span>
           </button>
-          <ul class="dropdown-menu">
+          <ul class="credits-page__dropdown-menu">
             <li>
               <a
-                class="dropdown-item"
+                class="credits-page__dropdown-item"
                 href="#"
-                @click="setStatusFilter('Todos')"
+                @click.prevent="setStatusFilter('Todos')"
                 >Todos</a
               >
             </li>
             <li>
               <a
-                class="dropdown-item"
+                class="credits-page__dropdown-item"
                 href="#"
-                @click="setStatusFilter('Pendiente')"
+                @click.prevent="setStatusFilter('Pendiente')"
                 >Pendiente</a
               >
             </li>
             <li>
               <a
-                class="dropdown-item"
+                class="credits-page__dropdown-item"
                 href="#"
-                @click="setStatusFilter('Aprobada')"
+                @click.prevent="setStatusFilter('Aprobada')"
                 >Aprobada</a
               >
             </li>
             <li>
               <a
-                class="dropdown-item"
+                class="credits-page__dropdown-item"
                 href="#"
-                @click="setStatusFilter('Completada')"
+                @click.prevent="setStatusFilter('Completada')"
                 >Confirmado</a
               >
             </li>
             <li>
               <a
-                class="dropdown-item"
+                class="credits-page__dropdown-item"
                 href="#"
-                @click="setStatusFilter('Cancelada')"
+                @click.prevent="setStatusFilter('Cancelada')"
                 >Cancelada</a
               >
             </li>
           </ul>
         </div>
       </div>
-    </div>
-    <div class="card">
-      <AseguradorasCreditoTable
-        v-if="creditsData !== null"
-        :vouchers="creditsData"
-      />
+
+      <div v-if="loading" class="credits-page__loading">
+        Cargando créditos...
+      </div>
+
+      <div v-else-if="creditsData.length === 0" class="credits-page__empty">
+        No hay solicitudes de crédito disponibles
+      </div>
+
+      <div v-else class="credits-page__card">
+        <AseguradorasCreditoTable :credits="filteredCredits" />
+      </div>
     </div>
   </NuxtLayout>
 </template>
+
+<style lang="scss" scoped>
+.credits-page {
+  padding: 0 1rem;
+
+  &__header {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+
+    @media (min-width: 768px) {
+      flex-direction: row;
+      align-items: center;
+    }
+  }
+
+  &__search {
+    width: 100%;
+
+    @media (min-width: 768px) {
+      width: auto;
+      margin-right: auto;
+    }
+  }
+
+  &__actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    width: 100%;
+
+    @media (min-width: 768px) {
+      width: auto;
+      margin-left: auto;
+      flex-wrap: nowrap;
+    }
+  }
+
+  &__button {
+    @include outline-button;
+    flex: 1 1 auto;
+    min-width: 0;
+    white-space: nowrap;
+    font-size: 0.875rem;
+    padding: 0.5rem 0.75rem;
+
+    @media (min-width: 576px) {
+      flex: 0 1 auto;
+      font-size: 1rem;
+      padding: 0.625rem 1rem;
+    }
+
+    &:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    &--download {
+      display: flex;
+      align-items: center;
+      gap: 0.25rem;
+      justify-content: center;
+
+      svg {
+        flex-shrink: 0;
+      }
+    }
+
+    &--dropdown {
+      &::after {
+        content: "";
+        display: inline-block;
+        margin-left: 0.5rem;
+        vertical-align: middle;
+        border-top: 0.3em solid;
+        border-right: 0.3em solid transparent;
+        border-left: 0.3em solid transparent;
+        flex-shrink: 0;
+      }
+    }
+
+    &-text {
+      display: none;
+
+      @media (min-width: 576px) {
+        display: inline;
+      }
+
+      &--short {
+        display: inline;
+
+        @media (min-width: 576px) {
+          display: none;
+        }
+      }
+    }
+  }
+
+  &__badge {
+    display: inline-block;
+    padding: 0.25rem 0.5rem;
+    margin-left: 0.25rem;
+    font-size: 0.75rem;
+    color: #6c757d;
+    background-color: #f8f9fa;
+    border-radius: 0.25rem;
+
+    @media (min-width: 576px) {
+      margin-left: 0.5rem;
+      font-size: 0.875rem;
+    }
+  }
+
+  &__dropdown {
+    position: relative;
+
+    &-menu {
+      position: absolute;
+      top: 100%;
+      right: 0;
+      z-index: 1000;
+      display: none;
+      min-width: 10rem;
+      max-width: 90vw;
+      padding: 0.5rem 0;
+      margin: 0.125rem 0 0;
+      font-size: 0.875rem;
+      color: #212529;
+      text-align: left;
+      list-style: none;
+      background-color: #fff;
+      background-clip: padding-box;
+      border: 1px solid rgba(0, 0, 0, 0.15);
+      border-radius: 0.25rem;
+      box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.175);
+
+      @media (min-width: 576px) {
+        font-size: 1rem;
+        left: 0;
+        right: auto;
+      }
+
+      &.show {
+        display: block;
+      }
+    }
+
+    &-item {
+      display: block;
+      width: 100%;
+      padding: 0.375rem 1rem;
+      clear: both;
+      font-weight: 400;
+      color: #212529;
+      text-align: inherit;
+      text-decoration: none;
+      white-space: nowrap;
+      background-color: transparent;
+      border: 0;
+      cursor: pointer;
+
+      @media (min-width: 576px) {
+        padding: 0.25rem 1rem;
+      }
+
+      &:hover {
+        color: #1e2125;
+        background-color: #f8f9fa;
+      }
+    }
+  }
+
+  &__card {
+    background-color: #fff;
+    border: 1px solid rgba(0, 0, 0, 0.125);
+    border-radius: 0.25rem;
+    box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+    overflow-x: auto;
+  }
+
+  &__loading,
+  &__empty {
+    padding: 2rem 1rem;
+    text-align: center;
+    color: #6c757d;
+    background-color: #fff;
+    border: 1px solid rgba(0, 0, 0, 0.125);
+    border-radius: 0.25rem;
+
+    @media (min-width: 576px) {
+      padding: 3rem;
+    }
+  }
+}
+</style>

@@ -1,4 +1,5 @@
-<script setup>
+<script lang="ts" setup>
+import { useAppointmentCredit } from "@/composables/api";
 import {
   ArcElement,
   BarElement,
@@ -9,126 +10,40 @@ import {
   LinearScale,
   Title,
   Tooltip,
+  type ChartData,
+  type ChartOptions,
 } from "chart.js";
 import { ref } from "vue";
-import { Bar, Doughnut } from "vue-chartjs";
+import { Bar } from "vue-chartjs";
+import type { Credit } from "~/types";
 
 definePageMeta({
   middleware: ["auth-insurances"],
 });
 
-const config = useRuntimeConfig();
-const token = useCookie("token");
+const { fetchAllAppointmentCredit } = useAppointmentCredit();
 
-const creditsData = ref();
+const creditsData = ref<Credit[]>([]);
+const isLoading = ref<boolean>(false);
 
-const { data: vouchersResponse, pending: pendingVouchers } = await useFetch(
-  config.public.API_BASE_URL + "/appointmentcredit/get_all",
-  {
-    headers: { Authorization: token.value },
-    transform: (_vouchers) => _vouchers.data,
+const loadAppointmentCredit = async () => {
+  try {
+    isLoading.value = true;
+
+    const api = fetchAllAppointmentCredit();
+    await api.request();
+
+    const response = api.response.value;
+
+    if (response?.data) {
+      creditsData.value = response.data;
+      useRefreshToken();
+    }
+  } catch (error) {
+  } finally {
+    isLoading.value = false;
   }
-);
-
-if (vouchersResponse) {
-  creditsData.value = vouchersResponse.value;
-  useRefreshToken();
-}
-const vouchers = [
-  {
-    voucher_id: 1,
-    patient_name: "Juan Pérez",
-    reason_for_request: "Oftalmología - Cirugía de cataratas",
-    status: "Pendiente",
-    address: "Calle Falsa 123",
-    phone_number: "+506 1234-5678",
-    city: "San José",
-    postal_code: "10101",
-    comment_by_insurance:
-      "Se requiere evaluación adicional del especialista antes de aprobar el procedimiento.",
-    requested_amount: 1200,
-    service_provider: "Hospital CIMA",
-    service_cost: 2300,
-    provider_phone: "+506 2208-2000",
-    provider_address: "San José, Autop. Próspero Fernández, San Rafael",
-    patient_message:
-      "Solicito un voucher para cubrir la operación de cataratas en ambos ojos, recomendada por mi oftalmólogo para mejorar mi visión.",
-  },
-  {
-    voucher_id: 2,
-    patient_name: "María Gómez",
-    reason_for_request: "Cardiología - Prueba de esfuerzo",
-    status: "Aprobada",
-    address: "Avenida Siempre Viva 742",
-    phone_number: "+506 8765-4321",
-    city: "Cartago",
-    postal_code: "20101",
-    comment_by_insurance: "Aprobado según cobertura del plan básico.",
-    requested_amount: 500,
-    service_provider: "Clínica Bíblica",
-    service_cost: 750,
-    provider_phone: "+506 2522-1000",
-    provider_address: "San José, Calle 1, Avenida 14",
-    patient_message:
-      "Necesito realizar una prueba de esfuerzo como seguimiento a mi condición cardíaca.",
-  },
-  {
-    voucher_id: 3,
-    patient_name: "Carlos Rodríguez",
-    reason_for_request: "Ortopedia - Reemplazo de cadera",
-    status: "Confirmada",
-    address: "Boulevard de los Sueños Rotos 456",
-    phone_number: "+506 2345-6789",
-    city: "Alajuela",
-    postal_code: "30101",
-    comment_by_insurance: "Procedimiento confirmado para el 15 de noviembre.",
-    requested_amount: 3000,
-    service_provider: "Hospital Metropolitano",
-    service_cost: 4500,
-    provider_phone: "+506 2436-1000",
-    provider_address: "San José, Lindora, Santa Ana",
-    patient_message:
-      "Requiero cirugía de reemplazo de cadera debido a artritis severa.",
-  },
-  {
-    voucher_id: 4,
-    patient_name: "Ana Fernández",
-    reason_for_request: "Dermatología - Remoción de lunar",
-    status: "Rechazada",
-    address: "Calle de la Amargura 789",
-    phone_number: "+506 3456-7890",
-    city: "Heredia",
-    postal_code: "40101",
-    comment_by_insurance:
-      "No cumple con los criterios de cobertura para procedimiento cosmético.",
-    requested_amount: 800,
-    service_provider: "Hospital La Católica",
-    service_cost: 1200,
-    provider_phone: "+506 2246-3000",
-    provider_address: "San José, Guadalupe",
-    patient_message:
-      "Necesito remover un lunar que ha cambiado de apariencia recientemente.",
-  },
-  {
-    voucher_id: 5,
-    patient_name: "Luis Martínez",
-    reason_for_request: "Neurología - Resonancia magnética",
-    status: "Activo",
-    address: "Avenida Central 101",
-    phone_number: "+506 4567-8901",
-    city: "Puntarenas",
-    postal_code: "60101",
-    comment_by_insurance:
-      "Aprobado con prioridad debido a síntomas reportados.",
-    requested_amount: 1500,
-    service_provider: "Hospital San Juan de Dios",
-    service_cost: 1800,
-    provider_phone: "+506 2542-5000",
-    provider_address: "San José, Calle 14, Avenida 6",
-    patient_message:
-      "Presento dolores de cabeza persistentes y el médico recomienda una resonancia.",
-  },
-];
+};
 
 ChartJS.register(
   Title,
@@ -141,82 +56,20 @@ ChartJS.register(
   Colors
 );
 
-const doughnutCenterTextPlugin = {
-  id: "doughnutCenterText",
-  afterDraw: (chart) => {
-    if (chart.config.type !== "doughnut") {
-      return;
-    }
-    const { ctx } = chart;
-    const { width, height } = chart;
-    ctx.restore();
-
-    // Get the first dataset's value (assuming only one dataset)
-    const value = chart.data.datasets[0].data[0];
-    const total = chart.data.datasets[0].data.reduce((a, b) => a + b, 0);
-    const percentage = ((value / total) * 100).toFixed(2) + "%";
-
-    // Set font styles for the percentage
-    ctx.font = "700 33.877px Arial"; // Font size and weight
-    ctx.fillStyle = "#0CADBB"; // Color
-    ctx.textAlign = "center"; // Text alignment
-    ctx.textBaseline = "middle"; // Vertical alignment
-    ctx.fontFeatureSettings = "'liga' off, 'clig' off"; // Font features
-
-    // Draw the percentage text in the center
-    ctx.fillText(percentage, width / 2, height - 120); // Adjusted y-position for percentage
-
-    // Set font styles for the "Incremento" label
-    ctx.font = "16px Arial"; // Smaller font size for the label
-    ctx.fillStyle = "#000000"; // Color for the label (black in this case)
-
-    // Draw the "Incremento" label below the percentage
-    ctx.fillText("Incremento", width / 2, height - 90); // Adjusted y-position for label
-
-    ctx.save();
-  },
-};
-
-const semiDoughnutData = {
-  labels: ["Valor Único"],
-  datasets: [
-    {
-      label: "Doughnut Chart",
-      data: [75, 25], // Example data: 75% and 25%
-      backgroundColor: ["#0CADBB", "#C2C6E9"],
-    },
-  ],
-};
-
-const semiDoughnutOptions = {
-  responsive: true,
-  plugins: {
-    legend: {
-      display: false,
-      position: "top",
-    },
-    title: {
-      display: false,
-      text: "Valor Único",
-    },
-  },
-  circumference: 180, // 180 degrees for a semi-circle
-  rotation: -90, // Start from the top
-};
-const chartData = {
+const chartData: ChartData<"bar"> = {
   labels: [
-    "Enero",
-    "Febrero",
-    "Marzo",
-    "Abril",
-    "Mayo",
-    "Junio",
-    "Julio",
-    "Agosto",
-    "Septiembre",
-    "Octubre",
-    "Noviembre",
-    "Diciembre",
+    "Ene",
+    "Feb",
+    "Mar",
+    "Abr",
+    "May",
+    "Jun",
+    "Jul",
+    "Ago",
+    "Sep",
+    "Oct",
+    "Nov",
+    "Dic",
   ],
   datasets: [
     {
@@ -225,10 +78,9 @@ const chartData = {
         { length: 12 },
         () => Math.floor(Math.random() * 50) + 20
       ),
-      backgroundColor: "#36A2EB", // Blue for approved
-      // No stack → appears as a separate bar
+      backgroundColor: "#D3F2DD",
       borderWidth: 1,
-      borderRadius: 10, // Rounded borders
+      borderRadius: 10,
       barPercentage: 0.6,
     },
     {
@@ -237,32 +89,34 @@ const chartData = {
         { length: 12 },
         () => Math.floor(Math.random() * 30) + 10
       ),
-      backgroundColor: "#FFCE56", // Yellow for pending
-      stack: "Stack 1", // Groups with "Cancelados"
+      backgroundColor: "#FAC6D0",
+      stack: "Stack 1",
       borderWidth: 1,
-      borderRadius: 10, // Rounded borders
+      borderRadius: 10,
       barPercentage: 0.6,
     },
     {
       label: "Cancelados",
       data: Array.from({ length: 12 }, () => Math.floor(Math.random() * 20)),
-      backgroundColor: "#FF6384", // Red for canceled
-      stack: "Stack 1", // Stacks on top of "Pendientes"
+      backgroundColor: "#FAEDBF",
+      stack: "Stack 1",
       borderWidth: 1,
-      borderRadius: 10, // Rounded borders
+      borderRadius: 10,
       barPercentage: 0.6,
     },
   ],
 };
 
-const chartOptions = {
+const chartOptions: ChartOptions<"bar"> = {
   responsive: true,
+  maintainAspectRatio: false,
   plugins: {
     legend: {
       position: "top",
       labels: {
         usePointStyle: true,
         pointStyle: "rect",
+        color: "#6D758F",
       },
       display: false,
     },
@@ -277,197 +131,198 @@ const chartOptions = {
   },
   scales: {
     x: {
-      stacked: true, // Only stacks datasets with the same 'stack' ID
+      stacked: true,
+      ticks: {
+        color: "#6D758F",
+      },
+      grid: {
+        display: false,
+      },
     },
     y: {
-      stacked: true, // No vertical stacking (bars appear side by side)
+      stacked: true,
+      ticks: {
+        color: "#6D758F",
+      },
+      grid: {
+        display: false,
+      },
     },
   },
 };
+
+onMounted(async () => {
+  await loadAppointmentCredit();
+});
 </script>
+
 <template>
   <NuxtLayout name="aseguradoras-dashboard">
-    <div v-if="pendingVouchers"></div>
+    <div v-if="isLoading"></div>
     <div v-else>
-      <div class="row mb-3">
-        <div class="col">
-          <p class="mx-2 d-flex align-items-center justify-content-between">
-            <span class="fw-medium fs-5">Solicitudes Activas</span>
-            <NuxtLink
-              class="btn btn-link text-dark"
-              href="/socio-financiero/inicio"
-              >Ver Todo
-              <AtomsIconsArrowRightIcon />
-            </NuxtLink>
-          </p>
-          <div class="card border-0 shadow rounded-3 h-100">
-            <div v-if="vouchers !== null" class="card-body d-flex">
-              <div
-                class="col text-center align-items-center d-flex justify-content-center"
+      <div class="dashboard">
+        <div class="dashboard__row">
+          <div class="dashboard__column">
+            <div class="section-header">
+              <span class="section-header__title">Solicitudes Activas</span>
+              <NuxtLink
+                class="section-header__link"
+                href="/socio-financiero/inicio"
               >
-                <div class="position-relative">
-                  <!-- Semi-doughnut chart -->
-                  <Doughnut
-                    :data="semiDoughnutData"
-                    :options="semiDoughnutOptions"
-                    width="500"
-                    height="500"
-                  />
+                Ver Todo
+                <AtomsIconsArrowRightIcon />
+              </NuxtLink>
+            </div>
 
-                  <!-- Center text -->
-                  <div
-                    class="position-absolute start-50 translate-middle text-center"
-                    style="top: 70%"
-                  >
-                    <span class="fs-1 fw-bold text-info">85%</span><br />
-                    <span class="text-muted">de solicitudes activas</span>
+            <div class="card">
+              <div
+                v-if="creditsData !== null"
+                class="card__body card__body--flex"
+              >
+                <div class="chart-container">
+                  <div class="chart-container__wrapper">
+                    <UiDoughnutChart
+                      :attended-value="50"
+                      :total-value="100"
+                      center-label="de solicitudes activas"
+                      cutout="75%"
+                    />
                   </div>
                 </div>
-              </div>
-              <div
-                class="col-auto bg-light d-flex flex-column justify-content-center rounded-4 px-3 py-5"
-              >
-                <span class="fs-4 text-center">
-                  <div>Total de</div>
-                  <div class="display-4 fw-bold text-info">
-                    {{ vouchers.length }}
+
+                <div class="stats-box">
+                  <div class="stats-box__content">
+                    <div class="stats-box__label">Total de</div>
+                    <div class="stats-box__value">{{ creditsData.length }}</div>
                   </div>
-                </span>
-                <span class="fw-light text-center text-muted fs-4 text-wrap"
-                  >Créditos <br />aprobados y <br />
-                  confirmados</span
-                >
+                  <span class="stats-box__description">
+                    Créditos <br />aprobados y <br />confirmados
+                  </span>
+                </div>
               </div>
-            </div>
-            <div class="card-body d-flex align-items-center p-5" v-else>
-              <AtomsIconsChartVacio />
-              <p class="d-flex flex-column align-items-start ms-3">
-                <span class="fw-medium text-muted fs-5"
-                  >Aún no tienes actividad en tu tablero</span
-                >
-                <span class="fw-light text-muted"
-                  >Muy pronto podrás administrar y verificar tu actividad.</span
-                >
-                <button class="btn btn-primary btn-sm mt-2 rounded-3">
-                  Empezar
-                </button>
-              </p>
+
+              <div class="card__body card__body--empty" v-else>
+                <AtomsIconsChartVacio />
+                <div class="empty-state">
+                  <span class="empty-state__title"
+                    >Aún no tienes actividad en tu tablero</span
+                  >
+                  <span class="empty-state__description">
+                    Muy pronto podrás administrar y verificar tu actividad.
+                  </span>
+                  <button class="empty-state__button">Empezar</button>
+                </div>
+              </div>
             </div>
           </div>
-        </div>
-        <div class="col">
-          <p class="mx-2 d-flex align-items-center justify-content-between">
-            <span class="fw-medium fs-5">Resumen Anual de créditos</span>
-            <NuxtLink
-              class="btn btn-link text-dark"
-              href="/socio-financiero/inicio"
-              >Ver Todo
-              <AtomsIconsArrowRightIcon />
-            </NuxtLink>
-          </p>
-          <div class="card border-0 shadow rounded-3 h-100">
-            <div class="card border-0 shadow rounded-3 h-100">
-              <div v-if="vouchers !== null" class="card-body">
-                <div
-                  class="d-flex align-items-center justify-content-center py-5 bg-light text-muted mb-3"
-                >
-                  <!-- <span class="py-4"> Chart Goes Here </span> -->
+
+          <div class="dashboard__column">
+            <div class="section-header">
+              <span class="section-header__title"
+                >Resumen Anual de créditos</span
+              >
+              <NuxtLink
+                class="section-header__link"
+                href="/socio-financiero/inicio"
+              >
+                Ver Todo
+                <AtomsIconsArrowRightIcon />
+              </NuxtLink>
+            </div>
+
+            <div class="card">
+              <div v-if="creditsData !== null" class="card__body">
+                <div class="chart-area">
                   <Bar :data="chartData" :options="chartOptions" />
                 </div>
-                <div class="row">
-                  <div class="col">
-                    <div
-                      class="bg-light p-3 d-flex align-items-center rounded-4"
-                    >
-                      <span
-                        class="fs-4 text-center pe-3 me-3 border-end border-dark text-info"
-                      >
-                        <div class="text-nowrap fw-medium">Total de</div>
-                        <div class="fs-1 fw-bold">{{ vouchers.length }}</div>
+
+                <div class="summary">
+                  <div class="summary__stats">
+                    <div class="summary-stats">
+                      <div class="summary-stats__total">
+                        <div class="summary-stats__label">Total de</div>
+                        <div class="summary-stats__value">
+                          {{ creditsData.length }}
+                        </div>
+                      </div>
+                      <span class="summary-stats__description">
+                        Créditos aprobados y confirmados
                       </span>
-                      <span class="fw-semibold text-muted"
-                        >Créditos aprobados y confirmados</span
-                      >
                     </div>
                   </div>
-                  <div class="col-auto d-flex align-items-center">
-                    <ul class="list-unstyled m-0">
-                      <li class="d-flex align-items-center text-muted">
+
+                  <div class="summary__legend">
+                    <ul class="legend">
+                      <li class="legend__item">
                         <span
-                          class="square me-2"
-                          style="background-color: #36a2eb"
-                        ></span
-                        >Aprobados
+                          class="legend__square legend__square--approved"
+                        ></span>
+                        Aprobados
                       </li>
-                      <li class="d-flex align-items-center text-muted">
+                      <li class="legend__item">
                         <span
-                          class="square me-2"
-                          style="background-color: #ffce56"
-                        ></span
-                        >Pendientes
+                          class="legend__square legend__square--pending"
+                        ></span>
+                        Pendientes
                       </li>
-                      <li class="d-flex align-items-center text-muted">
+                      <li class="legend__item">
                         <span
-                          class="square me-2"
-                          style="background-color: #ff6384"
-                        ></span
-                        >Cancelados
+                          class="legend__square legend__square--canceled"
+                        ></span>
+                        Cancelados
                       </li>
                     </ul>
                   </div>
                 </div>
               </div>
-              <div class="card-body d-flex align-items-center p-5" v-else>
+
+              <div class="card__body card__body--empty" v-else>
                 <AtomsIconsChartVacio />
-                <p class="d-flex flex-column align-items-start ms-3">
-                  <span class="fw-medium text-muted fs-5"
+                <div class="empty-state">
+                  <span class="empty-state__title"
                     >Aún no tienes actividad en tu tablero</span
                   >
-                  <span class="fw-light text-muted"
-                    >Muy pronto podrás administrar y verificar tu
-                    actividad.</span
-                  >
-                  <button class="btn btn-primary btn-sm mt-2 rounded-3">
-                    Empezar
-                  </button>
-                </p>
+                  <span class="empty-state__description">
+                    Muy pronto podrás administrar y verificar tu actividad.
+                  </span>
+                  <button class="empty-state__button">Empezar</button>
+                </div>
               </div>
             </div>
           </div>
         </div>
-      </div>
-      <div class="row">
-        <p class="mx-2 d-flex align-items-center justify-content-between">
-          <span class="fw-medium fs-5">Historial</span>
-          <NuxtLink
-            class="btn btn-link text-dark"
-            href="/socio-financiero/inicio"
-            >Ver Todo
-            <AtomsIconsArrowRightIcon />
-          </NuxtLink>
-        </p>
 
-        <AseguradorasCreditoTable
-          v-if="creditsData !== null"
-          :vouchers="creditsData"
-        />
+        <div class="dashboard__history">
+          <div class="section-header">
+            <span class="section-header__title">Historial</span>
+            <NuxtLink
+              class="section-header__link"
+              href="/socio-financiero/inicio"
+            >
+              Ver Todo
+              <AtomsIconsArrowRightIcon />
+            </NuxtLink>
+          </div>
 
-        <div class="card border-0 shadow rounded-3 py-4 h-100" v-else>
-          <div class="card-body d-flex align-items-center p-5">
-            <span class="w-50 text-center">
-              <AtomsIconsChartVacio />
-            </span>
-            <p class="d-flex flex-column align-items-start ms-3">
-              <span class="fw-medium text-muted fs-5"
-                >Aún no tienes actividad en tu tablero</span
-              >
-              <span class="fw-light text-muted"
-                >Muy pronto podrás administrar y verificar tu actividad.</span
-              >
-              <button class="btn btn-primary btn-sm mt-2 rounded-3">
-                Empezar
-              </button>
-            </p>
+          <div v-if="creditsData !== null" class="dashboard__history-table">
+            <AseguradorasCreditoTable :credits="creditsData" />
+          </div>
+
+          <div class="card card--history" v-else>
+            <div class="card__body card__body--empty">
+              <span class="empty-state__icon">
+                <AtomsIconsChartVacio />
+              </span>
+              <div class="empty-state">
+                <span class="empty-state__title"
+                  >Aún no tienes actividad en tu tablero</span
+                >
+                <span class="empty-state__description">
+                  Muy pronto podrás administrar y verificar tu actividad.
+                </span>
+                <button class="empty-state__button">Empezar</button>
+              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -476,11 +331,695 @@ const chartOptions = {
 
   <AseguradorasRegistroOnboarding />
 </template>
+
 <style lang="scss" scoped>
-.square {
-  display: inline-block;
-  height: 1rem;
-  width: 1rem;
-  border-radius: 0.4rem;
+.dashboard {
+  &__row {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1.5rem;
+    margin-bottom: 1.5rem;
+  }
+
+  &__column {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+  }
+
+  &__history {
+    display: flex;
+    flex-direction: column;
+  }
+
+  &__history-table {
+    background-color: #fff;
+    border: 1px solid rgba(0, 0, 0, 0.125);
+    border-radius: 0.25rem;
+    box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+  }
+}
+
+.section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin: 0 0.5rem 1.5rem;
+
+  &__title {
+    font-weight: 600;
+    font-size: 18px;
+    line-height: 100%;
+    letter-spacing: 0px;
+    color: #353e5c;
+  }
+
+  &__link {
+    display: inline-flex;
+    align-items: center;
+    font-weight: 600;
+    font-style: Semi Bold;
+    font-size: 13px;
+    line-height: 18px;
+    letter-spacing: 0;
+    text-align: center;
+    text-decoration: none;
+    color: #6d758f;
+    transition: opacity 0.2s ease;
+
+    &:hover {
+      opacity: 0.8;
+    }
+  }
+}
+
+.card {
+  background-color: #ffffff;
+  border: none;
+  border-radius: 1rem;
+  box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+
+  &--history {
+    padding: 1.5rem 0;
+  }
+
+  &__body {
+    padding: 1.5rem;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+
+    &--flex {
+      display: flex;
+      flex-direction: row;
+      gap: 1.5rem;
+    }
+
+    &--empty {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 5rem;
+    }
+  }
+}
+
+.chart-container {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+
+  &__wrapper {
+    position: relative;
+  }
+
+  &__center-text {
+    position: absolute;
+    top: 70%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    text-align: center;
+  }
+
+  &__percentage {
+    display: block;
+    font-size: 3rem;
+    font-weight: bold;
+    color: #0dcaf0;
+  }
+
+  &__label {
+    display: block;
+    color: #6c757d;
+  }
+}
+
+.stats-box {
+  display: flex;
+  justify-content: center;
+  flex-direction: column;
+  background-color: #f1f3f7;
+  border-radius: 1rem;
+  padding: 1.5rem;
+  max-width: 168px;
+  gap: 17px;
+  flex: 1;
+
+  &__content {
+    font-size: 1.5rem;
+    margin-bottom: 1rem;
+    @include space-y(17px);
+  }
+
+  &__label {
+    display: block;
+    font-weight: 400;
+    font-size: 16.86px;
+    line-height: 22.72px;
+    letter-spacing: 0px;
+    color: #353e5c;
+  }
+
+  &__value {
+    display: block;
+    font-weight: 800;
+    font-size: 48px;
+    line-height: 22.72px;
+    letter-spacing: 0px;
+    color: #0cadbb;
+  }
+
+  &__description {
+    font-weight: 500;
+    font-style: Medium;
+    font-size: 14px;
+    line-height: 20.72px;
+    letter-spacing: 0px;
+    color: #353e5c;
+  }
+}
+
+.chart-area {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem 0;
+  color: #6c757d;
+  width: 100%;
+  flex: 1;
+  min-height: 262px;
+}
+
+.summary {
+  display: flex;
+  gap: 1rem;
+
+  &__stats {
+    display: flex;
+    align-items: center;
+  }
+
+  &__legend {
+    display: flex;
+    align-items: center;
+  }
+}
+
+.summary-stats {
+  display: flex;
+  align-items: center;
+  padding: 1.5rem;
+  border-radius: 1rem;
+  gap: 1.5rem;
+
+  &__total {
+    font-size: 1.5rem;
+    text-align: center;
+    padding-right: 1.5rem;
+    border-right: 1px solid #e1e4ed;
+    color: #0cadbb;
+  }
+
+  &__label {
+    white-space: nowrap;
+    font-weight: 400;
+    font-size: 14px;
+    line-height: 22.72px;
+    letter-spacing: 0px;
+  }
+
+  &__value {
+    font-weight: 800;
+    font-size: 32px;
+    line-height: 22.72px;
+    letter-spacing: 0px;
+    text-align: center;
+  }
+
+  &__description {
+    max-width: 141px;
+    font-weight: 500;
+    font-style: Medium;
+    font-size: 13px;
+    line-height: 19.72px;
+    letter-spacing: 0px;
+    color: #353e5c;
+  }
+}
+
+.legend {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+
+  &__item {
+    display: flex;
+    align-items: center;
+    color: #6d758f;
+    margin-bottom: 8px;
+    font-weight: 500;
+    font-style: Medium;
+    font-size: 13px;
+    line-height: 14.72px;
+    letter-spacing: 0px;
+
+    &:last-child {
+      margin-bottom: 0;
+    }
+  }
+
+  &__square {
+    display: inline-block;
+    width: 1rem;
+    height: 1rem;
+    border-radius: 0.375rem;
+    margin-right: 0.5rem;
+
+    &--approved {
+      background-color: #d3f2dd;
+    }
+
+    &--pending {
+      background-color: #fac6d0;
+    }
+
+    &--canceled {
+      background-color: #faedbf;
+    }
+  }
+}
+
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  margin-left: 1.5rem;
+
+  &__icon {
+    width: 50%;
+    text-align: center;
+  }
+
+  &__title {
+    font-weight: 500;
+    color: #353e5c;
+    font-size: 1.25rem;
+  }
+
+  &__description {
+    font-weight: 300;
+    color: #6c757d;
+    margin-top: 0.5rem;
+  }
+
+  &__button {
+    background-color: #0d6efd;
+    color: #ffffff;
+    border: none;
+    padding: 0.5rem 1rem;
+    border-radius: 0.75rem;
+    margin-top: 0.5rem;
+    cursor: pointer;
+    font-size: 0.875rem;
+    transition: background-color 0.2s ease;
+
+    &:hover {
+      background-color: #0a58ca;
+    }
+  }
+}
+
+/* ========================================
+   RESPONSIVE DESIGN
+   ======================================== */
+
+/* Tablets grandes y laptops pequeñas (1024px - 1200px) */
+@media (max-width: 1200px) {
+  .summary-stats {
+    padding: 1rem;
+    gap: 1rem;
+
+    &__total {
+      padding-right: 1rem;
+    }
+
+    &__value {
+      font-size: 28px;
+    }
+
+    &__description {
+      font-size: 12px;
+      line-height: 18px;
+    }
+  }
+
+  .stats-box {
+    max-width: 150px;
+    padding: 1.25rem;
+
+    &__value {
+      font-size: 42px;
+    }
+  }
+}
+
+/* Tablets (768px - 1024px) */
+@media (max-width: 1024px) {
+  .dashboard {
+    &__row {
+      grid-template-columns: 1fr;
+      gap: 1.25rem;
+    }
+  }
+
+  .section-header {
+    margin: 0 0.25rem 1.25rem;
+
+    &__title {
+      font-size: 16px;
+    }
+
+    &__link {
+      font-size: 12px;
+    }
+  }
+
+  .card__body {
+    padding: 1.25rem;
+
+    &--flex {
+      gap: 1.25rem;
+    }
+  }
+
+  .chart-area {
+    min-height: 220px;
+  }
+
+  .summary {
+    flex-direction: column;
+    gap: 1rem;
+  }
+
+  .summary-stats {
+    flex-direction: row;
+    justify-content: center;
+
+    &__total {
+      border-right: 1px solid #e1e4ed;
+      border-bottom: none;
+      padding-right: 1rem;
+      padding-bottom: 0;
+      margin-right: 0;
+      margin-bottom: 0;
+    }
+  }
+
+  .legend {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 1rem;
+
+    &__item {
+      margin-bottom: 0;
+    }
+  }
+}
+
+/* Móviles grandes (576px - 768px) */
+@media (max-width: 768px) {
+  .section-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.75rem;
+    margin: 0 0.25rem 1rem;
+
+    &__title {
+      font-size: 16px;
+    }
+
+    &__link {
+      align-self: flex-end;
+    }
+  }
+
+  .card {
+    border-radius: 0.75rem;
+
+    &__body {
+      padding: 1rem;
+
+      &--flex {
+        flex-direction: column;
+        gap: 1rem;
+      }
+
+      &--empty {
+        padding: 3rem 1.5rem;
+        flex-direction: column;
+        text-align: center;
+      }
+    }
+  }
+
+  .chart-container {
+    &__wrapper {
+      max-width: 200px;
+      margin: 0 auto;
+    }
+  }
+
+  .stats-box {
+    max-width: 100%;
+    padding: 1rem;
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+
+    &__content {
+      margin-bottom: 0;
+    }
+
+    &__value {
+      font-size: 36px;
+    }
+
+    &__description {
+      text-align: right;
+      br {
+        display: none;
+      }
+    }
+  }
+
+  .chart-area {
+    min-height: 180px;
+    padding: 0.5rem 0;
+  }
+
+  .summary {
+    gap: 0.75rem;
+  }
+
+  .summary-stats {
+    flex-direction: column;
+    padding: 1rem;
+    gap: 1rem;
+    text-align: center;
+
+    &__total {
+      border-right: none;
+      border-bottom: 1px solid #e1e4ed;
+      padding-right: 0;
+      padding-bottom: 1rem;
+      margin-right: 0;
+      margin-bottom: 0;
+    }
+
+    &__value {
+      font-size: 28px;
+    }
+
+    &__description {
+      max-width: 100%;
+    }
+  }
+
+  .legend {
+    padding: 0.5rem;
+  }
+
+  .empty-state {
+    align-items: center;
+    margin-left: 0;
+    margin-top: 1rem;
+
+    &__icon {
+      width: 100%;
+    }
+
+    &__title {
+      font-size: 1.1rem;
+      text-align: center;
+    }
+
+    &__description {
+      text-align: center;
+    }
+
+    &__button {
+      margin-top: 1rem;
+    }
+  }
+
+  .dashboard__history-table {
+    overflow-x: auto;
+  }
+}
+
+/* Móviles pequeños (hasta 576px) */
+@media (max-width: 576px) {
+  .dashboard {
+    &__row {
+      gap: 1rem;
+    }
+  }
+
+  .section-header {
+    margin: 0 0 0.75rem;
+
+    &__title {
+      font-size: 15px;
+    }
+
+    &__link {
+      font-size: 11px;
+    }
+  }
+
+  .card {
+    &__body {
+      padding: 0.875rem;
+
+      &--empty {
+        padding: 2rem 1rem;
+      }
+    }
+  }
+
+  .stats-box {
+    flex-direction: column;
+    align-items: flex-start;
+    padding: 0.875rem;
+
+    &__value {
+      font-size: 32px;
+    }
+
+    &__label {
+      font-size: 14px;
+    }
+
+    &__description {
+      text-align: left;
+      font-size: 13px;
+    }
+  }
+
+  .summary-stats {
+    padding: 0.875rem;
+
+    &__value {
+      font-size: 24px;
+    }
+
+    &__label {
+      font-size: 13px;
+    }
+
+    &__description {
+      font-size: 12px;
+      line-height: 18px;
+    }
+  }
+
+  .legend {
+    flex-direction: column;
+    gap: 0.5rem;
+
+    &__item {
+      font-size: 12px;
+    }
+  }
+
+  .empty-state {
+    &__title {
+      font-size: 1rem;
+    }
+
+    &__description {
+      font-size: 0.875rem;
+    }
+
+    &__button {
+      padding: 0.5rem 1.25rem;
+      font-size: 0.813rem;
+    }
+  }
+
+  .chart-area {
+    min-height: 160px;
+  }
+}
+
+/* Móviles muy pequeños (hasta 375px) */
+@media (max-width: 375px) {
+  .section-header {
+    &__title {
+      font-size: 14px;
+    }
+  }
+
+  .stats-box {
+    &__value {
+      font-size: 28px;
+    }
+
+    &__label,
+    &__description {
+      font-size: 12px;
+    }
+  }
+
+  .summary-stats {
+    &__value {
+      font-size: 22px;
+    }
+
+    &__label,
+    &__description {
+      font-size: 11px;
+    }
+  }
+
+  .chart-area {
+    min-height: 140px;
+  }
+
+  .empty-state {
+    &__title {
+      font-size: 0.938rem;
+    }
+
+    &__description {
+      font-size: 0.813rem;
+    }
+  }
 }
 </style>
