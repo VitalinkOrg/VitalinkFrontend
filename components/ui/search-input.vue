@@ -156,6 +156,7 @@ defineExpose({
 .search-input-wrapper {
   position: relative;
   width: 100%;
+  min-width: 0;
 }
 
 .search-input {
@@ -163,17 +164,27 @@ defineExpose({
   display: flex;
   align-items: center;
   width: 100%;
+  min-width: 0;
   background-color: $white;
-  border-radius: 0.5rem;
+  border-radius: 0.375rem;
   border: 1px solid #f1f3f7;
   box-shadow: 0px 1px 2px 0px #1018280d;
   transition: all 0.2s ease;
 
+  @media (min-width: 576px) {
+    border-radius: 0.5rem;
+  }
+
   &--focused {
     outline: 2px solid $color-primary;
-    outline-offset: 2px;
+    outline-offset: 1px;
     border-color: $color-primary;
-    box-shadow: 0 0 0 3px rgba($color-primary, 0.2);
+    box-shadow: 0 0 0 2px rgba($color-primary, 0.15);
+
+    @media (min-width: 576px) {
+      outline-offset: 2px;
+      box-shadow: 0 0 0 3px rgba($color-primary, 0.2);
+    }
   }
 
   &--full-width {
@@ -191,31 +202,50 @@ defineExpose({
     pointer-events: none;
 
     &--search {
-      left: 0.75rem;
-      width: 1.25rem;
-      height: 1.25rem;
+      left: 0.625rem;
+      width: 1rem;
+      height: 1rem;
 
-      @include respond-to-max(sm) {
-        margin-left: 0.75rem;
+      @media (min-width: 576px) {
+        left: 0.75rem;
+        width: 1.25rem;
+        height: 1.25rem;
       }
     }
   }
 
   &__field {
-    padding: 0.625rem 2.5rem 0.625rem 2.5rem;
+    padding: 0.5rem 2rem 0.5rem 2rem;
     font-weight: 300;
-    font-size: 0.875rem;
+    font-size: 0.8125rem;
+    line-height: 1.25;
     color: #6d758f;
-    border-radius: 8px;
+    border-radius: 0.375rem;
     border: 1px solid #f1f3f7;
     box-shadow: 0 1px 2px #1018280d;
-    background-color: #fff;
+    background-color: $white;
     width: 100%;
+    min-width: 0;
     transition: all 0.2s ease;
 
-    @include respond-to(sm) {
-      font-size: 1rem;
+    @media (min-width: 375px) {
+      padding: 0.5625rem 2.25rem 0.5625rem 2.125rem;
+      font-size: 0.875rem;
+    }
+
+    @media (min-width: 576px) {
+      padding: 0.625rem 2.75rem 0.625rem 2.5rem;
+      font-size: 0.9375rem;
+      border-radius: 0.5rem;
+    }
+
+    @media (min-width: 768px) {
       padding: 0.75rem 3rem 0.75rem 2.5rem;
+      font-size: 1rem;
+    }
+
+    &:hover:not(:disabled) {
+      border-color: $color-primary;
     }
 
     &:focus {
@@ -232,9 +262,18 @@ defineExpose({
 
     &::placeholder {
       color: #9ca3af;
+      font-size: 0.8125rem;
 
-      @include respond-to-max(sm) {
+      @media (min-width: 375px) {
         font-size: 0.875rem;
+      }
+
+      @media (min-width: 576px) {
+        font-size: 0.9375rem;
+      }
+
+      @media (min-width: 768px) {
+        font-size: 1rem;
       }
     }
 
@@ -248,12 +287,13 @@ defineExpose({
 
   &__clear {
     position: absolute;
-    right: 0.5rem;
+    right: 0.375rem;
     display: flex;
     align-items: center;
     justify-content: center;
-    width: 1.5rem;
-    height: 1.5rem;
+    width: 1.25rem;
+    height: 1.25rem;
+    min-width: 1.25rem;
     padding: 0;
     background-color: transparent;
     border: none;
@@ -263,6 +303,20 @@ defineExpose({
     transition: all 0.2s ease;
     flex-shrink: 0;
 
+    @media (min-width: 576px) {
+      right: 0.5rem;
+      width: 1.5rem;
+      height: 1.5rem;
+      min-width: 1.5rem;
+    }
+
+    @media (min-width: 768px) {
+      right: 0.625rem;
+      width: 1.625rem;
+      height: 1.625rem;
+      min-width: 1.625rem;
+    }
+
     &:hover {
       background-color: rgba($color-primary, 0.1);
       color: $color-primary;
@@ -270,9 +324,13 @@ defineExpose({
 
     &:focus {
       outline: 2px solid $color-primary;
-      outline-offset: 2px;
+      outline-offset: 1px;
       background-color: rgba($color-primary, 0.1);
       color: $color-primary;
+
+      @media (min-width: 576px) {
+        outline-offset: 2px;
+      }
     }
 
     &:active {
@@ -280,9 +338,43 @@ defineExpose({
     }
 
     &-icon {
-      font-size: 1.25rem;
+      font-size: 1.125rem;
       line-height: 1;
       font-weight: 400;
+
+      @media (min-width: 576px) {
+        font-size: 1.25rem;
+      }
+
+      @media (min-width: 768px) {
+        font-size: 1.375rem;
+      }
+    }
+  }
+}
+
+@media (max-width: 374px) {
+  .search-input {
+    &__field {
+      padding: 0.4375rem 1.75rem 0.4375rem 1.875rem;
+      font-size: 0.75rem;
+    }
+
+    &__icon--search {
+      left: 0.5rem;
+      width: 0.875rem;
+      height: 0.875rem;
+    }
+
+    &__clear {
+      right: 0.25rem;
+      width: 1.125rem;
+      height: 1.125rem;
+      min-width: 1.125rem;
+
+      &-icon {
+        font-size: 1rem;
+      }
     }
   }
 }
@@ -295,6 +387,10 @@ defineExpose({
       outline-width: 3px;
     }
   }
+
+  .search-input__clear:focus {
+    outline-width: 3px;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -303,6 +399,18 @@ defineExpose({
   .search-input__field,
   .search-input__clear {
     transition: none;
+  }
+}
+
+@media (hover: none) and (pointer: coarse) {
+  .search-input__clear {
+    width: 2rem;
+    height: 2rem;
+    min-width: 2rem;
+
+    &-icon {
+      font-size: 1.5rem;
+    }
   }
 }
 </style>
