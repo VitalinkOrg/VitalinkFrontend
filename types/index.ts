@@ -1,6 +1,7 @@
 //
 // Clinicas
 
+import type { Appointment } from "./appointment";
 import type { MedicalSpecialty } from "./supplier";
 
 //
@@ -272,6 +273,11 @@ export interface Package {
   created_date: string;
   updated_date: string | null;
   procedure?: Procedure;
+  specialty: {
+    id: number;
+    medical_specialty: IUdc;
+    created_date: string;
+  };
 }
 
 export interface Product {
@@ -286,6 +292,22 @@ export interface Product {
   created_date: string;
   updated_date: string | null;
   is_deleted: 0 | 1;
+}
+
+interface CreditStatus extends IUdc {}
+
+export interface Credit {
+  id: number;
+  appointment: Appointment;
+  credit_status: CreditStatus;
+  requested_amount: string;
+  approved_amount: string;
+  credit_observations: string;
+  pagare_file_code: string;
+  max_date_active: string | null;
+  already_been_used: number;
+  created_date: string;
+  updated_date: string;
 }
 
 export * from "./appointment";
