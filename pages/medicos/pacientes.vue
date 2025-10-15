@@ -256,10 +256,10 @@ const downloadAllPatients = (): void => {
 
 <template>
   <NuxtLayout name="medicos-dashboard">
-    <MedicosCommonPageHeader title="Mis Pacientes" />
+    <UiHeaderBreadcrumb title="Mis Pacientes" />
 
     <div class="patients__actions--wrapper">
-      <UiSearchBar
+      <UiSearchInput
         placeholder="Buscar"
         aria-label="Buscar en mis citas"
         max-width="320px"

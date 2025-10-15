@@ -464,7 +464,7 @@ provide("refreshAppointments", refreshAppointments);
         class="appointments-toolbar"
         aria-label="Herramientas de filtrado y búsqueda"
       >
-        <UiSearchBar
+        <UiSearchInput
           v-model="searchQuery"
           placeholder="Buscar"
           aria-label="Buscar en mis citas"
