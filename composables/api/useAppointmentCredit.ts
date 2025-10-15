@@ -1,4 +1,4 @@
-import type { ApiResponse, AppointmentCredit } from "@/types";
+import type { ApiResponse, AppointmentCredit, Credit } from "@/types";
 import useApi, { type UsableAPI } from "./useApi";
 
 interface AppointmentCreditPayload {
@@ -9,7 +9,7 @@ export const useAppointmentCredit = () => {
   const config = useRuntimeConfig();
   const { getToken } = useAuthToken();
 
-  const fetchAllAppointmentCredit = (
+  const fetchAllAppointmentCreditByQrCode = (
     appointmentQrCode: string
   ): UsableAPI<ApiResponse<AppointmentCredit[]>> => {
     const token = getToken();
@@ -18,6 +18,21 @@ export const useAppointmentCredit = () => {
     const url = `${config.public.API_BASE_URL}/appointmentcredit/get_all?appointment_qr_code=${appointmentQrCode}`;
 
     return useApi<ApiResponse<AppointmentCredit[]>>(url, {
+      method: "GET",
+      headers: {
+        Authorization: token,
+        "Content-Type": "application/json",
+      },
+    });
+  };
+
+  const fetchAllAppointmentCredit = (): UsableAPI<ApiResponse<Credit[]>> => {
+    const token = getToken();
+    if (!token) throw new Error("No authentication token found");
+
+    const url = `${config.public.API_BASE_URL}/appointmentcredit/get_all`;
+
+    return useApi<ApiResponse<Credit[]>>(url, {
       method: "GET",
       headers: {
         Authorization: token,
@@ -48,5 +63,6 @@ export const useAppointmentCredit = () => {
   return {
     updateAppointmentCredit,
     fetchAllAppointmentCredit,
+    fetchAllAppointmentCreditByQrCode,
   };
 };
