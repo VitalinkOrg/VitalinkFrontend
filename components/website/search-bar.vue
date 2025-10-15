@@ -1,4 +1,7 @@
 <script lang="ts" setup>
+import { useUdc } from "@/composables/api";
+import { onClickOutside } from "@vueuse/core";
+
 interface Specialty {
   code: string;
   name: string;
@@ -22,9 +25,6 @@ const props = withDefaults(defineProps<Props>(), {
 const emit = defineEmits<{
   search: [query: Record<string, string>];
 }>();
-
-import { onClickOutside } from "@vueuse/core";
-import { useUdc } from "~/composables/api";
 
 const route = useRoute();
 const router = useRouter();

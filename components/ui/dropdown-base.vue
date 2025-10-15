@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { onClickOutside } from "@vueuse/core";
+
 export interface DropdownItem {
   value: string | number;
   label: string;
@@ -15,7 +17,8 @@ interface Props {
   searchable?: boolean;
   clearable?: boolean;
   noResultsText?: string;
-  customClass?: string;
+  size?: "sm" | "md" | "lg";
+  variant?: "default" | "outline" | "filled";
 }
 
 interface Emits {
@@ -32,7 +35,8 @@ const props = withDefaults(defineProps<Props>(), {
   searchable: false,
   clearable: false,
   noResultsText: "No se encontraron resultados",
-  customClass: "",
+  size: "md",
+  variant: "default",
 });
 
 const emit = defineEmits<Emits>();
@@ -104,12 +108,6 @@ const closeDropdown = () => {
   }
 };
 
-const handleClickOutside = (event: Event) => {
-  if (dropdownRef.value && !dropdownRef.value.contains(event.target as Node)) {
-    closeDropdown();
-  }
-};
-
 const handleSearchInput = () => {
   if (!isOpen.value) {
     isOpen.value = true;
@@ -135,14 +133,13 @@ watch(
 );
 
 onMounted(() => {
-  document.addEventListener("click", handleClickOutside);
   if (props.searchable) {
     searchText.value = selectedItem.value?.label || "";
   }
 });
 
-onUnmounted(() => {
-  document.removeEventListener("click", handleClickOutside);
+onClickOutside(dropdownRef, () => {
+  closeDropdown();
 });
 </script>
 
@@ -150,7 +147,11 @@ onUnmounted(() => {
   <div
     ref="dropdownRef"
     class="dropdown"
-    :class="[customClass, { 'dropdown--disabled': disabled }]"
+    :class="[
+      `dropdown--${size}`,
+      `dropdown--${variant}`,
+      { 'dropdown--disabled': disabled },
+    ]"
   >
     <div
       class="dropdown__toggle"
@@ -254,7 +255,7 @@ onUnmounted(() => {
       </div>
     </div>
 
-    <div class="dropdown__menu" :class="{ 'dropdown__menu--show': isOpen }">
+    <div class="dropdown__menu" :class="{ 'dropdown__menu--open': isOpen }">
       <div v-if="filteredItems.length === 0" class="dropdown__no-results">
         {{ noResultsText }}
       </div>
@@ -273,7 +274,7 @@ onUnmounted(() => {
       >
         <span class="dropdown__item-text">{{ item.label }}</span>
 
-        <div v-if="modelValue === item.value" class="dropdown__item-icon">
+        <div v-if="modelValue === item.value" class="dropdown__item-check">
           <slot name="check-icon">
             <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
               <path
@@ -292,6 +293,21 @@ onUnmounted(() => {
 </template>
 
 <style lang="scss" scoped>
+$dropdown-border-color: #d0d5dd;
+$dropdown-border-radius: 0.5rem;
+$dropdown-bg-color: #ffffff;
+$dropdown-text-color: #374151;
+$dropdown-text-muted: #9ca3af;
+$dropdown-hover-bg: #f9fafb;
+$dropdown-focus-bg: #f3f4f6;
+$dropdown-disabled-bg: #f9fafb;
+$dropdown-disabled-color: #98a2b3;
+$dropdown-error-color: #dc3545;
+$dropdown-primary-color: #7f56d9;
+$dropdown-shadow:
+  0 0.25rem 0.375rem -0.0625rem rgba(0, 0, 0, 0.1),
+  0 0.125rem 0.25rem -0.0625rem rgba(0, 0, 0, 0.06);
+
 .dropdown {
   position: relative;
   width: 100%;
@@ -307,60 +323,124 @@ onUnmounted(() => {
       min-height: 2.5rem;
       padding: 0.5rem 0.75rem;
       font-size: 0.875rem;
+      line-height: 1.25rem;
+    }
+
+    .dropdown__text,
+    .dropdown__search-input {
+      font-size: 0.875rem;
+      line-height: 1.25rem;
     }
   }
 
   &--md {
     .dropdown__toggle {
-      min-height: 3.5rem;
-      padding: 1rem;
+      min-height: 3rem;
+      padding: 0.75rem 1rem;
       font-size: 1rem;
+      line-height: 1.5rem;
+    }
+
+    .dropdown__text,
+    .dropdown__search-input {
+      font-size: 1rem;
+      line-height: 1.5rem;
     }
   }
 
   &--lg {
     .dropdown__toggle {
-      min-height: 4rem;
-      padding: 1.25rem;
+      min-height: 3.5rem;
+      padding: 1rem 1.25rem;
       font-size: 1.125rem;
+      line-height: 1.75rem;
+    }
+
+    .dropdown__text,
+    .dropdown__search-input {
+      font-size: 1.125rem;
+      line-height: 1.75rem;
     }
   }
 
   &--outline {
     .dropdown__toggle {
       background: transparent;
-      border: 0.125rem solid var(--dropdown-accent-color, $primary-aqua);
+      border: 0.125rem solid $dropdown-primary-color;
+
+      &:hover:not(.dropdown__toggle--disabled) {
+        border-color: darken($dropdown-primary-color, 10%);
+      }
     }
   }
 
   &--filled {
     .dropdown__toggle {
-      background: var(--dropdown-accent-color, $primary-aqua);
-      color: $white;
-      border: 1px solid var(--dropdown-accent-color, $primary-aqua);
+      background: $dropdown-primary-color;
+      color: #ffffff;
+      border: 1px solid $dropdown-primary-color;
 
       .dropdown__text--placeholder {
         color: rgba(255, 255, 255, 0.7);
+      }
+
+      .dropdown__text,
+      .dropdown__search-input {
+        color: #ffffff;
+
+        &::placeholder {
+          color: rgba(255, 255, 255, 0.7);
+        }
+      }
+
+      .dropdown__icon,
+      .dropdown__arrow,
+      .dropdown__clear-button {
+        color: #ffffff;
+      }
+
+      &:hover:not(.dropdown__toggle--disabled) {
+        background: darken($dropdown-primary-color, 10%);
+        border-color: darken($dropdown-primary-color, 10%);
       }
     }
   }
 
   &__toggle {
-    @include input-base;
     width: 100%;
+    min-height: 3rem;
+    padding: 0.75rem 1rem;
     display: flex;
     align-items: center;
     gap: 0.5rem;
+    background: $dropdown-bg-color;
+    border: 1px solid $dropdown-border-color;
+    border-radius: $dropdown-border-radius;
     cursor: pointer;
+    transition: all 0.2s ease;
+    position: relative;
+
+    &:hover:not(&--disabled) {
+      border-color: darken($dropdown-border-color, 10%);
+    }
+
+    &:focus-within {
+      outline: 2px solid $dropdown-primary-color;
+      outline-offset: 2px;
+    }
+
+    &--active {
+      border-color: $dropdown-primary-color;
+    }
 
     &--disabled {
-      background-color: #f9fafb;
-      border-color: #d0d5dd;
-      color: #98a2b3;
+      background-color: $dropdown-disabled-bg;
+      border-color: $dropdown-border-color;
+      color: $dropdown-disabled-color;
       cursor: not-allowed;
 
       &:hover {
-        border-color: #d0d5dd;
+        border-color: $dropdown-border-color;
       }
     }
 
@@ -369,7 +449,12 @@ onUnmounted(() => {
     }
 
     &--error {
-      border-color: #dc3545;
+      border-color: $dropdown-error-color;
+
+      &:hover,
+      &:focus-within {
+        border-color: $dropdown-error-color;
+      }
     }
 
     &--searchable {
@@ -379,29 +464,33 @@ onUnmounted(() => {
 
   &__icon {
     flex-shrink: 0;
-    color: $color-text-muted;
+    color: $dropdown-text-muted;
     display: flex;
     align-items: center;
     justify-content: center;
+    width: 1.25rem;
+    height: 1.25rem;
   }
 
   &__search-input {
-    @include input-base;
     flex: 1;
     border: none;
     outline: none;
     background: transparent;
-    color: #374151;
+    color: $dropdown-text-color;
     font-size: 1rem;
     line-height: 1.5rem;
     min-width: 0;
+    font-family: inherit;
+    padding: 0;
+    margin: 0;
 
     &::placeholder {
-      color: $color-text-muted;
+      color: $dropdown-text-muted;
     }
 
     &:disabled {
-      color: #98a2b3;
+      color: $dropdown-disabled-color;
       cursor: not-allowed;
     }
   }
@@ -410,25 +499,25 @@ onUnmounted(() => {
     flex: 1;
     font-size: 1rem;
     line-height: 1.5rem;
-    color: #374151;
+    color: $dropdown-text-color;
     text-align: left;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
 
     &--placeholder {
-      color: $color-text-muted;
+      color: $dropdown-text-muted;
     }
   }
 
   &__clear-button {
     position: absolute;
-    right: 2.8125rem;
+    right: 2.5rem;
     width: 1.5rem;
     height: 1.5rem;
     border: none;
     background: transparent;
-    color: $color-text-muted;
+    color: $dropdown-text-muted;
     cursor: pointer;
     display: flex;
     align-items: center;
@@ -436,22 +525,31 @@ onUnmounted(() => {
     border-radius: 0.25rem;
     transition: all 0.2s ease;
     flex-shrink: 0;
+    padding: 0;
 
     &:hover {
-      background-color: #f3f4f6;
-      color: #374151;
+      background-color: $dropdown-focus-bg;
+      color: $dropdown-text-color;
+    }
+
+    &:focus {
+      outline: 2px solid $dropdown-primary-color;
+      outline-offset: 2px;
     }
   }
 
   &__arrow {
+    position: absolute;
+    right: 1rem;
     width: 1.25rem;
     height: 1.25rem;
-    color: $color-text-muted;
+    color: $dropdown-text-muted;
     transition: transform 0.2s ease;
     flex-shrink: 0;
     display: flex;
     align-items: center;
     justify-content: center;
+    pointer-events: none;
 
     &--rotated {
       transform: rotate(180deg);
@@ -460,7 +558,7 @@ onUnmounted(() => {
 
   &__loading {
     position: absolute;
-    right: 2.8125rem;
+    right: 2.5rem;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -469,8 +567,8 @@ onUnmounted(() => {
   }
 
   &__loading-spinner {
-    color: $primary-aqua;
-    animation: spin 1s linear infinite;
+    color: $dropdown-primary-color;
+    animation: dropdown-spin 1s linear infinite;
   }
 
   &__menu {
@@ -479,13 +577,11 @@ onUnmounted(() => {
     left: 0;
     right: 0;
     z-index: 1000;
-    background: $white;
-    border: 1px solid #d0d5dd;
-    border-radius: 0.5rem;
-    box-shadow:
-      0 0.25rem 0.375rem -0.0625rem rgba(0, 0, 0, 0.1),
-      0 0.125rem 0.25rem -0.0625rem rgba(0, 0, 0, 0.06);
-    max-height: 12.5rem;
+    background: $dropdown-bg-color;
+    border: 1px solid $dropdown-border-color;
+    border-radius: $dropdown-border-radius;
+    box-shadow: $dropdown-shadow;
+    max-height: 16rem;
     overflow-y: auto;
     margin-top: 0.25rem;
     opacity: 0;
@@ -493,23 +589,24 @@ onUnmounted(() => {
     transform: translateY(-0.625rem);
     transition: all 0.2s ease;
 
-    &--show {
+    &--open {
       opacity: 1;
       visibility: visible;
       transform: translateY(0);
     }
 
     &::-webkit-scrollbar {
-      width: 0.375rem;
+      width: 0.5rem;
     }
 
     &::-webkit-scrollbar-track {
       background: #f1f5f9;
+      border-radius: $dropdown-border-radius;
     }
 
     &::-webkit-scrollbar-thumb {
       background: #cbd5e1;
-      border-radius: 0.1875rem;
+      border-radius: 0.25rem;
 
       &:hover {
         background: #94a3b8;
@@ -518,9 +615,9 @@ onUnmounted(() => {
   }
 
   &__no-results {
-    padding: 0.75rem 1rem;
+    padding: 1rem;
     font-size: 0.875rem;
-    color: #6b7280;
+    color: $dropdown-text-muted;
     font-style: italic;
     text-align: center;
   }
@@ -534,41 +631,47 @@ onUnmounted(() => {
     cursor: pointer;
     font-size: 1rem;
     line-height: 1.5rem;
-    color: #374151;
-    transition: all 0.15s ease;
+    color: $dropdown-text-color;
+    transition: background-color 0.15s ease;
     display: flex;
     align-items: center;
     justify-content: space-between;
     gap: 0.5rem;
+    font-family: inherit;
 
     &:hover:not(&--disabled) {
-      background-color: #f9fafb;
+      background-color: $dropdown-hover-bg;
     }
 
     &:focus {
       outline: none;
-      background-color: #f3f4f6;
+      background-color: $dropdown-focus-bg;
     }
 
     &--active {
-      background-color: #f9fafb;
-      color: #374151;
+      background-color: $dropdown-hover-bg;
+      color: $dropdown-text-color;
+      font-weight: 500;
     }
 
     &--disabled {
-      color: #98a2b3;
+      color: $dropdown-disabled-color;
       cursor: not-allowed;
       opacity: 0.5;
+
+      &:hover {
+        background-color: transparent;
+      }
     }
 
     &:first-child {
-      border-top-left-radius: 0.4375rem;
-      border-top-right-radius: 0.4375rem;
+      border-top-left-radius: calc(#{$dropdown-border-radius} - 2px);
+      border-top-right-radius: calc(#{$dropdown-border-radius} - 2px);
     }
 
     &:last-child {
-      border-bottom-left-radius: 0.4375rem;
-      border-bottom-right-radius: 0.4375rem;
+      border-bottom-left-radius: calc(#{$dropdown-border-radius} - 2px);
+      border-bottom-right-radius: calc(#{$dropdown-border-radius} - 2px);
     }
   }
 
@@ -580,16 +683,18 @@ onUnmounted(() => {
     text-align: left;
   }
 
-  &__item-icon {
-    color: #7f56d9;
+  &__item-check {
+    color: $dropdown-primary-color;
     flex-shrink: 0;
     display: flex;
     align-items: center;
     justify-content: center;
+    width: 1rem;
+    height: 1rem;
   }
 }
 
-@keyframes spin {
+@keyframes dropdown-spin {
   from {
     transform: rotate(0deg);
   }
