@@ -18,14 +18,14 @@
 </template>
 
 <script setup lang="ts">
-import type { CardData } from "~/types";
+import type { ModalContent } from "@/types";
 
 interface Props {
   icon: string;
   title: string;
   description: string;
   withModal?: boolean;
-  data: CardData;
+  data?: ModalContent;
 }
 
 defineProps<Props>();

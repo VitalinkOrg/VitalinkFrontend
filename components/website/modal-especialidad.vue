@@ -20,7 +20,7 @@
         <div class="specialty-modal__header-content">
           <AtomsIconsPhoneIcon class="specialty-modal__header-icon" />
           <h2 class="specialty-modal__title">
-            {{ data.title }}
+            {{ data?.title }}
           </h2>
         </div>
         <button
@@ -42,9 +42,9 @@
         <section class="specialty-modal__intro">
           <p class="specialty-modal__intro-highlight">
             <strong>
-              {{ data.modalContent?.intro?.highlight }}
+              {{ data?.intro?.highlight }}
             </strong>
-            {{ data.modalContent?.intro?.text }}
+            {{ data?.intro?.text }}
           </p>
           <p class="specialty-modal__intro-text">
             Si no se corrigen, pueden afectar tu desempeño diario y empeorar con
@@ -61,9 +61,7 @@
               Solución especializada
             </h3>
             <p class="specialty-modal__solution-text">
-              En Vitalink te conectamos con especialistas que realizan cirugías
-              correctivas con diversas técnicas de última tecnología, una
-              solución segura y precisa para recuperar tu visión.
+              {{ data?.specializedSolution }}
             </p>
           </div>
         </section>
@@ -73,13 +71,12 @@
             ¿En qué consiste el procedimiento?
           </h3>
           <p class="specialty-modal__procedure-description">
-            Este procedimiento consiste en
             <strong>
-              {{ data.modalContent?.procedureConsistOf?.text }}
+              {{ data?.procedureConsistOf?.text }}
             </strong>
           </p>
           <p class="specialty-modal__procedure-benefits">
-            {{ data.modalContent?.procedureConsistOf?.additionalText }}
+            {{ data?.procedureConsistOf?.additionalText }}
           </p>
         </section>
       </div>
@@ -88,10 +85,10 @@
 </template>
 
 <script lang="ts" setup>
-import type { CardData } from "@/types";
+import type { ModalContent } from "@/types";
 
 interface Props {
-  data: CardData;
+  data?: ModalContent;
 }
 
 defineProps<Props>();

@@ -34,7 +34,7 @@
           :description="card.description"
           :modal-content="card.modalContent"
           :with-modal="true"
-          :data="card"
+          :data="card.modalContent"
         />
       </div>
     </div>
@@ -65,8 +65,10 @@ const specialties = ref<Specialty[]>([
             highlight: "¿Visión borrosa? ¿Dificultad para leer de lejos?",
             text: "Estos síntomas podrían indicar miopía o astigmatismo.",
           },
+          specializedSolution:
+            "En Vitalink te conectamos con especialistas que realizan cirugías correctivas con diversas técnicas de última tecnología, una solución segura y precisa para recuperar tu visión.",
           procedureConsistOf: {
-            text: " moldear la superficie del ojo con diversas técnicas como puede ser el uso de un láser especial para corregir problemas de enfoque como la miopía o el astigmatismo.",
+            text: "Este procedimiento consiste en moldear la superficie del ojo con diversas técnicas como puede ser el uso de un láser especial para corregir problemas de enfoque como la miopía o el astigmatismo.",
             additionalText:
               "Se realiza de forma rápida, no requiere hospitalización y permite mejorar la visión sin depender de lentes o anteojos.",
           },
@@ -80,7 +82,16 @@ const specialties = ref<Specialty[]>([
           "Vista nublada, halos al conducir o sensibilidad a la luz pueden ser señales de cataratas.",
         modalContent: {
           title: "Cirugía de cataratas",
-          intro: { highlight: "Vista nublada", text: "Posible catarata." },
+          intro: {
+            highlight:
+              "Vista nublada, halos al conducir o sensibilidad a la luz pueden ser señales de cataratas",
+            text: "Ignorar estos síntomas puede llevar a una pérdida progresiva de la visión.",
+          },
+          specializedSolution:
+            "Con Vitalink puedes acceder a profesionales de la salud que realizan cirugía de cataratas, devolviéndote claridad y calidad de vida.",
+          procedureConsistOf: {
+            text: "Cuando el lente natural del ojo (cristalino) se vuelve opaco, la visión se vuelve borrosa o nublada. La cirugía de cataratas consiste en retirar ese lente dañado y reemplazarlo por uno artificial, devolviendo claridad y nitidez a la visión. Es un procedimiento seguro y ambulatorio",
+          },
         },
       },
     ],
@@ -93,14 +104,42 @@ const specialties = ref<Specialty[]>([
       {
         id: "endoscopia",
         icon: "healthicons:stomach",
-        title: "Endoscopia digestiva",
-        description: "Explora el sistema digestivo superior.",
+        title: "Gastroscopía",
+        description:
+          "Ardor estomacal, reflujo constante o dolor abdominal no son normales. Podrían indicar gastritis o úlceras.",
+        modalContent: {
+          title: "Cirugía correctiva de miopía/astigmatismo",
+          intro: {
+            highlight:
+              "Ardor estomacal, reflujo constante o dolor abdominal no son normales. Podrían indicar gastritis o úlceras.",
+            text: "Postergar el diagnóstico puede derivar en complicaciones serias.",
+          },
+          specializedSolution:
+            "A través de Vitalink puedes realizarte una gastroscopía, un estudio que permite detectar a tiempo y definir el tratamiento adecuado.",
+          procedureConsistOf: {
+            text: "Es un estudio que utiliza una cámara muy pequeña para observar el interior del esófago y el estómago. Se recomienda cuando hay dolor abdominal, reflujo o sospecha de gastritis. El procedimiento es breve, ayuda a detectar problemas a tiempo y, si se requiere, permite tomar muestras para un diagnóstico más preciso.",
+          },
+        },
       },
       {
         id: "colonoscopia",
         icon: "healthicons:stomach",
-        title: "Colonoscopia preventiva",
-        description: "Previene cáncer colorrectal detectando pólipos.",
+        title: "Colonoscopía",
+        description:
+          "Sangrado en las heces, dolor abdominal frecuente o cambios en el ritmo intestinal merecen atención inmediata.",
+        modalContent: {
+          title: "Cirugía correctiva de miopía/astigmatismo",
+          intro: {
+            highlight:
+              "Sangrado en las heces, dolor abdominal frecuente o cambios en el ritmo intestinal merecen atención inmediata.",
+            text: "Si no se diagnostican a tiempo, estos síntomas pueden ocultar enfermedades graves, incluso cáncer colorrectal.",
+          },
+          specializedSolution:
+            "Con Vitalink puedes acceder a una colonoscopía, el procedimiento que permite detectar y prevenir a tiempo.",
+          procedureConsistOf: {
+            text: "Se utiliza para observar el interior del colon y detectar cambios como pólipos, inflamación o sangrado. Mediante una cámara flexible, el médico puede identificar problemas que no se verían en otros estudios. Además de diagnosticar, en algunos casos permite tratar lesiones pequeñas en el mismo momento",
+          },
+        },
       },
     ],
   },

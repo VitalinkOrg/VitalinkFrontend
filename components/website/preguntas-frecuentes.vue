@@ -100,55 +100,67 @@ const faqItems = ref<FaqItem[]>([
   {
     id: 2,
     question: "¿Cuál es la misión de Vitalink?",
-    answer: "Respuesta.",
+    answer:
+      "Facilitar tu acceso a salud de calidad con transparencia, confianza y acompañamiento. ",
     isOpen: false,
   },
   {
     id: 3,
     question: "¿Qué beneficios tiene Vitalink?",
-    answer: "Respuesta.",
+    answer:
+      "Acceso a especialistas, precios claros, sin membresías y con opciones de financiamiento.",
     isOpen: false,
   },
   {
     id: 4,
     question: "¿Es una clínica?",
-    answer: "Respuesta.",
+    answer:
+      "No. Somos una plataforma digital que conecta pacientes con profesionales y te brinda opciones de financiamiento para tus procedimientos médicos mediante grupos organizados y regulados.",
     isOpen: false,
   },
   {
     id: 5,
     question: "¿Es un seguro o plan médico?",
-    answer: "Respuesta.",
+    answer:
+      "No, no debes pagar membresías ni cobros ocultos, contamos con una red de médicos afiliados que ofrecen los precios más competitivos del mercado para tu procedimiento médico. ",
     isOpen: false,
   },
   {
     id: 6,
     question: "¿Quién me atiende?",
-    answer: "Respuesta.",
+    answer: "Un profesional de la salud calificado y con póliza vigente.",
     isOpen: false,
   },
   {
     id: 7,
     question: "¿Qué pasa si algo no sale como esperaba en mi procedimiento?",
-    answer: "Respuesta.",
+    answer: [
+      "En Vitalink entendemos la importancia de tu tranquilidad. Por eso, todos los profesionales de la salud que forman parte de la plataforma cuentan con su colegiatura vigente y con pólizas de responsabilidad civil, lo que brinda respaldo en caso de que surja una situación médica adversa.",
+      "Además, al estar colegiados, los pacientes tienen la garantía de que cualquier eventualidad puede canalizarse a través de los mecanismos formales y regulados del Colegio de Médicos, lo que asegura transparencia, respaldo y confianza en todo el proceso.",
+    ],
     isOpen: false,
   },
   {
     id: 8,
     question: "¿Qué es una cita de valoración?",
-    answer: "Respuesta.",
+    answer:
+      "Consulta inicial para confirmar si sos candidato para un procedimiento médico. \n De ahí se genera tu proforma.",
     isOpen: false,
   },
   {
     id: 9,
     question: "¿Puedo solicitar una cita para otra persona?",
-    answer: "Respuesta.",
+    answer:
+      "Sí, podes solicitar una cita de valoración para vos o tus familiares.",
     isOpen: false,
   },
   {
     id: 10,
     question: "¿Qué es un procedimiento médico?",
-    answer: "Respuesta.",
+    answer: [
+      "Un procedimiento médico es una intervención realizada por un profesional de la salud con el fin de diagnosticar, tratar o corregir un padecimiento. Pueden ser ambulatorios (sin hospitalización) o quirúrgicos (cuando se requiere intervención en un entorno controlado).",
+      "En Vitalink trabajamos únicamente con profesionales calificados, lo que garantiza que cada procedimiento cumpla con los estándares de seguridad y calidad médica. ",
+    ],
     isOpen: false,
   },
 ]);

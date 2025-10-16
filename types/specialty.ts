@@ -33,6 +33,7 @@ export interface ModalContent {
   solution?: ModalSolution;
   procedure?: ModalProcedure;
   customSections?: CustomSection[];
+  specializedSolution: string;
   procedureConsistOf?: ProcedureConsistOf;
 }
 
