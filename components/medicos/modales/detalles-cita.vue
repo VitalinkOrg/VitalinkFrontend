@@ -31,30 +31,35 @@
             v-if="!creditAlreadyBeenUsed"
             class="appointment-details__validate-qr-wrapper"
           >
-            <label for="validate-qr" class="visually-hidden">Validar QR</label>
-            <input
-              v-model="qrCodeInput"
-              type="text"
-              id="validate-qr"
-              class="appointment-details__input"
-              placeholder="Escanear código QR"
-            />
-            <button
-              v-if="!qrValidated"
-              class="appointment-details__button--primary"
-              :disabled="isLoading || !qrCodeInput.trim()"
-              @click="handleValidateQRCode"
-            >
-              {{ isLoading ? "Validando..." : "Validar QR" }}
-            </button>
-            <button
-              v-if="qrValidated && !creditUsed"
-              class="appointment-details__button--primary"
-              :disabled="isLoading"
-              @click="useCredit"
-            >
-              {{ isLoading ? "Usando..." : "Usar crédito" }}
-            </button>
+            <div class="appointment-details__validate-qr-group">
+              <label for="validate-qr" class="visually-hidden"
+                >Validar QR</label
+              >
+              <input
+                v-model="qrCodeInput"
+                type="text"
+                id="validate-qr"
+                class="appointment-details__input"
+                placeholder="Escanear código QR"
+                :disabled="isLoading"
+              />
+              <button
+                v-if="!qrValidated"
+                class="appointment-details__button appointment-details__button--nowrap appointment-details__button--primary"
+                :disabled="isLoading || !qrCodeInput.trim()"
+                @click="handleValidateQRCode"
+              >
+                {{ isLoading ? "Validando..." : "Validar QR" }}
+              </button>
+              <button
+                v-if="qrValidated && !creditUsed"
+                class="appointment-details__button--nowrap appointment-details__button appointment-details__button--primary"
+                :disabled="isLoading"
+                @click="useCredit"
+              >
+                {{ isLoading ? "Usando..." : "Usar crédito" }}
+              </button>
+            </div>
             <div v-if="errorMessage" class="appointment-details__error-message">
               {{ errorMessage }}
             </div>
@@ -186,7 +191,7 @@ import type { Appointment, AppointmentStatusCode } from "~/types";
 import type { TablaBaseRow } from "../tabla-detalles-cita.vue";
 
 const refreshAppointments = inject<() => Promise<void>>("refreshAppointments");
-const { updateAppointmentCredit, fetchAllAppointmentCredit } =
+const { updateAppointmentCredit, fetchAllAppointmentCreditByQrCode } =
   useAppointmentCredit();
 
 const isModalOpen = ref<boolean>(false);
@@ -342,7 +347,7 @@ const handleValidateQRCode = async () => {
   try {
     isLoading.value = true;
 
-    const api = fetchAllAppointmentCredit(qrCodeInput.value.trim());
+    const api = fetchAllAppointmentCreditByQrCode(qrCodeInput.value.trim());
     await api.request();
 
     const response = api.response.value;
@@ -367,8 +372,8 @@ const handleValidateQRCode = async () => {
       creditId.value = credit.id;
     }
 
-    if (api.error) {
-      throw new Error(api.error.value.info);
+    if (api.error && api.error.value) {
+      throw new Error(api.error.value?.info);
     }
   } catch (err: any) {
     errorMessage.value = "Error al validar el código QR";
@@ -391,13 +396,12 @@ const useCredit = async () => {
     const api = updateAppointmentCredit(payload, creditId.value);
     await api.request();
 
-    if (api.error) {
+    if (api.error && api.error.value) {
       throw new Error(api.error.value.info);
     }
 
     creditUsed.value = true;
     await refreshAppointments?.();
-    handleCloseModal();
   } catch (err: any) {
     errorMessage.value = "Error al utilizar el crédito";
     console.error("Error using credit:", err);
@@ -459,11 +463,20 @@ defineExpose({
 
   &__validate-qr-wrapper {
     display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+
+  &__validate-qr-group {
+    display: flex;
     gap: 0.75rem;
   }
 
   &__input {
     @include input-base;
+    padding: 10px 14px;
+    height: auto;
+    min-width: 5rem;
   }
 
   &__error-message {
@@ -530,6 +543,9 @@ defineExpose({
   }
 
   &__button {
+    &--nowrap {
+      text-wrap: nowrap;
+    }
     &--danger {
       @include outline-danger-button;
       border: none;
