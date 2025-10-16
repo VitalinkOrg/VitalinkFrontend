@@ -311,4 +311,5 @@ export interface Credit {
 }
 
 export * from "./appointment";
+export * from "./specialty";
 export * from "./supplier";

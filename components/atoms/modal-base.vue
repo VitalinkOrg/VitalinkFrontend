@@ -353,6 +353,8 @@ $modal-padding: 1.5rem;
     outline: none;
     border: none;
     padding: 0;
+    margin: 0 auto;
+
     @include modal-size(31.25rem);
 
     &--extra-small {

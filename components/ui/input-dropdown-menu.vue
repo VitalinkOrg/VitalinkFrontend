@@ -119,6 +119,7 @@ import { useAuth } from "~/composables/api";
 const { logout } = useAuth();
 const { getUserInfo } = useUserInfo();
 const router = useRouter();
+const route = useRoute();
 
 interface MenuItem {
   key: string;
@@ -248,7 +249,7 @@ function handleLogout() {
     announceText.value = "Sesión cerrada correctamente. Redirigiendo...";
 
     setTimeout(() => {
-      router.push("/pacientes/login");
+      if (route.path !== "/") router.push("/pacientes/login");
     }, 500);
   } catch (error) {
     console.error("Error durante el logout:", error);

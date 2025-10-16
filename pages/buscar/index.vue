@@ -377,7 +377,7 @@ onMounted(async () => {
   background-color: #f8f8f8;
 
   &__container {
-    max-width: 1200px;
+    width: 100%;
     margin: 0 auto;
     padding: 0 1rem;
   }
@@ -405,8 +405,7 @@ onMounted(async () => {
   }
 
   &-inner {
-    width: 91.666667%;
-    max-width: 800px;
+    width: 100%;
   }
 }
 
