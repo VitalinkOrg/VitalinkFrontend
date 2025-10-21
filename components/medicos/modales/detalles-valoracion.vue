@@ -1,6 +1,4 @@
 <template>
-  <slot name="trigger" :open="handleOpenModal"></slot>
-
   <AtomsModalBase
     :is-open="isModalOpen"
     size="large"
@@ -17,6 +15,7 @@
 
     <div class="valoration-details__body">
       <MedicosTablaDetallesCita
+        v-if="appointmentRowsWithData"
         :rows="appointmentRowsWithData"
         aria-label="Detalles de la cita médica"
       >
@@ -113,8 +112,11 @@
         </template>
 
         <template #data-estado-cita>
-          <span :class="getStatusClass(appointment.appointment_status.code)">
-            {{ appointment.appointment_status.value1 }}
+          <span
+            v-if="currentAppointment"
+            :class="getStatusClass(currentAppointment.appointment_status.code)"
+          >
+            {{ currentAppointment.appointment_status.value1 }}
           </span>
         </template>
       </MedicosTablaDetallesCita>
@@ -155,23 +157,16 @@
           >
             Cancelar
           </button>
-          <MedicosModalesConfirmacionValoracion
-            v-if="
-              appointment.appointment_status.code ===
-              'CONFIRM_VALIDATION_APPOINTMENT'
-            "
-            :appointment="appointment"
-            :recommendation="currentRecommendation"
-            :diagnostic="currentDiagnostic"
-            :proforma-file-name="currentProformaFileName || ''"
-            :price-procedure="currentPriceProcedure"
+
+          <button
+            v-if="isValidationAppointment"
+            class="valoration-details__button--primary"
+            @click="handleOpenConfirmValorationModal"
+            :disabled="canSaveProforma"
           >
-            <template #trigger="{ open }">
-              <button class="valoration-details__button--primary" @click="open">
-                Guardar
-              </button>
-            </template>
-          </MedicosModalesConfirmacionValoracion>
+            Guardar
+          </button>
+
           <button
             v-else
             class="valoration-details__button--primary"
@@ -188,11 +183,10 @@
 
 <script lang="ts" setup>
 import { useAppointment, useDocuments } from "@/composables/api";
-import { nextTick, readonly } from "vue";
+import { nextTick } from "vue";
 import type { Appointment, AppointmentStatusCode } from "~/types";
 import type { TablaBaseRow } from "../tabla-detalles-cita.vue";
 
-const isModalOpen = ref(false);
 const isLoading = ref(false);
 const isEditing = ref(true);
 const changesSaved = ref(false);
@@ -210,16 +204,59 @@ const originalProformaFileName = ref<string | null>(null);
 const proformaFile = ref<File | null>(null);
 const proformaError = ref("");
 
-interface Props {
-  appointment: Appointment;
-}
-const props = defineProps<Props>();
-
 const refreshAppointments = inject<() => Promise<void>>("refreshAppointments");
+
+const { isOpen, closeModal, getSharedData, openModal } =
+  useMedicalModalManager();
+
+const modalData = computed(() => {
+  const data = getSharedData<{ appointment: Appointment }>(
+    "detallesValoracion"
+  );
+  return data || null;
+});
+
+const currentAppointment = computed(() => {
+  return modalData.value?.appointment || null;
+});
+
+const isModalOpen = computed(() => isOpen.detallesValoracion);
 
 const { uploadProforma } = useAppointment();
 const { uploadDocument } = useDocuments();
 const { formatDate, formatTime, formatCurrency } = useFormat();
+
+const isValidationAppointment = computed(() => {
+  if (!currentAppointment.value) return false;
+
+  return (
+    currentAppointment.value.appointment_status.code ===
+      "CONFIRM_VALIDATION_APPOINTMENT" ||
+    currentAppointment.value.appointment_status.code ===
+      "VALUATION_PENDING_VALORATION_APPOINTMENT"
+  );
+});
+
+const continueWithoutPayment = ref<boolean>(false);
+
+const PAYMENT_WARNING_CONFIG: Record<string, string> = {
+  CONFIRM_VALIDATION_APPOINTMENT:
+    "PAYMENT_STATUS_NOT_PAID_VALORATION_APPOINTMENT",
+  CONFIRM_PROCEDURE: "PAYMENT_STATUS_NOT_PAID_PROCEDURE",
+};
+
+const showPaymentWarningModal = computed(() => {
+  if (!currentAppointment.value) return false;
+
+  const status = currentAppointment.value.appointment_status?.code;
+  const paymentStatus = currentAppointment.value.payment_status?.code;
+
+  return status && paymentStatus
+    ? PAYMENT_WARNING_CONFIG[status] === paymentStatus
+    : false;
+});
+
+continueWithoutPayment.value = showPaymentWarningModal.value;
 
 const hasChanges = computed(
   () =>
@@ -233,87 +270,122 @@ const canSave = computed(
   () => hasChanges.value && !!currentProformaFileName.value
 );
 
+const canSaveProforma = computed(() => {
+  return !(
+    currentProformaFileName.value &&
+    currentPriceProcedure.value !== "" &&
+    currentRecommendation.value !== "" &&
+    currentDiagnostic.value !== ""
+  );
+});
+
 const formattedPriceDisplay = computed(() =>
   !currentPriceProcedure.value || currentPriceProcedure.value === "0"
     ? ""
     : formatCurrency(currentPriceProcedure.value, { decimalPlaces: 0 })
 );
 
-const appointmentRowsWithData = computed((): TablaBaseRow[] => [
-  {
-    key: "tipo-servicio",
-    header: "Tipo de servicio:",
-    value: props.appointment.appointment_type.name,
-  },
-  {
-    key: "fecha",
-    header: "Fecha de la cita:",
-    value: formatDate(props.appointment.appointment_date),
-  },
-  {
-    key: "hora",
-    header: "Hora de la cita:",
-    value: formatTime(props.appointment.appointment_hour, "hs"),
-  },
-  {
-    key: "paciente",
-    header: "Paciente:",
-    value: props.appointment.customer.name,
-    isEndRow: true,
-  },
-  {
-    key: "procedimiento",
-    header: "Procedimiento:",
-    value: props.appointment.package?.procedure?.name,
-  },
-  {
-    key: "motivo",
-    header: "Motivo:",
-    value: props.appointment.user_description,
-  },
-  { key: "costo", header: "Costo del servicio:", value: "Ver en proforma" },
-  {
-    key: "fecha-solicitud",
-    header: "Fecha de la solicitud:",
-    value: formatDate(props.appointment.application_date, "short"),
-  },
-  {
-    key: "estado-cita",
-    header: "Estado de la cita:",
-    value: props.appointment.appointment_status.value1,
-    isEndRow: true,
-  },
-  {
-    key: "proforma",
-    header: "Proforma:",
-    value:
-      currentProformaFileName.value ||
-      props.appointment.proforma_file_code ||
-      "Sin proforma",
-  },
-  {
-    key: "valor-procedimiento",
-    header: "Valor del procedimiento:",
-    value: formatCurrency(currentPriceProcedure.value, { decimalPlaces: 0 }),
-  },
-  {
-    key: "recomendaciones",
-    header: "Recomendaciones Post-Cita:",
-    value: currentRecommendation.value || "Sin recomendaciones",
-  },
-  {
-    key: "diagnostico",
-    header: "Diagnostico:",
-    value: currentDiagnostic.value || "Sin diagnóstico",
-  },
-]);
+const handleOpenConfirmValorationModal = () => {
+  if (!currentAppointment.value) return;
+  console.log("currentAppointment.value", currentAppointment.value);
+
+  const sharedData = {
+    appointment: currentAppointment.value,
+    recommendation: currentRecommendation.value,
+    diagnostic: currentDiagnostic.value,
+    proformaFileName: currentProformaFileName.value,
+    priceProcedure: currentPriceProcedure.value,
+  };
+
+  console.log("CONFIRAR VALORACIÓN");
+  openModal("confirmValoration", sharedData);
+};
+
+const appointmentRowsWithData = computed((): TablaBaseRow[] | undefined => {
+  if (!currentAppointment.value) return undefined;
+
+  const appointment = currentAppointment.value;
+
+  return [
+    {
+      key: "tipo-servicio",
+      header: "Tipo de servicio:",
+      value: appointment.appointment_type?.name || "N/A",
+    },
+    {
+      key: "fecha",
+      header: "Fecha de la cita:",
+      value: formatDate(appointment.appointment_date),
+    },
+    {
+      key: "hora",
+      header: "Hora de la cita:",
+      value: formatTime(appointment.appointment_hour, "hs"),
+    },
+    {
+      key: "paciente",
+      header: "Paciente:",
+      value: appointment.customer?.name || "N/A",
+      isEndRow: true,
+    },
+    {
+      key: "procedimiento",
+      header: "Procedimiento:",
+      value: appointment.package?.procedure?.name || "N/A",
+    },
+    {
+      key: "motivo",
+      header: "Motivo:",
+      value: appointment.user_description || "N/A",
+    },
+    { key: "costo", header: "Costo del servicio:", value: "Ver en proforma" },
+    {
+      key: "fecha-solicitud",
+      header: "Fecha de la solicitud:",
+      value: formatDate(appointment.application_date, "short"),
+    },
+    {
+      key: "estado-cita",
+      header: "Estado de la cita:",
+      value: appointment.appointment_status?.value1 || "N/A",
+      isEndRow: true,
+    },
+    {
+      key: "proforma",
+      header: "Proforma:",
+      value:
+        currentProformaFileName.value ||
+        appointment.proforma_file_code ||
+        "Sin proforma",
+    },
+    {
+      key: "valor-procedimiento",
+      header: "Valor del procedimiento:",
+      value: formatCurrency(currentPriceProcedure.value, { decimalPlaces: 0 }),
+    },
+    {
+      key: "recomendaciones",
+      header: "Recomendaciones Post-Cita:",
+      value: currentRecommendation.value || "Sin recomendaciones",
+    },
+    {
+      key: "diagnostico",
+      header: "Diagnostico:",
+      value: currentDiagnostic.value || "Sin diagnóstico",
+    },
+  ];
+});
 
 const initializeValues = () => {
+  if (!currentAppointment.value) return;
+
+  const appointment = currentAppointment.value;
+
   currentRecommendation.value =
-    props.appointment.recommendation_post_appointment || "";
-  currentDiagnostic.value = props.appointment.diagnostic || "";
-  currentPriceProcedure.value = props.appointment.price_procedure || "";
-  currentProformaFileName.value = props.appointment.proforma_file_code || null;
+    appointment.recommendation_post_appointment || "";
+  currentDiagnostic.value = appointment.diagnostic || "";
+  currentPriceProcedure.value = appointment.price_procedure || "";
+  currentProformaFileName.value = appointment.proforma_file_code || null;
 
   originalRecommendation.value = currentRecommendation.value;
   originalDiagnostic.value = currentDiagnostic.value;
@@ -323,15 +395,8 @@ const initializeValues = () => {
   proformaError.value = "";
 };
 
-const handleOpenModal = () => {
-  isModalOpen.value = true;
-  isEditing.value = true;
-  changesSaved.value = false;
-  initializeValues();
-};
-
 const handleCloseModal = () => {
-  isModalOpen.value = false;
+  closeModal("detallesValoracion");
   resetState();
 };
 
@@ -383,18 +448,27 @@ const handleUploadDocument = async () => {
 };
 
 const handleSaveChanges = async () => {
+  if (!currentAppointment.value) {
+    proformaError.value = "No se encontró la cita";
+    return;
+  }
+
   if (!currentProformaFileName.value) {
     proformaError.value =
       "Debe adjuntar una proforma para poder guardar los cambios";
     return;
   }
+
   if (!hasChanges.value) return;
 
   isLoading.value = true;
   proformaError.value = "";
+
   try {
+    const appointment = currentAppointment.value;
+
     const proformaFileCode = await handleUploadDocument();
-    if (!proformaFileCode) throw new Error();
+    if (!proformaFileCode) throw new Error("Error al cargar el documento");
 
     const payload = {
       price_procedure: currentPriceProcedure.value,
@@ -404,7 +478,7 @@ const handleSaveChanges = async () => {
       proforma_file_code: proformaFileCode,
     };
 
-    const api = uploadProforma(payload, props.appointment.id);
+    const api = uploadProforma(payload, appointment.id);
     await api.request();
     if (api.error.value) throw new Error(api.error.value.raw);
 
@@ -416,7 +490,8 @@ const handleSaveChanges = async () => {
     changesSaved.value = true;
     isEditing.value = false;
     await refreshAppointments?.();
-  } catch {
+  } catch (error) {
+    console.error("Error saving changes:", error);
     proformaError.value =
       "Error al guardar los cambios. Por favor intenta nuevamente.";
   } finally {
@@ -451,6 +526,7 @@ const handlePriceInput = (event: Event) => {
   const oldValue = target.value;
   const rawValue = oldValue.replace(/[^\d]/g, "");
   currentPriceProcedure.value = rawValue || "0";
+
   nextTick(() => {
     const newFormattedValue = formatCurrency(rawValue || "0", {
       decimalPlaces: 0,
@@ -460,6 +536,7 @@ const handlePriceInput = (event: Event) => {
       .replace(/[^\d]/g, "").length;
     let digitCount = 0;
     let newCursorPosition = 0;
+
     for (let i = 0; i < newFormattedValue.length; i++) {
       if (/\d/.test(newFormattedValue[i])) {
         digitCount++;
@@ -469,19 +546,17 @@ const handlePriceInput = (event: Event) => {
         }
       }
     }
+
     if (digitCount < digitsBeforeCursor)
       newCursorPosition = newFormattedValue.length;
     target.setSelectionRange(newCursorPosition, newCursorPosition);
   });
 };
 
-provide("closeValorationDetailsModal", handleCloseModal);
-
-defineExpose({
-  handleOpenModal,
-  handleCloseModal,
-  isOpen: readonly(isModalOpen),
-  isLoading: readonly(isLoading),
+watch(isModalOpen, (isOpen) => {
+  if (isOpen) {
+    initializeValues();
+  }
 });
 </script>
 
