@@ -1,5 +1,4 @@
 <script lang="ts" setup>
-import ImgAvatarSm from "@/src/assets/img-avatar-sm.png";
 import type { Supplier } from "@/types";
 import { onMounted, onUnmounted, ref, type Component, type Ref } from "vue";
 
@@ -34,7 +33,11 @@ const pending: Ref<boolean> = ref(false);
 const sidebarOpen: Ref<boolean> = ref(false);
 const isMobile: Ref<boolean> = ref(false);
 const isTablet: Ref<boolean> = ref(false);
-const searchInput = ref<HTMLInputElement>();
+const { getUserInfo } = useUserInfo();
+
+const userInfo = getUserInfo();
+
+const userProfilePicture = computed(() => userInfo.profile_picture_url);
 const userMenuTrigger = ref<HTMLButtonElement>();
 
 const token = useCookie("token");
@@ -163,7 +166,7 @@ onUnmounted(() => {
           </svg>
         </button>
 
-        <UiSearchBar
+        <UiSearchInput
           placeholder="Buscar"
           aria-label="Buscar"
           max-width="320px"
@@ -178,7 +181,7 @@ onUnmounted(() => {
         </button>
 
         <UiInputDropdownMenu
-          :src="ImgAvatarSm"
+          :src="userProfilePicture"
           :hide-default-items="hideDefaultItems"
           :custom-urls="customUrls"
           :with-avatar="withAvatar"

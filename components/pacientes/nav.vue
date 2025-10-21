@@ -92,7 +92,7 @@
             </button>
           </li>
           <UiInputDropdownMenu
-            :src="imgVitalinkLogo"
+            :src="userProfilePicture"
             :hide-default-items="['perfil', 'configuracion', 'resenas']"
             :custom-urls="{
               cuenta: '/pacientes/cuenta',
@@ -106,7 +106,11 @@
 </template>
 
 <script lang="ts" setup>
-import imgVitalinkLogo from "@/src/assets/img-avatar-sm.png";
+const { getUserInfo } = useUserInfo();
+
+const userInfo = getUserInfo();
+
+const userProfilePicture = computed(() => userInfo.profile_picture_url);
 </script>
 
 <style lang="scss" scoped>

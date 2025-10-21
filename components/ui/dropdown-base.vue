@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { onClickOutside } from "@vueuse/core";
+
 export interface DropdownItem {
   value: string | number;
   label: string;
@@ -15,7 +17,8 @@ interface Props {
   searchable?: boolean;
   clearable?: boolean;
   noResultsText?: string;
-  customClass?: string;
+  size?: "sm" | "md" | "lg";
+  variant?: "default" | "outline" | "filled";
 }
 
 interface Emits {
@@ -32,7 +35,8 @@ const props = withDefaults(defineProps<Props>(), {
   searchable: false,
   clearable: false,
   noResultsText: "No se encontraron resultados",
-  customClass: "",
+  size: "md",
+  variant: "default",
 });
 
 const emit = defineEmits<Emits>();
@@ -104,12 +108,6 @@ const closeDropdown = () => {
   }
 };
 
-const handleClickOutside = (event: Event) => {
-  if (dropdownRef.value && !dropdownRef.value.contains(event.target as Node)) {
-    closeDropdown();
-  }
-};
-
 const handleSearchInput = () => {
   if (!isOpen.value) {
     isOpen.value = true;
@@ -135,14 +133,13 @@ watch(
 );
 
 onMounted(() => {
-  document.addEventListener("click", handleClickOutside);
   if (props.searchable) {
     searchText.value = selectedItem.value?.label || "";
   }
 });
 
-onUnmounted(() => {
-  document.removeEventListener("click", handleClickOutside);
+onClickOutside(dropdownRef, () => {
+  closeDropdown();
 });
 </script>
 
@@ -150,7 +147,11 @@ onUnmounted(() => {
   <div
     ref="dropdownRef"
     class="dropdown"
-    :class="[customClass, { 'dropdown--disabled': disabled }]"
+    :class="[
+      `dropdown--${size}`,
+      `dropdown--${variant}`,
+      { 'dropdown--disabled': disabled },
+    ]"
   >
     <div
       class="dropdown__toggle"
@@ -167,94 +168,98 @@ onUnmounted(() => {
         <slot name="icon" />
       </div>
 
-      <input
-        v-if="searchable"
-        ref="searchInputRef"
-        v-model="searchText"
-        type="text"
-        class="dropdown__search-input"
-        :placeholder="!modelValue ? placeholder : ''"
-        :disabled="disabled"
-        @input="handleSearchInput"
-        @click="handleInputClick"
-      />
+      <div class="dropdown__content">
+        <input
+          v-if="searchable"
+          ref="searchInputRef"
+          v-model="searchText"
+          type="text"
+          class="dropdown__search-input"
+          :placeholder="!modelValue ? placeholder : ''"
+          :disabled="disabled"
+          @input="handleSearchInput"
+          @click="handleInputClick"
+        />
 
-      <span
-        v-else
-        class="dropdown__text"
-        :class="{ 'dropdown__text--placeholder': !modelValue }"
-      >
-        {{ displayText }}
-      </span>
-
-      <button
-        v-if="showClearButton"
-        type="button"
-        class="dropdown__clear-button"
-        @click="clearSelection"
-      >
-        <slot name="clear-icon">
-          <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-            <path
-              d="M12 4L4 12M4 4l8 8"
-              stroke="currentColor"
-              stroke-width="1.5"
-              stroke-linecap="round"
-              stroke-linejoin="round"
-            />
-          </svg>
-        </slot>
-      </button>
-
-      <div
-        class="dropdown__arrow"
-        :class="{ 'dropdown__arrow--rotated': isOpen }"
-      >
-        <slot name="arrow">
-          <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-            <path
-              d="M5 7.5L10 12.5L15 7.5"
-              stroke="currentColor"
-              stroke-width="1.67"
-              stroke-linecap="round"
-              stroke-linejoin="round"
-            />
-          </svg>
-        </slot>
+        <span
+          v-else
+          class="dropdown__text"
+          :class="{ 'dropdown__text--placeholder': !modelValue }"
+        >
+          {{ displayText }}
+        </span>
       </div>
 
-      <div v-if="loading" class="dropdown__loading">
-        <slot name="loading-icon">
-          <svg
-            class="dropdown__loading-spinner"
-            width="16"
-            height="16"
-            viewBox="0 0 16 16"
-          >
-            <circle
-              cx="8"
-              cy="8"
-              r="6"
-              fill="none"
-              stroke="currentColor"
-              stroke-width="2"
-              stroke-linecap="round"
-              stroke-dasharray="37.7"
-              stroke-dashoffset="37.7"
-            >
-              <animate
-                attributeName="stroke-dashoffset"
-                dur="1s"
-                values="37.7;0"
-                repeatCount="indefinite"
+      <div class="dropdown__actions">
+        <button
+          v-if="showClearButton"
+          type="button"
+          class="dropdown__clear-button"
+          @click="clearSelection"
+        >
+          <slot name="clear-icon">
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+              <path
+                d="M12 4L4 12M4 4l8 8"
+                stroke="currentColor"
+                stroke-width="1.5"
+                stroke-linecap="round"
+                stroke-linejoin="round"
               />
-            </circle>
-          </svg>
-        </slot>
+            </svg>
+          </slot>
+        </button>
+
+        <div v-if="loading" class="dropdown__loading">
+          <slot name="loading-icon">
+            <svg
+              class="dropdown__loading-spinner"
+              width="16"
+              height="16"
+              viewBox="0 0 16 16"
+            >
+              <circle
+                cx="8"
+                cy="8"
+                r="6"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-dasharray="37.7"
+                stroke-dashoffset="37.7"
+              >
+                <animate
+                  attributeName="stroke-dashoffset"
+                  dur="1s"
+                  values="37.7;0"
+                  repeatCount="indefinite"
+                />
+              </circle>
+            </svg>
+          </slot>
+        </div>
+
+        <div
+          class="dropdown__arrow"
+          :class="{ 'dropdown__arrow--rotated': isOpen }"
+        >
+          <slot name="arrow">
+            <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+              <path
+                d="M5 7.5L10 12.5L15 7.5"
+                stroke="currentColor"
+                stroke-width="1.67"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              />
+            </svg>
+          </slot>
+        </div>
       </div>
     </div>
 
-    <div class="dropdown__menu" :class="{ 'dropdown__menu--show': isOpen }">
+    <div class="dropdown__menu" :class="{ 'dropdown__menu--open': isOpen }">
       <div v-if="filteredItems.length === 0" class="dropdown__no-results">
         {{ noResultsText }}
       </div>
@@ -273,7 +278,7 @@ onUnmounted(() => {
       >
         <span class="dropdown__item-text">{{ item.label }}</span>
 
-        <div v-if="modelValue === item.value" class="dropdown__item-icon">
+        <div v-if="modelValue === item.value" class="dropdown__item-check">
           <slot name="check-icon">
             <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
               <path
@@ -307,51 +312,119 @@ onUnmounted(() => {
       min-height: 2.5rem;
       padding: 0.5rem 0.75rem;
       font-size: 0.875rem;
+      line-height: 1.25rem;
+    }
+
+    .dropdown__text,
+    .dropdown__search-input {
+      font-size: 0.875rem;
+      line-height: 1.25rem;
     }
   }
 
   &--md {
     .dropdown__toggle {
-      min-height: 3.5rem;
-      padding: 1rem;
+      min-height: 3rem;
+      padding: 0.75rem 1rem;
       font-size: 1rem;
+      line-height: 1.5rem;
+    }
+
+    .dropdown__text,
+    .dropdown__search-input {
+      font-size: 1rem;
+      line-height: 1.5rem;
     }
   }
 
   &--lg {
     .dropdown__toggle {
-      min-height: 4rem;
-      padding: 1.25rem;
+      min-height: 3.5rem;
+      padding: 1rem 1.25rem;
       font-size: 1.125rem;
+      line-height: 1.75rem;
+    }
+
+    .dropdown__text,
+    .dropdown__search-input {
+      font-size: 1.125rem;
+      line-height: 1.75rem;
     }
   }
 
   &--outline {
     .dropdown__toggle {
       background: transparent;
-      border: 0.125rem solid var(--dropdown-accent-color, $primary-aqua);
+      border: 0.125rem solid $color-primary;
+
+      &:hover:not(.dropdown__toggle--disabled) {
+        border-color: #6941c6;
+      }
     }
   }
 
   &--filled {
     .dropdown__toggle {
-      background: var(--dropdown-accent-color, $primary-aqua);
-      color: $white;
-      border: 1px solid var(--dropdown-accent-color, $primary-aqua);
+      background: $color-primary;
+      color: #ffffff;
+      border: 1px solid $color-primary;
 
       .dropdown__text--placeholder {
         color: rgba(255, 255, 255, 0.7);
+      }
+
+      .dropdown__text,
+      .dropdown__search-input {
+        color: #ffffff;
+
+        &::placeholder {
+          color: rgba(255, 255, 255, 0.7);
+        }
+      }
+
+      .dropdown__icon,
+      .dropdown__arrow,
+      .dropdown__clear-button {
+        color: #ffffff;
+      }
+
+      &:hover:not(.dropdown__toggle--disabled) {
+        background: #6941c6;
+        border-color: #6941c6;
       }
     }
   }
 
   &__toggle {
-    @include input-base;
     width: 100%;
+    min-height: 3rem;
+    padding: 0.75rem 1rem;
     display: flex;
     align-items: center;
     gap: 0.5rem;
+    background: #ffffff;
+    border: 1px solid #d0d5dd;
+    border-radius: 0.5rem;
     cursor: pointer;
+    transition: all 0.2s ease;
+    position: relative;
+
+    &:hover:not(&--disabled) {
+      border-color: #98a2b3;
+    }
+
+    &:focus-within {
+      outline: none;
+      border-color: #3541b4;
+      box-shadow:
+        0 0 0 4px rgba(53, 65, 180, 0.2),
+        0 0 1.05px rgba(53, 65, 180, 0.4),
+        0 1.05px 2.1px rgba(50, 50, 71, 0.1);
+    }
+
+    &--active {
+      border-color: $color-primary;
+    }
 
     &--disabled {
       background-color: #f9fafb;
@@ -370,34 +443,44 @@ onUnmounted(() => {
 
     &--error {
       border-color: #dc3545;
-    }
 
-    &--searchable {
-      padding-right: 3.125rem;
+      &:hover,
+      &:focus-within {
+        border-color: #dc3545;
+      }
     }
   }
 
   &__icon {
     flex-shrink: 0;
-    color: $color-text-muted;
+    color: #9ca3af;
     display: flex;
     align-items: center;
     justify-content: center;
+    width: 1.25rem;
+    height: 1.25rem;
+  }
+
+  &__content {
+    flex: 1;
+    min-width: 0;
+    margin-right: 0.5rem;
   }
 
   &__search-input {
-    @include input-base;
-    flex: 1;
+    width: 100%;
     border: none;
     outline: none;
     background: transparent;
     color: #374151;
     font-size: 1rem;
     line-height: 1.5rem;
-    min-width: 0;
+    font-family: inherit;
+    padding: 0;
+    margin: 0;
 
     &::placeholder {
-      color: $color-text-muted;
+      color: #9ca3af;
     }
 
     &:disabled {
@@ -407,7 +490,7 @@ onUnmounted(() => {
   }
 
   &__text {
-    flex: 1;
+    display: block;
     font-size: 1rem;
     line-height: 1.5rem;
     color: #374151;
@@ -417,41 +500,51 @@ onUnmounted(() => {
     text-overflow: ellipsis;
 
     &--placeholder {
-      color: $color-text-muted;
+      color: #9ca3af;
     }
   }
 
+  &__actions {
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+    flex-shrink: 0;
+  }
+
   &__clear-button {
-    position: absolute;
-    right: 2.8125rem;
     width: 1.5rem;
     height: 1.5rem;
     border: none;
     background: transparent;
-    color: $color-text-muted;
+    color: #9ca3af;
     cursor: pointer;
     display: flex;
     align-items: center;
     justify-content: center;
     border-radius: 0.25rem;
     transition: all 0.2s ease;
-    flex-shrink: 0;
+    padding: 0;
 
     &:hover {
       background-color: #f3f4f6;
       color: #374151;
+    }
+
+    &:focus {
+      outline: 2px solid $color-primary;
+      outline-offset: 2px;
     }
   }
 
   &__arrow {
     width: 1.25rem;
     height: 1.25rem;
-    color: $color-text-muted;
+    color: #9ca3af;
     transition: transform 0.2s ease;
-    flex-shrink: 0;
     display: flex;
     align-items: center;
     justify-content: center;
+    pointer-events: none;
 
     &--rotated {
       transform: rotate(180deg);
@@ -459,8 +552,6 @@ onUnmounted(() => {
   }
 
   &__loading {
-    position: absolute;
-    right: 2.8125rem;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -469,8 +560,8 @@ onUnmounted(() => {
   }
 
   &__loading-spinner {
-    color: $primary-aqua;
-    animation: spin 1s linear infinite;
+    color: $color-primary;
+    animation: dropdown-spin 1s linear infinite;
   }
 
   &__menu {
@@ -479,13 +570,13 @@ onUnmounted(() => {
     left: 0;
     right: 0;
     z-index: 1000;
-    background: $white;
+    background: #ffffff;
     border: 1px solid #d0d5dd;
     border-radius: 0.5rem;
     box-shadow:
       0 0.25rem 0.375rem -0.0625rem rgba(0, 0, 0, 0.1),
       0 0.125rem 0.25rem -0.0625rem rgba(0, 0, 0, 0.06);
-    max-height: 12.5rem;
+    max-height: 16rem;
     overflow-y: auto;
     margin-top: 0.25rem;
     opacity: 0;
@@ -493,23 +584,24 @@ onUnmounted(() => {
     transform: translateY(-0.625rem);
     transition: all 0.2s ease;
 
-    &--show {
+    &--open {
       opacity: 1;
       visibility: visible;
       transform: translateY(0);
     }
 
     &::-webkit-scrollbar {
-      width: 0.375rem;
+      width: 0.5rem;
     }
 
     &::-webkit-scrollbar-track {
       background: #f1f5f9;
+      border-radius: 0.5rem;
     }
 
     &::-webkit-scrollbar-thumb {
       background: #cbd5e1;
-      border-radius: 0.1875rem;
+      border-radius: 0.25rem;
 
       &:hover {
         background: #94a3b8;
@@ -518,9 +610,9 @@ onUnmounted(() => {
   }
 
   &__no-results {
-    padding: 0.75rem 1rem;
+    padding: 1rem;
     font-size: 0.875rem;
-    color: #6b7280;
+    color: #9ca3af;
     font-style: italic;
     text-align: center;
   }
@@ -535,11 +627,12 @@ onUnmounted(() => {
     font-size: 1rem;
     line-height: 1.5rem;
     color: #374151;
-    transition: all 0.15s ease;
+    transition: background-color 0.15s ease;
     display: flex;
     align-items: center;
     justify-content: space-between;
     gap: 0.5rem;
+    font-family: inherit;
 
     &:hover:not(&--disabled) {
       background-color: #f9fafb;
@@ -553,22 +646,27 @@ onUnmounted(() => {
     &--active {
       background-color: #f9fafb;
       color: #374151;
+      font-weight: 500;
     }
 
     &--disabled {
       color: #98a2b3;
       cursor: not-allowed;
       opacity: 0.5;
+
+      &:hover {
+        background-color: transparent;
+      }
     }
 
     &:first-child {
-      border-top-left-radius: 0.4375rem;
-      border-top-right-radius: 0.4375rem;
+      border-top-left-radius: calc(0.5rem - 2px);
+      border-top-right-radius: calc(0.5rem - 2px);
     }
 
     &:last-child {
-      border-bottom-left-radius: 0.4375rem;
-      border-bottom-right-radius: 0.4375rem;
+      border-bottom-left-radius: calc(0.5rem - 2px);
+      border-bottom-right-radius: calc(0.5rem - 2px);
     }
   }
 
@@ -580,16 +678,18 @@ onUnmounted(() => {
     text-align: left;
   }
 
-  &__item-icon {
-    color: #7f56d9;
+  &__item-check {
+    color: $color-primary;
     flex-shrink: 0;
     display: flex;
     align-items: center;
     justify-content: center;
+    width: 1rem;
+    height: 1rem;
   }
 }
 
-@keyframes spin {
+@keyframes dropdown-spin {
   from {
     transform: rotate(0deg);
   }

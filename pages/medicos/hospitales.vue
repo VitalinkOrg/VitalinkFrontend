@@ -103,7 +103,10 @@ const openAddModal = () => {
 
       <div class="row mb-2">
         <div class="col-10">
-          <UiSearchBar placeholder="Buscar" aria-label="Buscar en hospitales" />
+          <UiSearchInput
+            placeholder="Buscar"
+            aria-label="Buscar en hospitales"
+          />
         </div>
         <div class="col-2 ms-auto d-flex">
           <div class="dropdown me-2 w-100">

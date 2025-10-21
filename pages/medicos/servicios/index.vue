@@ -79,7 +79,7 @@ onMounted(async () => {
 <template>
   <NuxtLayout name="medicos-dashboard">
     <div class="services__header">
-      <MedicosCompartidosEncabezadoBreadcrumb title="Mis servicios" />
+      <UiHeaderBreadcrumb title="Mis servicios" />
       <MedicosModalesAgregarServicio>
         <template #trigger="{ open }">
           <button class="services__button--primary" @click="open">
@@ -91,7 +91,7 @@ onMounted(async () => {
     </div>
 
     <div class="services-controls">
-      <UiSearchBar placeholder="Buscar" aria-label="Buscar en servicios" />
+      <UiSearchInput placeholder="Buscar" aria-label="Buscar en servicios" />
 
       <div class="services-controls__sort-wrapper">
         <div class="sort-dropdown">

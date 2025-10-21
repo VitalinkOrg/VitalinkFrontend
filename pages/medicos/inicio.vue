@@ -12,7 +12,7 @@ import {
   type ChartData,
   type ChartOptions,
 } from "chart.js";
-import { Bar, Doughnut } from "vue-chartjs";
+import { Bar } from "vue-chartjs";
 import type { Appointment, Supplier } from "~/types";
 
 definePageMeta({
@@ -766,14 +766,14 @@ onMounted(() => {
               </div>
               <div class="charts__card charts__card--centered">
                 <div class="charts__card-body charts__card-body--centered">
-                  <Doughnut
-                    class="doughnut-chart"
-                    :data="doughnutData"
-                    :options="singleValueOptions"
-                    aria-label="Gráfico circular mostrando incremento de pacientes"
+                  <UiDoughnutChart
+                    :attended-value="50"
+                    :total-value="100"
+                    :chartSize="400"
+                    title="Nuevos Pacientes"
+                    description="Lorem ipsum"
+                    center-label="Incremento"
                   />
-                  <h3 class="charts__subtitle">Nuevos Pacientes</h3>
-                  <p class="charts__description">Lorem Ipsum</p>
                 </div>
               </div>
             </div>

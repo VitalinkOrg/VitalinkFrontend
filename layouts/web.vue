@@ -1,11 +1,18 @@
 <template>
-  <WebsiteNav v-if="!user_info" />
-  <PacientesNav v-else="!user_info" />
+  <WebsiteNavbar v-if="!isAuthenticated" />
+  <PacientesNav v-else="isAuthenticated" />
   <slot />
   <WebsiteFooter />
 </template>
 <style src="@/assets/styles/vitalink.scss" />
 
-<script setup>
-const user_info = useCookie("user_info");
+<script lang="ts" setup>
+const { authenticated } = useAuthState();
+const { getUserInfo } = useUserInfo();
+
+const isAuthenticated = computed(() => {
+  const userInfo = getUserInfo();
+
+  return userInfo && authenticated.value;
+});
 </script>

@@ -485,7 +485,7 @@ provide("handleRefresh", handleRefresh);
         </div>
 
         <div class="appointments-page__toolbar">
-          <UiSearchBar
+          <UiSearchInput
             v-model="searchQuery"
             placeholder="Buscar"
             aria-label="Buscar en mis citas"

@@ -119,6 +119,7 @@ import { useAuth } from "~/composables/api";
 const { logout } = useAuth();
 const { getUserInfo } = useUserInfo();
 const router = useRouter();
+const route = useRoute();
 
 interface MenuItem {
   key: string;
@@ -146,6 +147,7 @@ const props = withDefaults(defineProps<Props>(), {
   customUrls: () => ({}),
   withAvatar: true,
 });
+const userInfo = getUserInfo();
 
 const isDropdownOpen = ref(false);
 const imageError = ref(false);
@@ -155,10 +157,12 @@ const dropdownTrigger = ref<HTMLButtonElement>();
 const dropdownMenu = ref<HTMLUListElement>();
 const menuItems = ref<(HTMLElement | null)[]>([]);
 const currentFocusIndex = ref(-1);
-const userName = ref<string>(getUserInfo().email);
+const userName = computed(() => {
+  return userInfo?.name ? userInfo.name : userInfo.email;
+});
 
-const triggerId = `dropdown-trigger-${Math.random().toString(36).substr(2, 9)}`;
-const ariaDescribedBy = `dropdown-description-${Math.random().toString(36).substr(2, 9)}`;
+const triggerId = `dropdown-trigger-${Math.random().toString(36).substring(2, 11)}`;
+const ariaDescribedBy = `dropdown-description-${Math.random().toString(36).substring(2, 11)}`;
 
 const shouldShowImage = computed(() => {
   return props.src && !imageError.value && props.src.trim() !== "";
@@ -245,7 +249,7 @@ function handleLogout() {
     announceText.value = "Sesión cerrada correctamente. Redirigiendo...";
 
     setTimeout(() => {
-      router.push("/pacientes/login");
+      if (route.path !== "/") router.push("/pacientes/login");
     }, 500);
   } catch (error) {
     console.error("Error durante el logout:", error);

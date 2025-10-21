@@ -1,3 +1,3 @@
 <template>
-  <img src="@/src/assets/dollar.svg" alt="No hay data" />
+  <Icon name="mdi:dollar" />
 </template>

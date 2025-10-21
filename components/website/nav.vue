@@ -76,7 +76,7 @@
         </div>
 
         <div v-if="authenticated" class="logout-button">
-          <button @click="handleLogout" class="btn btn-primary">
+          <button @click="handleLogout" class="btn-custom-primary">
             Cerrar sesión
           </button>
         </div>

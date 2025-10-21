@@ -326,6 +326,7 @@ defineExpose({
           <div class="search-form__button-group">
             <button type="submit" class="search-form__submit-button">
               <AtomsIconsSearchIcon size="20" class="text-light" />
+              Buscar especialidad
             </button>
           </div>
         </form>
@@ -337,7 +338,7 @@ defineExpose({
 <style lang="scss" scoped>
 .search-form {
   width: 100%;
-  max-width: 48.5rem;
+  max-width: 957px;
   gap: 1.25rem;
   border-radius: 0.9375rem;
   padding: 1.25rem;
@@ -353,21 +354,25 @@ defineExpose({
     gap: 1rem;
   }
 
+  &__card {
+    width: 100%;
+  }
+
+  &__body {
+    width: 100%;
+  }
+
   &__form {
+    width: 100%;
     display: grid;
     grid-template-columns: 1fr 1fr auto;
     gap: 1.25rem;
-    width: 100%;
-    align-items: flex-end;
+    align-items: end;
 
     @media (max-width: $breakpoint-md) {
       grid-template-columns: 1fr;
       grid-template-rows: auto auto auto;
     }
-  }
-
-  &__body {
-    display: contents;
   }
 
   &__group {
@@ -376,6 +381,10 @@ defineExpose({
     flex-direction: column;
     gap: 0.375rem;
     min-width: 0;
+
+    @media (min-width: $breakpoint-md) {
+      max-width: 320px;
+    }
   }
 
   &__label-container {
@@ -398,43 +407,20 @@ defineExpose({
     animation: spin 1s linear infinite;
   }
 
-  &__dropdown {
-    position: relative;
-    width: 100%;
-    min-width: 20.25rem;
-  }
-
   &__button-group {
     display: flex;
-    align-self: end;
+
+    @media (max-width: $breakpoint-md) {
+      width: 100%;
+    }
   }
 
   &__submit-button {
-    width: 3.5rem;
+    @include gradient-button;
     height: 3.5rem;
-    gap: 0.5rem;
-    opacity: 1;
-    border-radius: 0.5rem;
-    padding: 1rem;
-    border: 1px solid $primary-aqua;
-    box-shadow: 0 0.0625rem 0.125rem 0 #1018280d;
-    background: $primary-aqua;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    transition: all 0.2s ease;
-    flex-shrink: 0;
-
-    &:hover {
-      background-color: darken($primary-aqua, 10%);
-      border-color: darken($primary-aqua, 10%);
-    }
 
     @media (max-width: $breakpoint-md) {
-      align-self: flex-end;
       width: 100%;
-      justify-content: center;
     }
   }
 
@@ -443,262 +429,19 @@ defineExpose({
     bottom: -1.25rem;
     left: 0;
     font-size: 0.75rem;
+    line-height: 1rem;
 
     &--error {
       color: #dc3545;
     }
   }
-}
 
-.dropdown {
-  &__toggle-container {
-    position: relative;
-    width: 100%;
-  }
-
-  &__toggle {
-    width: 100%;
-    min-height: 3.5rem;
-    padding: 1rem;
-    background: $white;
-    border: 1px solid #d0d5dd;
-    border-radius: 0.5rem;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    cursor: pointer;
-    transition: all 0.2s ease;
-    position: relative;
-    text-align: left;
-
-    &:hover {
-      border-color: $primary-aqua;
-    }
-
-    &:focus {
-      outline: none;
-      border-color: $primary-aqua;
-      box-shadow: 0 0 0 0.1875rem rgba(12, 173, 187, 0.1);
-    }
-
-    &--active {
-      border-color: $primary-aqua;
-      box-shadow: 0 0 0 0.1875rem rgba(12, 173, 187, 0.1);
-    }
-
-    &--disabled {
-      background-color: #f9fafb;
-      border-color: #d0d5dd;
-      color: #98a2b3;
-      cursor: not-allowed;
-
-      &:hover {
-        border-color: #d0d5dd;
-      }
-    }
-
-    &--error {
-      border-color: #dc3545;
-    }
-
-    &--with-icon {
-      padding-left: 2.8125rem;
-      padding-right: 3.125rem;
-    }
-
-    &--clickable {
-      border: 1px solid #d0d5dd;
-      cursor: pointer;
-    }
-  }
-
-  &__icon {
-    position: absolute;
-    left: 0.75rem;
-    top: 50%;
-    transform: translateY(-50%);
-    color: $color-text-muted;
-    pointer-events: none;
-    z-index: 1;
-  }
-
-  &__clear-button {
-    position: absolute;
-    right: 1rem;
-    top: 50%;
-    transform: translateY(-50%);
-    width: 1.5rem;
-    height: 1.5rem;
-    border: none;
-    background: transparent;
-    color: $color-text-muted;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    border-radius: 0.25rem;
-    transition: all 0.2s ease;
-
-    &:hover {
-      background-color: #f3f4f6;
-      color: #374151;
-    }
-
-    &:disabled {
-      opacity: 0.5;
-      cursor: not-allowed;
-    }
-  }
-
-  &__search-input {
-    flex: 1;
-    border: none;
-    outline: none;
-    background: transparent;
-    color: $color-foreground;
-    width: 100%;
-    font-family: $font-family-main;
-    font-weight: 400;
-    font-size: 1rem;
-    line-height: 1.5rem;
-    letter-spacing: 0;
-
-    &::placeholder {
-      color: $color-text-muted;
-    }
-
-    &:disabled {
-      color: #98a2b3;
-      cursor: not-allowed;
-    }
-  }
-
-  &__text {
-    flex: 1;
-    font-size: 1rem;
-    line-height: 1.5rem;
-    color: $color-text-muted;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-  }
-
-  &__arrow {
-    width: 1.25rem;
-    height: 1.25rem;
-    color: $color-text-muted;
-    transition: transform 0.2s ease;
-    flex-shrink: 0;
-
-    &--rotated {
-      transform: rotate(180deg);
-    }
-  }
-
-  &__menu {
-    position: absolute;
-    top: 100%;
-    left: 0;
-    right: 0;
-    z-index: 1000;
-    background: $white;
-    border: 1px solid #d0d5dd;
-    border-radius: 0.5rem;
-    box-shadow:
-      0 0.25rem 0.375rem -0.0625rem rgba(0, 0, 0, 0.1),
-      0 0.125rem 0.25rem -0.0625rem rgba(0, 0, 0, 0.06);
-    max-height: 12.5rem;
-    overflow-y: auto;
+  &__auth-message {
     margin-top: 0.25rem;
-    opacity: 0;
-    visibility: hidden;
-    transform: translateY(-0.625rem);
-    transition: all 0.2s ease;
-
-    &--show {
-      opacity: 1;
-      visibility: visible;
-      transform: translateY(0);
-    }
-
-    &::-webkit-scrollbar {
-      width: 0.375rem;
-    }
-
-    &::-webkit-scrollbar-track {
-      background: #f1f5f9;
-    }
-
-    &::-webkit-scrollbar-thumb {
-      background: #cbd5e1;
-      border-radius: 0.1875rem;
-
-      &:hover {
-        background: #94a3b8;
-      }
-    }
-  }
-
-  &__no-results {
-    padding: 0.75rem 1rem;
-    font-size: 0.875rem;
-    color: #6b7280;
-    font-style: italic;
-    text-align: center;
-  }
-
-  &__item {
-    width: 100%;
-    padding: 0.75rem 1rem;
-    text-align: left;
-    border: none;
-    background: transparent;
-    cursor: pointer;
-    font-size: 1rem;
-    line-height: 1.5rem;
-    color: $color-foreground;
-    transition: all 0.15s ease;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 0.5rem;
-
-    &:hover {
-      background-color: #f9fafb;
-    }
-
-    &:focus {
-      outline: none;
-      background-color: #f3f4f6;
-    }
-
-    &--active {
-      background-color: #f9fafb;
-      color: $color-foreground;
-    }
-
-    &:first-child {
-      border-top-left-radius: 0.4375rem;
-      border-top-right-radius: 0.4375rem;
-    }
-
-    &:last-child {
-      border-bottom-left-radius: 0.4375rem;
-      border-bottom-right-radius: 0.4375rem;
-    }
-  }
-
-  &__item-text {
-    flex: 1;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    text-align: left;
-  }
-
-  &__item-icon {
-    color: #7f56d9;
-    flex-shrink: 0;
+    font-size: 0.75rem;
+    line-height: 1rem;
+    color: #ef4444;
+    font-weight: 500;
   }
 }
 
