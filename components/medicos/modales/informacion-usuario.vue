@@ -264,7 +264,20 @@ onUnmounted(() => {
 });
 
 const profileImage = computed(() => {
-  return props.appointment.customer.profile_picture_url || defaultAvatar;
+  const profileUrl = props.appointment?.customer?.profile_picture_url;
+
+  if (typeof profileUrl !== "string" || profileUrl.trim() === "") {
+    return defaultAvatar;
+  }
+
+  try {
+    const url = new URL(profileUrl);
+    const allowedProtocols = ["http:", "https:", "data:"];
+
+    return allowedProtocols.includes(url.protocol) ? profileUrl : defaultAvatar;
+  } catch {
+    return defaultAvatar;
+  }
 });
 
 defineExpose({

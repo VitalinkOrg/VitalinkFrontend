@@ -157,8 +157,13 @@ const dropdownTrigger = ref<HTMLButtonElement>();
 const dropdownMenu = ref<HTMLUListElement>();
 const menuItems = ref<(HTMLElement | null)[]>([]);
 const currentFocusIndex = ref(-1);
+
 const userName = computed(() => {
-  return userInfo?.name ? userInfo.name : userInfo.email;
+  if (!userInfo) return "";
+  if ("value" in userInfo) {
+    return userInfo.value?.name || userInfo.value?.email || "";
+  }
+  return userInfo?.name || userInfo?.email || "";
 });
 
 const triggerId = `dropdown-trigger-${Math.random().toString(36).substring(2, 11)}`;

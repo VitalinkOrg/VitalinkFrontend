@@ -108,9 +108,15 @@
 <script lang="ts" setup>
 const { getUserInfo } = useUserInfo();
 
-const userInfo = getUserInfo();
+const userInfo = getUserInfo?.() ?? null;
 
-const userProfilePicture = computed(() => userInfo.profile_picture_url);
+const userProfilePicture = computed(() => {
+  return (
+    userInfo?.value?.profile_picture_url ??
+    userInfo?.profile_picture_url ??
+    "@/assets/img-avatar-sm.png"
+  );
+});
 </script>
 
 <style lang="scss" scoped>
