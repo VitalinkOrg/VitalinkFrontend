@@ -1,6 +1,4 @@
 <template>
-  <slot name="trigger" :open="handleOpenModal"></slot>
-
   <AtomsModalBase
     :is-open="isModalOpen"
     size="extra-small"
@@ -48,37 +46,36 @@
 import { useAppointment } from "@/composables/api";
 import type { Appointment } from "@/types";
 
-interface Props {
-  appointment: Appointment;
-}
+const refreshAppointments = inject<() => Promise<void>>("refreshAppointments");
+
+const { isOpen, closeModal, getSharedData } = useMedicalModalManager();
+
+const modalData = computed(() =>
+  getSharedData<{ appointment: Appointment }>("anularCita")
+);
+
+const currentAppointment = computed(() => modalData.value.appointment);
+
+const isModalOpen = computed(() => isOpen.anularCita);
 
 const { updateAppointment } = useAppointment();
-
-const refreshAppointments = inject<() => Promise<void>>("refreshAppointments");
-const closeParentModal = inject<() => void>("closeParentModal");
-
-const props = defineProps<Props>();
-
-const isModalOpen = ref<boolean>(false);
 const isLoading = ref<boolean>(false);
 
-const handleOpenModal = () => {
-  isModalOpen.value = true;
-};
-
 const handleCloseModal = () => {
-  isModalOpen.value = false;
+  closeModal("anularCita");
 };
 
 const handleCancelAppointment = async () => {
   try {
+    if (!currentAppointment.value) throw new Error("No appointment found.");
+
     isLoading.value = true;
 
     const payload = {
       appointment_status_code: "CANCEL_APPOINTMENT",
     };
 
-    const api = updateAppointment(payload, props.appointment.id);
+    const api = updateAppointment(payload, currentAppointment.value.id);
     await api.request();
 
     const response = api.response.value;
@@ -87,11 +84,11 @@ const handleCancelAppointment = async () => {
     if (response?.data) {
       await refreshAppointments?.();
       handleCloseModal();
-      closeParentModal?.();
+      closeModal("detallesCita");
     }
 
     if (error) {
-      throw new Error("Error cancelling appointment:" + error.info);
+      throw new Error("Error cancelling appointment: " + error.info);
     }
   } catch (error) {
     console.error(error);
@@ -99,13 +96,6 @@ const handleCancelAppointment = async () => {
     isLoading.value = false;
   }
 };
-
-defineExpose({
-  handleOpenModal,
-  handleCloseModal,
-  isOpen: readonly(isModalOpen),
-  isLoading: readonly(isLoading),
-});
 </script>
 
 <style lang="scss" scoped>

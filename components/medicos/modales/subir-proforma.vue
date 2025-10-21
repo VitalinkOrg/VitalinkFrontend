@@ -1,6 +1,4 @@
 <template>
-  <slot name="trigger" :open="handleOpenModal"></slot>
-
   <AtomsModalBase
     :is-open="isModalOpen"
     size="small"
@@ -19,16 +17,19 @@
 
       <div class="upload-proforma__table-wrapper">
         <MedicosTablaDetallesCita
+          v-if="currentAppointment"
           :rows="appointmentRowsWithData"
           :hidden-title="true"
-          :aria-label="`Detalles de la cita de ${appointment.customer.name}`"
+          :aria-label="`Detalles de la cita de ${currentAppointment.customer.name}`"
         >
           <template #data-estado-cita>
             <span
               class="status-badge"
-              :class="getStatusClass(appointment.appointment_status.code)"
+              :class="
+                getStatusClass(currentAppointment.appointment_status.code)
+              "
             >
-              {{ appointment.appointment_status.value1 }}
+              {{ currentAppointment.appointment_status.value1 }}
             </span>
           </template>
         </MedicosTablaDetallesCita>
@@ -37,17 +38,13 @@
 
     <template #footer>
       <div class="upload-proforma__actions">
-        <MedicosModalesConfirmacionNoApto :appointment="appointment">
-          <template #trigger="{ open }">
-            <button
-              :disabled="isLoading"
-              class="upload-proforma__button--outline"
-              @click="open"
-            >
-              No apto para procedimiento
-            </button>
-          </template>
-        </MedicosModalesConfirmacionNoApto>
+        <button
+          :disabled="isLoading"
+          class="upload-proforma__button--outline"
+          @click="handleOpenNotSuitable"
+        >
+          No apto para procedimiento
+        </button>
         <button
           :disabled="isLoading"
           class="upload-proforma__button--primary"
@@ -59,98 +56,105 @@
       </div>
     </template>
   </AtomsModalBase>
-
-  <MedicosModalesDetallesValoracion
-    ref="valorationDetailsRef"
-    :appointment="appointment"
-  />
 </template>
 
 <script lang="ts" setup>
+import { computed, ref } from "vue";
 import { useFormat } from "~/composables/useFormat";
 import type { Appointment, AppointmentStatusCode } from "~/types";
 import type { TablaBaseRow } from "../tabla-detalles-cita.vue";
 
 const { formatDate, formatTime } = useFormat();
+const { isOpen, closeModal, getSharedData, openModal } =
+  useMedicalModalManager();
 
-interface Props {
-  appointment: Appointment;
-}
-
-const props = defineProps<Props>();
-
-const appointmentRowsWithData = computed((): TablaBaseRow[] => [
-  {
-    key: "tipo-servicio",
-    header: "Tipo de servicio:",
-    value: props.appointment.appointment_type.name,
-  },
-  {
-    key: "fecha",
-    header: "Fecha de la cita:",
-    value: formatDate(props.appointment.appointment_date),
-    class: "appointment-editor__details-row--editable",
-  },
-  {
-    key: "hora",
-    header: "Hora de la cita:",
-    value: formatTime(props.appointment.appointment_hour, "hs"),
-    class: "appointment-editor__details-row--editable",
-  },
-  {
-    key: "paciente",
-    header: "Paciente:",
-    value: props.appointment.customer.name,
-    isEndRow: true,
-  },
-  {
-    key: "procedimiento",
-    header: "Procedimiento:",
-    value: props.appointment.package?.procedure?.name,
-  },
-  {
-    key: "motivo",
-    header: "Motivo:",
-    value: props.appointment.user_description,
-  },
-  {
-    key: "costo-servicio",
-    header: "Costo del servicio:",
-    value: "A confirmar en la cita",
-  },
-  {
-    key: "fecha-solicitud",
-    header: "Fecha de la solicitud:",
-    value: formatDate(props.appointment.application_date, "short"),
-  },
-  {
-    key: "tipo-reserva",
-    header: "Tipo de reserva:",
-    value: props.appointment.reservation_type.value1,
-  },
-  {
-    key: "estado-cita",
-    header: "Estado de la cita:",
-    value: props.appointment.appointment_status.code,
-  },
-]);
-
-const isModalOpen = ref<boolean>(false);
 const isLoading = ref<boolean>(false);
 
-const valorationDetailsRef = ref();
+const modalData = computed(() =>
+  getSharedData<{ appointment: Appointment }>("subirProforma")
+);
 
-const handleOpenModal = () => {
-  isModalOpen.value = true;
-};
+const currentAppointment = computed(() => modalData.value?.appointment);
+
+const appointmentRowsWithData = computed((): TablaBaseRow[] => {
+  const appointment = currentAppointment.value;
+  if (!appointment) return [];
+
+  return [
+    {
+      key: "tipo-servicio",
+      header: "Tipo de servicio:",
+      value: appointment.appointment_type.name,
+    },
+    {
+      key: "fecha",
+      header: "Fecha de la cita:",
+      value: formatDate(appointment.appointment_date),
+      class: "appointment-editor__details-row--editable",
+    },
+    {
+      key: "hora",
+      header: "Hora de la cita:",
+      value: formatTime(appointment.appointment_hour, "hs"),
+      class: "appointment-editor__details-row--editable",
+    },
+    {
+      key: "paciente",
+      header: "Paciente:",
+      value: appointment.customer.name,
+      isEndRow: true,
+    },
+    {
+      key: "procedimiento",
+      header: "Procedimiento:",
+      value: appointment.package?.procedure?.name ?? "—",
+    },
+    {
+      key: "motivo",
+      header: "Motivo:",
+      value: appointment.user_description ?? "—",
+    },
+    {
+      key: "costo-servicio",
+      header: "Costo del servicio:",
+      value: "A confirmar en la cita",
+    },
+    {
+      key: "fecha-solicitud",
+      header: "Fecha de la solicitud:",
+      value: formatDate(appointment.application_date, "short"),
+    },
+    {
+      key: "tipo-reserva",
+      header: "Tipo de reserva:",
+      value: appointment.reservation_type.value1,
+    },
+    {
+      key: "estado-cita",
+      header: "Estado de la cita:",
+      value: appointment.appointment_status.code,
+    },
+  ];
+});
+
+const isModalOpen = computed(() => isOpen.subirProforma);
 
 const handleCloseModal = () => {
-  isModalOpen.value = false;
+  closeModal("subirProforma");
+};
+
+const handleOpenNotSuitable = () => {
+  if (currentAppointment.value) {
+    openModal("confirmacionNoApto", { appointment: currentAppointment.value });
+    handleCloseModal();
+  }
 };
 
 const openValorationDetails = () => {
-  valorationDetailsRef.value?.handleOpenModal();
-  handleCloseModal();
+  if (currentAppointment.value) {
+    openModal("detallesValoracion", { appointment: currentAppointment.value });
+    handleCloseModal();
+  }
 };
 
 const getStatusClass = (status: AppointmentStatusCode) => {
@@ -167,15 +171,6 @@ const getStatusClass = (status: AppointmentStatusCode) => {
   };
   return statusClassMap[status] || "";
 };
-
-provide("closeUploadProformaModal", handleCloseModal);
-
-defineExpose({
-  handleOpenModal,
-  handleCloseModal,
-  isOpen: readonly(isModalOpen),
-  isLoading: readonly(isLoading),
-});
 </script>
 
 <style lang="scss" scoped>

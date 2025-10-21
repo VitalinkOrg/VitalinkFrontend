@@ -1,6 +1,4 @@
 <template>
-  <slot name="trigger" :open="handleOpenModal"></slot>
-
   <AtomsModalBase
     :is-open="isModalOpen"
     size="extra-small"
@@ -53,10 +51,6 @@ const emit = defineEmits<Emits>();
 const isModalOpen = ref<boolean>(false);
 const isLoading = ref<boolean>(false);
 
-const handleOpenModal = () => {
-  isModalOpen.value = true;
-};
-
 const handleCloseModal = () => {
   isModalOpen.value = false;
 };
@@ -67,13 +61,6 @@ const handleDelete = async () => {
     isLoading.value = false;
   });
 };
-
-defineExpose({
-  handleOpenModal,
-  handleCloseModal,
-  isOpen: readonly(isModalOpen),
-  isLoading: readonly(isLoading),
-});
 </script>
 
 <style lang="scss" scoped>

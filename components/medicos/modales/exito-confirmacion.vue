@@ -1,6 +1,4 @@
 <template>
-  <slot name="trigger" :open="handleOpenModal"></slot>
-
   <AtomsModalBase
     :is-open="isModalOpen"
     size="small"
@@ -16,16 +14,19 @@
 
       <div class="success-confirmation__table-wrapper">
         <MedicosTablaDetallesCita
+          v-if="appointmentRowsWithData && currentAppointment"
           :rows="appointmentRowsWithData"
           :hidden-title="true"
-          :aria-label="`Detalles de la cita de ${appointment.customer.name}`"
+          :aria-label="`Detalles de la cita de ${currentAppointment.customer.name}`"
         >
           <template #data-estado-cita>
             <span
               class="status-badge"
-              :class="getStatusClass(appointment.appointment_status.code)"
+              :class="
+                getStatusClass(currentAppointment.appointment_status.code)
+              "
             >
-              {{ appointment.appointment_status.value1 }}
+              {{ currentAppointment.appointment_status.value1 }}
             </span>
           </template>
         </MedicosTablaDetallesCita>
@@ -60,69 +61,78 @@ import type { Appointment, AppointmentStatusCode } from "~/types";
 
 const { formatDate } = useFormat();
 
-interface Props {
-  appointment: Appointment;
-}
+const { isOpen, closeModal, getSharedData } = useMedicalModalManager();
 
-const props = defineProps<Props>();
+const modalData = computed(() =>
+  getSharedData<{ appointment: Appointment }>("exitoConfirmacion")
+);
 
-const appointmentRowsWithData = computed((): TablaBaseRow[] => [
-  {
-    key: "paciente",
-    header: "Paciente:",
-    value: props.appointment.customer.name,
-  },
-  {
-    key: "tipo-servicio",
-    header: "Tipo de servicio:",
-    value: props.appointment.appointment_type.name,
-  },
-  {
-    key: "fecha",
-    header: "Fecha de la cita:",
-    value: formatDate(props.appointment.appointment_date),
-    class: "appointment-editor__details-row--editable",
-  },
-  {
-    key: "hora",
-    header: "Hora de la cita:",
-    value: props.appointment.appointment_hour,
-    class: "appointment-editor__details-row--editable",
-    isEndRow: true,
-  },
-  {
-    key: "motivo",
-    header: "Motivo:",
-    value: props.appointment.user_description,
-  },
-  {
-    key: "procedimiento",
-    header: "Procedimiento:",
-    value: props.appointment.package?.procedure?.name,
-  },
-  {
-    key: "costo-servicio",
-    header: "Costo del servicio:",
-    value: "A confirmar en la cita",
-  },
-  {
-    key: "fecha-solicitud",
-    header: "Fecha de la solicitud:",
-    value: formatDate(props.appointment.application_date, "short"),
-  },
-  {
-    key: "tipo-reserva",
-    header: "Tipo de reserva:",
-    value: props.appointment.reservation_type.value1,
-  },
-  {
-    key: "estado-cita",
-    header: "Estado de la cita:",
-    value: props.appointment.appointment_status.code,
-  },
-]);
+const currentAppointment = computed(() => modalData.value?.appointment);
 
-const isModalOpen = ref<boolean>(false);
+const isModalOpen = computed(() => isOpen.exitoConfirmacion);
+
+const appointmentRowsWithData = computed((): TablaBaseRow[] | undefined => {
+  if (!currentAppointment.value) return;
+
+  const appointment = currentAppointment.value;
+
+  return [
+    {
+      key: "paciente",
+      header: "Paciente:",
+      value: appointment.customer.name,
+    },
+    {
+      key: "tipo-servicio",
+      header: "Tipo de servicio:",
+      value: appointment.appointment_type.name,
+    },
+    {
+      key: "fecha",
+      header: "Fecha de la cita:",
+      value: formatDate(appointment.appointment_date),
+      class: "appointment-editor__details-row--editable",
+    },
+    {
+      key: "hora",
+      header: "Hora de la cita:",
+      value: appointment.appointment_hour,
+      class: "appointment-editor__details-row--editable",
+      isEndRow: true,
+    },
+    {
+      key: "motivo",
+      header: "Motivo:",
+      value: appointment.user_description,
+    },
+    {
+      key: "procedimiento",
+      header: "Procedimiento:",
+      value: appointment.package?.procedure?.name,
+    },
+    {
+      key: "costo-servicio",
+      header: "Costo del servicio:",
+      value: "A confirmar en la cita",
+    },
+    {
+      key: "fecha-solicitud",
+      header: "Fecha de la solicitud:",
+      value: formatDate(appointment.application_date, "short"),
+    },
+    {
+      key: "tipo-reserva",
+      header: "Tipo de reserva:",
+      value: appointment.reservation_type.value1,
+    },
+    {
+      key: "estado-cita",
+      header: "Estado de la cita:",
+      value: appointment.appointment_status.code,
+    },
+  ];
+});
+
 const isLoading = ref<boolean>(false);
 
 const handleNavigateToHome = () => {
@@ -130,12 +140,8 @@ const handleNavigateToHome = () => {
   useRouter().push("/pacientes/inicio");
 };
 
-const handleOpenModal = () => {
-  isModalOpen.value = true;
-};
-
 const handleCloseModal = () => {
-  isModalOpen.value = false;
+  closeModal("exitoConfirmacion");
 };
 
 const getStatusClass = (status: AppointmentStatusCode) => {
@@ -152,13 +158,6 @@ const getStatusClass = (status: AppointmentStatusCode) => {
   };
   return statusClassMap[status] || "";
 };
-
-defineExpose({
-  handleOpenModal,
-  handleCloseModal,
-  isOpen: readonly(isModalOpen),
-  isLoading: readonly(isLoading),
-});
 </script>
 
 <style lang="scss" scoped>

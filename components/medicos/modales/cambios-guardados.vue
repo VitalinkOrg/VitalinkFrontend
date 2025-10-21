@@ -1,6 +1,4 @@
 <template>
-  <slot name="trigger" :open="handleOpenModal"></slot>
-
   <AtomsModalBase
     :is-open="isModalOpen"
     size="small"
@@ -16,16 +14,19 @@
 
       <div class="success-confirmation__table-wrapper">
         <MedicosTablaDetallesCita
+          v-if="appointmentRowsWithData"
           :rows="appointmentRowsWithData"
           :hidden-title="true"
-          :aria-label="`Detalles de la cita de ${appointment.customer.name}`"
+          :aria-label="`Detalles de la cita de ${currentAppointment.customer.name}`"
         >
           <template #data-estado-cita>
             <span
               class="status-badge"
-              :class="getStatusClass(appointment.appointment_status.code)"
+              :class="
+                getStatusClass(currentAppointment.appointment_status.code)
+              "
             >
-              {{ appointment.appointment_status.value1 }}
+              {{ currentAppointment.appointment_status.value1 }}
             </span>
           </template>
         </MedicosTablaDetallesCita>
@@ -54,100 +55,26 @@
 </template>
 
 <script lang="ts" setup>
+import { computed, ref } from "vue";
+import { useRouter } from "vue-router";
 import { useFormat } from "~/composables/useFormat";
 import type { Appointment, AppointmentStatusCode } from "~/types";
 import type { TablaBaseRow } from "../tabla-detalles-cita.vue";
 
+const { isOpen, closeModal } = useMedicalModalManager();
 const { formatDate, formatTime } = useFormat();
+const router = useRouter();
 
-interface Props {
-  appointment: Appointment;
-}
-
-const props = defineProps<Props>();
-
-const isModalOpen = ref<boolean>(false);
-const isLoading = ref<boolean>(false);
-
-const handleOpenModal = () => {
-  isModalOpen.value = true;
-};
-
-const handleCloseModal = () => {
-  isModalOpen.value = false;
-};
-
-const closeAppointmentDetailsModal = inject<() => void>(
-  "closeAppointmentDetailsModal"
+const modalData = computed(() =>
+  useMedicalModalManager().getSharedData<{ appointment: Appointment }>(
+    "cambiosGuardados"
+  )
 );
 
-const appointmentRowsWithData = computed((): TablaBaseRow[] => [
-  {
-    key: "tipo-servicio",
-    header: "Tipo de servicio:",
-    value: props.appointment.appointment_type.name,
-  },
-  {
-    key: "fecha",
-    header: "Fecha de la cita:",
-    value: formatDate(props.appointment.appointment_date),
-    class: "appointment-editor__details-row--editable",
-  },
-  {
-    key: "hora",
-    header: "Hora de la cita:",
-    value: formatTime(props.appointment.appointment_hour, "hs"),
-    class: "appointment-editor__details-row--editable",
-  },
-  {
-    key: "paciente",
-    header: "Paciente:",
-    value: props.appointment.customer.name,
-    isEndRow: true,
-  },
-  {
-    key: "procedimiento",
-    header: "Procedimiento:",
-    value: props.appointment.package?.procedure?.name,
-  },
-  {
-    key: "motivo",
-    header: "Motivo:",
-    value: props.appointment.user_description,
-  },
-  {
-    key: "costo-servicio",
-    header: "Costo del servicio:",
-    value: "A confirmar en la cita",
-  },
-  {
-    key: "fecha-solicitud",
-    header: "Fecha de la solicitud:",
-    value: formatDate(props.appointment.application_date, "short"),
-  },
-  {
-    key: "tipo-reserva",
-    header: "Tipo de reserva:",
-    value: props.appointment.reservation_type.value1,
-  },
-  {
-    key: "estado-cita",
-    header: "Estado de la cita:",
-    value: props.appointment.appointment_status.code,
-  },
-]);
+const currentAppointment = computed(() => modalData.value.appointment);
 
-const handleNavigateToHome = () => {
-  useRouter().push("/medicos/inicio");
-  closeAppointmentDetailsModal?.();
-  handleCloseModal();
-};
-
-const handleNavigateToAppointments = () => {
-  useRouter().push("/medicos/citas");
-  closeAppointmentDetailsModal?.();
-  handleCloseModal();
-};
+const isModalOpen = computed(() => isOpen.cambiosGuardados);
+const isLoading = ref<boolean>(false);
 
 const getStatusClass = (status: AppointmentStatusCode) => {
   const statusClassMap = {
@@ -164,12 +91,80 @@ const getStatusClass = (status: AppointmentStatusCode) => {
   return statusClassMap[status] || "";
 };
 
-defineExpose({
-  handleOpenModal,
-  handleCloseModal,
-  isOpen: readonly(isModalOpen),
-  isLoading: readonly(isLoading),
+const appointmentRowsWithData = computed((): TablaBaseRow[] => {
+  if (!currentAppointment.value) return [];
+
+  const appt = currentAppointment.value;
+  return [
+    {
+      key: "tipo-servicio",
+      header: "Tipo de servicio:",
+      value: appt.appointment_type.name,
+    },
+    {
+      key: "fecha",
+      header: "Fecha de la cita:",
+      value: formatDate(appt.appointment_date),
+      class: "appointment-editor__details-row--editable",
+    },
+    {
+      key: "hora",
+      header: "Hora de la cita:",
+      value: formatTime(appt.appointment_hour, "hs"),
+      class: "appointment-editor__details-row--editable",
+    },
+    {
+      key: "paciente",
+      header: "Paciente:",
+      value: appt.customer.name,
+      isEndRow: true,
+    },
+    {
+      key: "procedimiento",
+      header: "Procedimiento:",
+      value: appt.package?.procedure?.name ?? "",
+    },
+    {
+      key: "motivo",
+      header: "Motivo:",
+      value: appt.user_description ?? "",
+    },
+    {
+      key: "costo-servicio",
+      header: "Costo del servicio:",
+      value: "A confirmar en la cita",
+    },
+    {
+      key: "fecha-solicitud",
+      header: "Fecha de la solicitud:",
+      value: formatDate(appt.application_date, "short"),
+    },
+    {
+      key: "tipo-reserva",
+      header: "Tipo de reserva:",
+      value: appt.reservation_type.value1,
+    },
+    {
+      key: "estado-cita",
+      header: "Estado de la cita:",
+      value: appt.appointment_status.code,
+    },
+  ];
 });
+
+const handleCloseModal = () => {
+  closeModal("cambiosGuardados");
+};
+
+const handleNavigateToHome = () => {
+  router.push("/medicos/inicio");
+  handleCloseModal();
+};
+
+const handleNavigateToAppointments = () => {
+  router.push("/medicos/citas");
+  handleCloseModal();
+};
 </script>
 
 <style lang="scss" scoped>

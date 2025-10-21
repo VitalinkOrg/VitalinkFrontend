@@ -1,6 +1,4 @@
 <template>
-  <slot name="trigger" :open="handleOpenModal"></slot>
-
   <AtomsModalBase
     :is-open="isModalOpen"
     size="extra-small"
@@ -42,11 +40,6 @@
       </div>
     </template>
   </AtomsModalBase>
-
-  <MedicosModalesCambiosGuardados
-    ref="savedChangesRef"
-    :appointment="appointment"
-  />
 </template>
 
 <script lang="ts" setup>
@@ -60,49 +53,56 @@ interface Props {
 }
 
 const refreshAppointments = inject<() => Promise<void>>("refreshAppointments");
-const closeReschedulingModal = inject<() => void>("closeReschedulingModal");
+const { isOpen, closeModal, getSharedData, openModal } =
+  useMedicalModalManager();
 
-const props = defineProps<Props>();
+const modalData = computed(() =>
+  getSharedData<{
+    appointment: Appointment;
+    appointmentDate: string;
+    appointmentHour: string;
+  }>("confirmacionReprogramacion")
+);
+
+const currentAppointment = computed(() => modalData.value?.appointment);
+const newAppointmentDate = computed(() => modalData.value?.appointmentDate);
+const newAppointmentHour = computed(() => modalData.value?.appointmentHour);
 
 const { confirmValorationAppointment, updateAppointment, confirmProcedure } =
   useAppointment();
 
-const isModalOpen = ref<boolean>(false);
+const isModalOpen = computed(() => isOpen.confirmacionReprogramacion);
 const isLoading = ref<boolean>(false);
 
 const savedChangesRef = ref();
 
-const handleOpenModal = () => {
-  if (!props.appointmentDate || !props.appointmentHour) {
-    console.warn("Cannot proceed without date and time selection");
-    return;
-  }
-
-  isModalOpen.value = true;
-};
-
 const handleCloseModal = () => {
-  isModalOpen.value = false;
+  closeModal("confirmacionReprogramacion");
 };
 
 const handleSaveChanges = async () => {
-  if (!props.appointmentDate || !props.appointmentHour) {
+  if (!currentAppointment.value) {
+    console.error("Appointment not found");
+    return;
+  }
+
+  if (!newAppointmentDate.value || !newAppointmentHour.value) {
     console.error("Missing appointment date or hour");
     return;
   }
 
   const payload = {
-    customer_id: props.appointment.customer.id,
-    appointment_date: props.appointmentDate,
-    appointment_hour: props.appointmentHour,
-    reservation_type: props.appointment.reservation_type.type,
-    supplier_id: props.appointment.supplier.id,
+    customer_id: currentAppointment.value.customer.id,
+    appointment_date: newAppointmentDate.value as string,
+    appointment_hour: newAppointmentHour.value as string,
+    reservation_type: currentAppointment.value.reservation_type.type,
+    supplier_id: currentAppointment.value.supplier.id,
   };
 
   try {
     isLoading.value = true;
 
-    const api = updateAppointment(payload, props.appointment.id);
+    const api = updateAppointment(payload, currentAppointment.value.id);
     await api.request();
 
     const response = api.response.value;
@@ -110,19 +110,32 @@ const handleSaveChanges = async () => {
 
     if (response?.data) {
       if (
-        props.appointment.appointment_status.code ===
+        currentAppointment.value?.appointment_status.code ===
         "CONFIRM_VALIDATION_APPOINTMENT"
       ) {
         await refreshAppointments?.();
-        savedChangesRef.value?.handleOpenModal();
+        closeModal("detallesCita");
+        closeModal("editorFechaHora");
+        closeModal("confirmacionReprogramacion");
+        openModal("cambiosGuardados", {
+          appointment: currentAppointment.value,
+        });
         return;
       }
 
-      if (props.appointment.appointment_status.code === "PENDING_PROCEDURE") {
+      if (
+        currentAppointment.value?.appointment_status.code ===
+        "PENDING_PROCEDURE"
+      ) {
         await handleConfirmProcedure();
       } else {
         await handleConfirmValorationAppointment();
       }
+      await refreshAppointments?.();
+      closeModal("detallesCita");
+      closeModal("editorFechaHora");
+      closeModal("confirmacionReprogramacion");
+      openModal("cambiosGuardados", { appointment: currentAppointment.value });
     }
 
     if (error) {
@@ -136,7 +149,9 @@ const handleSaveChanges = async () => {
 };
 
 const handleConfirmValorationAppointment = async () => {
-  const api = confirmValorationAppointment(props.appointment.id);
+  if (!currentAppointment.value) return;
+
+  const api = confirmValorationAppointment(currentAppointment.value.id);
   await api.request();
 
   const response = api.response.value;
@@ -145,8 +160,6 @@ const handleConfirmValorationAppointment = async () => {
   if (response?.data) {
     await refreshAppointments?.();
     handleCloseModal();
-    closeReschedulingModal?.();
-    savedChangesRef.value?.handleOpenModal();
   }
 
   if (error) {
@@ -155,30 +168,25 @@ const handleConfirmValorationAppointment = async () => {
 };
 
 const handleConfirmProcedure = async () => {
-  const api = confirmProcedure(props.appointment.id);
-  await api.request();
+  try {
+    if (!currentAppointment.value) throw new Error("No appointment found");
+    const api = confirmProcedure(currentAppointment.value?.id);
+    await api.request();
 
-  const response = api.response.value;
-  const error = api.error.value;
+    const response = api.response.value;
+    const error = api.error.value;
 
-  if (response?.data) {
-    await refreshAppointments?.();
-    handleCloseModal();
-    closeReschedulingModal?.();
-    savedChangesRef.value?.handleOpenModal();
-  }
+    if (response?.data) {
+      await refreshAppointments?.();
+      handleCloseModal();
+      savedChangesRef.value?.handleOpenModal();
+    }
 
-  if (error) {
+    if (error) throw new Error(error.info);
+  } catch (error) {
     console.error(error);
   }
 };
-
-defineExpose({
-  handleOpenModal,
-  handleCloseModal,
-  isOpen: readonly(isModalOpen),
-  isLoading: readonly(isLoading),
-});
 </script>
 
 <style lang="scss" scoped>
