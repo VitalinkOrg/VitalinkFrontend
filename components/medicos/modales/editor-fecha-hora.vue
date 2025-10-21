@@ -1,6 +1,4 @@
 <template>
-  <slot name="trigger" :open="handleOpenModal"></slot>
-
   <AtomsModalBase
     :is-open="isModalOpen"
     size="medium"
@@ -21,14 +19,13 @@
         :rows="appointmentRowsWithData"
         :title="appointmentTitle"
         :hidden-title="true"
-        :aria-label="`Detalles de la cita de ${appointment.customer.name}`"
+        :aria-label="`Detalles de la cita de ${currentAppointment?.customer.name}`"
       >
         <template #data-fecha>
           <UiDatePicker
             v-model="selectedDate"
             :min-date="new Date()"
             custom-class="appointment-editor__date-picker"
-            @confirm="handleDateConfirm"
             @update:model-value="handleDateChange"
           />
           <div
@@ -66,10 +63,11 @@
 
         <template #data-estado-cita>
           <span
+            v-if="currentAppointment"
             class="status-badge"
-            :class="getStatusClass(appointment.appointment_status.code)"
+            :class="getStatusClass(currentAppointment.appointment_status.code)"
           >
-            {{ appointment.appointment_status.value1 }}
+            {{ currentAppointment?.appointment_status.value1 }}
           </span>
         </template>
       </MedicosTablaDetallesCita>
@@ -135,13 +133,6 @@
       </div>
     </template>
   </AtomsModalBase>
-
-  <MedicosModalesConfirmacionReprogramacion
-    ref="confirmationModalRef"
-    :appointment="appointment"
-    :appointment-date="formattedSelectedDate"
-    :appointment-hour="formattedSelectedHour"
-  />
 </template>
 
 <script lang="ts" setup>
@@ -149,23 +140,25 @@ import type { TablaBaseRow } from "~/components/medicos/tabla-detalles-cita.vue"
 import { useFormat } from "~/composables/useFormat";
 import type { Appointment, AppointmentStatusCode } from "~/types";
 
-interface Props {
-  appointment: Appointment;
-}
+const { isOpen, closeModal, getSharedData, openModal } =
+  useMedicalModalManager();
 
-const props = defineProps<Props>();
+const modalData = computed(() =>
+  getSharedData<{ appointment: Appointment }>("editorFechaHora")
+);
+
+const currentAppointment = computed(() => modalData.value?.appointment);
+
+const isModalOpen = computed(() => isOpen.editorFechaHora);
 
 const { formatDate, formatCurrency } = useFormat();
 
-const isModalOpen = ref<boolean>(false);
 const isLoading = ref<boolean>(false);
 const selectedDate = ref<Date | null>(null);
 const selectedTime = ref<string>("");
 const dateError = ref<string>("");
 const timeError = ref<string>("");
 const apiError = ref<string>("");
-
-const confirmationModalRef = ref();
 
 const availableTimes = ref<string[]>([
   "08:30",
@@ -212,35 +205,35 @@ const appointmentRowsWithData = computed((): TablaBaseRow[] => [
   {
     key: "paciente",
     header: "Paciente:",
-    value: props.appointment.customer.name,
+    value: currentAppointment.value?.customer?.name ?? "",
   },
   {
     key: "tipo-servicio",
     header: "Tipo de servicio:",
-    value: props.appointment.appointment_type.name,
+    value: currentAppointment.value?.appointment_type?.name ?? "",
   },
   {
     key: "fecha",
     header: "Fecha de la cita:",
-    value: props.appointment.appointment_date,
+    value: currentAppointment.value?.appointment_date ?? "",
     class: "appointment-editor__details-row--editable",
   },
   {
     key: "hora",
     header: "Hora de la cita:",
-    value: props.appointment.appointment_hour,
+    value: currentAppointment.value?.appointment_hour ?? "",
     class: "appointment-editor__details-row--editable",
     isEndRow: true,
   },
   {
     key: "motivo",
     header: "Motivo:",
-    value: props.appointment.user_description,
+    value: currentAppointment.value?.user_description ?? "",
   },
   {
     key: "procedimiento",
     header: "Procedimiento:",
-    value: props.appointment.package?.procedure?.name,
+    value: currentAppointment.value?.package?.procedure?.name ?? "",
   },
   {
     key: "costo-servicio",
@@ -250,49 +243,60 @@ const appointmentRowsWithData = computed((): TablaBaseRow[] => [
   {
     key: "fecha-solicitud",
     header: "Fecha de la solicitud:",
-    value: formatDate(props.appointment.application_date, "short"),
+    value: formatDate(
+      currentAppointment.value?.application_date ?? "",
+      "short"
+    ),
   },
   {
     key: "tipo-reserva",
     header: "Tipo de reserva:",
-    value: props.appointment.reservation_type.value1,
+    value: currentAppointment.value?.reservation_type?.value1 ?? "",
   },
   {
     key: "apto-credito",
     header: "Apto para crédito:",
     value: "Sí",
     show:
-      props.appointment.appointment_status.code === "WAITING_PROCEDURE" ||
-      props.appointment.appointment_status.code === "CONFIRM_PROCEDURE",
+      currentAppointment.value?.appointment_status?.code ===
+        "WAITING_PROCEDURE" ||
+      currentAppointment.value?.appointment_status?.code ===
+        "CONFIRM_PROCEDURE",
   },
   {
     key: "costo-servicio",
     header: "Costo del servicio:",
-    value: formatCurrency(props.appointment.price_procedure, {
+    value: formatCurrency(currentAppointment.value?.price_procedure ?? 0, {
       decimalPlaces: 0,
     }),
     show:
-      props.appointment.appointment_status.code === "WAITING_PROCEDURE" ||
-      props.appointment.appointment_status.code === "CONFIRM_PROCEDURE",
+      currentAppointment.value?.appointment_status?.code ===
+        "WAITING_PROCEDURE" ||
+      currentAppointment.value?.appointment_status?.code ===
+        "CONFIRM_PROCEDURE",
   },
   {
     key: "costo-servicio",
     header: "Costo del servicio:",
     value: "Cubierto por crédito",
     show:
-      props.appointment.appointment_status.code === "WAITING_PROCEDURE" ||
-      props.appointment.appointment_status.code === "CONFIRM_PROCEDURE",
+      currentAppointment.value?.appointment_status?.code ===
+        "WAITING_PROCEDURE" ||
+      currentAppointment.value?.appointment_status?.code ===
+        "CONFIRM_PROCEDURE",
   },
   {
     key: "estado-cita",
     header: "Estado de la cita:",
-    value: props.appointment.appointment_status.code,
+    value: currentAppointment.value?.appointment_status?.code ?? "",
   },
 ]);
 
 const appointmentTitle = computed(() => {
-  const { code: typeCode } = props.appointment.appointment_type;
-  const { code: statusCode } = props.appointment.appointment_status;
+  if (!currentAppointment.value) return;
+
+  const { code: typeCode } = currentAppointment.value.appointment_type;
+  const { code: statusCode } = currentAppointment.value.appointment_status;
 
   if (typeCode === "VALORATION_APPOINTMENT")
     return "Detalles de la Cita de valoración";
@@ -301,19 +305,15 @@ const appointmentTitle = computed(() => {
 });
 
 const shouldShowCoordinationReminder = computed(() => {
-  const { code } = props.appointment.appointment_status;
+  if (!currentAppointment.value) return;
+  const { code } = currentAppointment.value.appointment_status;
   return (
     code === "PENDING_VALORATION_APPOINTMENT" || code === "PENDING_PROCEDURE"
   );
 });
 
-const handleOpenModal = () => {
-  isModalOpen.value = true;
-  clearErrors();
-};
-
 const handleCloseModal = () => {
-  isModalOpen.value = false;
+  closeModal("editorFechaHora");
   clearErrors();
   selectedDate.value = null;
   selectedTime.value = "";
@@ -361,16 +361,21 @@ const handleTimeSelect = (item: {
   }
 };
 
-const handleDateConfirm = (date: Date | null) => {
-  console.log("Fecha confirmada:", date);
-};
-
 const handleSaveChanges = async () => {
+  console.log({
+    appointment: currentAppointment,
+    appointmentDate: formattedSelectedDate.value,
+    appointmentHour: formattedSelectedHour.value,
+  });
   if (!validateForm()) {
     return;
   }
 
-  confirmationModalRef.value?.handleOpenModal();
+  openModal("confirmacionReprogramacion", {
+    appointment: currentAppointment,
+    appointmentDate: formattedSelectedDate.value,
+    appointmentHour: formattedSelectedHour.value,
+  });
 };
 
 const getStatusClass = (status: AppointmentStatusCode) => {
@@ -387,15 +392,6 @@ const getStatusClass = (status: AppointmentStatusCode) => {
   };
   return statusClassMap[status] || "";
 };
-
-provide("closeReschedulingModal", handleCloseModal);
-
-defineExpose({
-  handleOpenModal,
-  handleCloseModal,
-  isOpen: readonly(isModalOpen),
-  isLoading: readonly(isLoading),
-});
 </script>
 
 <style lang="scss" scoped>

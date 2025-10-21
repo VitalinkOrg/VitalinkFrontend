@@ -31,7 +31,11 @@
               {{ isCreditDisabled ? "Sí" : "No" }}
             </td>
           </tr>
-          <tr class="schedule-procedure-modal__row">
+          <tr
+            :class="{
+              'schedule-procedure-modal__row': !appointment.appointment_credit,
+            }"
+          >
             <td class="schedule-procedure-modal__label">Costo del servicio:</td>
             <td class="schedule-procedure-modal__value">
               {{
@@ -39,6 +43,28 @@
                   decimalPlaces: 0,
                 })
               }}
+            </td>
+          </tr>
+          <tr v-if="appointment.appointment_credit">
+            <td class="schedule-procedure-modal__label">Crédito aprobado:</td>
+            <td class="schedule-procedure-modal__value">
+              {{
+                formatCurrency(
+                  appointment.appointment_credit?.approved_amount,
+                  {
+                    decimalPlaces: 0,
+                  }
+                ) || formatCurrency("0", { decimalPlaces: 0 })
+              }}
+            </td>
+          </tr>
+          <tr
+            v-if="appointment.appointment_credit"
+            class="schedule-procedure-modal__row"
+          >
+            <td class="schedule-procedure-modal__label">Saldo pendiente:</td>
+            <td class="schedule-procedure-modal__value">
+              {{ formatCurrency(calculateBalance(), { decimalPlaces: 0 }) }}
             </td>
           </tr>
           <tr>
@@ -182,6 +208,13 @@ interface Emits {
 
 const props = defineProps<Props>();
 const emit = defineEmits<Emits>();
+
+const calculateBalance = () => {
+  return (
+    Number(props.appointment.price_procedure) -
+    Number(props.appointment.appointment_credit?.approved_amount || 0)
+  );
+};
 
 const selectedDate = ref("");
 const selectedTime = ref("");

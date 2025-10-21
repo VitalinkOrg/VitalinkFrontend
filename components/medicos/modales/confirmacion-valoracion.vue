@@ -1,6 +1,4 @@
 <template>
-  <slot name="trigger" :open="handleOpenModal"></slot>
-
   <AtomsModalBase
     :is-open="isModalOpen"
     size="extra-small"
@@ -47,50 +45,64 @@
 </template>
 
 <script lang="ts" setup>
-import { useAppointment } from "~/composables/api";
-import type { Appointment } from "~/types";
+import { useAppointment } from "@/composables/api";
+import type { Appointment } from "@/types";
 
-interface Props {
+interface SharedData {
   appointment: Appointment;
+  priceProcedure: string;
   recommendation: string;
   diagnostic: string;
-  priceProcedure: string;
-  proformaFileName: string;
 }
 
-const openSuccessModal = inject<() => void>("openSuccessModal");
 const refreshAppointments = inject<() => Promise<void>>("refreshAppointments");
-const closeValorationDetailsModal = inject<() => void>(
-  "closeValorationDetailsModal"
+
+const { isOpen, closeModal, getSharedData, openModal } =
+  useMedicalModalManager();
+
+const modalData = computed(() =>
+  getSharedData<SharedData>("confirmValoration")
 );
 
-const props = defineProps<Props>();
+const sharedData = computed(() => ({
+  appointment: modalData.value.appointment,
+  priceProcedure: modalData.value.priceProcedure,
+  recommendation: modalData.value.recommendation,
+  diagnostic: modalData.value.diagnostic,
+}));
+
+const isModalOpen = computed(() => isOpen.confirmValoration);
 
 const { uploadProforma } = useAppointment();
 
-const isModalOpen = ref<boolean>(false);
 const isLoading = ref<boolean>(false);
 
-const handleOpenModal = () => {
-  isModalOpen.value = true;
-};
-
 const handleCloseModal = () => {
-  isModalOpen.value = false;
+  closeModal("confirmValoration");
 };
 
 const handleConfirmValoration = async () => {
+  if (
+    !sharedData.value.priceProcedure ||
+    !sharedData.value.recommendation ||
+    !sharedData.value.diagnostic
+  ) {
+    return;
+  }
+
   const payload = {
-    price_procedure: props.priceProcedure,
-    recommendation_post_appointment: props.recommendation,
-    diagnostic: props.diagnostic,
+    price_procedure: sharedData.value.priceProcedure,
+    recommendation_post_appointment: sharedData.value.recommendation,
+    diagnostic: sharedData.value.diagnostic,
     appointment_result_code: "FIT_FOR_PROCEDURE",
     proforma_file_code: "PERSONAL_DOCUMENT____6__DOC__652025134811",
   };
 
   try {
+    if (!sharedData.value.appointment) throw new Error("Appointment not found");
+
     isLoading.value = true;
-    const api = uploadProforma(payload, props.appointment.id);
+    const api = uploadProforma(payload, sharedData.value.appointment.id);
     await api.request();
 
     const response = api.response.value;
@@ -98,8 +110,11 @@ const handleConfirmValoration = async () => {
 
     if (response?.data) {
       await refreshAppointments?.();
-      closeValorationDetailsModal?.();
-      openSuccessModal?.();
+      handleCloseModal();
+      closeModal("detallesValoracion");
+      openModal("exitoConfirmacion", {
+        appointment: sharedData.value.appointment,
+      });
       handleCloseModal();
     }
 
@@ -112,13 +127,6 @@ const handleConfirmValoration = async () => {
     isLoading.value = false;
   }
 };
-
-defineExpose({
-  handleOpenModal,
-  handleCloseModal,
-  isOpen: readonly(isModalOpen),
-  isLoading: readonly(isLoading),
-});
 </script>
 
 <style lang="scss" scoped>

@@ -146,6 +146,8 @@ const isModalOpen = computed({
 
 const closeModal = (): void => {
   emit("close-modal", "successfulPayment");
+  emit("close-modal", "payAppointment");
+  emit("close-modal", "appointmentDetails");
 };
 </script>
 

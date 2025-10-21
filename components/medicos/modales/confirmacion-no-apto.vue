@@ -1,6 +1,4 @@
 <template>
-  <slot name="trigger" :open="handleOpenModal"></slot>
-
   <AtomsModalBase
     :is-open="isModalOpen"
     size="extra-small"
@@ -43,26 +41,22 @@
 import { useAppointment } from "@/composables/api";
 import type { Appointment } from "@/types";
 
-interface Props {
-  appointment: Appointment;
-}
-
 const { uploadProforma } = useAppointment();
 
 const refreshAppointments = inject<() => Promise<void>>("refreshAppointments");
-const closeParentModal = inject<() => void>("closeUploadProformaModal");
 
-const props = defineProps<Props>();
+const { isOpen, closeModal, getSharedData } = useMedicalModalManager();
+const modalData = computed(() =>
+  getSharedData<{ appointment: Appointment }>("confirmacionNoApto")
+);
 
-const isModalOpen = ref<boolean>(false);
+const currentAppointment = computed(() => modalData.value.appointment);
+
+const isModalOpen = computed(() => isOpen.confirmacionNoApto);
 const isLoading = ref<boolean>(false);
 
-const handleOpenModal = () => {
-  isModalOpen.value = true;
-};
-
 const handleCloseModal = () => {
-  isModalOpen.value = false;
+  closeModal("confirmacionNoApto");
 };
 
 const handleConfirmNotSuitable = async () => {
@@ -74,7 +68,7 @@ const handleConfirmNotSuitable = async () => {
   try {
     isLoading.value = true;
 
-    const api = uploadProforma(payload, props.appointment.id);
+    const api = uploadProforma(payload, currentAppointment.value.id);
     await api.request();
 
     const response = api.response.value;
@@ -83,7 +77,7 @@ const handleConfirmNotSuitable = async () => {
     if (response?.data) {
       await refreshAppointments?.();
       handleCloseModal();
-      closeParentModal?.();
+      closeModal("subirProforma");
     }
 
     if (error) {
@@ -95,13 +89,6 @@ const handleConfirmNotSuitable = async () => {
     isLoading.value = false;
   }
 };
-
-defineExpose({
-  handleOpenModal,
-  handleCloseModal,
-  isOpen: readonly(isModalOpen),
-  isLoading: readonly(isLoading),
-});
 </script>
 
 <style lang="scss" scoped>

@@ -1,6 +1,4 @@
 <template>
-  <slot name="trigger" :open="handleOpenModal"></slot>
-
   <AtomsModalBase
     :is-open="isModalOpen"
     size="extra-small"
@@ -93,38 +91,34 @@
       </div>
     </template>
   </AtomsModalBase>
-
-  <MedicosModalesSubirProforma
-    ref="uploadProformaRef"
-    :appointment="appointment"
-  />
 </template>
 
 <script lang="ts" setup>
 import { useAppointment } from "@/composables/api";
 import type { Appointment, AppointmentStatusCode } from "@/types";
+import { computed, inject, ref } from "vue";
 
-interface Props {
-  appointment: Appointment;
-}
-
-const props = defineProps<Props>();
-
-const closeAppointmentDetailsModal = inject<() => void>(
-  "closeAppointmentDetailsModal"
-);
 const refreshAppointments = inject<() => Promise<void>>("refreshAppointments");
+
+const { isOpen, closeModal, getSharedData, openModal } =
+  useMedicalModalManager();
+
+const modalData = computed(() =>
+  getSharedData<{ appointment: Appointment }>("confirmacionReserva")
+);
+
+const currentAppointment = computed(() => modalData.value?.appointment);
+
+const isModalOpen = computed(() => isOpen.confirmacionReserva);
 
 const { confirmProcedure, setProcedureRealized, confirmValorationAppointment } =
   useAppointment();
 
-const isModalOpen = ref<boolean>(false);
 const isLoading = ref<boolean>(false);
-
-const uploadProformaRef = ref();
+const continueWithoutPayment = ref<boolean>(false);
 
 const appointmentStatus = computed(
-  () => props.appointment.appointment_status.code
+  () => currentAppointment.value?.appointment_status.code
 );
 
 const modalTitle = computed(() => {
@@ -140,7 +134,10 @@ const modalTitle = computed(() => {
     VALUATION_PENDING_VALORATION_APPOINTMENT: "¿Confirmar reserva?",
   };
 
-  return titleMap[appointmentStatus.value] || "¿Confirmar reserva?";
+  const status = appointmentStatus.value as AppointmentStatusCode | undefined;
+  return status
+    ? (titleMap[status] ?? "¿Confirmar reserva?")
+    : "¿Confirmar reserva?";
 });
 
 const PAYMENT_WARNING_CONFIG: Record<string, string> = {
@@ -149,58 +146,60 @@ const PAYMENT_WARNING_CONFIG: Record<string, string> = {
   CONFIRM_PROCEDURE: "PAYMENT_STATUS_NOT_PAID_PROCEDURE",
 };
 
+const showPaymentWarningModal = computed(() => {
+  const status = currentAppointment.value?.appointment_status.code;
+  const paymentStatus = currentAppointment.value?.payment_status.code;
+  return status && paymentStatus
+    ? PAYMENT_WARNING_CONFIG[status] === paymentStatus
+    : false;
+});
+
+continueWithoutPayment.value = showPaymentWarningModal.value;
+
 const handleContinueWithoutPayment = () => {
   continueWithoutPayment.value = false;
 };
 
-const showPaymentWarningModal = computed(() => {
-  const { appointment_status, payment_status } = props.appointment;
-  return (
-    PAYMENT_WARNING_CONFIG[appointment_status.code] === payment_status.code
-  );
-});
-
-const continueWithoutPayment = ref<boolean>(showPaymentWarningModal.value);
-
 const statusChangeText = computed(() => {
+  const status = appointmentStatus.value;
   const isValoration =
-    appointmentStatus.value === "PENDING_VALORATION_APPOINTMENT" ||
-    appointmentStatus.value === "CONFIRM_VALIDATION_APPOINTMENT";
+    status === "PENDING_VALORATION_APPOINTMENT" ||
+    status === "CONFIRM_VALIDATION_APPOINTMENT";
 
-  const isProcedure = [
-    "WAITING_PROCEDURE",
-    "CONFIRM_PROCEDURE",
-    "CONCRETED_APPOINTMENT",
-  ].includes(appointmentStatus.value);
+  const isProcedure = status
+    ? [
+        "WAITING_PROCEDURE",
+        "CONFIRM_PROCEDURE",
+        "CONCRETED_APPOINTMENT",
+      ].includes(status)
+    : false;
 
   if (isValoration) {
     return "Con estos cambios el estado de la solicitud de valoración pasará de: Pendiente a Confirmada";
   } else if (isProcedure) {
     return "Con estos cambios el estado de la solicitud de procedimiento pasará de: Pendiente a Concretada";
-  } else if (appointmentStatus.value === "PENDING_PROCEDURE") {
+  } else if (status === "PENDING_PROCEDURE") {
     return "Con estos cambios el estado de la solicitud de valoración pasará de: Pendiente a Confirmada";
   }
 
   return "Con estos cambios el estado de la solicitud de reserva pasará de: Pendiente a Valorada";
 });
 
-const shouldShowNotificationText = computed(() => {
-  return appointmentStatus.value === "PENDING_VALORATION_APPOINTMENT";
-});
+const shouldShowNotificationText = computed(
+  () => appointmentStatus.value === "PENDING_VALORATION_APPOINTMENT"
+);
 
-const shouldShowWarning = computed(() => {
-  return appointmentStatus.value === "PENDING_VALORATION_APPOINTMENT";
-});
-
-const handleOpenModal = () => {
-  isModalOpen.value = true;
-};
+const shouldShowWarning = computed(
+  () => appointmentStatus.value === "PENDING_VALORATION_APPOINTMENT"
+);
 
 const handleCloseModal = () => {
-  isModalOpen.value = false;
+  closeModal("confirmacionReserva");
 };
 
 const handleConfirmAction = async () => {
+  const status = appointmentStatus.value;
+
   const actionMap: Record<AppointmentStatusCode, () => Promise<void>> = {
     PENDING_VALORATION_APPOINTMENT: handleConfirmValorationAppointment,
     PENDING_PROCEDURE: handleConfirmProcedure,
@@ -208,15 +207,16 @@ const handleConfirmAction = async () => {
     CONFIRM_PROCEDURE: handleFinishProcedure,
     CONCRETED_APPOINTMENT: handleFinishProcedure,
     CONFIRM_VALIDATION_APPOINTMENT: confirmValoration,
+    VALUATION_PENDING_VALORATION_APPOINTMENT: confirmValoration,
     CANCEL_APPOINTMENT: handleConfirmValorationAppointment,
     VALUED_VALORATION_APPOINTMENT: handleConfirmValorationAppointment,
-    VALUATION_PENDING_VALORATION_APPOINTMENT:
-      handleConfirmValorationAppointment,
   };
 
-  const action =
-    actionMap[appointmentStatus.value] || handleConfirmValorationAppointment;
-  await action();
+  if (status && status in actionMap) {
+    await actionMap[status]();
+  } else {
+    await handleConfirmValorationAppointment();
+  }
 };
 
 const handleConfirmValorationAppointment = async () => {
@@ -232,12 +232,14 @@ const handleFinishProcedure = async () => {
 };
 
 const confirmValoration = async () => {
-  uploadProformaRef.value?.handleOpenModal();
+  closeModal("detallesCita");
+  openModal("subirProforma", { appointment: currentAppointment });
   handleCloseModal();
-  closeAppointmentDetailsModal?.();
 };
 
 const executeApiCall = async (action: string) => {
+  if (!currentAppointment.value) return;
+
   try {
     isLoading.value = true;
 
@@ -245,19 +247,16 @@ const executeApiCall = async (action: string) => {
 
     switch (action) {
       case "confirm_procedure":
-        api = confirmProcedure(props.appointment.id);
+        api = confirmProcedure(currentAppointment.value.id);
         break;
-
       case "set_procedure_realized":
-        api = setProcedureRealized(props.appointment.id);
+        api = setProcedureRealized(currentAppointment.value.id);
         break;
-
       case "confirm_valoration_appointment":
-        api = confirmValorationAppointment(props.appointment.id);
+        api = confirmValorationAppointment(currentAppointment.value.id);
         break;
-
       default:
-        break;
+        return;
     }
 
     if (!api) return;
@@ -269,9 +268,8 @@ const executeApiCall = async (action: string) => {
 
     if (response?.data) {
       await refreshAppointments?.();
-
       handleCloseModal();
-      closeAppointmentDetailsModal?.();
+      closeModal("detallesCita");
     }
 
     if (error) {
@@ -283,13 +281,6 @@ const executeApiCall = async (action: string) => {
     isLoading.value = false;
   }
 };
-
-defineExpose({
-  handleOpenModal,
-  handleCloseModal,
-  isOpen: readonly(isModalOpen),
-  isLoading: readonly(isLoading),
-});
 </script>
 
 <style lang="scss" scoped>

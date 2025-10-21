@@ -96,55 +96,50 @@
       </template>
 
       <template #cell-main_action="{ item }">
-        <MedicosModalesDetallesCita :appointment="item">
-          <template #trigger="{ open }">
-            <button
-              v-if="
-                item.appointment_status.code ===
-                'PENDING_VALORATION_APPOINTMENT'
-              "
-              class="appointments-table__action-btn appointments-table__action-btn--primary"
-              @click="open"
-              :aria-label="`Confirmar cita de valoración de ${item.customer.name}`"
-            >
-              Confirmar
-            </button>
+        <button
+          v-if="
+            item.appointment_status.code === 'PENDING_VALORATION_APPOINTMENT'
+          "
+          class="appointments-table__action-btn appointments-table__action-btn--primary"
+          @click="handleOpenDetallesCita(item)"
+          :aria-label="`Confirmar cita de valoración de ${item.customer.name}`"
+        >
+          Confirmar
+        </button>
 
-            <button
-              v-else-if="
-                [
-                  'VALUATION_PENDING_VALORATION_APPOINTMENT',
-                  'CONFIRM_VALIDATION_APPOINTMENT',
-                ].includes(item.appointment_status.code)
-              "
-              class="appointments-table__action-btn appointments-table__action-btn--warning"
-              @click="open"
-              :aria-label="`Realizar valoración de ${item.customer.name}`"
-            >
-              Valoración
-            </button>
+        <button
+          v-else-if="
+            [
+              'VALUATION_PENDING_VALORATION_APPOINTMENT',
+              'CONFIRM_VALIDATION_APPOINTMENT',
+            ].includes(item.appointment_status.code)
+          "
+          class="appointments-table__action-btn appointments-table__action-btn--warning"
+          @click="handleOpenDetallesCita(item)"
+          :aria-label="`Realizar valoración de ${item.customer.name}`"
+        >
+          Valoración
+        </button>
 
-            <button
-              v-else-if="item.appointment_status.code === 'PENDING_PROCEDURE'"
-              class="appointments-table__action-btn appointments-table__action-btn--success"
-              @click="open"
-              :aria-label="`Confirmar procedimiento de ${item.customer.name}`"
-            >
-              Confirmar Procedimiento
-            </button>
+        <button
+          v-else-if="item.appointment_status.code === 'PENDING_PROCEDURE'"
+          class="appointments-table__action-btn appointments-table__action-btn--success"
+          @click="handleOpenDetallesCita(item)"
+          :aria-label="`Confirmar procedimiento de ${item.customer.name}`"
+        >
+          Confirmar Procedimiento
+        </button>
 
-            <button
-              v-else-if="item.appointment_status.code === 'WAITING_PROCEDURE'"
-              class="appointments-table__action-btn appointments-table__action-btn--complete"
-              @click="open"
-              :aria-label="`Marcar como concretado procedimiento de ${item.customer.name}`"
-            >
-              Marcar como Concretado
-            </button>
+        <button
+          v-else-if="item.appointment_status.code === 'WAITING_PROCEDURE'"
+          class="appointments-table__action-btn appointments-table__action-btn--complete"
+          @click="handleOpenDetallesCita(item)"
+          :aria-label="`Marcar como concretado procedimiento de ${item.customer.name}`"
+        >
+          Marcar como Concretado
+        </button>
 
-            <span v-else class="appointments-table__no-action"> — </span>
-          </template>
-        </MedicosModalesDetallesCita>
+        <span v-else class="appointments-table__no-action"> — </span>
       </template>
 
       <template #cell-contact="{ item }">
@@ -164,28 +159,19 @@
 
           <ul class="dropdown-menu" role="menu">
             <li role="none">
-              <MedicosModalesDetallesValoracion
-                v-if="
+              <button
+                class="dropdown-item"
+                role="menuitem"
+                @click="
                   item.appointment_status.code ===
                   'VALUED_VALORATION_APPOINTMENT'
+                    ? handleOpenDetallesValoracion(item)
+                    : handleOpenDetallesCita(item)
                 "
-                :appointment="item"
               >
-                <template #trigger="{ open }">
-                  <button class="dropdown-item" role="menuitem" @click="open">
-                    <AtomsIconsEyeIcon />
-                    Ver más detalles
-                  </button>
-                </template>
-              </MedicosModalesDetallesValoracion>
-              <MedicosModalesDetallesCita v-else :appointment="item">
-                <template #trigger="{ open }">
-                  <button class="dropdown-item" role="menuitem" @click="open">
-                    <AtomsIconsEyeIcon />
-                    Ver más detalles
-                  </button>
-                </template>
-              </MedicosModalesDetallesCita>
+                <AtomsIconsEyeIcon />
+                Ver más detalles
+              </button>
             </li>
 
             <li
@@ -197,14 +183,14 @@
                 ].includes(item.appointment_status.code)
               "
             >
-              <MedicosModalesConfirmacionReserva :appointment="item">
-                <template #trigger="{ open }">
-                  <button class="dropdown-item" role="menuitem" @click="open">
-                    <AtomsIconsCalendarDaysIcon />
-                    Confirmar reserva
-                  </button>
-                </template>
-              </MedicosModalesConfirmacionReserva>
+              <button
+                class="dropdown-item"
+                role="menuitem"
+                @click="handleOpenConfirmacionReserva(item)"
+              >
+                <AtomsIconsCalendarDaysIcon />
+                Confirmar reserva
+              </button>
             </li>
 
             <li
@@ -214,24 +200,24 @@
                 'PENDING_VALORATION_APPOINTMENT'
               "
             >
-              <MedicosModalesEditorFechaHora :appointment="item">
-                <template #trigger="{ open }">
-                  <button class="dropdown-item" role="menuitem" @click="open">
-                    <Icon
-                      :name="
-                        item.appointment_type.name == 'pre-reserva'
-                          ? 'lucide:square-pen'
-                          : 'lucide:undo-2'
-                      "
-                    />
-                    {{
-                      item.appointment_type.name == "pre-reserva"
-                        ? "Editar fecha y hora"
-                        : "Reprogramar cita"
-                    }}
-                  </button>
-                </template>
-              </MedicosModalesEditorFechaHora>
+              <button
+                class="dropdown-item"
+                role="menuitem"
+                @click="handleOpenEditorFechaHora(item)"
+              >
+                <Icon
+                  :name="
+                    item.appointment_type.name == 'pre-reserva'
+                      ? 'lucide:square-pen'
+                      : 'lucide:undo-2'
+                  "
+                />
+                {{
+                  item.appointment_type.name == "pre-reserva"
+                    ? "Editar fecha y hora"
+                    : "Reprogramar cita"
+                }}
+              </button>
             </li>
 
             <li role="none">
@@ -253,14 +239,14 @@
                 )
               "
             >
-              <MedicosModalesAnularCita :appointment="item">
-                <template #trigger="{ open }">
-                  <button class="dropdown-item" role="menuitem" @click="open">
-                    <AtomsIconsCircleXIcon />
-                    Anular cita
-                  </button>
-                </template>
-              </MedicosModalesAnularCita>
+              <button
+                class="dropdown-item"
+                role="menuitem"
+                @click="handleOpenAnularCita(item)"
+              >
+                <AtomsIconsCircleXIcon />
+                Anular cita
+              </button>
             </li>
 
             <li role="none">
@@ -279,39 +265,28 @@
         <div v-else class="appointments-table__actions">
           <MedicosModalesInformacionUsuario :appointment="item">
             <template #trigger="{ open }">
-              <button
-                class="appointments-table__action-btn--view custom-stroke"
-                @click="open"
-                :aria-label="`Ver detalles de ${item.customer.name}`"
-              >
-                <Icon name="lucide:file-search" size="20" stroke-width="1" />
+              <button class="dropdown-item" role="menuitem" @click="open">
+                <AtomsIconsUserRoundIcon />
+                Perfil del Paciente
               </button>
             </template>
           </MedicosModalesInformacionUsuario>
 
-          <MedicosModalesDetallesCita :appointment="item">
-            <template #trigger="{ open }">
-              <button
-                class="appointments-table__action-btn--edit custom-stroke"
-                @click="open"
-                :aria-label="`Editar cita de ${item.customer.name}`"
-              >
-                <AtomsIconsPenLineIcon size="20" />
-              </button>
-            </template>
-          </MedicosModalesDetallesCita>
+          <button
+            class="appointments-table__action-btn--edit custom-stroke"
+            @click="handleOpenDetallesCita(item)"
+            :aria-label="`Editar cita de ${item.customer.name}`"
+          >
+            <AtomsIconsPenLineIcon size="20" />
+          </button>
 
-          <MedicosModalesAnularCita :appointment="item">
-            <template #trigger="{ open }">
-              <button
-                class="appointments-table__action-btn--cancel custom-stroke"
-                @click="open"
-                :aria-label="`Cancelar cita de ${item.customer.name}`"
-              >
-                <AtomsIconsTrashIcon size="20" />
-              </button>
-            </template>
-          </MedicosModalesAnularCita>
+          <button
+            class="appointments-table__action-btn--cancel custom-stroke"
+            @click="handleOpenAnularCita(item)"
+            :aria-label="`Cancelar cita de ${item.customer.name}`"
+          >
+            <AtomsIconsTrashIcon size="20" />
+          </button>
         </div>
       </template>
 
@@ -338,9 +313,34 @@
       </template>
     </UiAppointmentTableBase>
   </section>
+
+  <MedicosModalesDetallesValoracion v-if="isOpen.detallesValoracion" />
+  <MedicosModalesDetallesCita v-if="isOpen.detallesCita" />
+  <MedicosModalesEditorFechaHora v-if="isOpen.editorFechaHora" />
+  <MedicosModalesConfirmacionReprogramacion
+    v-if="isOpen.confirmacionReprogramacion"
+  />
+  <MedicosModalesCambiosGuardados v-if="isOpen.cambiosGuardados" />
+  <MedicosModalesConfirmacionReserva v-if="isOpen.confirmacionReserva" />
+  <MedicosModalesSubirProforma v-if="isOpen.subirProforma" />
+  <MedicosModalesConfirmacionValoracion v-if="isOpen.confirmValoration" />
+  <MedicosModalesExitoConfirmacion v-if="isOpen.exitoConfirmacion" />
+  <MedicosModalesAnularCita v-if="isOpen.anularCita" />
+  <MedicosModalesConfirmacionNoApto v-if="isOpen.confirmacionNoApto" />
+  <MedicosModalesConfirmarCodigo v-if="isOpen.confirmarCodigo" />
+
+  <!--   
+ 
+  
+  
+  
+  <MedicosModalesConfirmarEliminacion />
+  
+  <MedicosModalesAdvertenciaPago /> -->
 </template>
 
 <script lang="ts" setup>
+import { useMedicalModalManager } from "@/composables/useMedicalModalManager";
 import { jsPDF } from "jspdf";
 import { computed, ref, watch } from "vue";
 import type { Appointment, AppointmentStatusCode } from "~/types";
@@ -359,6 +359,8 @@ const props = withDefaults(defineProps<Props>(), {
 });
 
 const { formatDate, formatTime } = useFormat();
+
+const { openModal, isOpen } = useMedicalModalManager();
 
 const selectedAppointments = ref<Set<number>>(new Set());
 const allSelected = ref<boolean>(false);
@@ -446,6 +448,26 @@ const dynamicColumns = computed<TableColumn[]>(() => {
 
   return baseColumns;
 });
+
+const handleOpenDetallesCita = (appointment: Appointment) => {
+  openModal("detallesCita", { appointment });
+};
+
+const handleOpenDetallesValoracion = (appointment: Appointment) => {
+  openModal("detallesValoracion", { appointment });
+};
+
+const handleOpenConfirmacionReserva = (appointment: Appointment) => {
+  openModal("confirmacionReserva", { appointment });
+};
+
+const handleOpenEditorFechaHora = (appointment: Appointment) => {
+  openModal("editorFechaHora", { appointment });
+};
+
+const handleOpenAnularCita = (appointment: Appointment) => {
+  openModal("anularCita", { appointment });
+};
 
 const toggleAppointmentSelection = (appointmentId: number): void => {
   if (selectedAppointments.value.has(appointmentId)) {
