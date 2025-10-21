@@ -31,7 +31,11 @@
         {{ buttonConfig.text }}
       </span>
 
-      <span v-else-if="buttonConfig.type === 'empty'">—</span>
+      <span
+        v-else-if="buttonConfig.type === 'empty'"
+        class="appointment-pay-modal__empty-status"
+        >—</span
+      >
     </div>
 
     <PacientesModalesDetallesCita
@@ -310,6 +314,12 @@ const buttonConfig = computed((): ButtonConfig | null => {
 
 <style lang="scss" scoped>
 .appointment-pay-modal {
+  &__empty-status {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+  }
+
   &__button {
     &--outline {
       @include outline-button;
