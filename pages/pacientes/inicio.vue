@@ -11,9 +11,11 @@ const route = useRoute();
 const router = useRouter();
 const { fetchUdc } = useUdc();
 const { fetchAllMain } = useSupplier();
-const { getUserInfo } = useUserInfo();
 
-const userInfo = getUserInfo();
+const { getUserInfo } = useUserInfo();
+const userInfo = getUserInfo?.() ?? null;
+
+const safeUser = computed(() => userInfo?.value ?? userInfo ?? {});
 
 const openPackagesModal = ref(false);
 
@@ -55,10 +57,11 @@ const handleGetHistory = async () => {
 };
 
 const genderWelcome = computed(() => {
-  const gender = userInfo.value?.gender;
+  const gender = safeUser.value.gender;
   if (!gender) return "Bienvenido/a";
   if (gender.toLowerCase() === "male") return "Bienvenido";
   if (gender.toLowerCase() === "female") return "Bienvenida";
+  return "Bienvenido/a";
 });
 
 const selectDoctor = async ({
@@ -90,7 +93,7 @@ onMounted(async () => {
         <div class="hero__container">
           <h1 class="hero__title">
             <span class="hero__greeting">
-              {{ genderWelcome }} {{ userInfo.name }}
+              {{ genderWelcome }} {{ safeUser.name }}
             </span>
             <span class="hero__question">
               ¿Qué servicio médico estás buscando?
