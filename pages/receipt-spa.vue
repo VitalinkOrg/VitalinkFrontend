@@ -68,11 +68,15 @@
           }}
         </p>
 
-        <div class="receipt-spa__details">
+        <div class="receipt-spa__details" v-if="reference">
           <div class="receipt-spa__detail-row">
             <span class="receipt-spa__detail-label">Referencia:</span>
             <span class="receipt-spa__detail-value">{{ reference }}</span>
           </div>
+        </div>
+
+        <div v-if="errorDetails" class="receipt-spa__error-details">
+          <p class="receipt-spa__error-text">{{ errorDetails }}</p>
         </div>
       </div>
 
@@ -101,7 +105,7 @@
 </template>
 
 <script setup lang="ts">
-import { onMounted, ref } from "vue";
+import { onMounted, onUnmounted, ref } from "vue";
 import { useRoute } from "vue-router";
 
 type PaymentStatus = "created" | "pending" | "accepted" | "declined" | "error";
@@ -123,20 +127,44 @@ interface PaymentStatusResponse {
     currency?: string;
     timestamp?: string;
   };
+  message?: string;
 }
 
 const route = useRoute();
 const config = useRuntimeConfig();
 const { getToken } = useAuthToken();
+
 const state = ref<ComponentState>("validating");
 const reference = ref<string>("");
 const sigValid = ref<boolean>(false);
 const hint = ref<string>("");
 const canceled = ref<boolean>(false);
 const pollAttempts = ref<number>(0);
-const maxPollAttempts = 30;
+const errorDetails = ref<string>("");
+const pollingTimeoutId = ref<ReturnType<typeof setTimeout> | null>(null);
 
+const maxPollAttempts = 30;
 const POLL_INTERVAL = 3000;
+
+const getParentOrigin = (): string => {
+  try {
+    if (process.dev) {
+      return window.location.origin;
+    }
+
+    if (document.referrer) {
+      const url = new URL(document.referrer);
+      return url.origin;
+    }
+
+    return window.location.origin;
+  } catch (error) {
+    console.error("[Receipt] Error determining parent origin:", error);
+    return "*";
+  }
+};
+
+const parentOrigin = getParentOrigin();
 
 const fetchPaymentStatus = async (
   ref: string
@@ -144,43 +172,56 @@ const fetchPaymentStatus = async (
   try {
     const token = getToken();
     if (!token) {
-      console.error("No authentication token found");
+      errorDetails.value = "Token de autenticación no encontrado";
       return null;
     }
 
-    const url = `${config.public.API_BASE_URL}/payment/status?reference=${ref}`;
+    let apiUrl = config.public.API_BASE_URL;
 
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 10000);
+    if (window.location.protocol === "https:" && apiUrl.startsWith("http://")) {
+      apiUrl = apiUrl.replace("http://", "https://");
+    }
 
-    const response = await fetch(url, {
+    const url = `${apiUrl}/payment/status`;
+
+    const data = await $fetch<PaymentStatusResponse>(url, {
+      method: "GET",
+      query: {
+        reference: ref,
+      },
       headers: {
         Authorization: token,
         "Content-Type": "application/json",
+        Accept: "application/json",
       },
-      signal: controller.signal,
+      timeout: 30000,
+      retry: 1,
+      retryDelay: 1000,
     });
 
-    clearTimeout(timeoutId);
-
-    if (!response.ok) {
-      if (response.status === 400) {
-        const errorData = await response.json().catch(() => null);
-        console.error("Bad Request (400):", errorData);
-      } else if (response.status === 401) {
-        console.error("Unauthorized (401): Invalid or expired token");
-      }
+    if (!data.success) {
+      errorDetails.value = data.message || "Respuesta inválida del servidor";
       return null;
     }
 
-    const data: PaymentStatusResponse = await response.json();
     return data;
-  } catch (error) {
-    if (error instanceof Error && error.name === "AbortError") {
-      console.error("Request timeout after 10 seconds");
+  } catch (error: any) {
+    if (error.statusCode === 400) {
+      errorDetails.value = "Solicitud inválida";
+    } else if (error.statusCode === 401) {
+      errorDetails.value = "No autorizado. Por favor, inicie sesión nuevamente";
+    } else if (error.statusCode === 404) {
+      errorDetails.value = "Transacción no encontrada";
+    } else if (error.statusCode >= 500) {
+      errorDetails.value = "Error del servidor. Intente nuevamente";
+    } else if (error.message?.includes("timeout")) {
+      errorDetails.value = "Tiempo de espera agotado";
+    } else if (error.message?.includes("fetch")) {
+      errorDetails.value = "Error de red. Verifique su conexión";
     } else {
-      console.error("Error fetching payment status:", error);
+      errorDetails.value = error.message || "Error desconocido";
     }
+
     return null;
   }
 };
@@ -188,6 +229,8 @@ const fetchPaymentStatus = async (
 const startPolling = async () => {
   if (!reference.value) {
     state.value = "error";
+    errorDetails.value = "Referencia de pago no proporcionada";
+    notifyParent("error", "");
     return;
   }
 
@@ -197,9 +240,12 @@ const startPolling = async () => {
 
   if (!statusData || !statusData.success) {
     if (pollAttempts.value < maxPollAttempts) {
-      setTimeout(startPolling, POLL_INTERVAL);
+      pollingTimeoutId.value = setTimeout(startPolling, POLL_INTERVAL);
     } else {
       state.value = "error";
+      if (!errorDetails.value) {
+        errorDetails.value = "No se pudo verificar el estado del pago";
+      }
       notifyParent("error", reference.value);
     }
     return;
@@ -209,9 +255,11 @@ const startPolling = async () => {
 
   if (paymentStatus === "created" || paymentStatus === "pending") {
     if (pollAttempts.value < maxPollAttempts) {
-      setTimeout(startPolling, POLL_INTERVAL);
+      pollingTimeoutId.value = setTimeout(startPolling, POLL_INTERVAL);
     } else {
       state.value = "error";
+      errorDetails.value =
+        "Tiempo de espera agotado para la validación del pago";
       notifyParent("error", reference.value);
     }
     return;
@@ -225,21 +273,36 @@ const startPolling = async () => {
     notifyParent("declined", reference.value);
   } else {
     state.value = "error";
+    errorDetails.value = "Estado de pago no reconocido";
     notifyParent("error", reference.value);
   }
 };
 
 const notifyParent = (status: string, ref: string) => {
   if (window.parent && window.parent !== window) {
-    window.parent.postMessage(
-      {
-        type: "PAYMENT_RESULT",
-        status: status,
-        reference: ref,
-        timestamp: new Date().toISOString(),
-      },
-      "*"
-    );
+    const message = {
+      type: "PAYMENT_RESULT",
+      status: status,
+      reference: ref,
+      timestamp: new Date().toISOString(),
+    };
+
+    try {
+      window.parent.postMessage(message, parentOrigin);
+
+      if (process.dev) {
+        window.parent.postMessage(message, "*");
+      }
+    } catch (error: any) {
+      console.error("Error sending message to parent:", error);
+    }
+  }
+};
+
+const cleanup = () => {
+  if (pollingTimeoutId.value) {
+    clearTimeout(pollingTimeoutId.value);
+    pollingTimeoutId.value = null;
   }
 };
 
@@ -257,11 +320,31 @@ onMounted(() => {
 
   if (!sigValid.value) {
     state.value = "error";
+    errorDetails.value = "Firma de validación inválida";
+    notifyParent("error", reference.value);
+    return;
+  }
+
+  if (!reference.value) {
+    state.value = "error";
+    errorDetails.value = "Referencia de pago no encontrada";
+    notifyParent("error", "");
+    return;
+  }
+
+  const token = getToken();
+  if (!token) {
+    state.value = "error";
+    errorDetails.value = "Sesión no válida";
     notifyParent("error", reference.value);
     return;
   }
 
   startPolling();
+});
+
+onUnmounted(() => {
+  cleanup();
 });
 </script>
 
@@ -278,10 +361,11 @@ onMounted(() => {
     "Segoe UI",
     Roboto,
     sans-serif;
+  background: #f7fafc;
 
   &__container {
     width: 100%;
-    max-width: 480px;
+    max-width: 600px;
     background: #ffffff;
     border-radius: 12px;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
@@ -290,7 +374,7 @@ onMounted(() => {
 
   &__header {
     text-align: center;
-    margin-bottom: 32px;
+    margin-bottom: 24px;
   }
 
   &__title {
@@ -407,6 +491,22 @@ onMounted(() => {
     padding: 4px 8px;
     border-radius: 4px;
     word-break: break-all;
+    max-width: 60%;
+    text-align: right;
+  }
+
+  &__error-details {
+    background: #fff5f5;
+    border: 1px solid #feb2b2;
+    border-radius: 8px;
+    padding: 12px;
+    margin-top: 16px;
+  }
+
+  &__error-text {
+    font-size: 13px;
+    color: #c53030;
+    margin: 0;
   }
 }
 
@@ -430,6 +530,11 @@ onMounted(() => {
 
     &__result-title {
       font-size: 20px;
+    }
+
+    &__detail-value {
+      max-width: 50%;
+      font-size: 12px;
     }
   }
 }
