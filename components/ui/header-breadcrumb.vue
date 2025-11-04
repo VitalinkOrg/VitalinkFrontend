@@ -9,7 +9,6 @@ const route = useRoute();
 
 const generateBreadcrumbs = () => {
   const pathSegments = route.path.split("/").filter((segment) => segment);
-  console.log({ pathSegments });
   const breadcrumbs = [];
 
   let currentPath = "";
