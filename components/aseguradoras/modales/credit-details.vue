@@ -1,107 +1,65 @@
 <template>
-  <button
-    class="credit-details__trigger"
-    @click="handleOpenModal"
-    :disabled="disabled"
-  >
-    Ver Detalles
-  </button>
-
   <AtomsModalBase
-    :is-open="isOpen"
-    @close="handleCloseModal"
+    :is-open="modalManager.isOpen.details"
+    @close="handleClose"
     :close-on-backdrop="false"
     header-class="header-border-bottom"
     footer-class="footer-border-top"
   >
-    <div class="credit-details">
+    <template #title>
       <h5 class="credit-details__title">Detalles de la solicitud</h5>
+    </template>
 
-      <table class="credit-details__table">
-        <tbody>
-          <tr class="credit-details__row">
-            <td class="credit-details__label">Información del Paciente:</td>
-            <td class="credit-details__value">
-              {{ credit.appointment.customer.name }}
-            </td>
-          </tr>
-          <tr class="credit-details__row">
-            <td class="credit-details__label">Especialidad:</td>
-            <td class="credit-details__value">
-              {{ credit.appointment.package.specialty.medical_specialty.name }}
-            </td>
-          </tr>
-          <tr class="credit-details__row">
-            <td class="credit-details__label">Procedimiento:</td>
-            <td class="credit-details__value">
-              {{ credit.appointment.package?.procedure?.name }}
-            </td>
-          </tr>
-          <tr class="credit-details__row">
-            <td class="credit-details__label">Fecha de Solicitud:</td>
-            <td class="credit-details__value">
-              {{ formatDate(credit.created_date) }}
-            </td>
-          </tr>
-          <tr class="credit-details__row">
-            <td class="credit-details__label">Monto Solicitado:</td>
-            <td class="credit-details__value">
-              {{
-                formatCurrency(credit.requested_amount, { decimalPlaces: 0 })
-              }}
-            </td>
-          </tr>
-          <tr class="credit-details__row">
-            <td class="credit-details__label">Monto a Aprobar:</td>
-            <td class="credit-details__value">
-              <input
-                type="number"
-                :value="approvedAmount"
-                @input="
-                  $emit(
-                    'update:approved-amount',
-                    ($event.target as HTMLInputElement).value
-                  )
-                "
-                :max="credit.requested_amount"
-                class="credit-details__input"
-                :class="{ 'credit-details__input--invalid': amountError }"
-              />
-              <div v-if="amountError" class="credit-details__error">
-                {{ amountError }}
-              </div>
-            </td>
-          </tr>
-          <tr class="credit-details__row">
-            <td class="credit-details__label">Observaciones del Análisis:</td>
-            <td class="credit-details__value">
-              <textarea
-                :value="description"
-                @input="
-                  $emit(
-                    'update:description',
-                    ($event.target as HTMLTextAreaElement).value
-                  )
-                "
-                class="credit-details__textarea"
-                rows="3"
-                placeholder="Campo para detallar motivos del ajuste si se aprueba con un monto menor"
-                :disabled="proformaGuardado"
-              ></textarea>
-            </td>
-          </tr>
-        </tbody>
-      </table>
+    <div class="credit-details">
+      <MedicosTablaDetallesCita
+        :rows="creditRowsWithData"
+        :hidden-title="true"
+        :aria-label="`Detalles de la cita de ${modalManager.credit.value?.appointment.customer.name}`"
+      >
+        <template #data-monto-aprobar>
+          <input
+            type="text"
+            class="credit-details__input"
+            :placeholder="
+              formatCurrency(modalManager.credit.value?.requested_amount || 0, {
+                decimalPlaces: 0,
+              })
+            "
+            :value="displayAmount"
+            @input="handleAmountInput"
+            :class="{ 'credit-details__input--invalid': amountError }"
+            :disabled="isDisabled"
+            inputmode="numeric"
+          />
+          <small class="credit-details__help-text"
+            >Debe ser igual o menor al monto solicitado.</small
+          >
+          <div v-if="amountError" class="credit-details__error">
+            {{ amountError }}
+          </div>
+        </template>
+
+        <template #data-observaciones-analisis>
+          <textarea
+            v-model="description"
+            class="credit-details__textarea"
+            placeholder="Campo para detallar motivos del ajuste si se aprueba con un monto menor"
+            rows="4"
+            :disabled="isDisabled"
+          ></textarea>
+        </template>
+      </MedicosTablaDetallesCita>
 
       <div class="credit-details__actions">
         <button
-          class="credit-details__btn credit-details__btn--danger-outline"
+          class="credit-details__button credit-details__button--danger-outline"
           @click="handleCancel"
+          :disabled="isDisabled"
         >
           Anular Solicitud
         </button>
         <button
-          class="credit-details__btn credit-details__btn--primary"
+          class="credit-details__button credit-details__button--primary"
           @click="validateAndProceed"
           :disabled="isApproveDisabled"
         >
@@ -113,246 +71,176 @@
 </template>
 
 <script lang="ts" setup>
-import type { Credit } from "@/types";
-
-interface Props {
-  credit: Credit;
-  approvedAmount: string | null;
-  description: string;
-  amountError: string;
-  proformaGuardado: boolean;
-  disabled: boolean;
-}
-
-interface Emits {
-  (e: "update:approved-amount", value: string): void;
-  (e: "update:description", value: string): void;
-  (e: "next-step"): void;
-  (e: "cancel-step"): void;
-}
+import type { TablaBaseRow } from "@/components/medicos/tabla-detalles-cita.vue";
+import { useModalManager } from "@/composables/useModalManager";
 
 const { formatDate, formatCurrency } = useFormat();
+const modalManager = useModalManager();
 
-const props = defineProps<Props>();
-const emit = defineEmits<Emits>();
+const amountError = ref<string>("");
 
-const isOpen = ref<boolean>(false);
+const approvedAmount = computed({
+  get: () => modalManager.getSharedData<string>("approvedAmount") || "",
+  set: (value: string) => modalManager.setSharedData("approvedAmount", value),
+});
 
-const handleOpenModal = () => {
-  isOpen.value = true;
-};
+const description = computed({
+  get: () => modalManager.getSharedData<string>("description") || "",
+  set: (value: string) => modalManager.setSharedData("description", value),
+});
 
-const handleCloseModal = () => {
-  isOpen.value = false;
+const isDisabled = computed(
+  () => modalManager.credit.value?.credit_status.code !== "REQUIRED"
+);
+
+const creditRowsWithData = computed((): TablaBaseRow[] => {
+  if (!modalManager.credit.value) return [];
+
+  return [
+    {
+      key: "paciente",
+      header: "Información del Paciente:",
+      value: modalManager.credit.value.appointment.customer.name,
+    },
+    {
+      key: "especialidad",
+      header: "Especialidad:",
+      value:
+        modalManager.credit.value.appointment.package.specialty
+          .medical_specialty.name,
+    },
+    {
+      key: "procedimiento",
+      header: "Procedimiento:",
+      value:
+        modalManager.credit.value.appointment.package?.procedure?.name ?? "",
+      class: "appointment-editor__details-row--editable",
+      isEndRow: true,
+    },
+    {
+      key: "fecha-solicitud",
+      header: "Fecha de Solicitud:",
+      value: formatDate(modalManager.credit.value.created_date, "short"),
+      class: "appointment-editor__details-row--editable",
+    },
+    {
+      key: "monto-solicitado",
+      header: "Monto Solicitado:",
+      value: modalManager.credit.value.requested_amount
+        ? formatCurrency(modalManager.credit.value.requested_amount, {
+            decimalPlaces: 0,
+          })
+        : "",
+    },
+    {
+      key: "monto-aprobar",
+      header: "Monto a Aprobar:",
+      value: modalManager.credit.value.approved_amount
+        ? formatCurrency(modalManager.credit.value.approved_amount, {
+            decimalPlaces: 0,
+          })
+        : "",
+    },
+    {
+      key: "observaciones-analisis",
+      header: "Observaciones del Análisis:",
+      value: modalManager.credit.value.credit_observations || "",
+    },
+  ];
+});
+
+const displayAmount = computed(() => {
+  if (!approvedAmount.value) return "";
+  return formatCurrency(Number(approvedAmount.value), {
+    decimalPlaces: 0,
+  });
+});
+
+const handleAmountInput = (event: Event) => {
+  const input = event.target as HTMLInputElement;
+  const value = input.value;
+  const numericValue = value.replace(/[^\d]/g, "");
+  approvedAmount.value = numericValue;
 };
 
 const isApproveDisabled = computed<boolean>(() => {
   return (
-    !props.approvedAmount ||
-    Number(props.approvedAmount) <= 0 ||
-    (props.credit?.requested_amount !== undefined &&
-      props.approvedAmount > props.credit.requested_amount)
+    isDisabled.value ||
+    !approvedAmount.value ||
+    Number(approvedAmount.value) <= 0 ||
+    (modalManager.credit.value?.requested_amount !== undefined &&
+      Number(approvedAmount.value) >
+        Number(modalManager.credit.value.requested_amount))
   );
 });
 
 const validateAndProceed = (): void => {
-  if (!props.approvedAmount) {
+  if (!approvedAmount.value) {
+    amountError.value = "El monto es requerido";
     return;
   }
 
   if (
-    props.credit?.requested_amount &&
-    props.approvedAmount > props.credit.requested_amount
+    modalManager.credit.value?.requested_amount &&
+    Number(approvedAmount.value) >
+      Number(modalManager.credit.value.requested_amount)
   ) {
+    amountError.value = `El monto no puede exceder ${formatCurrency(modalManager.credit.value.requested_amount, { decimalPlaces: 0 })}`;
     return;
   }
 
-  if (Number(props.approvedAmount) <= 0) {
+  if (Number(approvedAmount.value) <= 0) {
+    amountError.value = "El monto debe ser mayor a 0";
     return;
   }
 
-  emit("next-step");
-  handleCloseModal();
+  amountError.value = "";
+  modalManager.closeModal("details");
+  modalManager.openModal("approval");
 };
 
 const handleCancel = () => {
-  emit("cancel-step");
-  handleCloseModal();
+  modalManager.closeModal("details");
+  modalManager.openModal("rejection");
 };
 
-defineExpose({
-  handleOpenModal,
-  handleCloseModal,
-  isOpen: readonly(isOpen),
+const handleClose = () => {
+  // Limpiar errores al cerrar
+  amountError.value = "";
+  modalManager.closeModal("details");
+};
+
+// Limpiar el error cuando se abre el modal con un nuevo crédito
+watch(
+  () => modalManager.credit.value?.id,
+  () => {
+    amountError.value = "";
+  }
+);
+
+watch(approvedAmount, (newVal) => {
+  if (!newVal) {
+    amountError.value = "El monto es requerido";
+    return;
+  }
+
+  if (
+    modalManager.credit.value?.requested_amount &&
+    Number(newVal) > Number(modalManager.credit.value.requested_amount)
+  ) {
+    amountError.value = `El monto no puede exceder ${formatCurrency(modalManager.credit.value.requested_amount, { decimalPlaces: 0 })}`;
+  } else if (Number(newVal) <= 0) {
+    amountError.value = "El monto debe ser mayor a 0";
+  } else {
+    amountError.value = "";
+  }
 });
 </script>
 
 <style lang="scss" scoped>
-.credit-modal {
-  &__button {
-    &--outline {
-      @include outline-button;
-      border-radius: 8px;
-      border-width: 1px;
-      padding: 8px 14px;
-      gap: 8px;
-      opacity: 1;
-      font-weight: 600;
-      font-size: 14px;
-      line-height: 20px;
-      letter-spacing: 0;
-    }
-  }
-
-  &__content {
-    position: relative;
-    display: flex;
-    flex-direction: column;
-    width: 100%;
-  }
-}
-
-%table-base {
-  width: 100%;
-  margin-bottom: 1rem;
-  border-collapse: collapse;
-}
-
-%table-row {
-  border: none;
-}
-
-%table-label {
-  padding: 0.5rem;
-  color: #6c757d;
-  vertical-align: top;
-}
-
-%table-value {
-  padding: 0.5rem;
-}
-
-%input-base {
-  display: block;
-  width: 100%;
-  padding: 0.375rem 0.75rem;
-  font-size: 1rem;
-  font-weight: 400;
-  line-height: 1.5;
-  color: #212529;
-  background-color: #fff;
-  border: 1px solid #ced4da;
-  border-radius: 0.375rem;
-  transition:
-    border-color 0.15s ease-in-out,
-    box-shadow 0.15s ease-in-out;
-
-  &:focus {
-    color: #212529;
-    background-color: #fff;
-    border-color: #86b7fe;
-    outline: 0;
-    box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25);
-  }
-}
-
-%btn-base {
-  padding: 0.5rem 1rem;
-  font-size: 1rem;
-  font-weight: 400;
-  line-height: 1.5;
-  border-radius: 0.375rem;
-  border: 1px solid transparent;
-  cursor: pointer;
-  transition:
-    color 0.15s ease-in-out,
-    background-color 0.15s ease-in-out,
-    border-color 0.15s ease-in-out,
-    box-shadow 0.15s ease-in-out;
-
-  &:disabled {
-    pointer-events: none;
-    opacity: 0.65;
-  }
-}
-
-%btn-primary {
-  @extend %btn-base;
-  color: #fff;
-  background-color: #0d6efd;
-  border-color: #0d6efd;
-
-  &:hover:not(:disabled) {
-    background-color: #0b5ed7;
-    border-color: #0a58ca;
-  }
-}
-
-%btn-danger {
-  @extend %btn-base;
-  color: #fff;
-  background-color: #dc3545;
-  border-color: #dc3545;
-
-  &:hover:not(:disabled) {
-    background-color: #bb2d3b;
-    border-color: #b02a37;
-  }
-}
-
-%btn-danger-outline {
-  @extend %btn-base;
-  color: #dc3545;
-  background-color: transparent;
-  border-color: #dc3545;
-
-  &:hover:not(:disabled) {
-    color: #fff;
-    background-color: #dc3545;
-    border-color: #dc3545;
-  }
-}
-
-%btn-dark-outline {
-  @extend %btn-base;
-  color: #212529;
-  background-color: transparent;
-  border-color: #212529;
-
-  &:hover:not(:disabled) {
-    color: #fff;
-    background-color: #212529;
-    border-color: #212529;
-  }
-}
-
-%error-message {
-  color: #dc3545;
-  font-size: 0.875rem;
-  margin-top: 0.25rem;
-}
-
-%title-base {
-  font-size: 1.25rem;
-  font-weight: 700;
-  margin-bottom: 1rem;
-}
-
-%description-base {
-  color: #6c757d;
-  margin-bottom: 1rem;
-}
-
 .credit-details {
   width: 100%;
   padding: 20px 24px;
-
-  &__trigger {
-    @include outline-button;
-    padding: 8px;
-    font-size: 14px;
-    text-wrap: nowrap;
-  }
 
   &__title {
     font-weight: 600;
@@ -362,48 +250,17 @@ defineExpose({
     color: #353e5c;
   }
 
-  &__table {
-    width: 100%;
-    margin-bottom: 1rem;
-    border-collapse: collapse;
-  }
-
-  &__row {
-    border: none;
-  }
-
-  &__label {
-    padding: 0.5rem;
-    color: #6c757d;
-    vertical-align: top;
-  }
-
-  &__value {
-    padding: 0.5rem;
+  &__help-text {
+    font-weight: 400;
+    font-size: 14px;
+    line-height: 20px;
+    letter-spacing: 0;
+    color: #667085;
   }
 
   &__input {
-    display: block;
+    @include input-base;
     width: 100%;
-    padding: 0.375rem 0.75rem;
-    font-size: 1rem;
-    font-weight: 400;
-    line-height: 1.5;
-    color: #212529;
-    background-color: #fff;
-    border: 1px solid #ced4da;
-    border-radius: 0.375rem;
-    transition:
-      border-color 0.15s ease-in-out,
-      box-shadow 0.15s ease-in-out;
-
-    &:focus {
-      color: #212529;
-      background-color: #fff;
-      border-color: #86b7fe;
-      outline: 0;
-      box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25);
-    }
 
     &--invalid {
       border-color: #dc3545;
@@ -416,33 +273,8 @@ defineExpose({
   }
 
   &__textarea {
-    display: block;
+    @include input-base;
     width: 100%;
-    padding: 0.375rem 0.75rem;
-    font-size: 1rem;
-    font-weight: 400;
-    line-height: 1.5;
-    color: #212529;
-    background-color: #fff;
-    border: 1px solid #ced4da;
-    border-radius: 0.375rem;
-    resize: vertical;
-    transition:
-      border-color 0.15s ease-in-out,
-      box-shadow 0.15s ease-in-out;
-
-    &:focus {
-      color: #212529;
-      background-color: #fff;
-      border-color: #86b7fe;
-      outline: 0;
-      box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25);
-    }
-
-    &:disabled {
-      background-color: #e9ecef;
-      opacity: 1;
-    }
   }
 
   &__error {
@@ -458,46 +290,14 @@ defineExpose({
     margin-top: 1.5rem;
   }
 
-  &__btn {
-    padding: 0.5rem 1rem;
-    font-size: 1rem;
-    font-weight: 400;
-    line-height: 1.5;
-    border-radius: 0.375rem;
-    border: 1px solid transparent;
-    cursor: pointer;
-    transition:
-      color 0.15s ease-in-out,
-      background-color 0.15s ease-in-out,
-      border-color 0.15s ease-in-out,
-      box-shadow 0.15s ease-in-out;
-
-    &:disabled {
-      pointer-events: none;
-      opacity: 0.65;
-    }
-
+  &__button {
     &--primary {
-      color: #fff;
-      background-color: #0d6efd;
-      border-color: #0d6efd;
-
-      &:hover:not(:disabled) {
-        background-color: #0b5ed7;
-        border-color: #0a58ca;
-      }
+      @include primary-button;
     }
 
     &--danger-outline {
-      color: #dc3545;
-      background-color: transparent;
-      border-color: #dc3545;
-
-      &:hover:not(:disabled) {
-        color: #fff;
-        background-color: #dc3545;
-        border-color: #dc3545;
-      }
+      @include outline-danger-button;
+      border: none;
     }
   }
 }
