@@ -11,153 +11,91 @@
         Reservar Procedimiento Médico
       </h2>
 
-      <table class="schedule-procedure-modal__table">
-        <tbody class="schedule-procedure-modal__body">
-          <tr>
-            <td class="schedule-procedure-modal__label">Paciente titular:</td>
-            <td class="schedule-procedure-modal__value">
-              {{ appointment.customer.name }}
-            </td>
-          </tr>
-          <tr>
-            <td class="schedule-procedure-modal__label">Doctor:</td>
-            <td class="schedule-procedure-modal__value">
-              {{ appointment.supplier.name }}
-            </td>
-          </tr>
-          <tr v-if="canShowCreditStatus">
-            <td class="schedule-procedure-modal__label">Apto para crédito:</td>
-            <td class="schedule-procedure-modal__value">
-              {{ isCreditDisabled ? "Sí" : "No" }}
-            </td>
-          </tr>
-          <tr
-            :class="{
-              'schedule-procedure-modal__row': !appointment.appointment_credit,
-            }"
-          >
-            <td class="schedule-procedure-modal__label">Costo del servicio:</td>
-            <td class="schedule-procedure-modal__value">
-              {{
-                formatCurrency(appointment.price_procedure, {
-                  decimalPlaces: 0,
-                })
-              }}
-            </td>
-          </tr>
-          <tr v-if="appointment.appointment_credit">
-            <td class="schedule-procedure-modal__label">Crédito aprobado:</td>
-            <td class="schedule-procedure-modal__value">
-              {{
-                formatCurrency(
-                  appointment.appointment_credit?.approved_amount,
-                  {
-                    decimalPlaces: 0,
-                  }
-                ) || formatCurrency("0", { decimalPlaces: 0 })
-              }}
-            </td>
-          </tr>
-          <tr
-            v-if="appointment.appointment_credit"
-            class="schedule-procedure-modal__row"
-          >
-            <td class="schedule-procedure-modal__label">Saldo pendiente:</td>
-            <td class="schedule-procedure-modal__value">
-              {{ formatCurrency(calculateBalance(), { decimalPlaces: 0 }) }}
-            </td>
-          </tr>
-          <tr>
-            <td class="schedule-procedure-modal__label">Fecha de la cita:</td>
-            <td class="schedule-procedure-modal__value">
-              <div class="schedule-procedure-modal__dropdown dropdown">
-                <button
-                  class="schedule-procedure-modal__dropdown-button dropdown-toggle"
-                  type="button"
-                  id="dateDropdown"
-                  data-bs-toggle="dropdown"
-                  data-bs-auto-close="true"
-                  aria-expanded="false"
-                  :disabled="isLoading"
+      <MedicosTablaDetallesCita :rows="tableRows">
+        <template #data-appointment-date>
+          <div class="schedule-procedure-modal__dropdown dropdown">
+            <button
+              class="schedule-procedure-modal__dropdown-button dropdown-toggle"
+              type="button"
+              id="dateDropdown"
+              data-bs-toggle="dropdown"
+              data-bs-auto-close="true"
+              aria-expanded="false"
+              :disabled="isLoading"
+            >
+              <AtomsIconsCalendarIcon />
+              <span>{{ selectedDate || "Seleccionar fecha" }}</span>
+              <svg
+                class="schedule-procedure-modal__dropdown-arrow"
+                viewBox="0 0 20 20"
+                fill="currentColor"
+              >
+                <path
+                  fill-rule="evenodd"
+                  d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0-1.414z"
+                  clip-rule="evenodd"
+                />
+              </svg>
+            </button>
+            <ul
+              class="dropdown-menu schedule-procedure-modal__dropdown-menu"
+              aria-labelledby="dateDropdown"
+            >
+              <li v-for="date in availableDates" :key="date">
+                <a
+                  class="schedule-procedure-modal__dropdown-item"
+                  href="#"
+                  @click.prevent="selectDate(date)"
                 >
-                  <AtomsIconsCalendarIcon />
-                  <span>{{ selectedDate || "Seleccionar fecha" }}</span>
-                  <svg
-                    class="schedule-procedure-modal__dropdown-arrow"
-                    viewBox="0 0 20 20"
-                    fill="currentColor"
-                  >
-                    <path
-                      fill-rule="evenodd"
-                      d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0-1.414z"
-                      clip-rule="evenodd"
-                    />
-                  </svg>
-                </button>
-                <ul
-                  class="dropdown-menu schedule-procedure-modal__dropdown-menu"
-                  aria-labelledby="dateDropdown"
-                >
-                  <li v-for="date in availableDates" :key="date">
-                    <a
-                      class="schedule-procedure-modal__dropdown-item"
-                      href="#"
-                      @click.prevent="selectDate(date)"
-                    >
-                      {{ formatDisplayDate(date) }}
-                    </a>
-                  </li>
-                </ul>
-              </div>
-            </td>
-          </tr>
+                  {{ formatDisplayDate(date) }}
+                </a>
+              </li>
+            </ul>
+          </div>
+        </template>
 
-          <tr>
-            <td class="schedule-procedure-modal__label">Hora de la cita:</td>
-            <td class="schedule-procedure-modal__value">
-              <div class="schedule-procedure-modal__dropdown dropdown">
-                <button
-                  class="schedule-procedure-modal__dropdown-button dropdown-toggle"
-                  type="button"
-                  id="timeDropdown"
-                  data-bs-toggle="dropdown"
-                  data-bs-auto-close="true"
-                  aria-expanded="false"
-                  :disabled="!selectedDate || isLoading"
+        <template #data-appointment-time>
+          <div class="schedule-procedure-modal__dropdown dropdown">
+            <button
+              class="schedule-procedure-modal__dropdown-button dropdown-toggle"
+              type="button"
+              id="timeDropdown"
+              data-bs-toggle="dropdown"
+              data-bs-auto-close="true"
+              aria-expanded="false"
+              :disabled="!selectedDate || isLoading"
+            >
+              <AtomsIconsClockIcon />
+              <span>{{ selectedTime || "Seleccionar hora" }}</span>
+              <svg
+                class="schedule-procedure-modal__dropdown-arrow"
+                viewBox="0 0 20 20"
+                fill="currentColor"
+              >
+                <path
+                  fill-rule="evenodd"
+                  d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0-1.414z"
+                  clip-rule="evenodd"
+                />
+              </svg>
+            </button>
+            <ul
+              class="dropdown-menu schedule-procedure-modal__dropdown-menu"
+              aria-labelledby="timeDropdown"
+            >
+              <li v-for="time in availableTimes" :key="time">
+                <a
+                  class="schedule-procedure-modal__dropdown-item"
+                  href="#"
+                  @click.prevent="selectTime(time)"
                 >
-                  <AtomsIconsClockIcon />
-                  <span>{{ selectedTime || "Seleccionar hora" }}</span>
-                  <svg
-                    class="schedule-procedure-modal__dropdown-arrow"
-                    viewBox="0 0 20 20"
-                    fill="currentColor"
-                  >
-                    <path
-                      fill-rule="evenodd"
-                      d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0-1.414z"
-                      clip-rule="evenodd"
-                    />
-                  </svg>
-                </button>
-                <ul
-                  class="dropdown-menu schedule-procedure-modal__dropdown-menu"
-                  aria-labelledby="timeDropdown"
-                >
-                  <li v-for="time in availableTimes" :key="time">
-                    <a
-                      class="schedule-procedure-modal__dropdown-item"
-                      href="#"
-                      @click.prevent="selectTime(time)"
-                    >
-                      {{ time }}
-                    </a>
-                  </li>
-                </ul>
-              </div>
-            </td>
-          </tr>
-        </tbody>
-      </table>
+                  {{ time }}
+                </a>
+              </li>
+            </ul>
+          </div>
+        </template>
+      </MedicosTablaDetallesCita>
     </div>
     <template #footer>
       <div class="schedule-procedure-modal__footer">
@@ -185,6 +123,7 @@
 </template>
 
 <script lang="ts" setup>
+import type { TablaBaseRow } from "~/components/medicos/tabla-detalles-cita.vue";
 import { useFormat } from "~/composables/useFormat";
 import type { ModalName } from "~/types";
 import type { Appointment } from "~/types/appointment";
@@ -265,6 +204,74 @@ const canShowCreditStatus = computed(() => {
     props.appointment.appointment_credit?.credit_status_code !== "REQUIRED"
   )
     return true;
+});
+
+const tableRows = computed((): TablaBaseRow[] => {
+  const rows: TablaBaseRow[] = [
+    {
+      key: "patient",
+      header: "Paciente titular:",
+      value: props.appointment.customer.name,
+    },
+    {
+      key: "doctor",
+      header: "Doctor:",
+      value: props.appointment.supplier.name,
+    },
+  ];
+
+  if (canShowCreditStatus.value) {
+    rows.push({
+      key: "credit-eligible",
+      header: "Apto para crédito:",
+      value: isCreditDisabled.value ? "Sí" : "No",
+    });
+  }
+
+  rows.push({
+    key: "service-cost",
+    header: "Costo del servicio:",
+    value: formatCurrency(props.appointment.price_procedure, {
+      decimalPlaces: 0,
+    }),
+    isEndRow: !props.appointment.appointment_credit,
+  });
+
+  if (props.appointment.appointment_credit) {
+    rows.push(
+      {
+        key: "approved-credit",
+        header: "Crédito aprobado:",
+        value: formatCurrency(
+          props.appointment.appointment_credit?.approved_amount || 0,
+          {
+            decimalPlaces: 0,
+          }
+        ),
+      },
+      {
+        key: "pending-balance",
+        header: "Saldo pendiente:",
+        value: formatCurrency(calculateBalance(), { decimalPlaces: 0 }),
+        isEndRow: true,
+      }
+    );
+  }
+
+  rows.push(
+    {
+      key: "appointment-date",
+      header: "Fecha de la cita:",
+      value: "", // El valor se mostrará mediante el slot
+    },
+    {
+      key: "appointment-time",
+      header: "Hora de la cita:",
+      value: "", // El valor se mostrará mediante el slot
+    }
+  );
+
+  return rows;
 });
 
 const formatDisplayDate = (dateString: string) => {
@@ -383,47 +390,13 @@ watch(
     font-size: 1.125rem;
     line-height: 1.75rem;
     color: $color-foreground;
-  }
-
-  &__table {
-    width: 100%;
-    margin-top: 1.5rem;
-    border-collapse: separate;
-    border-spacing: 0;
-
-    tr.schedule-procedure-modal__row td {
-      border-bottom: 0.0625rem solid #e1e4ed;
-    }
-
-    td {
-      padding: 0.375rem 0;
-      vertical-align: middle;
-    }
-
-    &__label {
-      font-family: $font-family-main;
-      font-weight: 300;
-      font-size: 1rem;
-      line-height: 1.25rem;
-      color: $color-text-secondary;
-    }
-
-    &__value {
-      font-family: $font-family-main;
-      font-weight: 500;
-      font-size: 1rem;
-      line-height: 1.25rem;
-      color: $color-foreground;
-    }
+    margin-bottom: 1.5rem;
   }
 
   &__dropdown {
     position: relative;
     display: inline-block;
     width: 100%;
-    &:first-child {
-      padding-top: 0.5rem;
-    }
   }
 
   &__dropdown-button {
