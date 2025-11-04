@@ -73,6 +73,7 @@
                 | 'APPROVED'
                 | 'CANCELLED'
                 | 'REJECTED'
+                | 'APPROVED_PERCENTAGE'
             )
           "
         >
@@ -82,11 +83,13 @@
 
       <template #cell-actions="{ item }">
         <div class="vouchers-table__actions">
-          <AseguradorasModales
-            :credit="item"
-            v-model:step="currentStep"
-            @refresh="refreshAppointments"
-          />
+          <button
+            class="vouchers-table__action-btn vouchers-table__action-btn--details"
+            @click="openCreditDetails(item)"
+            :disabled="item.credit_status.code !== 'REQUIRED'"
+          >
+            Ver Detalles
+          </button>
         </div>
       </template>
     </UiAppointmentTableBase>
@@ -223,15 +226,27 @@
         </div>
       </div>
     </transition-group>
+
+    <!-- MODALES GLOBALES - UNA SOLA INSTANCIA -->
+    <AseguradorasModalesCreditDetails />
+    <AseguradorasModalesCreditApproval />
+    <AseguradorasModalesCreditRejection />
+    <AseguradorasModalesCreditSuccess />
   </section>
 </template>
 
 <script setup lang="ts">
+import { useModalManager } from "@/composables/useModalManager";
 import type { Credit } from "@/types";
 import type { TableColumn } from "../ui/appointment-table-base.vue";
 
 interface CreditStatus {
-  code: "REQUIRED" | "APPROVED" | "CANCELLED" | "REJECTED";
+  code:
+    | "REQUIRED"
+    | "APPROVED"
+    | "CANCELLED"
+    | "REJECTED"
+    | "APPROVED_PERCENTAGE";
   name: string;
 }
 
@@ -241,13 +256,13 @@ interface Props {
 }
 
 const props = withDefaults(defineProps<Props>(), {
-  vouchers: () => [],
+  credits: () => [],
   itemsPerPage: 10,
 });
 
-console.log("vouchers: ", props.credits);
+const emit = defineEmits(["refreshed"]);
 
-defineEmits(["refreshed"]);
+const modalManager = useModalManager();
 
 const refreshAppointments = inject<(() => void) | undefined>(
   "refreshAppointments"
@@ -256,7 +271,6 @@ const refreshAppointments = inject<(() => void) | undefined>(
 const selectedVouchers = ref<Set<number>>(new Set());
 const allSelected = ref(false);
 const expandedRow = ref<number | null>(null);
-const currentStep = ref(1);
 
 const tableColumns: TableColumn[] = [
   {
@@ -304,6 +318,35 @@ const expandedVouchers = computed(() => {
   return props.credits.filter((v) => v.id === expandedRow.value);
 });
 
+const openCreditDetails = (credit: Credit): void => {
+  modalManager.setCredit(credit);
+
+  modalManager.setSharedData(
+    "approvedAmount",
+    credit.requested_amount?.toString() || ""
+  );
+  modalManager.setSharedData("description", "");
+  modalManager.setSharedData("uploadedFile", null);
+
+  modalManager.openModal("details");
+};
+
+const refreshCredits = async (): Promise<void> => {
+  emit("refreshed");
+  if (refreshAppointments) {
+    refreshAppointments();
+  }
+};
+
+onMounted(() => {
+  modalManager.setRefreshCredits(refreshCredits);
+});
+
+onUnmounted(() => {
+  modalManager.clearSharedData();
+  modalManager.setRefreshCredits(null);
+});
+
 const toggleVoucherSelection = (voucherId: number): void => {
   if (selectedVouchers.value.has(voucherId)) {
     selectedVouchers.value.delete(voucherId);
@@ -329,6 +372,7 @@ const getStatusClass = (code: CreditStatus["code"]): string => {
     APPROVED: "vouchers-table__status--approved",
     CANCELLED: "vouchers-table__status--cancelled",
     REJECTED: "vouchers-table__status--rejected",
+    APPROVED_PERCENTAGE: "vouchers-table__status--approved",
   };
   return statusMap[code] || "";
 };
@@ -495,6 +539,7 @@ const handlePageChange = (page: number): void => {
       font-size: 14px;
       line-height: 20px;
       letter-spacing: 0;
+      text-wrap: nowrap;
     }
 
     &--expand {
