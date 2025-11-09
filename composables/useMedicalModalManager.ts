@@ -16,6 +16,8 @@ const modalNames = [
   "subirProforma",
   "confirmarCodigo",
   "advertenciaPago",
+  "agregarHospital",
+  "eliminarHospital",
 ] as const;
 
 export type ModalName = (typeof modalNames)[number];
