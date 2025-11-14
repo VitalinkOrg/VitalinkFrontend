@@ -1,21 +1,24 @@
 <template>
   <AtomsModalBase
-    :is-open="isOpen"
-    @close="handleCloseModal"
+    :is-open="modalManager.isOpen.approval"
+    @close="modalManager.closeModal('approval')"
     :close-on-backdrop="false"
-    header-class="header-border-bottom"
-    footer-class="footer-border-top"
+    size="extra-small"
   >
-    <div class="credit-approval">
+    <template #title>
       <span class="credit-approval__warning-icon">
         <img src="@/src/assets/warning.svg" width="20" alt="Warning" />
       </span>
+    </template>
 
-      <h5 class="credit-approval__title">Confirmación de aprobación</h5>
+    <div class="credit-approval">
+      <h5 class="credit-approval__title">
+        Seguro que quieres aprobar esta solicitud?
+      </h5>
 
       <p class="credit-approval__description">
-        Para continuar por favor adjunta el documento de aprobación con las
-        condiciones de pago para el paciente:
+        Para continuar por favor adjunta el pagaré con las condiciones de pago
+        para el paciente:
       </p>
 
       <div class="credit-approval__file-upload">
@@ -30,7 +33,9 @@
         <label
           for="documentUpload"
           class="credit-approval__file-label"
-          :class="{ 'credit-approval__file-label--success': uploadedFile }"
+          :class="{
+            'credit-approval__file-label--success': uploadedFile,
+          }"
         >
           <div class="credit-approval__file-content">
             <img src="@/src/assets/cloud-upload.svg" width="20" alt="Upload" />
@@ -44,7 +49,7 @@
           <button
             v-if="uploadedFile"
             @click.stop="handleRemoveFile"
-            class="credit-approval__btn credit-approval__btn--danger-small"
+            class="credit-approval__button credit-approval__button--danger-small"
           >
             Eliminar
           </button>
@@ -56,89 +61,206 @@
           {{ fileError }}
         </div>
       </div>
+    </div>
 
+    <template #footer>
       <div class="credit-approval__actions">
         <button
-          class="credit-approval__btn credit-approval__btn--dark-outline"
+          class="credit-approval__button credit-approval__button--danger"
           @click="handleGoBack"
+          :disabled="isLoading"
         >
           Cancelar
         </button>
         <button
-          class="credit-approval__btn credit-approval__btn--primary"
+          class="credit-approval__button credit-approval__button--primary"
           @click="handleConfirm"
-          :disabled="!uploadedFile"
+          :disabled="!uploadedFile || isLoading"
         >
-          Confirmar Aprobación
+          {{ isLoading ? "Procesando..." : "Continuar" }}
         </button>
       </div>
-    </div>
+    </template>
   </AtomsModalBase>
 </template>
 
 <script lang="ts" setup>
-interface Props {
-  uploadedFile: File | null;
-  fileError: string;
+import { useModalManager } from "@/composables/useModalManager";
+
+interface DocumentFields {
+  title: string;
+  type: string;
+  description: string;
+  id_for_table: number | string;
+  table: string;
+  action_type: string;
+  user_id: number | string;
+  is_public: number;
 }
 
-interface Emits {
-  (e: "file-uploaded", file: File): void;
-  (e: "file-removed"): void;
-  (e: "back"): void;
-  (e: "confirm"): void;
-}
+const config = useRuntimeConfig();
+const token = useCookie<string>("token");
+const user_info = useCookie<{ id: number | string }>("user_info");
 
-const props = defineProps<Props>();
-const emit = defineEmits<Emits>();
-
-const isOpen = ref<boolean>(false);
-
-const handleOpenModal = () => {
-  isOpen.value = true;
-};
-
-const handleCloseModal = () => {
-  isOpen.value = false;
-};
-
+const modalManager = useModalManager();
 const fileInputRef = ref<HTMLInputElement | null>(null);
+const fileError = ref<string>("");
+const isLoading = ref<boolean>(false);
+
+const uploadedFile = computed({
+  get: () => modalManager.getSharedData<File | null>("uploadedFile"),
+  set: (value: File | null) =>
+    modalManager.setSharedData("uploadedFile", value),
+});
+
+const approvedAmount = computed(() =>
+  modalManager.getSharedData<string>("approvedAmount")
+);
+
+const description = computed(() =>
+  modalManager.getSharedData<string>("description")
+);
 
 const handleFileChange = (event: Event): void => {
+  event.stopPropagation();
+  event.preventDefault();
+
   const target = event.target as HTMLInputElement;
   const file = target.files?.[0];
 
-  if (file) {
-    emit("file-uploaded", file);
+  if (!file) return;
+
+  const validTypes = [
+    "application/pdf",
+    "application/msword",
+    "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+  ];
+
+  if (!validTypes.includes(file.type)) {
+    fileError.value = "Solo se aceptan archivos PDF o Word";
+    uploadedFile.value = null;
+    return;
   }
+
+  if (file.size > 5 * 1024 * 1024) {
+    fileError.value = "El archivo no puede exceder 5MB";
+    uploadedFile.value = null;
+    return;
+  }
+
+  uploadedFile.value = file;
+  fileError.value = "";
 };
 
 const handleRemoveFile = (): void => {
-  emit("file-removed");
+  uploadedFile.value = null;
+  fileError.value = "";
   if (fileInputRef.value) {
     fileInputRef.value.value = "";
   }
 };
 
-const handleConfirm = () => {
-  emit("confirm");
+const handleConfirm = async (): Promise<void> => {
+  if (!uploadedFile.value) {
+    fileError.value = "Debe subir un documento para continuar";
+    return;
+  }
+
+  if (!modalManager.credit.value) return;
+
+  try {
+    isLoading.value = true;
+    const formData = new FormData();
+    formData.append("file", uploadedFile.value);
+
+    const documentFields: DocumentFields = {
+      title: `Credit_Document_${modalManager.credit.value.id}`,
+      type: "DOC",
+      description: description.value || "",
+      id_for_table: modalManager.credit.value.id,
+      table: "APPOINTMENT_CREDIT",
+      action_type: "PRIVATE_CONTRACT",
+      user_id: user_info.value?.id || "",
+      is_public: 0,
+    };
+
+    formData.append("fields", JSON.stringify(documentFields));
+
+    const documentResponse = await fetch(
+      `${config.public.API_BASE_URL}/document/add`,
+      {
+        method: "POST",
+        headers: { Authorization: token.value || "" },
+        body: formData,
+      }
+    );
+
+    if (!documentResponse.ok) {
+      throw new Error("Error al subir el documento");
+    }
+
+    const documentResult = await documentResponse.json();
+    const documentCode = documentResult.data?.code;
+
+    if (!documentCode) {
+      throw new Error("No se pudo obtener el código del documento");
+    }
+
+    const { data, error } = await useFetch(
+      `${config.public.API_BASE_URL}/appointmentcredit/edit?id=${modalManager.credit.value.id}`,
+      {
+        method: "PUT",
+        headers: {
+          Authorization: token.value || "",
+          "Content-Type": "application/json",
+        },
+        body: {
+          credit_status_code:
+            Number(approvedAmount.value) &&
+            Number(approvedAmount.value) <
+              parseFloat(modalManager.credit.value.requested_amount)
+              ? "APPROVED_PERCENTAGE"
+              : "APPROVED",
+          approved_amount: approvedAmount.value,
+          credit_observations: description.value || "Solicitud Aprobada",
+          pagare_file_code: documentCode,
+        },
+      }
+    );
+
+    if (error.value) {
+      throw new Error(
+        (error.value as any).data?.info || "Error al aprobar el crédito"
+      );
+    }
+
+    if (modalManager.credit.value) {
+      modalManager.credit.value.approved_amount = approvedAmount.value;
+    }
+
+    if (modalManager.refreshCredits.value) {
+      await modalManager.refreshCredits.value();
+    }
+
+    modalManager.closeModal("approval");
+    modalManager.openModal("success");
+  } catch (error: any) {
+    fileError.value = error.message || "Error al procesar la aprobación";
+  } finally {
+    isLoading.value = false;
+  }
 };
 
 const handleGoBack = () => {
-  emit("back");
-  handleCloseModal();
+  modalManager.closeModal("approval");
+  modalManager.openModal("details");
 };
-
-defineExpose({
-  handleOpenModal,
-  handleCloseModal,
-  isOpen: readonly(isOpen),
-});
 </script>
 
 <style lang="scss" scoped>
 .credit-approval {
   width: 100%;
+  padding: 0 24px;
 
   &__warning-icon {
     display: inline-flex;
@@ -153,20 +275,25 @@ defineExpose({
   }
 
   &__title {
-    font-size: 1.25rem;
-    font-weight: 700;
-    margin-bottom: 1rem;
+    max-width: 280px;
+    font-weight: 600;
+    font-size: 20px;
+    line-height: 30px;
+    letter-spacing: 0;
+    color: $color-foreground;
   }
 
   &__description {
-    color: #6c757d;
-    margin-bottom: 1rem;
+    font-weight: 500;
+    font-size: 14px;
+    line-height: 24px;
+    letter-spacing: 0;
+    color: #6d758f;
   }
 
   &__file-upload {
-    border: 2px dashed #dee2e6;
+    border: 2px solid #dee2e6;
     border-radius: 0.375rem;
-    padding: 1rem;
     margin-bottom: 1rem;
     transition: all 0.3s ease;
 
@@ -185,11 +312,16 @@ defineExpose({
     flex-wrap: wrap;
     align-items: center;
     justify-content: space-between;
-    gap: 0.5rem;
-    background-color: #cff4fc;
+    gap: 8px;
+    background-color: #ebecf7;
+    color: #344054;
     padding: 0.75rem;
     cursor: pointer;
     border-radius: 0.375rem;
+    font-weight: 500;
+    font-size: 14px;
+    line-height: 20px;
+    letter-spacing: 0;
 
     &--success {
       border: 1px solid #198754;
@@ -221,14 +353,13 @@ defineExpose({
     display: flex;
     justify-content: space-between;
     gap: 0.5rem;
-    margin-top: 1.5rem;
 
-    .credit-approval__btn {
+    .credit-approval__button {
       flex: 1;
     }
   }
 
-  &__btn {
+  &__button {
     padding: 0.5rem 1rem;
     font-size: 1rem;
     font-weight: 400;
@@ -243,45 +374,21 @@ defineExpose({
       box-shadow 0.15s ease-in-out;
 
     &:disabled {
-      pointer-events: none;
-      opacity: 0.65;
+      cursor: not-allowed;
     }
 
     &--primary {
-      color: #fff;
-      background-color: #0d6efd;
-      border-color: #0d6efd;
-
-      &:hover:not(:disabled) {
-        background-color: #0b5ed7;
-        border-color: #0a58ca;
-      }
+      @include primary-button;
     }
 
-    &--dark-outline {
-      color: #212529;
-      background-color: transparent;
-      border-color: #212529;
-
-      &:hover:not(:disabled) {
-        color: #fff;
-        background-color: #212529;
-        border-color: #212529;
-      }
+    &--danger {
+      @include danger-button;
     }
 
     &--danger-small {
+      @include danger-button;
       padding: 0.25rem 0.5rem;
       font-size: 0.875rem;
-      color: #dc3545;
-      background-color: transparent;
-      border-color: #dc3545;
-
-      &:hover {
-        color: #fff;
-        background-color: #dc3545;
-        border-color: #dc3545;
-      }
     }
   }
 }

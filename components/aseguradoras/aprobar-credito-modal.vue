@@ -548,7 +548,7 @@ const cancelAppointment = async (): Promise<void> => {
   }
 
   if (error.value) {
-    console.log(error.value, "data");
+    console.error(error.value, "data");
   }
 
   handleCloseModal();

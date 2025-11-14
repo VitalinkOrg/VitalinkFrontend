@@ -1,233 +1,62 @@
 <template>
-  <table class="appointment-table">
-    <tbody>
-      <tr :class="canShowHourAndTime ? 'appointment-table__row' : ''">
-        <td class="appointment-table__label">Tipo de servicio:</td>
-        <td class="appointment-table__value">
-          {{
-            appointment.appointment_type.code === "PROCEDURE_APPOINTMENT"
-              ? "Cita de procedimiento"
-              : appointment.appointment_type.code ===
-                    "VALORATION_APPOINTMENT" &&
-                  appointment.appointment_status.code ===
-                    "VALUED_VALORATION_APPOINTMENT"
-                ? "Procedimiento médico"
-                : "Cita de valoración"
-          }}
-        </td>
-      </tr>
+  <MedicosTablaDetallesCita :rows="tableRows">
+    <template #data-status="{ row }">
+      <span class="status-badge" :class="getStatusClass()">
+        {{ getStatusText() }}
+      </span>
+    </template>
 
-      <tr v-if="!canShowHourAndTime">
-        <td class="appointment-table__label">Fecha de la cita:</td>
-        <td class="appointment-table__value">
-          {{ formatDate(appointment.application_date) }}
-        </td>
-      </tr>
+    <template #data-valoration-conclusion="{ row }">
+      <span
+        class="appointment-table__payment-status"
+        :class="setPaymentStatusClass(appointment)"
+      ></span>
+      {{ appointment?.appointment_result?.name }}
+    </template>
 
-      <tr v-if="!canShowHourAndTime" class="appointment-table__row">
-        <td class="appointment-table__label">Hora de la cita:</td>
-        <td class="appointment-table__value">
-          {{ formatTime(appointment.appointment_hour, "hs") }}
-        </td>
-      </tr>
-
-      <tr>
-        <td class="appointment-table__label">Paciente titular:</td>
-        <td class="appointment-table__value">
-          {{ appointment.customer.name }}
-        </td>
-      </tr>
-
-      <tr>
-        <td class="appointment-table__label">Teléfono de Contacto:</td>
-        <td class="appointment-table__value">
-          {{
-            formatPhone(
-              appointment.phone_number_external_user ??
-                appointment.customer.phone_number
-            )
-          }}
-        </td>
-      </tr>
-
-      <tr>
-        <td class="appointment-table__label">Profesional Médico:</td>
-        <td class="appointment-table__value">
-          {{ appointment.supplier.name }}
-        </td>
-      </tr>
-
-      <tr>
-        <td class="appointment-table__label">Procedimiento:</td>
-        <td class="appointment-table__value">
-          {{ appointment.package?.procedure?.name }}
-        </td>
-      </tr>
-
-      <tr>
-        <td class="appointment-table__label">Estado:</td>
-        <td class="appointment-table__value">
-          <span class="status-badge" :class="getStatusClass()">
-            {{ getStatusText() }}
-          </span>
-        </td>
-      </tr>
-
-      <tr
-        v-if="
-          appointment.appointment_status.code ===
-          'VALUED_VALORATION_APPOINTMENT'
-        "
+    <template #data-proforma="{ row }">
+      <button
+        class="appointment-table__button--outline"
+        :disabled="isLoadingProforma"
+        @click="downloadProforma"
       >
-        <td class="appointment-table__label">Conclusión de valoración:</td>
-        <td class="appointment-table__value">
-          <span
-            class="appointment-table__payment-status"
-            :class="setPaymentStatusClass(appointment)"
-          ></span>
-          {{ appointment?.appointment_result?.name }}
-        </td>
-      </tr>
+        <AtomsIconsDownloadIcon />
+        Descargar Proforma
+      </button>
+    </template>
 
-      <tr
-        v-if="
-          appointment.appointment_status.code ===
-          'VALUED_VALORATION_APPOINTMENT'
+    <template #data-payment-status="{ row }">
+      <span
+        v-if="!appointment.appointment_credit"
+        class="appointment-table__payment-status"
+        :class="setPaymentStatusClass(appointment)"
+      ></span>
+      {{ row.value }}
+    </template>
+
+    <template #data-recommendations="{ row }">
+      <textarea
+        id="appointment-recommendations"
+        class="appointment-table__textarea"
+        name="recommendations"
+        aria-labelledby="recommendations-label"
+        aria-readonly="true"
+        aria-describedby="recommendations-hint"
+        :value="
+          appointment.recommendation_post_appointment ??
+          'No hay recomendaciones'
         "
-        class="appointment-table__row"
-      >
-        <td class="appointment-table__label">Proforma:</td>
-        <td class="appointment-table__value">
-          <button
-            class="appointment-table__button--outline"
-            :disabled="isLoadingProforma"
-            @click="downloadProforma"
-          >
-            <AtomsIconsDownloadIcon />
-            Descargar Proforma
-          </button>
-        </td>
-      </tr>
-
-      <tr v-if="canShowCreditStatus">
-        <td class="appointment-table__label">Apto para crédito:</td>
-        <td class="appointment-table__value">
-          {{ isCreditDisabled ? "Sí" : "No" }}
-        </td>
-      </tr>
-
-      <tr
-        v-if="
-          appointment.appointment_type.code !== 'VALORATION_APPOINTMENT' &&
-          appointment.appointment_status.code !==
-            'VALUED_VALORATION_APPOINTMENT'
-        "
-      >
-        <td class="appointment-table__label">Procedimiento:</td>
-        <td class="appointment-table__value">
-          {{ appointment.package?.procedure?.name }}
-        </td>
-      </tr>
-
-      <tr>
-        <td class="appointment-table__label">
-          {{
-            appointment.appointment_type.code === "PROCEDURE_APPOINTMENT"
-              ? "Monto del procedimiento"
-              : "Costo del servicio"
-          }}:
-        </td>
-        <td class="appointment-table__value">
-          {{
-            appointment.appointment_type.code === "PROCEDURE_APPOINTMENT" ||
-            appointment.appointment_status.code ===
-              "VALUED_VALORATION_APPOINTMENT"
-              ? formatCurrency(appointment.price_procedure, {
-                  decimalPlaces: 0,
-                })
-              : formatCurrency(appointment.price_valoration_appointment, {
-                  decimalPlaces: 0,
-                })
-          }}
-        </td>
-      </tr>
-
-      <tr
-        v-if="
-          appointment.appointment_status.code !==
-            'VALUED_VALORATION_APPOINTMENT' &&
-          appointment.appointment_status.code !==
-            'PENDING_VALORATION_APPOINTMENT'
-        "
-      >
-        <td class="appointment-table__label">Estado de pago:</td>
-        <td
-          v-if="!appointment.appointment_credit"
-          class="appointment-table__value"
-        >
-          <span
-            class="appointment-table__payment-status"
-            :class="setPaymentStatusClass(appointment)"
-          ></span>
-          {{ setPaymentValueName(appointment) }}
-        </td>
-        <td v-else class="appointment-table__value">Cubierto por el crédito</td>
-      </tr>
-
-      <tr v-if="appointment.appointment_status.code === 'CANCEL_APPOINTMENT'">
-        <td class="appointment-table__label">Recomendaciones o anotaciones:</td>
-        <td class="appointment-table__value">
-          <textarea
-            id="appointment-recommendations"
-            class="appointment-table__textarea"
-            name="recommendations"
-            aria-labelledby="recommendations-label"
-            aria-readonly="true"
-            aria-describedby="recommendations-hint"
-            :value="
-              appointment.recommendation_post_appointment ??
-              'No hay recomendaciones'
-            "
-            disabled
-            readonly
-          ></textarea>
-        </td>
-      </tr>
-
-      <tr
-        v-if="
-          appointment.appointment_credit &&
-          appointment.appointment_type.code !== 'PROCEDURE_APPOINTMENT'
-        "
-      >
-        <td class="appointment-table__label">Crédito aprobado:</td>
-        <td class="appointment-table__value">
-          {{
-            formatCurrency(appointment.appointment_credit?.approved_amount, {
-              decimalPlaces: 0,
-            }) || formatCurrency("0", { decimalPlaces: 0 })
-          }}
-        </td>
-      </tr>
-
-      <tr
-        v-if="
-          appointment.appointment_credit &&
-          appointment.appointment_type.code !== 'PROCEDURE_APPOINTMENT'
-        "
-      >
-        <td class="appointment-table__label">Saldo pendiente:</td>
-        <td class="appointment-table__value">
-          {{ formatCurrency(calculateBalance(), { decimalPlaces: 0 }) }}
-        </td>
-      </tr>
-    </tbody>
-  </table>
+        disabled
+        readonly
+      ></textarea>
+    </template>
+  </MedicosTablaDetallesCita>
 </template>
 
 <script lang="ts" setup>
 import { useAppointment } from "@/composables/api";
 import type { Appointment } from "@/types/appointment";
+import type { TablaBaseRow } from "../medicos/tabla-detalles-cita.vue";
 
 const { formatCurrency, formatPhone, formatDate, formatTime } = useFormat();
 const { fetchDocumentByCode } = useAppointment();
@@ -255,6 +84,199 @@ const canShowHourAndTime = computed(() => {
 });
 
 const isLoadingProforma = ref<boolean>(false);
+
+const isCreditDisabled = computed(() => {
+  if (!props.appointment.appointment_credit) return false;
+  if (props.appointment.appointment_credit.credit_status?.code === "REJECTED")
+    return false;
+  return true;
+});
+
+const canShowCreditStatus = computed(() => {
+  if (!props.appointment.appointment_credit) return false;
+  if (
+    props.appointment.appointment_status.code ===
+      "VALUED_VALORATION_APPOINTMENT" &&
+    props.appointment.appointment_credit?.credit_status_code !== "REQUIRED"
+  )
+    return true;
+});
+
+const tableRows = computed((): TablaBaseRow[] => {
+  const rows: TablaBaseRow[] = [];
+
+  const serviceTypeValue =
+    props.appointment.appointment_type.code === "PROCEDURE_APPOINTMENT"
+      ? "Cita de procedimiento"
+      : props.appointment.appointment_type.code === "VALORATION_APPOINTMENT" &&
+          props.appointment.appointment_status.code ===
+            "VALUED_VALORATION_APPOINTMENT"
+        ? "Procedimiento médico"
+        : "Cita de valoración";
+
+  rows.push({
+    key: "service-type",
+    header: "Tipo de servicio:",
+    value: serviceTypeValue,
+    isEndRow: canShowHourAndTime.value,
+  });
+
+  if (!canShowHourAndTime.value) {
+    rows.push(
+      {
+        key: "appointment-date",
+        header: "Fecha de la cita:",
+        value: formatDate(props.appointment.application_date),
+      },
+      {
+        key: "appointment-time",
+        header: "Hora de la cita:",
+        value: formatTime(props.appointment.appointment_hour, "hs"),
+        isEndRow: true,
+      }
+    );
+  }
+
+  rows.push({
+    key: "patient",
+    header: "Paciente titular:",
+    value: props.appointment.customer.name,
+  });
+
+  rows.push({
+    key: "phone",
+    header: "Teléfono de Contacto:",
+    value: formatPhone(
+      props.appointment.phone_number_external_user ??
+        props.appointment.customer.phone_number
+    ),
+  });
+
+  rows.push({
+    key: "doctor",
+    header: "Profesional Médico:",
+    value: props.appointment.supplier.name,
+  });
+
+  rows.push({
+    key: "procedure",
+    header: "Procedimiento:",
+    value: props.appointment.package?.procedure?.name,
+  });
+
+  rows.push({
+    key: "status",
+    header: "Estado:",
+    value: "",
+  });
+
+  if (
+    props.appointment.appointment_status.code ===
+    "VALUED_VALORATION_APPOINTMENT"
+  ) {
+    rows.push({
+      key: "valoration-conclusion",
+      header: "Conclusión de valoración:",
+      value: "",
+    });
+
+    rows.push({
+      key: "proforma",
+      header: "Proforma:",
+      value: "",
+      isEndRow: true,
+    });
+  }
+
+  if (canShowCreditStatus.value) {
+    rows.push({
+      key: "credit-eligible",
+      header: "Apto para crédito:",
+      value: isCreditDisabled.value ? "Sí" : "No",
+    });
+  }
+
+  if (
+    props.appointment.appointment_type.code !== "VALORATION_APPOINTMENT" &&
+    props.appointment.appointment_status.code !==
+      "VALUED_VALORATION_APPOINTMENT"
+  ) {
+    rows.push({
+      key: "procedure-2",
+      header: "Procedimiento:",
+      value: props.appointment.package?.procedure?.name,
+    });
+  }
+
+  const costLabel =
+    props.appointment.appointment_type.code === "PROCEDURE_APPOINTMENT"
+      ? "Monto del procedimiento"
+      : "Costo del servicio";
+
+  const costValue =
+    props.appointment.appointment_type.code === "PROCEDURE_APPOINTMENT" ||
+    props.appointment.appointment_status.code ===
+      "VALUED_VALORATION_APPOINTMENT"
+      ? formatCurrency(props.appointment.price_procedure, { decimalPlaces: 0 })
+      : formatCurrency(props.appointment.price_valoration_appointment, {
+          decimalPlaces: 0,
+        });
+
+  rows.push({
+    key: "cost",
+    header: `${costLabel}:`,
+    value: costValue,
+  });
+
+  if (
+    props.appointment.appointment_status.code !==
+      "VALUED_VALORATION_APPOINTMENT" &&
+    props.appointment.appointment_status.code !==
+      "PENDING_VALORATION_APPOINTMENT"
+  ) {
+    const paymentStatusValue = props.appointment.appointment_credit
+      ? "Cubierto por el crédito"
+      : setPaymentValueName(props.appointment);
+
+    rows.push({
+      key: "payment-status",
+      header: "Estado de pago:",
+      value: paymentStatusValue,
+    });
+  }
+
+  if (props.appointment.appointment_status.code === "CANCEL_APPOINTMENT") {
+    rows.push({
+      key: "recommendations",
+      header: "Recomendaciones o anotaciones:",
+      value: "",
+    });
+  }
+
+  if (
+    props.appointment.appointment_credit &&
+    props.appointment.appointment_type.code !== "PROCEDURE_APPOINTMENT"
+  ) {
+    rows.push({
+      key: "approved-credit",
+      header: "Crédito aprobado:",
+      value: formatCurrency(
+        props.appointment.appointment_credit?.approved_amount || 0,
+        {
+          decimalPlaces: 0,
+        }
+      ),
+    });
+
+    rows.push({
+      key: "pending-balance",
+      header: "Saldo pendiente:",
+      value: formatCurrency(calculateBalance(), { decimalPlaces: 0 }),
+    });
+  }
+
+  return rows;
+});
 
 const getStatusClass = () => {
   const statusMap: Record<
@@ -380,69 +402,10 @@ const downloadProforma = async () => {
     isLoadingProforma.value = false;
   }
 };
-
-const isCreditDisabled = computed(() => {
-  if (!props.appointment.appointment_credit) return false;
-  if (props.appointment.appointment_credit.credit_status?.code === "REJECTED")
-    return false;
-  return true;
-});
-
-const canShowCreditStatus = computed(() => {
-  if (!props.appointment.appointment_credit) return false;
-  if (
-    props.appointment.appointment_status.code ===
-      "VALUED_VALORATION_APPOINTMENT" &&
-    props.appointment.appointment_credit?.credit_status_code !== "REQUIRED"
-  )
-    return true;
-});
 </script>
 
 <style lang="scss" scoped>
 .appointment-table {
-  width: 100%;
-  margin: 1.5rem 0;
-  border-collapse: separate;
-  font-size: 0.9rem;
-  background-color: #f8faff;
-  border-radius: 1.25rem;
-  gap: 0.3125rem;
-  padding: 0.625rem 1.25rem;
-  border-spacing: 0;
-  overflow: hidden;
-
-  &__row {
-    td {
-      border-bottom: 0.0625rem solid #e1e4ed;
-    }
-  }
-
-  &__label,
-  &__value {
-    padding: $spacing-sm 0;
-    vertical-align: top;
-    font-size: 0.875rem;
-  }
-
-  &__label {
-    font-family: $font-family-main;
-    font-weight: 300;
-    font-size: 1rem;
-    line-height: 1.25rem;
-    color: $color-text-secondary;
-    padding: 0.625rem;
-  }
-
-  &__value {
-    font-family: $font-family-main;
-    font-weight: 500;
-    font-size: 1rem;
-    line-height: 1.25rem;
-    color: $color-foreground;
-    padding: 0.625rem;
-  }
-
   &__payment-status {
     display: inline-block;
     margin-right: 0.375rem;

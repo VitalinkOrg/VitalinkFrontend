@@ -2,7 +2,9 @@ import type { ApiResponse, AppointmentCredit, Credit } from "@/types";
 import useApi, { type UsableAPI } from "./useApi";
 
 interface AppointmentCreditPayload {
-  already_been_used: number;
+  appointment?: number;
+  already_been_used?: number;
+  credit_status?: string;
 }
 
 export const useAppointmentCredit = () => {

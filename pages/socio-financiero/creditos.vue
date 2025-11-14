@@ -25,9 +25,6 @@ const statusMap: Record<string, string> = {
 const { fetchAllAppointmentCredit } = useAppointmentCredit();
 
 const filteredCredits = computed<Credit[]>(() => {
-  console.log("creditsData.value:", creditsData.value);
-  console.log("activeStatus.value:", activeStatus.value);
-
   if (!creditsData.value || creditsData.value.length === 0) {
     return [];
   }
@@ -38,11 +35,9 @@ const filteredCredits = computed<Credit[]>(() => {
 
   const filtered = creditsData.value.filter((credit) => {
     const statusCode = credit?.credit_status?.code;
-    console.log("Comparando:", statusCode, "con", activeStatus.value);
     return statusCode === activeStatus.value;
   });
 
-  console.log("Créditos filtrados:", filtered.length);
   return filtered;
 });
 
@@ -63,7 +58,6 @@ const loadCredits = async () => {
 
     if (response?.data && Array.isArray(response.data)) {
       creditsData.value = response.data;
-      console.log("Créditos cargados:", response.data.length);
     } else {
       console.warn("No se recibieron datos de créditos");
       creditsData.value = [];
@@ -97,7 +91,6 @@ const fetchCredits = async (isRefresh: boolean = false) => {
 
     if (response?.data && Array.isArray(response.data)) {
       creditsData.value = response.data;
-      console.log("Créditos actualizados:", response.data.length);
     }
   } catch (error) {
     console.error("Fetch error:", error);
