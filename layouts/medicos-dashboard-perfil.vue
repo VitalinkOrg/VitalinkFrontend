@@ -1,7 +1,7 @@
 <template>
   <NuxtLayout name="medicos-dashboard">
     <header class="medical-dashboard__header">
-      <nav class="breadcrumb-nav" aria-label="Navegación de migas de pan">
+      <nav class="breadcrumb-nav">
         <ol class="breadcrumb-nav__list">
           <li class="breadcrumb-nav__item">
             <NuxtLink
