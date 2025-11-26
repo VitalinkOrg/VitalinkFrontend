@@ -1,31 +1,69 @@
-<script setup>
-import { nextTick, onMounted, onUnmounted, reactive, ref, watch } from "vue";
-import { useUdc } from "~/composables/api";
+<script setup lang="ts">
+import { useUdc } from "@/composables/api";
+import {
+  computed,
+  nextTick,
+  onMounted,
+  onUnmounted,
+  reactive,
+  ref,
+  watch,
+} from "vue";
+import type { DropdownItem } from "../ui/dropdown-base.vue";
 
-const props = defineProps({
-  filters: {
-    type: Object,
-    default: () => ({}),
-  },
-  clearFilters: {
-    type: Function,
-    default: () => {},
-  },
+interface Specialty {
+  code: string;
+  name: string;
+}
+
+interface FilterData {
+  lugar: string;
+  valoracion: number;
+  disponibilidad: Specialty[];
+  min: number | null;
+  max: number | null;
+  entity: string;
+  procedimiento?: string;
+  procedures?: Specialty[];
+}
+
+interface Props {
+  filters?: Partial<FilterData>;
+  clearFilters?: () => void;
+}
+
+const props = withDefaults(defineProps<Props>(), {
+  filters: () => ({}),
+  clearFilters: () => {},
 });
 
-const emit = defineEmits(["search", "close"]);
+const emit = defineEmits<{
+  "filters-changed": [filters: FilterData];
+  close: [];
+}>();
 
 const { fetchUdc } = useUdc();
 
-const open = ref(false);
-const specialties = ref([]);
-const rating = ref(0);
-const place = ref("");
-const selectedSpecialty = ref("");
-const autocomplete = ref(null);
-const modalDialog = ref(null);
+const provinces = [
+  "San José",
+  "Alajuela",
+  "Cartago",
+  "Heredia",
+  "Guanacaste",
+  "Puntarenas",
+  "Limón",
+];
 
-const localFilters = reactive({
+const open = ref<boolean>(false);
+const specialties = ref<Specialty[]>([]);
+const rating = ref<number>(0);
+const place = ref<string>("");
+const selectedSpecialty = ref<string>("");
+const modalDialog = ref<HTMLElement | null>(null);
+const showProvinceDropdown = ref<boolean>(false);
+const placeInputRef = ref<HTMLInputElement | null>(null);
+
+const localFilters = reactive<FilterData>({
   lugar: "",
   valoracion: 0,
   disponibilidad: [],
@@ -34,21 +72,41 @@ const localFilters = reactive({
   entity: "",
 });
 
-watch(place, (newVal) => {
-  localFilters.lugar = newVal;
+const specialtyDropdownItems = computed<DropdownItem[]>(() => {
+  return localFilters.disponibilidad.map((specialty) => ({
+    value: specialty.code,
+    label: specialty.name,
+  }));
 });
 
-watch(rating, (newVal) => {
+const filteredProvinces = computed<string[]>(() => {
+  if (!place.value) {
+    return provinces;
+  }
+  const searchTerm = place.value.toLowerCase();
+  return provinces.filter((province) =>
+    province.toLowerCase().includes(searchTerm)
+  );
+});
+
+watch(place, (newVal: string) => {
+  localFilters.lugar = newVal;
+  showProvinceDropdown.value = true;
+});
+
+watch(rating, (newVal: number) => {
   localFilters.valoracion = newVal;
 });
 
-watch(open, async (newVal) => {
+watch(open, async (newVal: boolean) => {
   if (newVal) {
     document.body.setAttribute("aria-hidden", "true");
     await nextTick();
-    const firstFocusable = modalDialog.value?.querySelector(
+
+    const firstFocusable = modalDialog.value?.querySelector<HTMLElement>(
       'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
     );
+
     if (firstFocusable) {
       firstFocusable.focus();
     }
@@ -57,69 +115,81 @@ watch(open, async (newVal) => {
   }
 });
 
-const openConfirmationModal = () => {
+const openConfirmationModal = (): void => {
   open.value = true;
 };
 
-const closeModal = () => {
+const closeModal = (): void => {
   open.value = false;
   emit("close");
 };
 
-const searchFilters = () => {
-  const combinedFilters = {
-    ...props.filters,
+const searchFilters = (): void => {
+  const combinedFilters: FilterData = {
     ...localFilters,
+    disponibilidad: localFilters.disponibilidad,
   };
 
-  emit("search", combinedFilters);
+  emit("filters-changed", combinedFilters);
   open.value = false;
 };
 
-const handleKeyDown = (event) => {
+const handleKeyDown = (event: KeyboardEvent): void => {
   if (event.key === "Escape" && open.value) {
     closeModal();
   }
 };
 
-const getSpecialties = async () => {
+const handleSpecialtySelect = (item: DropdownItem): void => {
+  selectedSpecialty.value = item.value as string;
+};
+
+const handleSpecialtyClear = (): void => {
+  selectedSpecialty.value = "";
+};
+
+const selectProvince = (province: string): void => {
+  place.value = province;
+  showProvinceDropdown.value = false;
+};
+
+const handlePlaceInput = (): void => {
+  showProvinceDropdown.value = true;
+};
+
+const handlePlaceFocus = (): void => {
+  showProvinceDropdown.value = true;
+};
+
+const handlePlaceBlur = (): void => {
+  setTimeout(() => {
+    showProvinceDropdown.value = false;
+  }, 200);
+};
+
+const getSpecialties = async (): Promise<void> => {
   try {
-    const api = fetchUdc();
-    await api.request();
+    const { response, request } = fetchUdc("MEDICAL_SPECIALTY");
+    await request();
 
-    const response = api.response.value;
-
-    specialties.value = response.data.data;
-    localFilters.disponibilidad = response.data.data;
-  } catch (e) {
-    console.error("Error fetching specialties:", e);
+    if (response.value?.data) {
+      specialties.value = response.value.data.map((item) => ({
+        code: item.code,
+        name: item.name,
+      }));
+      localFilters.disponibilidad = specialties.value;
+    }
+  } catch (error) {
+    console.error("Error fetching specialties:", error);
   }
 };
 
-const initAutocomplete = () => {
-  const input = document.getElementById("placeInput");
-  if (!input || !window.google) return;
-
-  autocomplete.value = new google.maps.places.Autocomplete(input, {
-    fields: ["address_components", "geometry", "formatted_address"],
-  });
-
-  autocomplete.value.addListener("place_changed", () => {
-    const selectedPlace = autocomplete.value.getPlace();
-    if (selectedPlace.geometry) {
-      place.value = selectedPlace.formatted_address || input.value;
-    } else {
-      place.value = input.value;
-    }
-  });
-};
-
-const setRating = (value) => {
+const setRating = (value: number): void => {
   rating.value = value;
 };
 
-const getRatingLabel = (ratingValue) => {
-  const labels = {
+const getRatingLabel = (ratingValue: number): string => {
+  const labels: Record<number, string> = {
     1: "Una estrella",
     2: "Dos estrellas",
     3: "Tres estrellas",
@@ -129,28 +199,38 @@ const getRatingLabel = (ratingValue) => {
   return labels[ratingValue] || "";
 };
 
-const resetFilters = () => {
+const resetFilters = (): void => {
   rating.value = 0;
   place.value = "";
   selectedSpecialty.value = "";
+
   Object.assign(localFilters, {
     lugar: "",
     valoracion: 0,
+    disponibilidad: specialties.value,
     min: null,
     max: null,
     entity: "",
   });
-  props.clearFilters();
+
+  props.clearFilters?.();
 };
 
 onMounted(() => {
   getSpecialties();
-  initAutocomplete();
+
   document.addEventListener("keydown", handleKeyDown);
 
-  // Inicializar filtros locales con los props
   if (props.filters) {
-    Object.assign(localFilters, props.filters);
+    Object.assign(localFilters, {
+      lugar: props.filters.lugar || "",
+      valoracion: props.filters.valoracion || 0,
+      min: props.filters.min || null,
+      max: props.filters.max || null,
+      entity: props.filters.entity || "",
+      disponibilidad: props.filters.disponibilidad || [],
+    });
+
     rating.value = props.filters.valoracion || 0;
     place.value = props.filters.lugar || "";
   }
@@ -158,9 +238,6 @@ onMounted(() => {
 
 onUnmounted(() => {
   document.removeEventListener("keydown", handleKeyDown);
-  if (autocomplete.value) {
-    google.maps.event.clearInstanceListeners(autocomplete.value);
-  }
 });
 
 defineExpose({
@@ -171,11 +248,10 @@ defineExpose({
 </script>
 
 <template>
-  <div>
-    <!-- Trigger Button -->
+  <div class="filter-modal">
     <button
       @click="openConfirmationModal"
-      class="filter-trigger"
+      class="filter-modal__trigger"
       type="button"
       :aria-expanded="open"
       aria-haspopup="dialog"
@@ -185,454 +261,458 @@ defineExpose({
       <span>Más Filtros</span>
     </button>
 
-    <!-- Modal Backdrop -->
-    <Teleport to="body">
-      <div
-        v-if="open"
-        class="modal"
-        :class="{ 'modal--open': open }"
-        @click.self="closeModal"
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby="modal-title"
-        aria-describedby="modal-description"
-        id="filter-modal"
-      >
-        <div class="modal__dialog" ref="modalDialog" @click.stop>
-          <div class="modal__content">
-            <header class="modal__header">
-              <h1 class="modal__title" id="modal-title">Filtros de búsqueda</h1>
-              <p class="modal__description sr-only" id="modal-description">
-                Configure los filtros para refinar su búsqueda de especialistas
-                médicos
-              </p>
-              <button
-                type="button"
-                class="modal__close"
-                @click="closeModal"
-                aria-label="Cerrar modal de filtros"
+    <AtomsModalBase :is-open="open" size="large" @close="closeModal">
+      <template #title>
+        <h2 class="filter-modal__title" id="modal-title">Filtros</h2>
+      </template>
+
+      <form @submit.prevent="searchFilters" class="filter-modal__form">
+        <div class="filter-modal__content">
+          <section class="filter-modal__section">
+            <div class="filter-field">
+              <label class="filter-field__label">Valoraciones</label>
+              <div
+                class="rating-selector"
+                role="radiogroup"
+                aria-label="Seleccione valoración mínima"
               >
-                <span aria-hidden="true">
-                  <AtomsIconsXIcon size="24" />
-                </span>
-              </button>
-            </header>
+                <button
+                  v-for="n in 5"
+                  :key="n"
+                  type="button"
+                  class="rating-selector__star"
+                  :class="{ 'rating-selector__star--selected': n <= rating }"
+                  @click="setRating(n)"
+                  :aria-label="`${getRatingLabel(n)} - ${n <= rating ? 'seleccionado' : 'no seleccionado'}`"
+                  :aria-pressed="n <= rating"
+                  role="radio"
+                  :aria-checked="n === rating"
+                >
+                  <Icon
+                    :name="n <= rating ? 'fa6-solid:star' : 'fa6-regular:star'"
+                    aria-hidden="true"
+                  />
+                </button>
+              </div>
+            </div>
 
-            <form @submit.prevent="searchFilters" class="modal__form">
-              <div class="modal__body">
-                <div class="filter-section">
-                  <div class="form-field">
-                    <div class="form-field__group">
-                      <span class="form-field__label form-field__group--label"
-                        >Valoraciones</span
-                      >
-                      <div
-                        class="rating"
-                        role="radiogroup"
-                        aria-label="Seleccione valoración mínima"
-                      >
-                        <button
-                          v-for="n in 5"
-                          :key="n"
-                          type="button"
-                          class="rating__star"
-                          :class="{ 'rating__star--active': n <= rating }"
-                          @click="setRating(n)"
-                          :aria-label="`${getRatingLabel(n)} - ${n <= rating ? 'seleccionado' : 'no seleccionado'}`"
-                          :aria-pressed="n <= rating"
-                          role="radio"
-                          :aria-checked="n === rating"
-                        >
-                          <Icon
-                            :name="
-                              n <= rating
-                                ? 'fa6-solid:star'
-                                : 'fa6-regular:star'
-                            "
-                            aria-hidden="true"
-                          />
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div class="form-field__group">
-                    <label
-                      for="placeInput"
-                      class="form-field__label form-field__group--label"
-                    >
-                      Filtrar por lugar
-                    </label>
-                    <input
-                      type="text"
-                      class="form-field__input"
-                      id="placeInput"
-                      v-model="place"
-                      placeholder="Ciudad o provincia"
-                      aria-describedby="place-help"
-                    />
-                  </div>
-
-                  <div class="form-field__group">
-                    <label
-                      for="disponibilidad"
-                      class="form-field__label form-field__group--label"
-                    >
-                      Disponibilidad de citas
-                    </label>
-                    <select
-                      id="disponibilidad"
-                      class="form-field__select"
-                      v-model="selectedSpecialty"
-                      aria-describedby="specialty-help"
-                    >
-                      <option value="" disabled>Seleccione especialidad</option>
-                      <option
-                        v-for="specialty in localFilters.disponibilidad"
-                        :key="specialty.code"
-                        :value="specialty.code"
-                      >
-                        {{ specialty.name }}
-                      </option>
-                    </select>
-                  </div>
-
-                  <hr class="separator" role="separator" />
-
-                  <fieldset class="form-field__fieldset">
-                    <legend class="form-field__label">Rango de precios</legend>
-                    <p class="form-field__description">
-                      Agregue un precio mínimo y un precio máximo por el que
-                      esté dispuesto a pagar el servicio
-                    </p>
-                    <div class="price-range">
-                      <div class="price-range__field">
-                        <label for="min-price" class="sr-only"
-                          >Precio mínimo</label
-                        >
-                        <input
-                          type="number"
-                          class="form-field__input"
-                          placeholder="Mínimo"
-                          id="min-price"
-                          v-model.number="localFilters.min"
-                          min="0"
-                          aria-describedby="price-help"
-                        />
-                      </div>
-                      <span class="price-range__separator" aria-hidden="true"
-                        >-</span
-                      >
-                      <div class="price-range__field">
-                        <label for="max-price" class="sr-only"
-                          >Precio máximo</label
-                        >
-                        <input
-                          type="number"
-                          class="form-field__input"
-                          placeholder="Máximo"
-                          id="max-price"
-                          v-model.number="localFilters.max"
-                          min="0"
-                          aria-describedby="price-help"
-                        />
-                      </div>
-                    </div>
-                  </fieldset>
-
-                  <hr class="separator" role="separator" />
-
-                  <fieldset class="form-field__fieldset">
-                    <legend class="form-field__label">
-                      Servicios Integrales
-                    </legend>
-                    <div class="radio-group">
-                      <label class="radio">
-                        <input
-                          class="radio__input"
-                          type="radio"
-                          name="entityType"
-                          id="entityType1"
-                          value="hospital"
-                          v-model="localFilters.entity"
-                        />
-                        <span class="radio__custom"></span>
-                        <span class="radio__label">
-                          Por Hospitales que cubran ese procedimiento y la sala
-                          de cirugía
-                        </span>
-                      </label>
-
-                      <label class="radio">
-                        <input
-                          class="radio__input"
-                          type="radio"
-                          name="entityType"
-                          id="entityType2"
-                          value="doctor"
-                          v-model="localFilters.entity"
-                        />
-                        <span class="radio__custom"></span>
-                        <span class="radio__label">
-                          Por médico o especialista que cubran el procedimiento
-                        </span>
-                      </label>
-
-                      <label class="radio">
-                        <input
-                          class="radio__input"
-                          type="radio"
-                          name="entityType"
-                          id="entityType3"
-                          value=""
-                          v-model="localFilters.entity"
-                        />
-                        <span class="radio__custom"></span>
-                        <span class="radio__label"> Todas las opciones </span>
-                      </label>
-                    </div>
-                  </fieldset>
+            <div class="filter-field">
+              <label for="placeInput" class="filter-field__label">
+                Filtrar por ciudad o provincia
+              </label>
+              <div class="autocomplete">
+                <div class="input-with-icon">
+                  <AtomsIconsLocationIcon
+                    class="input-with-icon__icon"
+                    aria-hidden="true"
+                    size="20"
+                  />
+                  <input
+                    ref="placeInputRef"
+                    type="text"
+                    class="filter-field__input filter-field__input--with-icon"
+                    id="placeInput"
+                    v-model="place"
+                    placeholder="Ciudad o provincia"
+                    aria-describedby="place-help"
+                    autocomplete="off"
+                    @input="handlePlaceInput"
+                    @focus="handlePlaceFocus"
+                    @blur="handlePlaceBlur"
+                  />
+                </div>
+                <ul
+                  v-if="showProvinceDropdown && filteredProvinces.length > 0"
+                  class="autocomplete__list"
+                  role="listbox"
+                >
+                  <li
+                    v-for="province in filteredProvinces"
+                    :key="province"
+                    class="autocomplete__item"
+                    role="option"
+                    @click="selectProvince(province)"
+                  >
+                    {{ province }}
+                  </li>
+                </ul>
+                <div
+                  v-else-if="
+                    showProvinceDropdown && filteredProvinces.length === 0
+                  "
+                  class="autocomplete__empty"
+                >
+                  No se encontraron resultados
                 </div>
               </div>
+              <span id="place-help" class="visually-hidden">
+                Ingrese el nombre de una ciudad o provincia para filtrar
+                resultados
+              </span>
+            </div>
 
-              <footer class="modal__footer">
-                <button
-                  type="button"
-                  class="modal__footer--outline-button"
-                  @click="closeModal"
-                >
-                  Cancelar
-                </button>
-                <button type="submit" class="modal__footer--primary-button">
-                  Confirmar
-                </button>
-              </footer>
-            </form>
-          </div>
+            <div class="filter-field">
+              <label class="filter-field__label">
+                Disponibilidad de citas
+              </label>
+              <UiDropdownBase
+                v-model="selectedSpecialty"
+                :items="specialtyDropdownItems"
+                :searchable="true"
+                placeholder="Próximas semanas"
+                no-results-text="No se encontraron resultados"
+                @select="handleSpecialtySelect"
+                @clear="handleSpecialtyClear"
+              />
+              <span id="specialty-help" class="visually-hidden">
+                Seleccione para filtrar por disponibilidad
+              </span>
+            </div>
+
+            <hr
+              class="filter-modal__divider"
+              role="separator"
+              aria-hidden="true"
+            />
+
+            <fieldset class="filter-field__fieldset">
+              <legend class="filter-field__label">Rango de precios</legend>
+              <p class="filter-field__description" id="price-help">
+                Agregue un precio mínimo y un precio máximo por el que esté
+                dispuesto a pagar el servicio
+              </p>
+              <div class="price-range">
+                <div class="price-range__wrapper">
+                  <label for="min-price" class="visually-hidden">
+                    Precio mínimo
+                  </label>
+                  <input
+                    type="number"
+                    class="filter-field__input filter-field__input--price"
+                    placeholder="Mínimo"
+                    id="min-price"
+                    v-model.number="localFilters.min"
+                    min="0"
+                    aria-describedby="price-help"
+                  />
+                </div>
+                <span class="price-range__separator" aria-hidden="true">
+                  -
+                </span>
+                <div class="price-range__wrapper">
+                  <label for="max-price" class="visually-hidden">
+                    Precio máximo
+                  </label>
+                  <input
+                    type="number"
+                    class="filter-field__input filter-field__input--price"
+                    placeholder="Máximo"
+                    id="max-price"
+                    v-model.number="localFilters.max"
+                    min="0"
+                    aria-describedby="price-help"
+                  />
+                </div>
+              </div>
+            </fieldset>
+
+            <hr
+              class="filter-modal__divider"
+              role="separator"
+              aria-hidden="true"
+            />
+
+            <fieldset class="filter-field__fieldset">
+              <legend class="filter-field__label">Servicios Integrales</legend>
+              <div class="radio-group">
+                <div class="radio-group__option">
+                  <input
+                    class="radio-group__input"
+                    type="radio"
+                    name="entityType"
+                    id="entityType-hospital"
+                    value="hospital"
+                    v-model="localFilters.entity"
+                  />
+                  <label for="entityType-hospital" class="radio-group__label">
+                    <span class="radio-group__indicator"></span>
+                    <span class="radio-group__text">
+                      Por Hospitales que cubran ese procedimiento y la sala de
+                      cirugía
+                    </span>
+                  </label>
+                </div>
+
+                <div class="radio-group__option">
+                  <input
+                    class="radio-group__input"
+                    type="radio"
+                    name="entityType"
+                    id="entityType-doctor"
+                    value="doctor"
+                    v-model="localFilters.entity"
+                  />
+                  <label for="entityType-doctor" class="radio-group__label">
+                    <span class="radio-group__indicator"></span>
+                    <span class="radio-group__text">
+                      Por médico o especialista que cubran el procedimiento
+                    </span>
+                  </label>
+                </div>
+
+                <div class="radio-group__option">
+                  <input
+                    class="radio-group__input"
+                    type="radio"
+                    name="entityType"
+                    id="entityType-all"
+                    value=""
+                    v-model="localFilters.entity"
+                  />
+                  <label for="entityType-all" class="radio-group__label">
+                    <span class="radio-group__indicator"></span>
+                    <span class="radio-group__text"> Todas las opciones </span>
+                  </label>
+                </div>
+              </div>
+            </fieldset>
+          </section>
         </div>
-      </div>
-    </Teleport>
+      </form>
+
+      <template #footer>
+        <div class="filter-modal__actions">
+          <button
+            type="button"
+            class="filter-modal__button filter-modal__button--outline"
+            @click="closeModal"
+          >
+            Cancelar
+          </button>
+          <button
+            type="submit"
+            class="filter-modal__button filter-modal__button--primary"
+            @click="searchFilters"
+          >
+            Confirmar
+          </button>
+        </div>
+      </template>
+    </AtomsModalBase>
   </div>
 </template>
 
 <style lang="scss" scoped>
-.sr-only {
-  @include visually-hidden;
-}
-
-.filter-trigger {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.5rem;
-  font-weight: 400;
-  font-size: 14px;
-  line-height: 21px;
-  color: #374151;
-  border-radius: 52px;
-  padding: 8px 16px;
-  background-color: #ffffff;
-  border: 1px solid #e5e7eb;
-  cursor: pointer;
-
-  &:focus-visible {
-    outline: none;
-    box-shadow: 0 0 0 2px rgba($color-primary, 0.5);
-  }
-}
-
-.modal {
-  position: fixed;
-  top: 0;
-  left: 0;
-  z-index: 1055;
-  display: none;
-  width: 100%;
-  height: 100dvh;
-  background-color: rgba(0, 0, 0, 0.5);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  opacity: 0;
-  visibility: hidden;
-  transition: all 0.3s ease;
-
-  &--open {
-    opacity: 1;
-    visibility: visible;
-  }
-
-  &__dialog {
-    position: relative;
-    width: auto;
-    pointer-events: none;
+.filter-modal {
+  &__trigger {
     display: flex;
-    justify-content: center;
-    align-items: center;
-    width: 100%;
-    height: 100%;
-  }
-
-  &__content {
-    position: relative;
-    display: flex;
-    flex-direction: column;
-    max-width: 719px;
-    width: 100%;
-    max-height: calc(100vh - 3rem);
-    pointer-events: auto;
-    background-color: $white;
-    background-clip: padding-box;
-    border: 1px solid rgba(0, 0, 0, 0.2);
-    border-radius: 12px;
-    outline: 0;
-    overflow: hidden;
-    box-shadow:
-      0px 8px 8px -4px #1018280a,
-      0px 20px 24px -4px #1018281a;
-  }
-
-  &__header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: $spacing-lg;
-    border-bottom: 1px solid #e4e7ec;
-    background-color: $white;
+    border-radius: 6.56375rem;
+    border-width: 0.065625rem;
+    padding: 0.525rem 1.05rem;
+    gap: 0.525rem;
+    font-weight: 400;
+    font-size: 0.875rem;
+    line-height: 1.3125rem;
+    letter-spacing: 0;
+    color: #374151;
+    background: #ffffff;
+    border: 0.065625rem solid #e5e7eb;
+    box-shadow: 0rem 0.065625rem 0.13125rem 0rem #1f293714;
   }
 
   &__title {
-    @include label-base;
     font-weight: 600;
-    font-size: 20px;
-    line-height: 28px;
-    letter-spacing: 0%;
-    color: #19213d;
-  }
-
-  &__description {
-    margin: 0.25rem 0 0;
-    color: #6b7280;
-    font-size: 0.875rem;
-  }
-
-  &__close {
-    @include button-base;
-    background-color: transparent;
-    border: none;
-    padding: $spacing-sm;
-    color: #353e5c;
-    border-radius: 50%;
-    margin-left: auto;
-    transition: all 0.15s ease-in-out;
-
-    &:hover {
-      color: $black;
-      background-color: #f5f5f5;
-    }
-
-    &:focus-visible {
-      outline: 2px solid $color-primary;
-      outline-offset: 2px;
-    }
-  }
-
-  &__footer {
-    display: flex;
-    gap: 12px;
-    padding: 24px;
-
-    &--outline-button {
-      @include outline-button;
-      width: 100%;
-    }
-
-    &--primary-button {
-      @include primary-button;
-      width: 100%;
-    }
+    font-size: 1.25rem;
+    line-height: 1.75rem;
+    letter-spacing: 0;
+    color: $color-foreground;
   }
 
   &__form {
-    padding: 20px 24px;
-    overflow-y: auto;
-    flex: 1;
+    padding: 1.5rem;
   }
-}
 
-.filter-section {
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-}
-
-.form-field {
-  &__group {
+  &__actions {
     display: flex;
-    align-items: center;
-    gap: 20px;
-
-    &--label {
-      width: 100%;
-      max-width: 139px;
-    }
-  }
-
-  &__fieldset {
-    border: none;
-    padding: 0;
-    margin: 0;
-    display: flex;
-    flex-direction: column;
-  }
-
-  &__label {
-    @include label-base;
-    font-weight: 400;
-    font-size: 18px;
-    line-height: 20px;
-    color: #19213d;
-    margin: 0;
-    padding: 0;
-  }
-
-  &__description {
-    font-size: 0.875rem;
-    color: #6b7280;
-    margin-bottom: 1rem;
-  }
-
-  &__input,
-  &__select {
-    @include input-base;
+    justify-content: flex-end;
+    gap: 1rem;
     width: 100%;
   }
+
+  &__button {
+    &--primary {
+      @include primary-button;
+      width: 100%;
+    }
+
+    &--outline {
+      @include outline-button;
+      width: 100%;
+    }
+  }
 }
 
-.rating {
+.rating-selector {
   display: flex;
-  gap: 0.25rem;
+  gap: 0.5rem;
+  align-items: center;
 
   &__star {
     background: none;
     border: none;
-    font-size: 1.25rem;
-    color: #d1d5db;
-    cursor: pointer;
     padding: 0.25rem;
-    border-radius: 4px;
+    cursor: pointer;
     transition: all 0.2s ease;
+    color: #d1d5db;
+    font-size: 1.5rem;
+    line-height: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 0.25rem;
 
     &:hover {
       transform: scale(1.1);
+      color: #fbbf24;
     }
 
     &:focus {
-      outline: 2px solid $color-primary;
-      outline-offset: 2px;
+      outline: 0.125rem solid $primary-aqua;
+      outline-offset: 0.125rem;
     }
 
-    &--active {
+    &:focus:not(:focus-visible) {
+      outline: none;
+    }
+
+    &:focus-visible {
+      outline: 0.125rem solid $primary-aqua;
+      outline-offset: 0.125rem;
+    }
+
+    &--selected {
       color: #fbbf24;
+
+      &:hover {
+        color: #f59e0b;
+      }
+    }
+
+    &:active {
+      transform: scale(0.95);
+    }
+  }
+}
+
+.autocomplete {
+  position: relative;
+  width: 100%;
+
+  &__list {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    background: white;
+    border: 0.0625rem solid #e5e7eb;
+    border-radius: 0.5rem;
+    margin-top: 0.25rem;
+    max-height: 12.5rem;
+    overflow-y: auto;
+    z-index: 1000;
+    box-shadow:
+      0 0.25rem 0.375rem -0.0625rem rgba(0, 0, 0, 0.1),
+      0 0.125rem 0.25rem -0.0625rem rgba(0, 0, 0, 0.06);
+    list-style: none;
+    padding: 0;
+  }
+
+  &__item {
+    padding: 0.75rem 1rem;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+    font-size: 0.875rem;
+    line-height: 1.25rem;
+    color: $color-foreground;
+
+    &:hover {
+      background-color: #f3f4f6;
+    }
+
+    &:first-child {
+      border-radius: 0.5rem 0.5rem 0 0;
+    }
+
+    &:last-child {
+      border-radius: 0 0 0.5rem 0.5rem;
+    }
+  }
+
+  &__empty {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    background: white;
+    border: 0.0625rem solid #e5e7eb;
+    border-radius: 0.5rem;
+    margin-top: 0.25rem;
+    padding: 0.75rem 1rem;
+    z-index: 1000;
+    box-shadow:
+      0 0.25rem 0.375rem -0.0625rem rgba(0, 0, 0, 0.1),
+      0 0.125rem 0.25rem -0.0625rem rgba(0, 0, 0, 0.06);
+    font-size: 0.875rem;
+    line-height: 1.25rem;
+    color: #6d758f;
+    text-align: center;
+  }
+}
+
+.input-with-icon {
+  position: relative;
+  width: 100%;
+  display: flex;
+  align-items: center;
+
+  &__icon {
+    position: absolute;
+    left: 0.75rem;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #6d758f;
+    pointer-events: none;
+    z-index: 1;
+  }
+}
+
+.filter-field {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  margin-bottom: 1rem;
+
+  &__label {
+    font-weight: 400;
+    font-size: 1.125rem;
+    line-height: 1.25rem;
+    letter-spacing: 0;
+    color: $color-foreground;
+  }
+
+  &__description {
+    font-weight: 500;
+    font-size: 0.875rem;
+    line-height: 1.25rem;
+    letter-spacing: 0;
+    color: #6d758f;
+  }
+
+  &__input {
+    @include input-base;
+    width: 100%;
+
+    &--with-icon {
+      padding-left: 2.5rem;
     }
   }
 }
@@ -640,234 +720,47 @@ defineExpose({
 .price-range {
   display: flex;
   align-items: center;
-  gap: 1rem;
+  gap: 0.5rem;
 
-  &__field {
+  &__wrapper {
     flex: 1;
   }
 
   &__separator {
-    color: #6b7280;
-    font-weight: 500;
+    font-size: 1rem;
+    line-height: 1.5rem;
+    color: $color-foreground;
   }
 }
 
 .radio-group {
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-  margin-top: 12px;
-}
+  margin-bottom: 0.75rem;
 
-.radio {
-  display: flex;
-  align-items: flex-start;
-  cursor: pointer;
-  user-select: none;
-  position: relative;
-  gap: 12px;
+  &__option {
+    display: flex;
+    align-items: center;
+    margin-bottom: 0.75rem;
+  }
 
-  &:hover .radio__custom {
-    border-color: $primary-aqua;
-    opacity: 0.8;
+  &__text {
+    font-weight: 500;
+    font-size: 0.875rem;
+    line-height: 1.25rem;
+    letter-spacing: 0;
+    color: #6d758f;
+    margin-left: 0.5rem;
   }
 
   &__input {
-    position: absolute;
-    opacity: 0;
-    cursor: pointer;
-    height: 0;
-    width: 0;
-  }
+    @include custom-radio;
 
-  &__custom {
-    position: relative;
-    height: 24px;
-    width: 24px;
-    min-width: 24px;
-    border: 2px solid #6d758f;
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    transition: all 0.2s ease;
-    margin-top: 2px;
+    &:checked {
+      border-color: $primary-aqua;
 
-    &::after {
-      content: "";
-      width: 12px;
-      height: 12px;
-      border-radius: 50%;
-      background-color: $primary-aqua;
-      transform: scale(0);
-      transition: transform 0.2s ease;
+      &::after {
+        background-color: $primary-aqua;
+      }
     }
-  }
-
-  &__input:checked + &__custom {
-    border-color: $primary-aqua;
-
-    &::after {
-      transform: scale(1);
-    }
-  }
-
-  &__input:focus + &__custom {
-    outline: 2px solid $primary-aqua;
-    outline-offset: 2px;
-  }
-
-  &__label {
-    flex: 1;
-    font-size: 14px;
-    line-height: 1.5;
-    color: #374151;
-    cursor: pointer;
-
-    &:hover {
-      color: #111827;
-    }
-  }
-
-  &--disabled {
-    opacity: 0.6;
-    cursor: not-allowed;
-
-    .radio__custom,
-    .radio__label {
-      cursor: not-allowed;
-    }
-
-    &:hover .radio__custom {
-      border-color: #6d758f;
-      opacity: 0.6;
-    }
-  }
-}
-.separator {
-  border: none;
-  height: 1px;
-  background-color: #e4e7ec;
-  margin: 0;
-}
-
-.button {
-  padding: 0.75rem 1.5rem;
-  border-radius: 8px;
-  font-size: 0.875rem;
-  font-weight: 500;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  border: 1px solid transparent;
-  white-space: nowrap;
-
-  &:focus {
-    outline: 2px solid #3b82f6;
-    outline-offset: 2px;
-  }
-
-  &:disabled {
-    opacity: 0.6;
-    cursor: not-allowed;
-  }
-
-  &--primary {
-    flex: 2;
-    background-color: #3b82f6;
-    color: white;
-
-    &:hover:not(:disabled) {
-      background-color: #2563eb;
-    }
-
-    &:active:not(:disabled) {
-      background-color: #1d4ed8;
-    }
-  }
-
-  &--secondary {
-    flex: 1;
-    background-color: #f3f4f6;
-    color: #374151;
-    border-color: #d1d5db;
-
-    &:hover:not(:disabled) {
-      background-color: #e5e7eb;
-      border-color: #9ca3af;
-    }
-
-    &:active:not(:disabled) {
-      background-color: #d1d5db;
-    }
-  }
-
-  &--tertiary {
-    flex: 1;
-    background-color: white;
-    color: #6b7280;
-    border-color: #d1d5db;
-
-    &:hover:not(:disabled) {
-      background-color: #f9fafb;
-      color: #374151;
-    }
-
-    &:active:not(:disabled) {
-      background-color: #f3f4f6;
-    }
-  }
-}
-
-@media (max-width: 768px) {
-  .modal {
-    &__dialog {
-      width: 95%;
-      max-height: 95vh;
-    }
-
-    &__header,
-    &__body,
-    &__footer {
-      padding: 1rem;
-    }
-
-    &__footer {
-      flex-direction: column;
-    }
-  }
-
-  .filter-section {
-    padding: 1rem;
-  }
-
-  .price-range {
-    flex-direction: column;
-    align-items: stretch;
-
-    &__separator {
-      text-align: center;
-    }
-  }
-}
-
-@media (prefers-contrast: high) {
-  .form-field__input,
-  .form-field__select {
-    border-width: 2px;
-  }
-
-  .button {
-    border-width: 2px;
-  }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .modal,
-  .modal__dialog,
-  .filter-trigger,
-  .button,
-  .rating__star {
-    transition: none;
   }
 }
 </style>
