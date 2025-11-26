@@ -1,123 +1,165 @@
-<script setup>
+<script lang="ts" setup>
+import { useSupplier, useUdc } from "@/composables/api";
+import type { Supplier } from "@/types";
+import type { LocationQueryValue } from "vue-router";
+
 definePageMeta({
   middleware: ["auth-pacientes"],
 });
 
-import axios from "axios";
-
-const config = useRuntimeConfig();
-const token = useCookie("token");
 const route = useRoute();
 const router = useRouter();
+const { fetchAllMain } = useSupplier();
+const { fetchUdc } = useUdc();
 
-const clinicas = ref([]);
-const specialties = ref([]);
-const procedures = ref([]);
-const isLoading = ref(true);
-const isSpecialtiesLoading = ref(true);
+interface SearchFilters {
+  filter_name: string;
+  specialty_code: string;
+  procedure_code: string;
+  min_stars: string;
+  min_price: string;
+  max_price: string;
+  lugar: string;
+}
+
+interface Specialty {
+  code: string;
+  name: string;
+}
+
+interface Procedure {
+  code: string;
+  name: string;
+}
+
+const clinicas = ref<Supplier[]>([]);
+const specialties = ref<Specialty[]>([]);
+const procedures = ref<Procedure[]>([]);
+
+const isLoading = ref(false);
+const isSpecialtiesLoading = ref(false);
 const isMapVisible = ref(false);
 
-const filter_query = ref(route.query.filter_name || "");
-const insurance = ref(route.query.insurance || "");
-const entity_type = ref(route.query.entity_type || "");
-const min_price = ref(route.query.min_price || "");
-const max_price = ref(route.query.max_price || "");
-const specialty = ref(route.query.specialty || "");
-const specialty_code = ref(route.query.specialty_code || "");
-const procedure_code = ref(route.query.procedure_code || "");
-const min_stars = ref(route.query.min_stars || "");
-const lugar = ref(route.query.lugar || "");
-
-const filtersData = ref({
-  procedimiento: "",
-  lugar: "",
-  valoracion: "",
-  disponibilidad: "",
-  entity: "",
-  min: "",
-  max: "",
-  procedures: [],
+const filters = reactive<SearchFilters>({
+  filter_name: getQueryParam("filter_name"),
+  specialty_code: getQueryParam("specialty_code"),
+  procedure_code: getQueryParam("procedure_code"),
+  min_stars: getQueryParam("min_stars"),
+  min_price: getQueryParam("min_price"),
+  max_price: getQueryParam("max_price"),
+  lugar: getQueryParam("lugar"),
 });
 
 const currentProcedureName = computed(() => {
-  if (!procedure_code.value || !procedures.value.length) return null;
+  if (!filters.procedure_code || !procedures.value.length) return null;
   const procedure = procedures.value.find(
-    (p) => p.code === procedure_code.value
+    (p) => p.code === filters.procedure_code
   );
-  return procedure ? procedure.name : null;
+  return procedure?.name ?? null;
 });
 
 const currentSpecialtyName = computed(() => {
-  if (!specialty_code.value || !specialties.value.length) return null;
+  if (!filters.specialty_code || !specialties.value.length) return null;
   const specialty = specialties.value.find(
-    (s) => s.code === specialty_code.value
+    (s) => s.code === filters.specialty_code
   );
-  return specialty ? specialty.name : null;
+  return specialty?.name ?? null;
 });
 
 const searchDisplayText = computed(() => {
-  return currentProcedureName.value || currentSpecialtyName.value;
+  return (
+    currentProcedureName.value ||
+    currentSpecialtyName.value ||
+    "Todos los servicios"
+  );
 });
 
-const initializeFiltersFromQuery = async () => {
-  const query = route.query;
+const filtersData = computed(() => ({
+  procedimiento: filters.procedure_code,
+  lugar: filters.lugar,
+  valoracion: filters.min_stars ? Number(filters.min_stars) : undefined,
+  min: filters.min_price ? Number(filters.min_price) : undefined,
+  max: filters.max_price ? Number(filters.max_price) : undefined,
+  disponibilidad: [
+    { code: "all", name: "Todos" },
+    { code: "weeks", name: "Próximas semanas" },
+    { code: "months", name: "Próximos meses" },
+    { code: "days", name: "Próximos días" },
+  ],
+  procedures: procedures.value,
+}));
 
-  filtersData.value.procedimiento = query.procedure_code || "";
-  filtersData.value.lugar = query.province || "";
-  filtersData.value.valoracion = query.min_stars || "";
-  filtersData.value.min = query.min_price || "";
-  filtersData.value.max = query.max_price || "";
-  filtersData.value.entity = query.entity_type || "";
+function getQueryParam(key: string): string {
+  const value = route.query[key];
+  return (Array.isArray(value) ? value[0] : value) || "";
+}
 
-  specialty_code.value = query.specialty_code || "";
-  procedure_code.value = query.procedure_code || "";
+function buildSearchParams(): Record<string, string> {
+  const params: Record<string, string> = {};
 
-  if (!filtersData.value.disponibilidad.length) {
-    filtersData.value.disponibilidad = [
-      { code: "all", name: "Todos" },
-      { code: "weeks", name: "Proximas semanas" },
-      { code: "months", name: "Proximos meses" },
-      { code: "days", name: "Proximos dias" },
-    ];
-  }
-};
+  if (filters.filter_name) params.filter_name = filters.filter_name;
+  if (filters.procedure_code) params.procedure_code = filters.procedure_code;
+  if (filters.specialty_code) params.specialty_code = filters.specialty_code;
+  if (filters.min_stars) params.min_stars = filters.min_stars;
+  if (filters.min_price) params.min_price = filters.min_price;
+  if (filters.max_price) params.max_price = filters.max_price;
+  if (filters.lugar) params.lugar = filters.lugar;
 
-const loadSpecialties = async () => {
-  isSpecialtiesLoading.value = true;
-  try {
-    const response = await axios.get(
-      config.public.API_BASE_URL + "/udc/get_all?type=MEDICAL_SPECIALTY",
-      {
-        headers: { Authorization: token.value },
+  console.log("🔍 Parámetros construidos:", params);
+
+  return params;
+}
+
+function updateRouteQuery(newFilters: Partial<SearchFilters>) {
+  const combinedQuery = { ...route.query, ...newFilters };
+
+  const query = Object.entries(combinedQuery).reduce(
+    (acc, [key, value]) => {
+      if (value) {
+        acc[key] = value;
       }
-    );
-    specialties.value = response.data.data.map((item) => ({
-      code: item.code,
-      name: item.name,
-    }));
+      return acc;
+    },
+    {} as Record<string, LocationQueryValue | LocationQueryValue[]>
+  );
+
+  router.push({ path: "/buscar", query });
+}
+
+async function loadSpecialties() {
+  isSpecialtiesLoading.value = true;
+
+  try {
+    const { response, request } = fetchUdc("MEDICAL_SPECIALTY");
+    await request();
+
+    if (response.value?.data) {
+      specialties.value = response.value.data.map((item) => ({
+        code: item.code,
+        name: item.name,
+      }));
+    }
   } catch (error) {
     console.error("Error loading specialties:", error);
   } finally {
     isSpecialtiesLoading.value = false;
   }
-};
+}
 
-const loadProcedures = async (specialtyCode) => {
+async function loadProcedures(specialtyCode: string) {
   if (!specialtyCode) {
     procedures.value = [];
     return;
   }
 
   try {
-    const response = await axios.get(
-      `${config.public.API_BASE_URL}/udc/get_all?father_code=${specialtyCode}&type=MEDICAL_PROCEDURE`,
-      {
-        headers: { Authorization: token.value },
-      }
-    );
+    const { response, request } = fetchUdc("MEDICAL_PROCEDURE", {
+      father_code: specialtyCode,
+    });
+    await request();
 
-    if (response.data?.data) {
-      procedures.value = response.data.data.map((item) => ({
+    if (response.value?.data) {
+      procedures.value = response.value.data.map((item) => ({
         code: item.code,
         name: item.name,
       }));
@@ -128,146 +170,96 @@ const loadProcedures = async (specialtyCode) => {
     console.error("Error loading procedures:", error);
     procedures.value = [];
   }
-};
+}
 
-const search = async () => {
+async function searchSuppliers() {
   isLoading.value = true;
   clinicas.value = [];
 
-  const params = {};
-
-  if (filter_query.value) params.filter_name = filter_query.value;
-  if (procedure_code.value) params.procedure_code = procedure_code.value;
-  if (min_stars.value) params.min_stars = min_stars.value;
-  if (min_price.value) params.min_price = min_price.value;
-  if (max_price.value) params.max_price = max_price.value;
-  if (lugar.value) params.lugar = lugar.value;
-  if (specialty_code.value) params.specialty_code = specialty_code.value;
-
-  const setup = {
-    params,
-    headers: { Authorization: token.value },
-  };
-
   try {
-    const response = await axios.get(
-      config.public.API_BASE_URL + "/supplier/get_all_main",
-      setup
-    );
-    clinicas.value = response.data.data;
-  } catch (e) {
-    console.error("❌ Error en búsqueda:", e);
+    const params = buildSearchParams();
+
+    const { response, request } = fetchAllMain(params);
+
+    await request();
+
+    if (response.value?.data) {
+      clinicas.value = response.value.data;
+      console.log("✅ Búsqueda exitosa:", clinicas.value.length, "resultados");
+      console.log("📋 Parámetros de búsqueda:", params);
+    }
+  } catch (error) {
+    console.error("❌ Error en búsqueda:", error);
   } finally {
     isLoading.value = false;
   }
-};
+}
 
-const onFiltersChange = (newFilters) => {
-  filtersData.value = { ...filtersData.value, ...newFilters };
+function onFiltersChange(newFilters: any) {
+  const queryUpdates: Partial<SearchFilters> = {};
 
-  const newQuery = {
-    ...route.query,
-    ...(filtersData.value.procedimiento && {
-      procedure_code: filtersData.value.procedimiento,
-    }),
-    ...(filtersData.value.lugar && { province: filtersData.value.lugar }),
-    ...(filtersData.value.valoracion && {
-      min_stars: filtersData.value.valoracion,
-    }),
-    ...(filtersData.value.min && { min_price: filtersData.value.min }),
-    ...(filtersData.value.max && { max_price: filtersData.value.max }),
-    ...(filtersData.value.entity && {
-      entity_type: filtersData.value.entity,
-    }),
-  };
-
-  router.push({
-    path: "/buscar",
-    query: newQuery,
-  });
-};
-
-watch(
-  () => route.query.min_stars,
-  (newVal) => {
-    min_stars.value = newVal;
-    search();
+  if (newFilters.procedimiento !== undefined) {
+    queryUpdates.procedure_code = newFilters.procedimiento;
   }
-);
-
-watch(
-  () => route.query.min_price,
-  (newVal) => {
-    min_price.value = newVal;
-    search();
+  if (newFilters.lugar !== undefined) {
+    queryUpdates.lugar = newFilters.lugar;
   }
-);
-
-watch(
-  () => route.query.max_price,
-  (newVal) => {
-    max_price.value = newVal;
-    search();
+  if (newFilters.valoracion !== undefined) {
+    queryUpdates.min_stars = newFilters.valoracion;
   }
-);
+  if (newFilters.min !== undefined) {
+    queryUpdates.min_price = newFilters.min;
+  }
+  if (newFilters.max !== undefined) {
+    queryUpdates.max_price = newFilters.max;
+  }
+
+  updateRouteQuery(queryUpdates);
+}
 
 watch(
   () => route.query.specialty_code,
-  (newVal) => {
-    specialty_code.value = newVal;
+  async (newVal) => {
+    filters.specialty_code = getQueryParam("specialty_code");
+
     if (newVal) {
-      loadProcedures(newVal);
+      await loadProcedures(newVal as string);
     } else {
       procedures.value = [];
     }
-    search();
+
+    searchSuppliers();
   }
 );
 
 watch(
-  () => route.query.procedure_code,
-  (newVal) => {
-    procedure_code.value = newVal;
-    search();
+  () => [
+    route.query.procedure_code,
+    route.query.min_stars,
+    route.query.min_price,
+    route.query.max_price,
+    route.query.lugar,
+  ],
+  () => {
+    filters.filter_name = getQueryParam("filter_name");
+    filters.procedure_code = getQueryParam("procedure_code");
+    filters.min_stars = getQueryParam("min_stars");
+    filters.min_price = getQueryParam("min_price");
+    filters.max_price = getQueryParam("max_price");
+    filters.lugar = getQueryParam("lugar");
+
+    searchSuppliers();
   }
-);
-
-watch(
-  () => route.query,
-  (newQuery, oldQuery) => {
-    initializeFiltersFromQuery();
-
-    if (
-      newQuery.specialty_code !== oldQuery?.specialty_code ||
-      newQuery.procedure_code !== oldQuery?.procedure_code ||
-      newQuery.timestamp !== oldQuery?.timestamp
-    ) {
-      search();
-    }
-  },
-  { deep: true }
 );
 
 onMounted(async () => {
-  filter_query.value = route.query.filter_name || "";
-  insurance.value = route.query.insurance || "";
-  entity_type.value = route.query.entity_type || "";
-  min_price.value = route.query.min_price || "";
-  max_price.value = route.query.max_price || "";
-  specialty.value = route.query.specialty || "";
-  min_stars.value = route.query.min_stars || "";
-  specialty_code.value = route.query.specialty_code || "";
-  procedure_code.value = route.query.procedure_code || "";
-  lugar.value = route.query.lugar || "";
-
-  await initializeFiltersFromQuery();
   await loadSpecialties();
 
-  if (specialty_code.value) {
-    await loadProcedures(specialty_code.value);
+  if (filters.specialty_code) {
+    await loadProcedures(filters.specialty_code);
   }
 
-  search();
+  searchSuppliers();
 });
 </script>
 
@@ -297,10 +289,10 @@ onMounted(async () => {
           <div class="search-results__header">
             <div class="search-results__info">
               <div class="search-results__info-content">
-                <span class="search-results__title">{{
-                  searchDisplayText
-                }}</span>
-                <span class="search-results__count" v-if="clinicas">
+                <span class="search-results__title">
+                  {{ searchDisplayText }}
+                </span>
+                <span class="search-results__count">
                   {{ clinicas.length }} resultados
                 </span>
               </div>
@@ -361,6 +353,7 @@ onMounted(async () => {
                 </div>
               </div>
             </div>
+
             <div class="search-results__map" v-show="isMapVisible">
               <AtomsMapaInteractivo />
             </div>
