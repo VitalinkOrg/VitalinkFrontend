@@ -79,6 +79,7 @@ export interface UpdateHospital {
   card_id?: string;
   description?: string;
   medical_type_code?: string;
+  num_medical_enrollment?: string;
   // is_hospital: true;
 }
 
@@ -118,13 +119,17 @@ export const useSupplier = () => {
     });
   };
 
-  const fetchAllMain = () => {
+  const fetchAllMain = (params?: Record<string, string>) => {
     const token = getToken();
     if (!token) throw new Error("No authentication token found");
 
-    const url = `${config.public.API_BASE_URL}/supplier/get_all_main`;
+    const queryString = params
+      ? `?${new URLSearchParams(params).toString()}`
+      : "";
 
-    return useApi<ApiResponse<any>>(url, {
+    const url = `${config.public.API_BASE_URL}/supplier/get_all_main${queryString}`;
+
+    return useApi<ApiResponse<Supplier[]>>(url, {
       method: "GET",
       headers: {
         Authorization: token,

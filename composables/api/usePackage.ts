@@ -52,13 +52,13 @@ export const usePackage = () => {
 
   const createPackage = (
     packageData: Partial<PackageCreationRequest>
-  ): UsableAPI<ApiResponse<PackageCreationRequest>> => {
+  ): UsableAPI<ApiResponse<Package>> => {
     const token = getToken();
     if (!token) throw new Error("No authentication token found");
 
     const url = `${config.public.API_BASE_URL}/package/add`;
 
-    return useApi<ApiResponse<PackageCreationRequest>>(url, {
+    return useApi<ApiResponse<Package>>(url, {
       method: "POST",
       headers: {
         Authorization: token,
@@ -68,5 +68,63 @@ export const usePackage = () => {
     });
   };
 
-  return { fetchPackages, fetchPackagesBySupplierId, createPackage };
+  const fetchPackageById = (
+    packageId: number
+  ): UsableAPI<ApiResponse<Package>> => {
+    const token = getToken();
+    if (!token) throw new Error("No authentication token found");
+
+    const url = `${config.public.API_BASE_URL}/package/get?id=${packageId}`;
+
+    return useApi<ApiResponse<Package>>(url, {
+      method: "GET",
+      headers: {
+        Authorization: token,
+        "Content-Type": "application/json",
+      },
+    });
+  };
+
+  const updatePackage = (
+    packageId: number,
+    packageData: Partial<PackageCreationRequest>
+  ): UsableAPI<ApiResponse<Package>> => {
+    const token = getToken();
+    if (!token) throw new Error("No authentication token found");
+
+    const url = `${config.public.API_BASE_URL}/package/edit?id=${packageId}`;
+
+    return useApi<ApiResponse<Package>>(url, {
+      method: "PUT",
+      headers: {
+        Authorization: token,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(packageData),
+    });
+  };
+
+  const deletePackage = (packageId: number): UsableAPI<ApiResponse<void>> => {
+    const token = getToken();
+    if (!token) throw new Error("No authentication token found");
+
+    const url = `${config.public.API_BASE_URL}/package/delete?id=${packageId}`;
+
+    return useApi<ApiResponse<void>>(url, {
+      method: "DELETE",
+      headers: {
+        Authorization: token,
+        "Content-Type": "application/json",
+      },
+    });
+  };
+
+  return {
+    fetchPackages,
+    fetchPackagesBySupplierId,
+    fetchPackageById,
+    createPackage,
+    updatePackage,
+    deletePackage,
+  };
 };

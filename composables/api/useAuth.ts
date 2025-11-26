@@ -94,11 +94,35 @@ export const useAuth = () => {
     });
   };
 
+  const deleteUser = (userId: string): UsableAPI<ApiResponse<void>> => {
+    const token = getToken();
+    if (!token) {
+      throw new Error("No authentication token found");
+    }
+
+    const url = `${config.public.API_BASE_URL}/user/delete?id=${userId}`;
+
+    return useApi<ApiResponse<void>>(url, {
+      method: "DELETE",
+      headers: {
+        Authorization: token,
+        "Content-Type": "application/json",
+      },
+    });
+  };
+
   const logout = () => {
     clearTokens();
     clearAuthState();
     clearUserInfo();
   };
 
-  return { register, login, logout, fetchUserInfo, fetchHospitalInfo };
+  return {
+    register,
+    login,
+    logout,
+    fetchUserInfo,
+    fetchHospitalInfo,
+    deleteUser,
+  };
 };
