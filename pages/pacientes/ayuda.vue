@@ -1,197 +1,506 @@
-<script setup>
-import { ref } from "vue";
-const open = ref(false);
-const tab = ref(1);
+<script lang="ts" setup>
+const open = ref<boolean>(false);
+const tab = ref<number>(1);
+const claimSentRef = ref<any>(null);
+
+const submitClaimForm = () => {
+  if (claimSentRef.value) {
+    claimSentRef.value.openModal();
+  }
+};
 </script>
 
 <template>
   <NuxtLayout name="pacientes-dashboard">
-    <main class="bg-light">
-      <div class="container py-5">
-        <div class="card p-5 rounded-4 bg-primary-subtle border-0">
-          <h4 class="text-primary fw-semibold">
+    <main class="help-page">
+      <div class="help-page__back-link-container">
+        <NuxtLink href="/pacientes/cuenta" class="help-page__back-link">
+          <AtomsIconsArrowLeftIcon />
+          Ayuda y Soporte
+        </NuxtLink>
+      </div>
+      <div class="help-page__container">
+        <div class="help-page__header">
+          <img
+            class="help-page__image-banner"
+            src="@/src/assets/ayuda-soporte-banner.png"
+          />
+          <h4 class="help-page__title">
             Bienvenido a la página de ayuda y soporte de Vitalink
           </h4>
-          <form class="row g-3">
-            <div class="col-5">
-              <input
-                type="text"
-                class="form-control"
-                id="inputPassword2"
-                placeholder="Buscar"
+          <div class="help-page__search">
+            <div class="help-page__search-input-wrapper">
+              <UiSearchInput
+                placeholder="Escribe un problema o preugnta que tenga"
               />
             </div>
-            <div class="col-auto">
-              <button type="submit" class="btn btn-primary mb-3">Buscar</button>
+            <div class="help-page__search-button-wrapper">
+              <button type="submit" class="help-page__search-button">
+                Buscar
+              </button>
             </div>
-          </form>
+          </div>
         </div>
-        <div class="row justify-content-center my-5">
-          <div class="col-8 row justify-content-evenly">
+
+        <div class="help-page__content">
+          <div class="help-page__tabs">
             <div
-              class="col-4 rounded-4 fw-semibold d-flex justify-content-center text-center card p-5 fs-3 cursor-pointer"
-              :class="open ? 'text-white bg-info border-ayuda' : 'bg-info-subtle text-info border-0'"
+              class="help-page__tab"
+              :class="{ 'help-page__tab--active': open }"
               @click="open = true"
             >
               FAQs
             </div>
             <div
-              class="col-4 rounded-4 text-info fw-semibold d-flex justify-content-center text-center card p-5 fs-3 cursor-pointer"
-              :class="!open ? 'text-white bg-info border-ayuda' : 'bg-info-subtle text-info border-0'"
+              class="help-page__tab"
+              :class="{ 'help-page__tab--active': !open }"
               @click="open = false"
             >
               Realizar un reclamo
             </div>
           </div>
-          <div v-if="!open" class="col-8 my-5">
-            <p class="text-center text-secondary mb-5">
+
+          <div v-if="!open" class="help-page__claim">
+            <p class="help-page__claim-description">
               Si tienes algún problema con tu cuenta de Vitalink, puedes
               completar el siguiente formulario y nosotros nos encargaremos de
               ayudarte
             </p>
-            <form action="">
-              <div class="card border-0">
-                <h6 class="text-center mt-4 fs-5 fw-semibold">
-                  Formulario de reclamos
-                </h6>
-                <hr />
-                <div class="bg-light card border-0 m-3 p-4">
-                  <h6 class="fw-semibold">
+            <form class="help-page__form" @submit.prevent="submitClaimForm">
+              <div class="help-page__form-card">
+                <h6 class="help-page__form-title">Formulario de reclamos</h6>
+                <hr class="help-page__divider" />
+                <div class="help-page__form-content">
+                  <h6 class="help-page__form-section-title">
                     Datos Personales de quien solicita el reclamo
                   </h6>
-                  <div class="form-group my-3">
-                    <label for="nombre" class="form-label">Nombre (s)</label>
+                  <div class="help-page__form-group">
+                    <label for="nombre" class="help-page__label"
+                      >Nombre (s)</label
+                    >
                     <input
                       type="text"
                       placeholder="Escribe tu nombre"
-                      class="form-control shadow-sm"
+                      class="help-page__input"
                       id="nombre"
                       name="nombre"
                     />
                   </div>
-                  <div class="form-group mb-3">
-                    <label for="nombre" class="form-label">Apellido (s)</label>
+                  <div class="help-page__form-group">
+                    <label for="apellido" class="help-page__label"
+                      >Apellido (s)</label
+                    >
                     <input
                       type="text"
                       placeholder="Escribe tu apellido"
-                      class="form-control shadow-sm"
-                      id="nombre"
-                      name="nombre"
+                      class="help-page__input"
+                      id="apellido"
+                      name="apellido"
                     />
                   </div>
-                  <div class="form-group mb-3">
-                    <label for="nombre" class="form-label"
+                  <div class="help-page__form-group">
+                    <label for="email" class="help-page__label"
                       >Correo Electrónico</label
                     >
                     <input
                       type="email"
                       placeholder="Escribe tu correo electrónico"
-                      class="form-control shadow-sm"
-                      id="nombre"
-                      name="nombre"
+                      class="help-page__input"
+                      id="email"
+                      name="email"
                     />
                   </div>
-                  <div class="form-group mb-3">
-                    <label for="nombre" class="form-label"
+                  <div class="help-page__form-group">
+                    <label for="telefono" class="help-page__label"
                       >Número de teléfono</label
                     >
                     <input
-                      type="phone"
+                      type="tel"
                       placeholder="+1 (555) 000-0000"
-                      class="form-control shadow-sm"
-                      id="nombre"
-                      name="nombre"
+                      class="help-page__input"
+                      id="telefono"
+                      name="telefono"
                     />
                   </div>
-                  <div class="form-group mb-3">
-                    <label for="direccion" class="form-label">Dirección</label>
+                  <div class="help-page__form-group">
+                    <label for="direccion" class="help-page__label"
+                      >Dirección</label
+                    >
                     <input
                       type="text"
                       placeholder="Dirección"
-                      class="form-control shadow-sm"
+                      class="help-page__input"
                       id="direccion"
                       name="direccion"
                     />
                   </div>
-                  <hr />
-                  <h6 class="fw-semibold">¿Cuál es el inconveniente?</h6>
-                  <div class="form-group mb-3">
-                    <label for="direccion" class="form-label"
+                  <hr class="help-page__divider" />
+                  <h6 class="help-page__form-section-title">
+                    ¿Cuál es el inconveniente?
+                  </h6>
+                  <div class="help-page__form-group">
+                    <label for="descripcion" class="help-page__label"
                       >Descripción</label
                     >
                     <textarea
-                      type="text"
                       placeholder="Escribe una descripción"
-                      class="form-control shadow-sm"
-                      id="direccion"
+                      class="help-page__textarea"
+                      id="descripcion"
                       rows="4"
-                      name="direccion"
+                      name="descripcion"
                     ></textarea>
                   </div>
                 </div>
-                <hr />
-                <button type="submit" class="btn btn-primary m-3">
+                <hr class="help-page__divider" />
+                <button type="submit" class="help-page__submit-button">
                   Enviar
                 </button>
               </div>
             </form>
           </div>
-          <div v-else class="col-8 my-5">
-            <h2 class="text-center fw-semibold">Preguntas frecuentes</h2>
-            <p class="text-center text-secondary mb-5">
+
+          <div v-else class="help-page__faq">
+            <h2 class="help-page__faq-title">Preguntas frecuentes</h2>
+            <p class="help-page__faq-description">
               Estas son algunas preguntas y respuestas frecuentes sobre nuestros
               servicios.
             </p>
-            <div class="mb-4">
-              <ul
-                class="nav nav-underline d-flex justify-content-evenly flex-row w-100"
-              >
-                <li class="nav-item">
-                  <button class="nav-link text-secondary" :class="tab === 1 ? 'active text-info' : ''">
+            <div class="help-page__faq-nav">
+              <ul class="help-page__faq-nav-list">
+                <li class="help-page__faq-nav-item">
+                  <button
+                    class="help-page__faq-nav-link"
+                    :class="{ 'help-page__faq-nav-link--active': tab === 1 }"
+                    @click="tab = 1"
+                  >
                     General
                   </button>
                 </li>
-                <li class="nav-item">
-                  <button class="nav-link text-secondary" :class="tab === 2 ? 'active text-info' : ''">
+                <li class="help-page__faq-nav-item">
+                  <button
+                    class="help-page__faq-nav-link"
+                    :class="{ 'help-page__faq-nav-link--active': tab === 2 }"
+                    @click="tab = 2"
+                  >
                     Citas
                   </button>
                 </li>
-                <li class="nav-item">
-                  <button class="nav-link text-secondary" :class="tab === 3 ? 'active text-info' : ''">
+                <li class="help-page__faq-nav-item">
+                  <button
+                    class="help-page__faq-nav-link"
+                    :class="{ 'help-page__faq-nav-link--active': tab === 3 }"
+                    @click="tab = 3"
+                  >
                     Váuchers
                   </button>
                 </li>
-                <li class="nav-item">
-                  <button class="nav-link text-secondary" :class="tab === 4 ? 'active text-info' : ''">
+                <li class="help-page__faq-nav-item">
+                  <button
+                    class="help-page__faq-nav-link"
+                    :class="{ 'help-page__faq-nav-link--active': tab === 4 }"
+                    @click="tab = 4"
+                  >
                     Servicios
                   </button>
                 </li>
               </ul>
             </div>
-            <div
-              class="col align-items-center justify-content-center d-flex flex-column p-4"
-            >
-              <WebsiteFaqItem
-                title="¿Cuáles son los tipos de cirugía disponibles en VitaLink?"
-              />
-              <WebsiteFaqItem
-                title="¿Puedo programar citas directamente a través de VitaLink?"
-              />
-              <WebsiteFaqItem
-                title="¿Cómo protege VitaLink mi información personal y médica?"
-              />
-              <WebsiteFaqItem
-                title=" ¿Qué hace diferente a VitaLink de otros directorios de salud?"
-              />
-            </div>
+            <PacientesPreguntasFrecuentes />
           </div>
         </div>
       </div>
     </main>
+    <PacientesModalesReclamoEnviado ref="claimSentRef" />
   </NuxtLayout>
 </template>
-<style>
-.border-ayuda {
-  border: 10px solid var(--Primary-Gradients-02-Aqua-02, #C2EBEE);
+
+<style lang="scss" scoped>
+.help-page {
+  background-color: #f8f9fa;
+
+  &__back-link-container {
+    max-width: 1140px;
+    padding: 48px 15px 0 15px;
+    margin: 0 auto;
+  }
+
+  &__container {
+    max-width: 1078px;
+    margin: 0 auto;
+    padding: 48px 15px;
+  }
+
+  &__back-link {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-weight: 600;
+    font-size: 16px;
+    line-height: 20px;
+    letter-spacing: 0;
+    color: $color-foreground;
+    text-decoration: none;
+    margin-bottom: 24px;
+
+    &:hover {
+      text-decoration: underline;
+    }
+  }
+
+  &__image-banner {
+    z-index: 0;
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+
+  &__header {
+    position: relative;
+    overflow: hidden;
+    background-color: rgba($color-primary, 0.1);
+    padding: 48px;
+    max-height: 200px;
+    border-radius: 16px;
+  }
+
+  &__title {
+    position: relative;
+    z-index: 10;
+    color: $color-primary;
+    font-family: $font-family-montserrat-alt;
+    font-weight: 700;
+    font-style: Bold;
+    font-size: 22px;
+    line-height: 132%;
+    letter-spacing: 0px;
+    margin: 0 0 16px 0;
+    max-width: 390px;
+  }
+
+  &__search {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+
+  &__search-input-wrapper {
+    flex: 0 0 auto;
+    width: 41.666667%;
+
+    @include respond-to-max(md) {
+      width: 100%;
+    }
+  }
+
+  &__search-input {
+    @include input-base;
+    width: 100%;
+  }
+
+  &__search-button-wrapper {
+    position: relative;
+    z-index: 10;
+    flex: 0 0 auto;
+  }
+
+  &__search-button {
+    @include primary-button;
+  }
+
+  &__content {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin: 48px 0;
+  }
+
+  &__tabs {
+    display: flex;
+    justify-content: space-evenly;
+    gap: 24px;
+    width: 66.666667%;
+
+    @include respond-to-max(md) {
+      width: 100%;
+      flex-direction: column;
+    }
+  }
+
+  &__tab {
+    flex: 0 0 auto;
+    width: calc(35% - 12px);
+    border-radius: 16px;
+    font-weight: 600;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+    padding: 48px;
+    font-size: 20px;
+    cursor: pointer;
+    background-color: rgba($primary-aqua, 0.1);
+    color: $primary-aqua;
+    border: none;
+    transition: all 0.3s ease;
+
+    @include respond-to-max(md) {
+      width: 100%;
+    }
+
+    &--active {
+      color: $white;
+      background-color: $primary-aqua;
+      border: 10px solid $primary-aqua-light;
+    }
+  }
+
+  &__claim {
+    width: 66.666667%;
+    margin: 48px 0;
+
+    @include respond-to-max(md) {
+      width: 100%;
+    }
+  }
+
+  &__claim-description {
+    text-align: center;
+    color: $color-text-secondary;
+    margin-bottom: 48px;
+    font-family: $font-family-main;
+  }
+
+  &__form-card {
+    background-color: $white;
+    border-radius: 8px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  }
+
+  &__form-title {
+    text-align: center;
+    padding: 24px 0 0 0;
+    font-weight: 600;
+    font-size: 20px;
+    line-height: 28px;
+    letter-spacing: 0;
+  }
+
+  &__divider {
+    border: none;
+    border-top: 1px solid #dee2e6;
+    margin: 16px 0;
+  }
+
+  &__form-content {
+    background-color: #f8f9fa;
+    margin: 12px;
+    padding: 24px;
+    border-radius: 8px;
+  }
+
+  &__form-section-title {
+    font-weight: 600;
+    font-family: $font-family-main;
+    margin: 0 0 16px 0;
+    font-size: 16px;
+  }
+
+  &__form-group {
+    margin-bottom: 12px;
+  }
+
+  &__label {
+    @include form-label;
+    margin-bottom: 8px;
+  }
+
+  &__input {
+    @include input-base;
+    width: 100%;
+  }
+
+  &__textarea {
+    @include input-base;
+    width: 100%;
+    resize: vertical;
+  }
+
+  &__submit-button {
+    @include primary-button;
+    width: calc(100% - 24px);
+    margin: 12px;
+  }
+
+  &__faq {
+    width: 66.666667%;
+    margin: 48px 0;
+
+    @include respond-to-max(md) {
+      width: 100%;
+    }
+  }
+
+  &__faq-title {
+    text-align: center;
+    font-weight: 600;
+    font-family: $font-family-main;
+    margin: 0 0 16px 0;
+  }
+
+  &__faq-description {
+    text-align: center;
+    color: $color-text-secondary;
+    margin-bottom: 48px;
+    font-family: $font-family-main;
+  }
+
+  &__faq-nav {
+    margin-bottom: 24px;
+  }
+
+  &__faq-nav-list {
+    display: flex;
+    justify-content: space-evenly;
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    border-bottom: 1px solid #dee2e6;
+  }
+
+  &__faq-nav-item {
+    flex: 1;
+    text-align: center;
+  }
+
+  &__faq-nav-link {
+    @include button-base;
+    background: none;
+    border: none;
+    border-bottom: 2px solid transparent;
+    border-radius: 0;
+    color: $color-text-secondary;
+    padding: 12px 16px;
+    width: 100%;
+
+    &--active {
+      color: $primary-aqua;
+      border-bottom-color: $primary-aqua;
+    }
+
+    &:hover {
+      color: $primary-aqua;
+    }
+  }
+
+  &__faq-items {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+  }
 }
 </style>
