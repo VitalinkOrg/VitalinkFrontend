@@ -1,60 +1,110 @@
-<script setup>
-// Mock user data
-const mockUserInfo = {
-  degrees: [
-    {
-      id: 1,
-      degree: "Doctorado en Medicina",
-      university: "Universidad Nacional Autónoma de México",
-      city: "Ciudad de México",
-      country: "México",
-      start_date: "2015-09-01",
-      end_date: "2020-06-30",
-    },
-    {
-      id: 2,
-      degree: "Especialidad en Cardiología",
-      university: "Hospital General de México",
-      city: "Ciudad de México",
-      country: "México",
-      start_date: "2012-08-15",
-      end_date: "2015-07-20",
-    },
-  ],
-  experiences: [
-    {
-      id: 1,
-      position: "Cardiólogo Senior",
-      hospital: "Hospital Ángeles",
-      city: "Monterrey",
-      country: "México",
-      start_date: "2018-03-01",
-      end_date: "2023-05-15",
-    },
-  ],
-  languages: [
-    {
-      id: 1,
-      language_code: "Inglés",
-      skill_level: "Avanzado",
-    },
-    {
-      id: 2,
-      language_code: "Francés",
-      skill_level: "Intermedio",
-    },
-  ],
+<script setup lang="ts">
+interface Education {
+  id?: number;
+  degree: string;
+  university: string;
+  city: string;
+  country: string;
+  start_date: string;
+  end_date: string;
+  experience_type_code?: string;
+}
+
+interface Experience {
+  id?: number;
+  position: string;
+  hospital: string;
+  city: string;
+  country: string;
+  start_date: string;
+  end_date: string;
+  experience_type_code?: string;
+}
+
+interface Language {
+  id?: number;
+  language_code: string;
+  skill_level: string;
+}
+
+interface UserInfo {
+  degrees: Education[];
+  experiences: Experience[];
+  languages: Language[];
+  supplier_id?: number;
+}
+
+const { userInfo, getUserInfo } = useUserInfo();
+const config = useRuntimeConfig();
+const host = config.public.apiBase;
+
+const localUserInfo = ref<UserInfo>({
+  degrees: [],
+  experiences: [],
+  languages: [],
+});
+
+const languageOptions = [
+  { value: "Inglés", label: "Inglés" },
+  { value: "Francés", label: "Francés" },
+  { value: "Alemán", label: "Alemán" },
+  { value: "Italiano", label: "Italiano" },
+  { value: "Portugués", label: "Portugués" },
+];
+
+const skillLevelOptions = [
+  { value: "Básico", label: "Básico" },
+  { value: "Intermedio", label: "Intermedio" },
+  { value: "Avanzado", label: "Avanzado" },
+  { value: "Nativo", label: "Nativo" },
+];
+
+const loadUserData = async () => {
+  const userData = getUserInfo();
+  if (userData?.supplier_id) {
+    try {
+      const educationResponse = await $fetch(
+        `${host}/certificationsexperience/get_all`,
+        {
+          params: {
+            supplier_id: userData.supplier_id,
+            experience_type_code: "EDUCATION",
+          },
+        }
+      );
+      localUserInfo.value.degrees = Array.isArray(educationResponse)
+        ? educationResponse
+        : [];
+
+      const experienceResponse = await $fetch(
+        `${host}/certificationsexperience/get_all`,
+        {
+          params: {
+            supplier_id: userData.supplier_id,
+            experience_type_code: "EXPERIENCE",
+          },
+        }
+      );
+      localUserInfo.value.experiences = Array.isArray(experienceResponse)
+        ? experienceResponse
+        : [];
+
+      localUserInfo.value.languages = [];
+    } catch (error) {
+      console.error("Error loading user data:", error);
+    }
+  }
 };
 
-// Use mock data in development
-const user_info = process.dev ? ref(mockUserInfo) : useCookie("user_info");
+onMounted(() => {
+  loadUserData();
+});
 
-// State for modals and forms
 const showEducationModal = ref(false);
 const showExperienceModal = ref(false);
 const showLanguageModal = ref(false);
 
-const newEducation = ref({
+const newEducation = ref<Education>({
   degree: "",
   university: "",
   city: "",
@@ -63,7 +113,7 @@ const newEducation = ref({
   end_date: "",
 });
 
-const newExperience = ref({
+const newExperience = ref<Experience>({
   position: "",
   hospital: "",
   city: "",
@@ -72,19 +122,21 @@ const newExperience = ref({
   end_date: "",
 });
 
-const newLanguage = ref({
+const newLanguage = ref<Language>({
   language_code: "",
   skill_level: "",
 });
 
-const editingId = ref(null);
+const editingId = ref<number | null>(null);
+const isLoading = ref(false);
 
-// Education functions
-const openEducationModal = (id = null) => {
+const openEducationModal = (id: number | null = null) => {
   editingId.value = id;
   if (id) {
-    const degree = user_info.value.degrees.find((d) => d.id === id);
-    newEducation.value = { ...degree };
+    const degree = localUserInfo.value.degrees.find((d) => d.id === id);
+    if (degree) {
+      newEducation.value = { ...degree };
+    }
   } else {
     newEducation.value = {
       degree: "",
@@ -98,52 +150,85 @@ const openEducationModal = (id = null) => {
   showEducationModal.value = true;
 };
 
-const saveEducation = () => {
-  if (editingId.value) {
-    // Update existing
-    const index = user_info.value.degrees.findIndex(
-      (d) => d.id === editingId.value
-    );
-    user_info.value.degrees[index] = {
-      ...newEducation.value,
-      id: editingId.value,
-    };
-  } else {
-    // Add new
-    const newId = Math.max(...user_info.value.degrees.map((d) => d.id), 0) + 1;
-    user_info.value.degrees.push({ ...newEducation.value, id: newId });
-  }
+const closeEducationModal = () => {
   showEducationModal.value = false;
-
-  /* API call would go here
-  try {
-    const method = editingId.value ? 'PUT' : 'POST';
-    const url = editingId.value ? `/api/degrees/${editingId.value}` : '/api/degrees';
-    await $fetch(url, { method, body: newEducation.value });
-  } catch (error) {
-    console.error('Error saving education:', error);
-  }
-  */
 };
 
-const deleteEducation = (id) => {
-  user_info.value.degrees = user_info.value.degrees.filter((d) => d.id !== id);
-
-  /* API call would go here
+const saveEducation = async () => {
+  isLoading.value = true;
   try {
-    await $fetch(`/api/degrees/${id}`, { method: 'DELETE' });
+    const userData = getUserInfo();
+    const payload = {
+      ...newEducation.value,
+      experience_type_code: "EDUCATION",
+      supplier_id: userData?.supplier_id,
+    };
+
+    if (editingId.value) {
+      await $fetch(`${host}/certificationsexperience/edit`, {
+        method: "PUT",
+        params: { id: editingId.value },
+        body: payload,
+      });
+
+      const index = localUserInfo.value.degrees.findIndex(
+        (d) => d.id === editingId.value
+      );
+      if (index !== -1) {
+        localUserInfo.value.degrees[index] = {
+          ...payload,
+          id: editingId.value,
+        };
+      }
+    } else {
+      const response = await $fetch<Education>(
+        `${host}/certificationsexperience/add`,
+        {
+          method: "POST",
+          body: payload,
+        }
+      );
+
+      localUserInfo.value.degrees.push(response);
+    }
+
+    showEducationModal.value = false;
   } catch (error) {
-    console.error('Error deleting education:', error);
+    console.error("Error saving education:", error);
+    alert("Error al guardar la educación");
+  } finally {
+    isLoading.value = false;
   }
-  */
 };
 
-// Experience functions
-const openExperienceModal = (id = null) => {
+const deleteEducation = async (id: number) => {
+  if (!confirm("¿Estás seguro de eliminar esta educación?")) return;
+
+  isLoading.value = true;
+  try {
+    await $fetch(`${host}/certificationsexperience/delete`, {
+      method: "DELETE",
+      params: { id },
+    });
+
+    localUserInfo.value.degrees = localUserInfo.value.degrees.filter(
+      (d) => d.id !== id
+    );
+  } catch (error) {
+    console.error("Error deleting education:", error);
+    alert("Error al eliminar la educación");
+  } finally {
+    isLoading.value = false;
+  }
+};
+
+const openExperienceModal = (id: number | null = null) => {
   editingId.value = id;
   if (id) {
-    const exp = user_info.value.experiences.find((e) => e.id === id);
-    newExperience.value = { ...exp };
+    const exp = localUserInfo.value.experiences.find((e) => e.id === id);
+    if (exp) {
+      newExperience.value = { ...exp };
+    }
   } else {
     newExperience.value = {
       position: "",
@@ -157,55 +242,85 @@ const openExperienceModal = (id = null) => {
   showExperienceModal.value = true;
 };
 
-const saveExperience = () => {
-  if (editingId.value) {
-    // Update existing
-    const index = user_info.value.experiences.findIndex(
-      (e) => e.id === editingId.value
-    );
-    user_info.value.experiences[index] = {
-      ...newExperience.value,
-      id: editingId.value,
-    };
-  } else {
-    // Add new
-    const newId =
-      Math.max(...user_info.value.experiences.map((e) => e.id), 0) + 1;
-    user_info.value.experiences.push({ ...newExperience.value, id: newId });
-  }
+const closeExperienceModal = () => {
   showExperienceModal.value = false;
-
-  /* API call would go here
-  try {
-    const method = editingId.value ? 'PUT' : 'POST';
-    const url = editingId.value ? `/api/experiences/${editingId.value}` : '/api/experiences';
-    await $fetch(url, { method, body: newExperience.value });
-  } catch (error) {
-    console.error('Error saving experience:', error);
-  }
-  */
 };
 
-const deleteExperience = (id) => {
-  user_info.value.experiences = user_info.value.experiences.filter(
-    (e) => e.id !== id
-  );
-
-  /* API call would go here
+const saveExperience = async () => {
+  isLoading.value = true;
   try {
-    await $fetch(`/api/experiences/${id}`, { method: 'DELETE' });
+    const userData = getUserInfo();
+    const payload = {
+      ...newExperience.value,
+      experience_type_code: "EXPERIENCE",
+      supplier_id: userData?.supplier_id,
+    };
+
+    if (editingId.value) {
+      await $fetch(`${host}/certificationsexperience/edit`, {
+        method: "PUT",
+        params: { id: editingId.value },
+        body: payload,
+      });
+
+      const index = localUserInfo.value.experiences.findIndex(
+        (e) => e.id === editingId.value
+      );
+      if (index !== -1) {
+        localUserInfo.value.experiences[index] = {
+          ...payload,
+          id: editingId.value,
+        };
+      }
+    } else {
+      const response = await $fetch<Experience>(
+        `${host}/certificationsexperience/add`,
+        {
+          method: "POST",
+          body: payload,
+        }
+      );
+
+      localUserInfo.value.experiences.push(response);
+    }
+
+    showExperienceModal.value = false;
   } catch (error) {
-    console.error('Error deleting experience:', error);
+    console.error("Error saving experience:", error);
+    alert("Error al guardar la experiencia");
+  } finally {
+    isLoading.value = false;
   }
-  */
 };
 
-// Language functions
-const openLanguageModal = (id = null) => {
+const deleteExperience = async (id: number) => {
+  if (!confirm("¿Estás seguro de eliminar esta experiencia?")) return;
+
+  isLoading.value = true;
+  try {
+    await $fetch(`${host}/certificationsexperience/delete`, {
+      method: "DELETE",
+      params: { id },
+    });
+
+    localUserInfo.value.experiences = localUserInfo.value.experiences.filter(
+      (e) => e.id !== id
+    );
+  } catch (error) {
+    console.error("Error deleting experience:", error);
+    alert("Error al eliminar la experiencia");
+  } finally {
+    isLoading.value = false;
+  }
+};
+
+const openLanguageModal = (id: number | null = null) => {
   editingId.value = id;
   if (id) {
-    const lang = user_info.value.languages.find((l) => l.id === id);
-    newLanguage.value = { ...lang };
+    const lang = localUserInfo.value.languages.find((l) => l.id === id);
+    if (lang) {
+      newLanguage.value = { ...lang };
+    }
   } else {
     newLanguage.value = {
       language_code: "",
@@ -215,508 +330,740 @@ const openLanguageModal = (id = null) => {
   showLanguageModal.value = true;
 };
 
-const saveLanguage = () => {
-  if (editingId.value) {
-    // Update existing
-    const index = user_info.value.languages.findIndex(
-      (l) => l.id === editingId.value
-    );
-    user_info.value.languages[index] = {
-      ...newLanguage.value,
-      id: editingId.value,
-    };
-  } else {
-    // Add new
-    const newId =
-      Math.max(...user_info.value.languages.map((l) => l.id), 0) + 1;
-    user_info.value.languages.push({ ...newLanguage.value, id: newId });
-  }
+const closeLanguageModal = () => {
   showLanguageModal.value = false;
-
-  /* API call would go here
-  try {
-    const method = editingId.value ? 'PUT' : 'POST';
-    const url = editingId.value ? `/api/languages/${editingId.value}` : '/api/languages';
-    await $fetch(url, { method, body: newLanguage.value });
-  } catch (error) {
-    console.error('Error saving language:', error);
-  }
-  */
 };
 
-const deleteLanguage = (id) => {
-  user_info.value.languages = user_info.value.languages.filter(
+const saveLanguage = async () => {
+  console.warn("Language API endpoint not yet implemented");
+
+  if (editingId.value) {
+    const index = localUserInfo.value.languages.findIndex(
+      (l) => l.id === editingId.value
+    );
+    if (index !== -1) {
+      localUserInfo.value.languages[index] = {
+        ...newLanguage.value,
+        id: editingId.value,
+      };
+    }
+  } else {
+    const newId =
+      Math.max(...localUserInfo.value.languages.map((l) => l.id || 0), 0) + 1;
+    localUserInfo.value.languages.push({ ...newLanguage.value, id: newId });
+  }
+
+  showLanguageModal.value = false;
+};
+
+const deleteLanguage = (id: number) => {
+  console.warn("Language API endpoint not yet implemented");
+  localUserInfo.value.languages = localUserInfo.value.languages.filter(
     (l) => l.id !== id
   );
-
-  /* API call would go here
-  try {
-    await $fetch(`/api/languages/${id}`, { method: 'DELETE' });
-  } catch (error) {
-    console.error('Error deleting language:', error);
-  }
-  */
 };
 </script>
 
 <template>
   <NuxtLayout name="medicos-dashboard-perfil">
-    <!-- Education Section -->
-    <div class="d-flex justify-content-between align-items-center mb-3">
-      <h4 class="fw-normal m-0">Educación o Estudios</h4>
-      <button
-        class="btn btn-white border-dark fw-light"
-        @click="openEducationModal()"
-      >
-        <span class="fw-semibold me-2">
-          <AtomsIconsPlusIcon />
-        </span>
-        Agregar Nueva
-      </button>
-    </div>
+    <section class="profile-section">
+      <div class="profile-section__header">
+        <h4 class="profile-section__title">Educación o Estudios</h4>
+        <button
+          class="profile-section__add-button"
+          @click="openEducationModal()"
+          :disabled="isLoading"
+        >
+          <span class="profile-section__add-icon">
+            <AtomsIconsPlusIcon />
+          </span>
+          Agregar Nueva
+        </button>
+      </div>
 
-    <div v-if="user_info.degrees && user_info.degrees.length">
       <div
-        v-for="degree in user_info.degrees"
-        :key="degree.id"
-        class="card rounded-4 mb-3"
+        v-if="localUserInfo.degrees && localUserInfo.degrees.length"
+        class="profile-section__list"
       >
-        <div class="card-body d-flex">
-          <div class="w-100">
-            <p class="text-info fw-medium m-0">
+        <div
+          v-for="degree in localUserInfo.degrees"
+          :key="degree.id"
+          class="profile-item"
+        >
+          <div class="profile-item__content">
+            <p class="profile-item__date">
               {{ new Date(degree.start_date).toLocaleDateString() }} -
               {{ new Date(degree.end_date).toLocaleDateString() }}
             </p>
-            <p class="fw-light fs-5 mb-1">{{ degree.degree }}</p>
-            <p class="m-0 fw-light text-muted">
+            <p class="profile-item__title">{{ degree.degree }}</p>
+            <p class="profile-item__subtitle">
               {{ degree.university }}
             </p>
-            <p class="m-0 fw-light text-muted">
+            <p class="profile-item__location">
               {{ degree.city + ", " + degree.country }}
             </p>
           </div>
-          <div class="d-flex align-items-start">
+          <div class="profile-item__actions">
             <button
-              class="btn btn-light bg-white border"
+              class="profile-item__action-button profile-item__action-button--edit"
               @click="openEducationModal(degree.id)"
+              :disabled="isLoading"
             >
               <AtomsIconsEditPencilIcon />
             </button>
             <button
-              class="btn btn-light bg-white border ms-2"
-              @click="deleteEducation(degree.id)"
+              class="profile-item__action-button profile-item__action-button--delete"
+              @click="deleteEducation(degree.id!)"
+              :disabled="isLoading"
             >
               <AtomsIconsTrashIcon />
             </button>
           </div>
         </div>
       </div>
-    </div>
-    <div
-      v-else
-      class="card rounded-5 mb-3 bg-primary border-0"
-      style="--bs-bg-opacity: 0.05"
-    >
-      <div class="card-body text-center py-5">
+      <div v-else class="profile-empty">
         <img
           src="@/src/assets/img-icon-profile-empty-experience.svg"
           alt="Experiencia"
+          class="profile-empty__image"
         />
-        <div class="row">
-          <div class="col-sm-6 mx-auto">
-            <p class="fw-light text-muted my-3">
-              Aún no tienes educación o estudios en tu perfil. Añade
-              certificaciones para demostrar credibilidad a tus pacientes.
-            </p>
-            <button class="btn btn-primary" @click="openEducationModal()">
-              Agregar Educación o Estudios
-            </button>
-          </div>
+        <div class="profile-empty__content">
+          <p class="profile-empty__text">
+            Aún no tienes educación o estudios en tu perfil. Añade
+            certificaciones para demostrar credibilidad a tus pacientes.
+          </p>
+          <button class="profile-empty__button" @click="openEducationModal()">
+            Agregar Educación o Estudios
+          </button>
         </div>
       </div>
-    </div>
+    </section>
 
-    <!-- Experience Section -->
-    <div class="d-flex justify-content-between align-items-center mb-3">
-      <h4 class="fw-normal m-0">Experiencia</h4>
-      <button
-        class="btn btn-white border-dark fw-light"
-        @click="openExperienceModal()"
-      >
-        <span class="fw-semibold me-2">
-          <AtomsIconsPlusIcon />
-        </span>
-        Agregar Nueva
-      </button>
-    </div>
+    <section class="profile-section">
+      <div class="profile-section__header">
+        <h4 class="profile-section__title">Experiencia</h4>
+        <button
+          class="profile-section__add-button"
+          @click="openExperienceModal()"
+          :disabled="isLoading"
+        >
+          <span class="profile-section__add-icon">
+            <AtomsIconsPlusIcon />
+          </span>
+          Agregar Nueva
+        </button>
+      </div>
 
-    <div v-if="user_info.experiences && user_info.experiences.length">
       <div
-        v-for="experience in user_info.experiences"
-        :key="experience.id"
-        class="card rounded-4 mb-3"
+        v-if="localUserInfo.experiences && localUserInfo.experiences.length"
+        class="profile-section__list"
       >
-        <div class="card-body d-flex">
-          <div class="w-100">
-            <p class="text-info fw-medium m-0">
+        <div
+          v-for="experience in localUserInfo.experiences"
+          :key="experience.id"
+          class="profile-item"
+        >
+          <div class="profile-item__content">
+            <p class="profile-item__date">
               {{ new Date(experience.start_date).toLocaleDateString() }} -
               {{ new Date(experience.end_date).toLocaleDateString() }}
             </p>
-            <p class="fw-light fs-5 mb-1">
+            <p class="profile-item__title">
               {{ experience.position }}
             </p>
-            <p class="m-0 fw-light text-muted">{{ experience.hospital }}</p>
-            <p class="m-0 fw-light text-muted">
+            <p class="profile-item__subtitle">{{ experience.hospital }}</p>
+            <p class="profile-item__location">
               {{ experience.city + ", " + experience.country }}
             </p>
           </div>
-          <div class="d-flex align-items-start">
+          <div class="profile-item__actions">
             <button
-              class="btn btn-light bg-white border"
+              class="profile-item__action-button profile-item__action-button--edit"
               @click="openExperienceModal(experience.id)"
+              :disabled="isLoading"
             >
               <AtomsIconsEditPencilIcon />
             </button>
             <button
-              class="btn btn-light bg-white border ms-2"
-              @click="deleteExperience(experience.id)"
+              class="profile-item__action-button profile-item__action-button--delete"
+              @click="deleteExperience(experience.id!)"
+              :disabled="isLoading"
             >
               <AtomsIconsTrashIcon />
             </button>
           </div>
         </div>
       </div>
-    </div>
-    <div
-      v-else
-      class="card rounded-5 mb-3 bg-primary border-0"
-      style="--bs-bg-opacity: 0.05"
-    >
-      <div class="card-body text-center py-5">
+      <div v-else class="profile-empty">
         <img
           src="@/src/assets/img-icon-profile-empty-experience.svg"
           alt="Experiencia"
+          class="profile-empty__image"
         />
-        <div class="row">
-          <div class="col-sm-6 mx-auto">
-            <p class="fw-light text-muted my-3">
-              Aún no tienes certificaciones en tu perfil. Añade certificaciones
-              para demostrar credibilidad a tus pacientes.
-            </p>
-            <button class="btn btn-primary" @click="openExperienceModal()">
-              Agregar Experiencia
-            </button>
-          </div>
+        <div class="profile-empty__content">
+          <p class="profile-empty__text">
+            Aún no tienes certificaciones en tu perfil. Añade certificaciones
+            para demostrar credibilidad a tus pacientes.
+          </p>
+          <button class="profile-empty__button" @click="openExperienceModal()">
+            Agregar Experiencia
+          </button>
         </div>
       </div>
-    </div>
+    </section>
 
-    <!-- Languages Section -->
-    <div class="d-flex justify-content-between align-items-center mb-3">
-      <h4 class="fw-normal m-0">Idiomas</h4>
-      <button
-        class="btn btn-white border-dark fw-light"
-        @click="openLanguageModal()"
-      >
-        <span class="fw-semibold me-2">
-          <AtomsIconsPlusIcon />
-        </span>
-        Agregar Nueva
-      </button>
-    </div>
-    <div v-if="user_info.languages && user_info.languages.length">
+    <section class="profile-section">
+      <div class="profile-section__header">
+        <h4 class="profile-section__title">Idiomas</h4>
+        <button
+          class="profile-section__add-button"
+          @click="openLanguageModal()"
+          :disabled="isLoading"
+        >
+          <span class="profile-section__add-icon">
+            <AtomsIconsPlusIcon />
+          </span>
+          Agregar Nueva
+        </button>
+      </div>
+
       <div
-        v-for="language in user_info.languages"
-        :key="language.id"
-        class="card rounded-4 mb-3"
+        v-if="localUserInfo.languages && localUserInfo.languages.length"
+        class="profile-section__list"
       >
-        <div class="card-body d-flex align-items-center">
-          <div class="w-100">
-            <span class="fw-medium m-0 fs-5 me-3">{{
+        <div
+          v-for="language in localUserInfo.languages"
+          :key="language.id"
+          class="profile-language"
+        >
+          <div class="profile-language__content">
+            <span class="profile-language__name">{{
               language.language_code
             }}</span>
-            <span class="fw-light fs-5 text-muted">{{
+            <span class="profile-language__level">{{
               language.skill_level
             }}</span>
           </div>
-          <div class="d-flex align-items-start">
+          <div class="profile-language__actions">
             <button
-              class="btn btn-light bg-white border"
+              class="profile-language__action-button profile-language__action-button--edit"
               @click="openLanguageModal(language.id)"
+              :disabled="isLoading"
             >
               <AtomsIconsEditPencilIcon />
             </button>
             <button
-              class="btn btn-light bg-white border ms-2"
-              @click="deleteLanguage(language.id)"
+              class="profile-language__action-button profile-language__action-button--delete"
+              @click="deleteLanguage(language.id!)"
+              :disabled="isLoading"
             >
               <AtomsIconsTrashIcon />
             </button>
           </div>
         </div>
       </div>
-    </div>
-    <div
-      v-else
-      class="card rounded-5 mb-3 bg-primary border-0"
-      style="--bs-bg-opacity: 0.05"
-    >
-      <div class="card-body text-center py-5">
+      <div v-else class="profile-empty">
         <img
           src="@/src/assets/img-icon-profile-empty-experience.svg"
           alt="Experiencia"
+          class="profile-empty__image"
         />
-        <div class="row">
-          <div class="col-sm-6 mx-auto">
-            <p class="fw-light text-muted my-3">
-              Aún no tienes idiomas en tu perfil. Añade certificaciones para
-              demostrar credibilidad a tus pacientes.
-            </p>
-            <button class="btn btn-primary" @click="openLanguageModal()">
-              Agregar Idiomas
-            </button>
-          </div>
+        <div class="profile-empty__content">
+          <p class="profile-empty__text">
+            Aún no tienes idiomas en tu perfil. Añade certificaciones para
+            demostrar credibilidad a tus pacientes.
+          </p>
+          <button class="profile-empty__button" @click="openLanguageModal()">
+            Agregar Idiomas
+          </button>
         </div>
       </div>
-    </div>
+    </section>
 
-    <!-- Education Modal -->
-    <div v-if="showEducationModal" class="show">
-      <div class="modal d-block">
-        <div class="modal-dialog modal-dialog-centered">
-          <div class="modal-content">
-            <div class="modal-header">
-              <h5 class="modal-title">
-                {{ editingId ? "Editar" : "Agregar" }} Educación
-              </h5>
-              <button
-                type="button"
-                class="btn-close"
-                @click="showEducationModal = false"
-              ></button>
-            </div>
-            <div class="modal-body">
-              <div class="mb-3">
-                <label class="form-label">Título</label>
-                <input
-                  v-model="newEducation.degree"
-                  type="text"
-                  class="form-control"
-                />
-              </div>
-              <div class="mb-3">
-                <label class="form-label">Institución</label>
-                <input
-                  v-model="newEducation.university"
-                  type="text"
-                  class="form-control"
-                />
-              </div>
-              <div class="row mb-3">
-                <div class="col-md-6">
-                  <label class="form-label">Ciudad</label>
-                  <input
-                    v-model="newEducation.city"
-                    type="text"
-                    class="form-control"
-                  />
-                </div>
-                <div class="col-md-6">
-                  <label class="form-label">País</label>
-                  <input
-                    v-model="newEducation.country"
-                    type="text"
-                    class="form-control"
-                  />
-                </div>
-              </div>
-              <div class="row mb-3">
-                <div class="col-md-6">
-                  <label class="form-label">Fecha de inicio</label>
-                  <input
-                    v-model="newEducation.start_date"
-                    type="date"
-                    class="form-control"
-                  />
-                </div>
-                <div class="col-md-6">
-                  <label class="form-label">Fecha de fin</label>
-                  <input
-                    v-model="newEducation.end_date"
-                    type="date"
-                    class="form-control"
-                  />
-                </div>
-              </div>
-            </div>
-            <div class="modal-footer">
-              <button
-                type="button"
-                class="btn btn-secondary"
-                @click="showEducationModal = false"
-              >
-                Cancelar
-              </button>
-              <button
-                type="button"
-                class="btn btn-primary"
-                @click="saveEducation"
-              >
-                Guardar
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
+    <AtomsModalBase
+      :is-open="showEducationModal"
+      @close="closeEducationModal"
+      size="medium"
+      header-class="header-border-bottom"
+    >
+      <template #title>
+        {{ editingId ? "Editar" : "Agregar" }} Educación
+      </template>
 
-    <!-- Experience Modal -->
-    <div v-if="showExperienceModal" class="show">
-      <div class="modal d-block">
-        <div class="modal-dialog modal-dialog-centered">
-          <div class="modal-content">
-            <div class="modal-header">
-              <h5 class="modal-title">
-                {{ editingId ? "Editar" : "Agregar" }} Experiencia
-              </h5>
-              <button
-                type="button"
-                class="btn-close"
-                @click="showExperienceModal = false"
-              ></button>
-            </div>
-            <div class="modal-body">
-              <div class="mb-3">
-                <label class="form-label">Puesto</label>
-                <input
-                  v-model="newExperience.position"
-                  type="text"
-                  class="form-control"
-                />
-              </div>
-              <div class="mb-3">
-                <label class="form-label">Hospital/Institución</label>
-                <input
-                  v-model="newExperience.hospital"
-                  type="text"
-                  class="form-control"
-                />
-              </div>
-              <div class="row mb-3">
-                <div class="col-md-6">
-                  <label class="form-label">Ciudad</label>
-                  <input
-                    v-model="newExperience.city"
-                    type="text"
-                    class="form-control"
-                  />
-                </div>
-                <div class="col-md-6">
-                  <label class="form-label">País</label>
-                  <input
-                    v-model="newExperience.country"
-                    type="text"
-                    class="form-control"
-                  />
-                </div>
-              </div>
-              <div class="row mb-3">
-                <div class="col-md-6">
-                  <label class="form-label">Fecha de inicio</label>
-                  <input
-                    v-model="newExperience.start_date"
-                    type="date"
-                    class="form-control"
-                  />
-                </div>
-                <div class="col-md-6">
-                  <label class="form-label">Fecha de fin</label>
-                  <input
-                    v-model="newExperience.end_date"
-                    type="date"
-                    class="form-control"
-                  />
-                </div>
-              </div>
-            </div>
-            <div class="modal-footer">
-              <button
-                type="button"
-                class="btn btn-secondary"
-                @click="showExperienceModal = false"
-              >
-                Cancelar
-              </button>
-              <button
-                type="button"
-                class="btn btn-primary"
-                @click="saveExperience"
-              >
-                Guardar
-              </button>
-            </div>
+      <div class="modal-body">
+        <div class="profile-form__group">
+          <label class="profile-form__label">Título</label>
+          <input
+            v-model="newEducation.degree"
+            type="text"
+            class="profile-form__input"
+            :disabled="isLoading"
+          />
+        </div>
+        <div class="profile-form__group">
+          <label class="profile-form__label">Institución</label>
+          <input
+            v-model="newEducation.university"
+            type="text"
+            class="profile-form__input"
+            :disabled="isLoading"
+          />
+        </div>
+        <div class="profile-form__row">
+          <div class="profile-form__col">
+            <label class="profile-form__label">Ciudad</label>
+            <input
+              v-model="newEducation.city"
+              type="text"
+              class="profile-form__input"
+              :disabled="isLoading"
+            />
+          </div>
+          <div class="profile-form__col">
+            <label class="profile-form__label">País</label>
+            <input
+              v-model="newEducation.country"
+              type="text"
+              class="profile-form__input"
+              :disabled="isLoading"
+            />
+          </div>
+        </div>
+        <div class="profile-form__row">
+          <div class="profile-form__col">
+            <label class="profile-form__label">Fecha de inicio</label>
+            <input
+              v-model="newEducation.start_date"
+              type="date"
+              class="profile-form__input"
+              :disabled="isLoading"
+            />
+          </div>
+          <div class="profile-form__col">
+            <label class="profile-form__label">Fecha de fin</label>
+            <input
+              v-model="newEducation.end_date"
+              type="date"
+              class="profile-form__input"
+              :disabled="isLoading"
+            />
           </div>
         </div>
       </div>
-    </div>
 
-    <!-- Language Modal -->
-    <div v-if="showLanguageModal" class="show">
-      <div class="modal d-block">
-        <div class="modal-dialog modal-dialog-centered">
-          <div class="modal-content">
-            <div class="modal-header">
-              <h5 class="modal-title">
-                {{ editingId ? "Editar" : "Agregar" }} Idioma
-              </h5>
-              <button
-                type="button"
-                class="btn-close"
-                @click="showLanguageModal = false"
-              ></button>
-            </div>
-            <div class="modal-body">
-              <div class="mb-3">
-                <label class="form-label">Idioma</label>
-                <select v-model="newLanguage.language_code" class="form-select">
-                  <option value="">Seleccionar</option>
-                  <option value="Inglés">Inglés</option>
-                  <option value="Francés">Francés</option>
-                  <option value="Alemán">Alemán</option>
-                  <option value="Italiano">Italiano</option>
-                  <option value="Portugués">Portugués</option>
-                </select>
-              </div>
-              <div class="mb-3">
-                <label class="form-label">Nivel</label>
-                <select v-model="newLanguage.skill_level" class="form-select">
-                  <option value="">Seleccionar</option>
-                  <option value="Básico">Básico</option>
-                  <option value="Intermedio">Intermedio</option>
-                  <option value="Avanzado">Avanzado</option>
-                  <option value="Nativo">Nativo</option>
-                </select>
-              </div>
-            </div>
-            <div class="modal-footer">
-              <button
-                type="button"
-                class="btn btn-secondary"
-                @click="showLanguageModal = false"
-              >
-                Cancelar
-              </button>
-              <button
-                type="button"
-                class="btn btn-primary"
-                @click="saveLanguage"
-              >
-                Guardar
-              </button>
-            </div>
+      <template #footer>
+        <button
+          type="button"
+          class="profile-modal__button profile-modal__button--secondary"
+          @click="closeEducationModal"
+          :disabled="isLoading"
+        >
+          Cancelar
+        </button>
+        <button
+          type="button"
+          class="profile-modal__button profile-modal__button--primary"
+          @click="saveEducation"
+          :disabled="isLoading"
+        >
+          {{ isLoading ? "Guardando..." : "Guardar" }}
+        </button>
+      </template>
+    </AtomsModalBase>
+
+    <AtomsModalBase
+      :is-open="showExperienceModal"
+      @close="closeExperienceModal"
+      size="medium"
+      header-class="header-border-bottom"
+    >
+      <template #title>
+        {{ editingId ? "Editar" : "Agregar" }} Experiencia
+      </template>
+
+      <div class="modal-body">
+        <div class="profile-form__group">
+          <label class="profile-form__label">Puesto</label>
+          <input
+            v-model="newExperience.position"
+            type="text"
+            class="profile-form__input"
+            :disabled="isLoading"
+          />
+        </div>
+        <div class="profile-form__group">
+          <label class="profile-form__label">Hospital/Institución</label>
+          <input
+            v-model="newExperience.hospital"
+            type="text"
+            class="profile-form__input"
+            :disabled="isLoading"
+          />
+        </div>
+        <div class="profile-form__row">
+          <div class="profile-form__col">
+            <label class="profile-form__label">Ciudad</label>
+            <input
+              v-model="newExperience.city"
+              type="text"
+              class="profile-form__input"
+              :disabled="isLoading"
+            />
+          </div>
+          <div class="profile-form__col">
+            <label class="profile-form__label">País</label>
+            <input
+              v-model="newExperience.country"
+              type="text"
+              class="profile-form__input"
+              :disabled="isLoading"
+            />
+          </div>
+        </div>
+        <div class="profile-form__row">
+          <div class="profile-form__col">
+            <label class="profile-form__label">Fecha de inicio</label>
+            <input
+              v-model="newExperience.start_date"
+              type="date"
+              class="profile-form__input"
+              :disabled="isLoading"
+            />
+          </div>
+          <div class="profile-form__col">
+            <label class="profile-form__label">Fecha de fin</label>
+            <input
+              v-model="newExperience.end_date"
+              type="date"
+              class="profile-form__input"
+              :disabled="isLoading"
+            />
           </div>
         </div>
       </div>
-    </div>
+
+      <template #footer>
+        <button
+          type="button"
+          class="profile-modal__button profile-modal__button--secondary"
+          @click="closeExperienceModal"
+          :disabled="isLoading"
+        >
+          Cancelar
+        </button>
+        <button
+          type="button"
+          class="profile-modal__button profile-modal__button--primary"
+          @click="saveExperience"
+          :disabled="isLoading"
+        >
+          {{ isLoading ? "Guardando..." : "Guardar" }}
+        </button>
+      </template>
+    </AtomsModalBase>
+
+    <AtomsModalBase
+      :is-open="showLanguageModal"
+      @close="closeLanguageModal"
+      size="medium"
+      header-class="header-border-bottom"
+    >
+      <template #title>
+        {{ editingId ? "Editar" : "Agregar" }} Idioma
+      </template>
+
+      <div class="modal-body">
+        <div class="profile-form__group">
+          <label class="profile-form__label">Idioma</label>
+          <UiDropdownBase
+            v-model="newLanguage.language_code"
+            :items="languageOptions"
+            placeholder="Seleccionar idioma"
+            searchable
+            clearable
+          />
+        </div>
+        <div class="profile-form__group">
+          <label class="profile-form__label">Nivel</label>
+          <UiDropdownBase
+            v-model="newLanguage.skill_level"
+            :items="skillLevelOptions"
+            placeholder="Seleccionar nivel"
+            clearable
+          />
+        </div>
+      </div>
+
+      <template #footer>
+        <button
+          type="button"
+          class="profile-modal__button profile-modal__button--secondary"
+          @click="closeLanguageModal"
+        >
+          Cancelar
+        </button>
+        <button
+          type="button"
+          class="profile-modal__button profile-modal__button--primary"
+          @click="saveLanguage"
+        >
+          Guardar
+        </button>
+      </template>
+    </AtomsModalBase>
   </NuxtLayout>
 </template>
+
+<style lang="scss" scoped>
+.profile-section {
+  margin-bottom: 2rem;
+
+  &__header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1rem;
+  }
+
+  &__title {
+    font-weight: 600;
+    font-size: 18px;
+    line-height: 140%;
+    letter-spacing: -2%;
+    color: #353e5c;
+    margin: 0;
+  }
+
+  &__add-button {
+    @include outline-button;
+    padding: 8px 14px;
+  }
+
+  &__add-icon {
+    font-weight: 600;
+    margin-right: 8px;
+  }
+
+  &__list {
+    @include space-y(1rem);
+  }
+}
+
+.profile-item {
+  background: $white;
+  border-radius: 1rem;
+  padding: 1.5rem;
+  display: flex;
+  justify-content: space-between;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+
+  &__content {
+    flex: 1;
+  }
+
+  &__date {
+    color: $color-info;
+    font-weight: 500;
+    margin: 0 0 0.5rem 0;
+    font-family: $font-family-main;
+    font-size: 0.875rem;
+  }
+
+  &__title {
+    font-weight: 300;
+    font-size: 1.25rem;
+    margin: 0 0 0.25rem 0;
+    color: $color-foreground;
+    font-family: $font-family-main;
+  }
+
+  &__subtitle {
+    margin: 0;
+    font-weight: 300;
+    color: $color-text-muted;
+    font-family: $font-family-main;
+    font-size: 1rem;
+  }
+
+  &__location {
+    margin: 0;
+    font-weight: 300;
+    color: $color-text-muted;
+    font-family: $font-family-main;
+    font-size: 1rem;
+  }
+
+  &__actions {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.5rem;
+  }
+
+  &__action-button {
+    @include button-base;
+    background-color: $white;
+    border: 1px solid #dee2e6;
+    padding: 0.5rem 0.75rem;
+    border-radius: 0.375rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+
+    &:hover {
+      background-color: #f8f9fa;
+    }
+
+    &--edit {
+      color: $color-primary;
+    }
+
+    &--delete {
+      color: $color-danger;
+    }
+  }
+}
+
+.profile-language {
+  background: $white;
+  border-radius: 1rem;
+  padding: 1.5rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  margin-bottom: 1rem;
+
+  &__content {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+  }
+
+  &__name {
+    font-weight: 500;
+    font-size: 1.25rem;
+    color: $color-foreground;
+    font-family: $font-family-main;
+  }
+
+  &__level {
+    font-weight: 300;
+    font-size: 1.25rem;
+    color: $color-text-muted;
+    font-family: $font-family-main;
+  }
+
+  &__actions {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  &__action-button {
+    @include button-base;
+    background-color: $white;
+    border: 1px solid #dee2e6;
+    padding: 0.5rem 0.75rem;
+    border-radius: 0.375rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+
+    &:hover {
+      background-color: #f8f9fa;
+    }
+
+    &--edit {
+      color: $color-primary;
+    }
+
+    &--delete {
+      color: $color-danger;
+    }
+  }
+}
+
+.profile-empty {
+  background: rgba($color-primary, 0.05);
+  border-radius: 1.5rem;
+  padding: 3rem 1.5rem;
+  text-align: center;
+
+  &__image {
+    max-width: 200px;
+    margin: 0 auto 1.5rem;
+  }
+
+  &__content {
+    max-width: 600px;
+    margin: 0 auto;
+
+    @include respond-to(sm) {
+      max-width: 50%;
+    }
+  }
+
+  &__text {
+    font-weight: 300;
+    color: $color-text-muted;
+    margin: 1rem 0;
+    font-family: $font-family-main;
+    font-size: 1rem;
+    line-height: 1.5;
+  }
+
+  &__button {
+    @include primary-button;
+  }
+}
+
+.modal-body {
+  padding: 1.5rem;
+}
+
+.profile-form {
+  &__group {
+    margin-bottom: 1rem;
+  }
+
+  &__label {
+    @include form-label;
+    margin-bottom: 0.5rem;
+  }
+
+  &__input {
+    @include input-base;
+    width: 100%;
+  }
+
+  &__row {
+    display: flex;
+    gap: 1rem;
+    margin-bottom: 1rem;
+
+    @include respond-to-max(md) {
+      flex-direction: column;
+      gap: 0;
+    }
+  }
+
+  &__col {
+    flex: 1;
+
+    @include respond-to-max(md) {
+      margin-bottom: 1rem;
+    }
+  }
+}
+
+.profile-modal {
+  &__button {
+    &--primary {
+      @include primary-button;
+    }
+
+    &--secondary {
+      @include outline-button;
+    }
+  }
+}
+</style>

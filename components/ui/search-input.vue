@@ -176,8 +176,7 @@ defineExpose({
   }
 
   &--focused {
-    outline: 2px solid $color-primary;
-    outline-offset: 1px;
+    outline: none;
     border-color: $color-primary;
     box-shadow: 0 0 0 2px rgba($color-primary, 0.15);
 

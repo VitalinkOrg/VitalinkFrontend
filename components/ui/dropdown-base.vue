@@ -42,9 +42,11 @@ const props = withDefaults(defineProps<Props>(), {
 const emit = defineEmits<Emits>();
 
 const dropdownRef = ref<HTMLElement>();
+const menuRef = ref<HTMLElement>();
 const searchInputRef = ref<HTMLInputElement>();
 const isOpen = ref(false);
 const searchText = ref("");
+const menuPosition = ref({ top: 0, left: 0, width: 0 });
 
 const selectedItem = computed(() => {
   return props.items.find((item) => item.value === props.modelValue);
@@ -74,15 +76,32 @@ const showClearButton = computed(() => {
   return props.clearable && props.modelValue !== undefined && !props.disabled;
 });
 
+const updateMenuPosition = () => {
+  if (!dropdownRef.value) return;
+
+  const rect = dropdownRef.value.getBoundingClientRect();
+  const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
+  const scrollLeft = window.pageXOffset || document.documentElement.scrollLeft;
+
+  menuPosition.value = {
+    top: rect.bottom + scrollTop,
+    left: rect.left + scrollLeft,
+    width: rect.width,
+  };
+};
+
 const toggleDropdown = () => {
   if (!canOpen.value) return;
 
   isOpen.value = !isOpen.value;
 
-  if (isOpen.value && props.searchable) {
-    nextTick(() => {
-      searchInputRef.value?.focus();
-    });
+  if (isOpen.value) {
+    updateMenuPosition();
+    if (props.searchable) {
+      nextTick(() => {
+        searchInputRef.value?.focus();
+      });
+    }
   }
 };
 
@@ -111,6 +130,7 @@ const closeDropdown = () => {
 const handleSearchInput = () => {
   if (!isOpen.value) {
     isOpen.value = true;
+    updateMenuPosition();
   }
 };
 
@@ -119,7 +139,20 @@ const handleInputClick = (event: Event) => {
     event.stopPropagation();
     if (!isOpen.value && canOpen.value) {
       isOpen.value = true;
+      updateMenuPosition();
     }
+  }
+};
+
+const handleScroll = () => {
+  if (isOpen.value) {
+    updateMenuPosition();
+  }
+};
+
+const handleResize = () => {
+  if (isOpen.value) {
+    updateMenuPosition();
   }
 };
 
@@ -132,14 +165,32 @@ watch(
   }
 );
 
+watch(isOpen, (newValue) => {
+  if (newValue) {
+    window.addEventListener("scroll", handleScroll, true);
+    window.addEventListener("resize", handleResize);
+  } else {
+    window.removeEventListener("scroll", handleScroll, true);
+    window.removeEventListener("resize", handleResize);
+  }
+});
+
 onMounted(() => {
   if (props.searchable) {
     searchText.value = selectedItem.value?.label || "";
   }
 });
 
-onClickOutside(dropdownRef, () => {
-  closeDropdown();
+onBeforeUnmount(() => {
+  window.removeEventListener("scroll", handleScroll, true);
+  window.removeEventListener("resize", handleResize);
+});
+
+onClickOutside(dropdownRef, (event) => {
+  // Check if click is not on the menu
+  if (menuRef.value && !menuRef.value.contains(event.target as Node)) {
+    closeDropdown();
+  }
 });
 </script>
 
@@ -259,40 +310,51 @@ onClickOutside(dropdownRef, () => {
       </div>
     </div>
 
-    <div class="dropdown__menu" :class="{ 'dropdown__menu--open': isOpen }">
-      <div v-if="filteredItems.length === 0" class="dropdown__no-results">
-        {{ noResultsText }}
-      </div>
-
-      <button
-        v-for="item in filteredItems"
-        :key="item.value"
-        type="button"
-        class="dropdown__item"
-        :class="{
-          'dropdown__item--active': modelValue === item.value,
-          'dropdown__item--disabled': item.disabled,
+    <Teleport to="body">
+      <div
+        v-if="isOpen"
+        ref="menuRef"
+        class="dropdown__menu dropdown__menu--open"
+        :style="{
+          top: `${menuPosition.top}px`,
+          left: `${menuPosition.left}px`,
+          width: `${menuPosition.width}px`,
         }"
-        :disabled="item.disabled"
-        @click="selectItem(item)"
       >
-        <span class="dropdown__item-text">{{ item.label }}</span>
-
-        <div v-if="modelValue === item.value" class="dropdown__item-check">
-          <slot name="check-icon">
-            <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-              <path
-                d="M13.5 4.5L6 12L2.5 8.5"
-                stroke="currentColor"
-                stroke-width="1.5"
-                stroke-linecap="round"
-                stroke-linejoin="round"
-              />
-            </svg>
-          </slot>
+        <div v-if="filteredItems.length === 0" class="dropdown__no-results">
+          {{ noResultsText }}
         </div>
-      </button>
-    </div>
+
+        <button
+          v-for="item in filteredItems"
+          :key="item.value"
+          type="button"
+          class="dropdown__item"
+          :class="{
+            'dropdown__item--active': modelValue === item.value,
+            'dropdown__item--disabled': item.disabled,
+          }"
+          :disabled="item.disabled"
+          @click="selectItem(item)"
+        >
+          <span class="dropdown__item-text">{{ item.label }}</span>
+
+          <div v-if="modelValue === item.value" class="dropdown__item-check">
+            <slot name="check-icon">
+              <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                <path
+                  d="M13.5 4.5L6 12L2.5 8.5"
+                  stroke="currentColor"
+                  stroke-width="1.5"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                />
+              </svg>
+            </slot>
+          </div>
+        </button>
+      </div>
+    </Teleport>
   </div>
 </template>
 
@@ -565,30 +627,17 @@ onClickOutside(dropdownRef, () => {
   }
 
   &__menu {
-    position: absolute;
-    top: 100%;
-    left: 0;
-    right: 0;
-    z-index: 1000;
+    position: fixed;
+    z-index: 9999;
     background: #ffffff;
     border: 1px solid #d0d5dd;
     border-radius: 0.5rem;
     box-shadow:
-      0 0.25rem 0.375rem -0.0625rem rgba(0, 0, 0, 0.1),
-      0 0.125rem 0.25rem -0.0625rem rgba(0, 0, 0, 0.06);
+      0 0.625rem 1.25rem -0.1875rem rgba(0, 0, 0, 0.1),
+      0 0.25rem 0.375rem -0.125rem rgba(0, 0, 0, 0.05);
     max-height: 16rem;
     overflow-y: auto;
     margin-top: 0.25rem;
-    opacity: 0;
-    visibility: hidden;
-    transform: translateY(-0.625rem);
-    transition: all 0.2s ease;
-
-    &--open {
-      opacity: 1;
-      visibility: visible;
-      transform: translateY(0);
-    }
 
     &::-webkit-scrollbar {
       width: 0.5rem;

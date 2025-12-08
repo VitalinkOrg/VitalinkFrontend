@@ -1,204 +1,527 @@
-<script setup>
+<script lang="ts" setup>
+import { useSupplier } from "@/composables/api";
+import type { CreateHospital } from "@/composables/api/useSupplier";
+import { useDebounceFn } from "@/composables/useDebounce";
+import type { Supplier } from "@/types";
+
 definePageMeta({
   middleware: ["auth-doctors-hospitals"],
 });
-const open = ref(false);
-const remove = ref(false);
-const selectedHospital = ref(null); // To track which hospital is being edited
-const config = useRuntimeConfig();
-// const user_info = useCookie("user_info");
-const user_info = {
-  value: {
-    hospitals: [1, 3],
-  },
+
+const { fetchAllSuppliers } = useSupplier();
+const { openModal } = useMedicalModalManager();
+
+const isLoading = ref(true);
+const hospitals = ref<Supplier[]>([]);
+const searchQuery = ref("");
+const sortOrder = ref("name");
+
+const loadHospitals = async () => {
+  isLoading.value = true;
+  try {
+    const { response, error, request } = fetchAllSuppliers();
+    await request();
+
+    if (error.value) {
+      console.error("Error al cargar hospitales:", error.value);
+      return;
+    }
+
+    if (response.value?.data) {
+      hospitals.value = response.value.data.filter(
+        (supplier: Supplier) => supplier.is_hospital
+      );
+    }
+  } catch (err) {
+    console.error("Error al cargar hospitales:", err);
+  } finally {
+    isLoading.value = false;
+  }
 };
 
-// Mocked hospitals data matching your modal fields
-const hospitals = {
-  value: [
-    {
-      id: 1,
-      name: "Hospital General de San José",
-      address: "Avenida Central",
-      streetNumber: "100",
-      postalCode: "10101",
-      city: "San José",
-      country: "Costa Rica",
-      floor: "3",
-      doorNumber: "12",
-      country_iso_code: "CR",
-      phone_number_1: "2222-5555",
-    },
-    {
-      id: 2,
-      name: "Clínica Bíblica",
-      address: "Calle Los Lagos",
-      streetNumber: "45",
-      postalCode: "10103",
-      city: "San José",
-      country: "Costa Rica",
-      floor: "2",
-      doorNumber: "5",
-      country_iso_code: "CR",
-      phone_number_1: "2522-1000",
-    },
-    {
-      id: 3,
-      name: "Hospital México",
-      address: "Calle de la Salud",
-      streetNumber: "200",
-      postalCode: "10107",
-      city: "San José",
-      country: "Costa Rica",
-      floor: "1",
-      doorNumber: "1",
-      country_iso_code: "CR",
-      phone_number_1: "2233-4455",
-    },
-  ],
+const filteredHospitals = computed(() => {
+  if (!searchQuery.value) return hospitals.value;
+
+  const query = searchQuery.value.toLowerCase();
+  return hospitals.value.filter(
+    (hospital) =>
+      hospital.name.toLowerCase().includes(query) ||
+      hospital.city_name?.toLowerCase().includes(query) ||
+      hospital.address?.toLowerCase().includes(query)
+  );
+});
+
+const sortedHospitals = computed(() => {
+  const sorted = [...filteredHospitals.value];
+
+  switch (sortOrder.value) {
+    case "name":
+      return sorted.sort((a, b) => a.name.localeCompare(b.name));
+    case "recent":
+      return sorted.sort(
+        (a, b) =>
+          new Date(b.created_date || 0).getTime() -
+          new Date(a.created_date || 0).getTime()
+      );
+    default:
+      return sorted;
+  }
+});
+
+const mapSupplierToHospitalData = (
+  supplier: Supplier
+): Partial<CreateHospital> => {
+  const rep = supplier.legal_representative as any;
+  const legalRepresentativeString =
+    typeof supplier.legal_representative === "string"
+      ? supplier.legal_representative
+      : (rep?.name ?? rep?.full_name ?? "");
+
+  return {
+    name: supplier.name,
+    email: supplier.email,
+    phone_number: supplier.phone_number,
+    country_iso_code: supplier.country_iso_code,
+    province: supplier.province,
+    city_name: supplier.city_name,
+    address: supplier.address || "",
+    street_number: supplier.street_number || "",
+    postal_code: supplier.postal_code || "",
+    floor: supplier.floor || "",
+    door_number: supplier.door_number || "",
+    id_type: "JURIDICAL_DNI",
+    card_id: supplier.card_id,
+    legal_representative: legalRepresentativeString,
+    is_hospital: true,
+    description: supplier.description || "",
+  };
 };
 
-const filteredArray = hospitals.value.filter((item) =>
-  user_info.value.hospitals.includes(item.id)
-);
-
-const openEditModal = (hospital) => {
-  selectedHospital.value = hospital;
-  open.value = true;
+const handleAddOrEditHospital = (hospital: Supplier | null = null) => {
+  if (hospital) {
+    openModal("agregarHospital", {
+      mode: "edit",
+      hospitalId: hospital.id.toString(),
+      hospitalData: mapSupplierToHospitalData(hospital),
+    });
+  } else {
+    openModal("agregarHospital", {
+      mode: "create",
+    });
+  }
 };
 
-const openRemoveModal = (hospital) => {
-  selectedHospital.value = hospital;
-  remove.value = true;
+const handleDeleteHospital = (hospital: Supplier) => {
+  openModal("eliminarHospital", {
+    hospitalId: hospital.id.toString(),
+    hospitalName: hospital.name,
+  });
 };
 
-const openAddModal = () => {
-  selectedHospital.value = null;
-  open.value = true;
+const handleSearch = useDebounceFn((value: string) => {
+  searchQuery.value = value;
+}, 300);
+
+const handleSortChange = (value: string) => {
+  sortOrder.value = value;
 };
+
+const handleModalClosed = () => {
+  loadHospitals();
+};
+
+onMounted(() => {
+  loadHospitals();
+});
+
+onMounted(() => {
+  window.addEventListener("hospital-updated", handleModalClosed);
+  window.addEventListener("hospital-created", handleModalClosed);
+  window.addEventListener("hospital-deleted", handleModalClosed);
+});
+
+onUnmounted(() => {
+  window.removeEventListener("hospital-updated", handleModalClosed);
+  window.removeEventListener("hospital-created", handleModalClosed);
+  window.removeEventListener("hospital-deleted", handleModalClosed);
+});
 </script>
 
 <template>
   <NuxtLayout name="medicos-dashboard">
-    <div v-if="pendingHospitals"></div>
-    <div v-else>
-      <nav
-        style="--bs-breadcrumb-divider: &quot;/&quot;"
-        aria-label="breadcrumb"
-      >
-        <ol class="breadcrumb">
-          <li class="breadcrumb-item">
-            <NuxtLink href="/socio-financiero/inicio" class="text-muted"
-              >Inicio</NuxtLink
+    <header class="hospitals__header">
+      <nav class="breadcrumb-nav" aria-label="Navegación de migas de pan">
+        <ol class="breadcrumb-nav__list">
+          <li class="breadcrumb-nav__item">
+            <NuxtLink
+              href="/medicos/inicio"
+              class="breadcrumb-nav__link breadcrumb-nav__link--muted"
             >
+              Inicio
+            </NuxtLink>
           </li>
-          <li class="breadcrumb-item active fw-semibold" aria-current="page">
-            Hospitales
+          <li
+            class="breadcrumb-nav__item breadcrumb-nav__item--active"
+            aria-current="page"
+          >
+            <span class="breadcrumb-nav__text">Hospitales</span>
           </li>
         </ol>
       </nav>
-      <p>
-        <span class="fw-medium fs-4">Mis Hospitales</span>
-      </p>
 
-      <div class="row mb-2">
-        <div class="col-10">
-          <UiSearchInput
-            placeholder="Buscar"
-            aria-label="Buscar en hospitales"
-          />
-        </div>
-        <div class="col-2 ms-auto d-flex">
-          <div class="dropdown me-2 w-100">
-            <button
-              class="btn btn-outline-dark dropdown-toggle w-100"
-              type="button"
-              data-bs-toggle="dropdown"
-              aria-expanded="false"
-            >
-              Ordenar por
-            </button>
-            <ul class="dropdown-menu">
-              <li><a class="dropdown-item" href="#">Nombre</a></li>
-              <li><a class="dropdown-item" href="#">Ciudad</a></li>
-              <li><a class="dropdown-item" href="#">Reciente</a></li>
-            </ul>
-          </div>
+      <h1 class="hospitals__title">Mis Hospitales</h1>
+
+      <div class="hospitals__toolbar">
+        <UiSearchInput
+          placeholder="Buscar"
+          aria-label="Buscar en hospitales"
+          @update:model-value="handleSearch"
+        />
+        <div class="dropdown">
+          <button
+            class="hospitals__button--outline"
+            type="button"
+            data-bs-toggle="dropdown"
+            aria-expanded="false"
+          >
+            Ordenar por
+            <AtomsIconsChevronDown size="20" />
+          </button>
+          <ul class="dropdown-menu">
+            <li>
+              <button class="dropdown-item" @click="handleSortChange('name')">
+                Por nombre
+              </button>
+            </li>
+            <li>
+              <button class="dropdown-item" @click="handleSortChange('recent')">
+                Más recientes
+              </button>
+            </li>
+          </ul>
         </div>
       </div>
-      <div class="fw-light text-muted mb-4">
+
+      <p class="hospitals__subtext">
         Listado de hospitales donde tendrás disponibilidad para atender a sus
         pacientes
-      </div>
-      <div class="row" v-if="filteredArray !== null">
-        <div class="col">
-          <div
-            class="card shadow border-0 rounded-4 mb-4"
-            v-for="hospital in filteredArray"
-            :key="hospital.id"
-          >
-            <div
-              class="card-body py-2 px-4 d-flex justify-content-between align-items-center"
+      </p>
+    </header>
+
+    <!-- Loading state -->
+    <div v-if="isLoading" class="hospitals__loading">
+      <p>Cargando hospitales...</p>
+    </div>
+
+    <div
+      v-else-if="sortedHospitals.length === 0 && !searchQuery"
+      class="hospitals__empty"
+    >
+      <p>No tienes hospitales registrados</p>
+      <button
+        class="hospitals__button--priamry"
+        @click="handleAddOrEditHospital()"
+      >
+        <AtomsIconsPlusIcon size="20" />
+        Agregar primer hospital
+      </button>
+    </div>
+
+    <div
+      v-else-if="sortedHospitals.length === 0 && searchQuery"
+      class="hospitals__empty"
+    >
+      <p>No se encontraron hospitales que coincidan con "{{ searchQuery }}"</p>
+    </div>
+
+    <section v-else class="hospitals__main">
+      <div
+        v-for="hospital in sortedHospitals"
+        :key="hospital.id"
+        class="hospitals__card"
+      >
+        <div>
+          <h2 class="hospitals__card-title">{{ hospital.name }}</h2>
+          <ul class="hospitals__card-info">
+            <li class="hospitals__card-info--item">
+              {{
+                [
+                  hospital.address,
+                  hospital.street_number,
+                  hospital.city_name,
+                  hospital.province,
+                ]
+                  .filter(Boolean)
+                  .join(", ")
+              }}
+            </li>
+            <li
+              v-if="hospital.floor || hospital.door_number"
+              class="hospitals__card-info--item"
             >
-              <div
-                class="w-100 d-flex justify-content-between align-items-center"
+              <span v-if="hospital.floor">Piso {{ hospital.floor }}</span>
+              <span v-if="hospital.floor && hospital.door_number"> - </span>
+              <span v-if="hospital.door_number"
+                >Puerta {{ hospital.door_number }}</span
               >
-                <div class="col">
-                  <div>
-                    <h2 class="h5 fw-semibold my-2">{{ hospital.name }}</h2>
-                  </div>
-                  <p class="fw-light text-muted d-flex align-items-center mb-0">
-                    {{
-                      hospital.address +
-                      " " +
-                      hospital.streetNumber +
-                      ", " +
-                      hospital.city +
-                      ", " +
-                      hospital.country
-                    }}
-                  </p>
-                  <p class="fw-light text-muted d-flex align-items-center mb-0">
-                    Piso {{ hospital.floor }} - Puerta {{ hospital.doorNumber }}
-                  </p>
-                </div>
-                <div class="d-flex align-items-center gap-2">
-                  <button
-                    class="btn btn-outline-secondary"
-                    @click="openEditModal(hospital)"
-                  >
-                    <img src="@/src/assets/edit.svg" alt="Editar Hospital" />
-                  </button>
-                  <button
-                    class="btn btn-outline-secondary"
-                    @click="openRemoveModal(hospital)"
-                  >
-                    <img
-                      src="@/src/assets/remove.svg"
-                      alt="Eliminar Hospital"
-                    />
-                  </button>
-                </div>
-              </div>
-            </div>
-          </div>
-          <button class="btn btn-info text-white" @click="openAddModal">
-            <small class="text-white"> + Agregar </small>
+            </li>
+          </ul>
+        </div>
+        <div class="hospitals__card-actions">
+          <button
+            class="hospitals__button--outline"
+            aria-label="Editar hospital"
+            @click="handleAddOrEditHospital(hospital)"
+          >
+            <AtomsIconsPenLineIcon size="20" />
+          </button>
+          <button
+            class="hospitals__button--outline"
+            aria-label="Eliminar hospital"
+            @click="handleDeleteHospital(hospital)"
+          >
+            <AtomsIconsTrashIcon size="20" />
           </button>
         </div>
       </div>
+    </section>
+
+    <div v-if="!isLoading && hospitals.length > 0">
+      <button
+        class="hospitals__button--priamry"
+        @click="handleAddOrEditHospital()"
+      >
+        <AtomsIconsPlusIcon size="20" />
+        Agregar
+      </button>
     </div>
-    <WebsiteAgregarHospitalModal
-      :isOpen="open"
-      @close="open = false"
-      :hospitalInfo="selectedHospital"
-      @add-hospital="handleAddHospital"
-      @edit-hospital="handleEditHospital"
-    />
-    <WebsiteRemoverHospitalModal
-      :isOpen="remove"
-      @close="remove = false"
-      @remove-hospital="handleRemoveHospital"
-    />
   </NuxtLayout>
+
+  <MedicosModalesEliminarHospital @hospital-deleted="handleModalClosed" />
+  <MedicosModalesAgregarHospital
+    @hospital-created="handleModalClosed"
+    @hospital-updated="handleModalClosed"
+  />
 </template>
+
+<style lang="scss" scoped>
+.hospitals {
+  &__header {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    margin-bottom: 0.5rem;
+
+    @include respond-to(md) {
+      margin-bottom: 1rem;
+    }
+  }
+
+  &__title {
+    font-family: $font-family-main;
+    font-weight: 600;
+    font-size: 20px;
+    line-height: 20px;
+    letter-spacing: 0;
+  }
+
+  &__main {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    margin-bottom: 1rem;
+
+    @include respond-to(md) {
+      gap: 1.5rem;
+      margin-bottom: 1.5rem;
+    }
+  }
+
+  &__toolbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 1rem;
+  }
+
+  &__loading,
+  &__empty {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 3rem 1rem;
+    text-align: center;
+    gap: 1rem;
+
+    p {
+      color: #6d758f;
+      font-size: 1rem;
+    }
+  }
+
+  &__button {
+    &--priamry {
+      @include primary-button;
+      text-wrap: nowrap;
+      background: $primary-aqua;
+      border: 1px solid $primary-aqua;
+      padding: 8px 14px;
+      gap: 8px;
+
+      &:hover {
+        background-color: darken($primary-aqua, 5%);
+        border-color: darken($primary-aqua, 5%);
+      }
+
+      &:active {
+        background-color: darken($primary-aqua, 10%);
+      }
+
+      &:disabled {
+        background-color: #c2c6e9;
+        color: #ffffff;
+        cursor: not-allowed;
+      }
+
+      &:focus-visible {
+        border-color: darken($primary-aqua, 10%);
+        box-shadow: 0 0 0 3px rgba($primary-aqua, 0.4);
+      }
+    }
+
+    &--outline {
+      @include outline-button;
+      text-wrap: nowrap;
+    }
+  }
+
+  &__subtext {
+    font-weight: 400;
+    font-size: 14px;
+    line-height: 140%;
+    color: #6d758f;
+  }
+
+  &__card {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: $white;
+    border: 1px solid #f1f3f7;
+    padding: 10px 14px;
+    border-radius: 15px;
+    transition: box-shadow 0.2s;
+
+    &:hover {
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    }
+  }
+
+  &__card-title {
+    font-weight: 600;
+    font-size: 14px;
+    line-height: 24px;
+    letter-spacing: 0;
+    padding: 0;
+    margin: 0;
+    color: #19213d;
+  }
+
+  &__card-info {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+
+    &--item {
+      font-weight: 500;
+      font-size: 14px;
+      line-height: 24px;
+      letter-spacing: 0;
+      color: #6d758f;
+    }
+  }
+
+  &__card-actions {
+    display: flex;
+    gap: 0.5rem;
+    flex-shrink: 0;
+  }
+}
+
+.breadcrumb-nav {
+  display: flex;
+  align-items: center;
+  --breadcrumb-divider: "/";
+
+  &__list {
+    display: flex;
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    flex-wrap: wrap;
+    gap: 0.25rem;
+
+    li + li::before {
+      content: var(--breadcrumb-divider);
+      padding: 0 0.5rem;
+      color: #6c757d;
+
+      @include respond-to-max(sm) {
+        padding: 0 0.25rem;
+      }
+    }
+  }
+
+  &__item {
+    font-size: 0.75rem;
+
+    @include respond-to(sm) {
+      font-size: 0.875rem;
+    }
+
+    &--active .breadcrumb-nav__text {
+      color: #6c757d;
+    }
+  }
+
+  &__link {
+    text-decoration: none;
+    color: inherit;
+
+    &--muted {
+      color: #6c757d;
+    }
+
+    &:hover,
+    &:focus-visible {
+      text-decoration: underline;
+      outline: 2px solid transparent;
+    }
+
+    &:focus-visible {
+      outline: 2px solid $color-primary;
+      outline-offset: 2px;
+      border-radius: 2px;
+    }
+  }
+
+  &__text {
+    color: inherit;
+  }
+}
+
+.dropdown-menu {
+  min-width: 160px;
+}
+
+.dropdown-item {
+  cursor: pointer;
+
+  &:active {
+    background-color: $primary-aqua;
+  }
+}
+</style>

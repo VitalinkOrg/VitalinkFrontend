@@ -91,6 +91,18 @@ export interface IMedico {
   servicios?: IServicioClinica[];
 }
 
+export interface UserNotification {
+  id?: number | string;
+  action_url?: string;
+  payload?: string;
+  is_read: boolean;
+  notification: string;
+  user_send: string;
+  user_receive: string;
+  created_date?: string;
+  updated_date?: string;
+}
+
 export interface IVaucher {
   id: string;
   servicio: string; // Procedimiento
