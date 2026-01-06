@@ -30,6 +30,7 @@ export interface Supplier {
   code_medical_license_file: string | null;
   gender: string | null;
   medical_type: MedicalType;
+  medical_type_code: string;
   legal_representative: LegalRepresentative;
   created_date: string;
   updated_date: string | null;
