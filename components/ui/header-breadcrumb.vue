@@ -7,6 +7,16 @@ defineProps<Props>();
 
 const route = useRoute();
 
+const formatSegmentLabel = (segment: string): string => {
+  // Reemplazar guiones con espacios
+  const words = segment.split("-");
+
+  // Capitalizar cada palabra
+  return words
+    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+    .join(" ");
+};
+
 const generateBreadcrumbs = () => {
   const pathSegments = route.path.split("/").filter((segment) => segment);
   const breadcrumbs = [];
@@ -18,10 +28,14 @@ const generateBreadcrumbs = () => {
     currentPath += `/${segment}`;
 
     const isLast = i === pathSegments.length - 1;
-    let label = segment.charAt(0).toUpperCase() + segment.slice(1);
+
+    // Aplicar formato especial para ciertos segmentos
+    let label = "";
 
     if (segment === "medicos" || segment === "socio-financiero") {
       label = "Inicio";
+    } else {
+      label = formatSegmentLabel(segment);
     }
 
     breadcrumbs.push({
@@ -72,12 +86,12 @@ const breadcrumbs = generateBreadcrumbs();
   margin-bottom: 1rem;
   padding: 0 0.5rem;
 
-  @media (min-width: 576px) {
+  @include respond-to(sm) {
     padding: 0 1rem;
     margin-bottom: 1.25rem;
   }
 
-  @media (min-width: 768px) {
+  @include respond-to(md) {
     margin-bottom: 1.5rem;
   }
 }
@@ -91,7 +105,7 @@ const breadcrumbs = generateBreadcrumbs();
   scrollbar-width: thin;
   scrollbar-color: rgba(0, 0, 0, 0.2) transparent;
 
-  @media (min-width: 576px) {
+  @include respond-to(sm) {
     margin-bottom: 0.5rem;
   }
 
@@ -116,7 +130,7 @@ const breadcrumbs = generateBreadcrumbs();
     list-style: none;
     min-width: min-content;
 
-    @media (min-width: 768px) {
+    @include respond-to(md) {
       flex-wrap: wrap;
     }
   }
@@ -128,12 +142,12 @@ const breadcrumbs = generateBreadcrumbs();
     white-space: nowrap;
     flex-shrink: 0;
 
-    @media (min-width: 576px) {
+    @include respond-to(sm) {
       font-size: 0.8125rem;
       line-height: 1.1875rem;
     }
 
-    @media (min-width: 768px) {
+    @include respond-to(md) {
       font-size: 0.875rem;
       line-height: 1.25rem;
       flex-shrink: 1;
@@ -143,35 +157,34 @@ const breadcrumbs = generateBreadcrumbs();
     &:not(:last-child)::after {
       content: var(--breadcrumb-divider);
       margin: 0 0.25rem;
-      color: #353e5c;
+      color: $color-foreground;
 
-      @media (min-width: 576px) {
+      @include respond-to(sm) {
         margin: 0 0.3125rem 0 0.125rem;
       }
 
-      @media (min-width: 768px) {
+      @include respond-to(md) {
         margin: 0 0.375rem 0 0.1875rem;
       }
     }
 
     &--active {
       font-weight: 600;
-      color: #353e5c;
+      color: $color-foreground;
     }
   }
 
   &__link {
-    color: #6c757d;
-    text-decoration: none;
-    transition: color 0.2s ease;
+    @include link-base;
+    color: $color-text-muted;
 
     &:hover {
-      color: #495057;
+      color: darken($color-text-muted, 10%);
       text-decoration: underline;
     }
 
     &:active {
-      color: #353e5c;
+      color: $color-foreground;
     }
   }
 }
@@ -183,7 +196,7 @@ const breadcrumbs = generateBreadcrumbs();
   flex-wrap: wrap;
   gap: 0.5rem;
 
-  @media (min-width: 768px) {
+  @include respond-to(md) {
     flex-wrap: nowrap;
     gap: 1rem;
   }
@@ -205,17 +218,17 @@ const breadcrumbs = generateBreadcrumbs();
     word-wrap: break-word;
     hyphens: auto;
 
-    @media (min-width: 576px) {
+    @include respond-to(sm) {
       font-size: 1.125rem;
       line-height: 1.1875rem;
     }
 
-    @media (min-width: 768px) {
+    @include respond-to(md) {
       font-size: 1.25rem;
       line-height: 1.25rem;
     }
 
-    @media (min-width: 992px) {
+    @include respond-to(lg) {
       font-size: 1.375rem;
       line-height: 1.375rem;
     }

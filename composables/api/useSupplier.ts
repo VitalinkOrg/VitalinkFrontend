@@ -235,6 +235,56 @@ export const useSupplier = () => {
     });
   };
 
+  const deleteSupplier = (id: number, token?: string) => {
+    const authToken = token || getToken();
+    if (!authToken) throw new Error("No authentication token found");
+
+    const url = `${config.public.API_BASE_URL}/supplier/delete?id=${id}`;
+
+    return useApi<ApiResponse<any>>(url, {
+      method: "DELETE",
+      headers: {
+        Authorization: authToken,
+        "Content-Type": "application/json",
+      },
+    });
+  };
+
+  const deleteSpecialtyBySupplier = (id: number, token?: string) => {
+    const authToken = token || getToken();
+    if (!authToken) throw new Error("No authentication token found");
+
+    const url = `${config.public.API_BASE_URL}/specialtybysupplier/delete?id=${id}`;
+
+    return useApi<ApiResponse<any>>(url, {
+      method: "DELETE",
+      headers: {
+        Authorization: authToken,
+        "Content-Type": "application/json",
+      },
+    });
+  };
+
+  const updateSupplier = (
+    id: number,
+    body: Partial<CreateSupplier>,
+    token?: string
+  ) => {
+    const authToken = token || getToken();
+    if (!authToken) throw new Error("No authentication token found");
+
+    const url = `${config.public.API_BASE_URL}/supplier/edit?id=${id}`;
+
+    return useApi<ApiResponse<any>>(url, {
+      method: "PUT",
+      body: JSON.stringify(body),
+      headers: {
+        Authorization: authToken,
+        "Content-Type": "application/json",
+      },
+    });
+  };
+
   return {
     createSupplier,
     fetchAllSuppliers,
@@ -245,5 +295,8 @@ export const useSupplier = () => {
     createHospital,
     updateHospital,
     deleteHospital,
+    deleteSupplier,
+    deleteSpecialtyBySupplier,
+    updateSupplier,
   };
 };

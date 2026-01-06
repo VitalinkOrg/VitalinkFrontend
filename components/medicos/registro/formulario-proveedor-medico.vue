@@ -1,10 +1,12 @@
+// components\medicos\registro\formulario-proveedor-medico.vue
+
 <template>
   <div class="form-container">
-    <form @submit.prevent="handleNext" novalidate class="registro-form">
+    <form @submit.prevent="handleSubmit" novalidate class="registro-form">
       <div class="registro-form__main">
-        <label class="registro-form__title"
-          >Completa los datos de registro</label
-        >
+        <label class="registro-form__title">
+          Completa los datos de registro
+        </label>
 
         <div class="registro-form__row">
           <div class="registro-form__group">
@@ -15,7 +17,6 @@
                   size="20"
                   class="icon icon-tabler icons-tabler-outline icon-tabler-info-circle tooltip-trigger"
                 />
-
                 <div class="tooltip-content">
                   Selecciona el tipo de documento de identidad que utilizarás
                   para el registro
@@ -31,33 +32,55 @@
                 }))
               "
               :loading="isLoadingDocumentTypes"
+              :disabled="isLoading"
+              :class="{
+                'input-error':
+                  touched.documentType && !supplierFormData.documentType,
+              }"
               placeholder="Seleccione tipo de documento"
-              @update:model-value="
-                updateSupplierFormData({
-                  ...supplierFormData,
-                  documentType: ($event as string) ?? '',
-                })
-              "
+              @update:model-value="handleDocumentTypeChange($event as string)"
+              @blur="touched.documentType = true"
             />
-          </div>
-          <div class="registro-form__group">
-            <label for="documentNumber" class="registro-form__label"
-              >Número de documento:</label
+            <small
+              v-if="touched.documentType && !supplierFormData.documentType"
+              class="registro-form__error-message"
             >
+              Debes seleccionar un tipo de documento
+            </small>
+          </div>
+
+          <div class="registro-form__group">
+            <label for="documentNumber" class="registro-form__label">
+              Número de documento
+            </label>
             <input
               :value="supplierFormData.documentNumber"
-              @input="
-                updateSupplierFormData({
-                  ...supplierFormData,
-                  documentNumber: ($event.target as HTMLSelectElement).value,
-                })
-              "
+              @input="handleDocumentNumberInput"
+              @blur="touched.documentNumber = true"
               type="text"
               class="registro-form__input-text"
-              placeholder="Ingrese su número de documento"
+              :class="{
+                'input-error':
+                  touched.documentNumber &&
+                  (!supplierFormData.documentNumber || !isDocumentValid),
+              }"
+              :placeholder="getCedulaPlaceholder(supplierFormData.documentType)"
+              :disabled="isLoading"
               id="documentNumber"
               required
             />
+            <small
+              v-if="touched.documentNumber && !supplierFormData.documentNumber"
+              class="registro-form__error-message"
+            >
+              El número de documento es requerido
+            </small>
+            <small
+              v-else-if="supplierFormData.documentNumber && !isDocumentValid"
+              class="registro-form__error-message"
+            >
+              {{ getCedulaErrorMessage(supplierFormData.documentType) }}
+            </small>
           </div>
         </div>
 
@@ -70,28 +93,48 @@
             @input="
               updateSupplierFormData({
                 ...supplierFormData,
-                fullName: ($event.target as HTMLSelectElement).value,
+                fullName: ($event.target as HTMLInputElement).value,
               })
             "
+            @blur="touched.fullName = true"
             type="text"
             class="registro-form__input-text"
+            :class="{
+              'input-error':
+                touched.fullName && !supplierFormData.fullName.trim(),
+            }"
             placeholder="Ingrese nombre completo o razón social"
+            :disabled="isLoading"
             id="fullName"
             required
           />
+          <small
+            v-if="touched.fullName && !supplierFormData.fullName.trim()"
+            class="registro-form__error-message"
+          >
+            El nombre completo o razón social es requerido
+          </small>
         </div>
 
         <MedicosRegistroCargarArchivos
           label="Contrato"
           inputId="contact"
+          accept=".pdf,.doc,.docx,.jpg,.jpeg,.png"
           :uploadedFile="supplierFormData.contratcFile"
-          @update:file="
-            updateSupplierFormData({
-              ...supplierFormData,
-              contratcFile: $event,
-            })
-          "
+          :disabled="isLoading"
+          :has-error="touched.contratcFile && !supplierFormData.contratcFile"
+          @update:file="handleContractFileChange"
+          @blur="touched.contratcFile = true"
         />
+        <small
+          v-if="touched.contratcFile && !supplierFormData.contratcFile"
+          class="registro-form__error-message"
+        >
+          Debes cargar el archivo de contrato (PDF, Word, JPG o PNG)
+        </small>
+        <small v-if="contractFileError" class="registro-form__error-message">
+          {{ contractFileError }}
+        </small>
 
         <hr class="registro-form__divider" />
 
@@ -104,7 +147,6 @@
                   size="20"
                   class="icon icon-tabler icons-tabler-outline icon-tabler-info-circle tooltip-trigger"
                 />
-
                 <div class="tooltip-content">
                   Utiliza un correo electrónico válido. Recibirás notificaciones
                   importantes en esta dirección.
@@ -116,53 +158,107 @@
               @input="
                 updateSupplierFormData({
                   ...supplierFormData,
-                  email: ($event.target as HTMLSelectElement).value,
+                  email: ($event.target as HTMLInputElement).value,
                 })
               "
+              @blur="touched.email = true"
               type="email"
               class="registro-form__input-text"
+              :class="{
+                'input-error':
+                  touched.email &&
+                  (!supplierFormData.email.trim() || !isEmailValid),
+              }"
               placeholder="Escribe tu correo electrónico"
+              :disabled="isLoading"
               id="email"
               required
             />
-          </div>
-          <div class="registro-form__group">
-            <label for="confirmEmail" class="registro-form__label"
-              >Confirmar Correo Electrónico</label
+            <small
+              v-if="touched.email && !supplierFormData.email.trim()"
+              class="registro-form__error-message"
             >
+              El correo electrónico es requerido
+            </small>
+            <small
+              v-else-if="
+                touched.email && supplierFormData.email.trim() && !isEmailValid
+              "
+              class="registro-form__error-message"
+            >
+              Ingresa un correo electrónico válido (ej: usuario@ejemplo.com)
+            </small>
+          </div>
+
+          <div class="registro-form__group">
+            <label for="confirmEmail" class="registro-form__label">
+              Confirmar Correo Electrónico
+            </label>
             <input
               :value="confirmEmail"
-              @input="confirmEmail = ($event.target as HTMLSelectElement).value"
+              @input="confirmEmail = ($event.target as HTMLInputElement).value"
+              @blur="touched.confirmEmail = true"
               type="email"
               class="registro-form__input-text"
+              :class="{
+                'input-error':
+                  touched.confirmEmail && (!confirmEmail || emailMismatch),
+              }"
               placeholder="Confirma tu correo electrónico"
+              :disabled="isLoading"
               id="confirmEmail"
               required
             />
-            <div v-if="emailMismatch" class="registro-form__error-message">
+            <small
+              v-if="touched.confirmEmail && !confirmEmail"
+              class="registro-form__error-message"
+            >
+              Debes confirmar tu correo electrónico
+            </small>
+            <small
+              v-else-if="touched.confirmEmail && emailMismatch"
+              class="registro-form__error-message"
+            >
               Los correos electrónicos no coinciden
-            </div>
+            </small>
           </div>
         </div>
 
         <div class="registro-form__group">
-          <label for="phone" class="registro-form__label"
-            >Teléfono de contacto</label
-          >
+          <label for="phone" class="registro-form__label">
+            Teléfono de contacto
+          </label>
           <input
             :value="supplierFormData.phone"
-            @input="
-              updateSupplierFormData({
-                ...supplierFormData,
-                phone: ($event.target as HTMLSelectElement).value,
-              })
-            "
+            @input="handlePhoneInput"
+            @blur="touched.phone = true"
             type="tel"
             class="registro-form__input-text"
-            placeholder="(506) 0000-0000"
+            :class="{
+              'input-error':
+                touched.phone &&
+                (!supplierFormData.phone.trim() || !isPhoneValid),
+            }"
+            placeholder="8888-8888"
+            :disabled="isLoading"
             id="phone"
+            maxlength="13"
             required
           />
+          <small
+            v-if="touched.phone && !supplierFormData.phone.trim()"
+            class="registro-form__error-message"
+          >
+            El teléfono de contacto es requerido
+          </small>
+          <small
+            v-else-if="
+              touched.phone && supplierFormData.phone.trim() && !isPhoneValid
+            "
+            class="registro-form__error-message"
+          >
+            Ingresa un número de teléfono válido (8 dígitos)
+          </small>
         </div>
 
         <div class="registro-form__row">
@@ -174,7 +270,6 @@
                   size="20"
                   class="icon icon-tabler icons-tabler-outline icon-tabler-info-circle tooltip-trigger"
                 />
-
                 <div class="tooltip-content">
                   La contraseña debe tener al menos 8 caracteres
                 </div>
@@ -185,50 +280,91 @@
               @input="
                 updateSupplierFormData({
                   ...supplierFormData,
-                  password: ($event.target as HTMLSelectElement).value,
+                  password: ($event.target as HTMLInputElement).value,
                 })
               "
+              @blur="touched.password = true"
               type="password"
               class="registro-form__input-text"
+              :class="{
+                'input-error':
+                  touched.password &&
+                  (!supplierFormData.password || !isPasswordValid),
+              }"
               placeholder="Ingrese su contraseña"
+              :disabled="isLoading"
               id="password"
               required
             />
-          </div>
-          <div class="registro-form__group">
-            <label for="confirmPassword" class="registro-form__label"
-              >Confirmar Contraseña</label
+            <small
+              v-if="touched.password && !supplierFormData.password"
+              class="registro-form__error-message"
             >
+              La contraseña es requerida
+            </small>
+            <small
+              v-else-if="
+                touched.password &&
+                supplierFormData.password &&
+                !isPasswordValid
+              "
+              class="registro-form__error-message"
+            >
+              La contraseña debe tener al menos 8 caracteres
+            </small>
+          </div>
+
+          <div class="registro-form__group">
+            <label for="confirmPassword" class="registro-form__label">
+              Confirmar Contraseña
+            </label>
             <input
               :value="confirmPassword"
               @input="
-                confirmPassword = ($event.target as HTMLSelectElement).value
+                confirmPassword = ($event.target as HTMLInputElement).value
               "
+              @blur="touched.confirmPassword = true"
               type="password"
               class="registro-form__input-text"
+              :class="{
+                'input-error':
+                  touched.confirmPassword &&
+                  (!confirmPassword || passwordMismatch),
+              }"
               placeholder="Confirma tu contraseña"
+              :disabled="isLoading"
               id="confirmPassword"
               required
             />
-            <div v-if="passwordMismatch" class="registro-form__error-message">
+            <small
+              v-if="touched.confirmPassword && !confirmPassword"
+              class="registro-form__error-message"
+            >
+              Debes confirmar tu contraseña
+            </small>
+            <small
+              v-else-if="touched.confirmPassword && passwordMismatch"
+              class="registro-form__error-message"
+            >
               Las contraseñas no coinciden
-            </div>
+            </small>
           </div>
         </div>
 
         <button
           type="submit"
-          class="registro-form__button-next"
-          :disabled="!isStep1Valid"
+          class="registro-form__button-submit"
+          :disabled="!isFormValid || isLoading"
         >
-          Paso 2: Agregar médicos relacionados
+          <span v-if="isLoading" class="spinner"></span>
+          {{ isLoading ? "Registrando..." : "Completar Registro" }}
         </button>
       </div>
     </form>
 
     <div class="auth-footer-actions">
       <p class="auth-already-account" id="register-link-label">
-        <span>Ya tienes cuenta?</span>
+        <span>¿Ya tienes cuenta?</span>
         <NuxtLink
           to="/medicos/login"
           class="auth-login-link"
@@ -243,26 +379,64 @@
 
 <script lang="ts" setup>
 import { useUdc } from "@/composables/api";
+import { useFormat } from "@/composables/useFormat";
 import type { IdType, ISupplierFormData } from "@/types";
 
 interface Props {
   supplierFormData: ISupplierFormData;
+  isLoading?: boolean;
 }
 
 interface Emits {
   (e: "update:supplierFormData", value: ISupplierFormData): void;
-  (e: "next"): void;
+  (e: "submit"): void;
 }
 
 const props = defineProps<Props>();
 const emit = defineEmits<Emits>();
 
 const { fetchUdc } = useUdc();
+const {
+  formatCedula,
+  validateCedula,
+  getCedulaPlaceholder,
+  getCedulaErrorMessage,
+  formatPhone,
+} = useFormat();
 
 const confirmEmail = ref<string>("");
 const confirmPassword = ref<string>("");
 const documentTypeOptions = ref<IdType[]>([]);
 const isLoadingDocumentTypes = ref<boolean>(false);
+const contractFileError = ref<string>("");
+
+const touched = reactive({
+  documentType: false,
+  documentNumber: false,
+  fullName: false,
+  contratcFile: false,
+  email: false,
+  confirmEmail: false,
+  phone: false,
+  password: false,
+  confirmPassword: false,
+});
+
+const isEmailValid = computed(() => {
+  if (!props.supplierFormData.email) return true;
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  return emailRegex.test(props.supplierFormData.email);
+});
+
+const isPhoneValid = computed(() => {
+  if (!props.supplierFormData.phone) return true;
+  const digitsOnly = props.supplierFormData.phone.replace(/\D/g, "");
+  return digitsOnly.length === 8;
+});
+
+const isPasswordValid = computed(() => {
+  return props.supplierFormData.password.length >= 8;
+});
 
 const emailMismatch = computed(() => {
   return (
@@ -280,22 +454,178 @@ const passwordMismatch = computed(() => {
   );
 });
 
-const isStep1Valid = computed(() => {
+const isDocumentValid = computed(() => {
+  if (!props.supplierFormData.documentNumber) return true;
+  return validateCedula(
+    props.supplierFormData.documentNumber,
+    props.supplierFormData.documentType
+  );
+});
+
+const isFormValid = computed(() => {
   return (
     props.supplierFormData.documentType.trim() !== "" &&
     props.supplierFormData.documentNumber.trim() !== "" &&
+    isDocumentValid.value &&
     props.supplierFormData.fullName.trim() !== "" &&
     props.supplierFormData.contratcFile !== null &&
     props.supplierFormData.email.trim() !== "" &&
+    isEmailValid.value &&
     props.supplierFormData.phone.trim() !== "" &&
+    isPhoneValid.value &&
     props.supplierFormData.password.trim() !== "" &&
+    isPasswordValid.value &&
     !emailMismatch.value &&
     !passwordMismatch.value
   );
 });
 
+const ALLOWED_EXTENSIONS = [".pdf", ".doc", ".docx", ".jpg", ".jpeg", ".png"];
+const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
+
+const validateFileType = (file: File): boolean => {
+  const extension = "." + file.name.split(".").pop()?.toLowerCase();
+
+  if (!ALLOWED_EXTENSIONS.includes(extension)) {
+    contractFileError.value = `Formato no permitido. Solo se aceptan archivos: ${ALLOWED_EXTENSIONS.join(", ")}`;
+    return false;
+  }
+
+  if (file.size > MAX_FILE_SIZE) {
+    contractFileError.value =
+      "El archivo es demasiado grande. El tamaño máximo es 10MB";
+    return false;
+  }
+
+  contractFileError.value = "";
+  return true;
+};
+
+const handleContractFileChange = (file: File | null) => {
+  touched.contratcFile = true;
+
+  if (file && !validateFileType(file)) {
+    updateSupplierFormData({
+      ...props.supplierFormData,
+      contratcFile: null,
+    });
+    return;
+  }
+
+  updateSupplierFormData({
+    ...props.supplierFormData,
+    contratcFile: file,
+  });
+};
+
+const handleDocumentTypeChange = (documentType: string) => {
+  touched.documentType = true;
+  updateSupplierFormData({
+    ...props.supplierFormData,
+    documentType: documentType ?? "",
+    documentNumber: "",
+  });
+};
+
+const handleDocumentNumberInput = (event: Event) => {
+  touched.documentNumber = true;
+  const target = event.target as HTMLInputElement;
+  const cursorPosition = target.selectionStart || 0;
+
+  const formattedValue = formatCedula(
+    target.value,
+    props.supplierFormData.documentType
+  );
+
+  const numbersBeforeCursor = target.value
+    .substring(0, cursorPosition)
+    .replace(/\D/g, "").length;
+
+  let numbersCount = 0;
+  let newCursorPosition = 0;
+
+  for (let i = 0; i < formattedValue.length; i++) {
+    if (formattedValue[i].match(/\d/)) {
+      numbersCount++;
+      if (numbersCount === numbersBeforeCursor) {
+        newCursorPosition = i + 1;
+        break;
+      }
+    }
+  }
+
+  if (numbersCount < numbersBeforeCursor || newCursorPosition === 0) {
+    newCursorPosition = formattedValue.length;
+  }
+
+  updateSupplierFormData({
+    ...props.supplierFormData,
+    documentNumber: formattedValue,
+  });
+
+  nextTick(() => {
+    target.setSelectionRange(newCursorPosition, newCursorPosition);
+  });
+};
+
+const handlePhoneInput = (event: Event) => {
+  touched.phone = true;
+  const target = event.target as HTMLInputElement;
+  const cursorPosition = target.selectionStart || 0;
+
+  const digitsOnly = target.value.replace(/\D/g, "");
+
+  const limitedDigits = digitsOnly.slice(0, 8);
+
+  const formattedValue = formatPhone(limitedDigits);
+
+  const digitsBeforeCursor = target.value
+    .substring(0, cursorPosition)
+    .replace(/\D/g, "").length;
+
+  let newCursorPosition = 0;
+  let digitCount = 0;
+
+  for (let i = 0; i < formattedValue.length; i++) {
+    if (formattedValue[i].match(/\d/)) {
+      digitCount++;
+      if (digitCount === digitsBeforeCursor) {
+        newCursorPosition = i + 1;
+        break;
+      }
+    }
+  }
+
+  if (digitCount < digitsBeforeCursor || newCursorPosition === 0) {
+    newCursorPosition = formattedValue.length;
+  }
+
+  updateSupplierFormData({
+    ...props.supplierFormData,
+    phone: formattedValue,
+  });
+
+  nextTick(() => {
+    target.setSelectionRange(newCursorPosition, newCursorPosition);
+  });
+};
+
 const updateSupplierFormData = (newData: ISupplierFormData) => {
   emit("update:supplierFormData", { ...newData });
+};
+
+const markAllTouched = () => {
+  Object.keys(touched).forEach((key) => {
+    touched[key as keyof typeof touched] = true;
+  });
+};
+
+const handleSubmit = () => {
+  markAllTouched();
+
+  if (isFormValid.value && !props.isLoading) {
+    emit("submit");
+  }
 };
 
 const loadIdType = async () => {
@@ -309,16 +639,10 @@ const loadIdType = async () => {
       documentTypeOptions.value = response.data;
     }
   } catch (error) {
-    console.error("Error loading document type options:", error);
+    console.error("❌ Error loading document type options:", error);
     documentTypeOptions.value = [];
   } finally {
     isLoadingDocumentTypes.value = false;
-  }
-};
-
-const handleNext = () => {
-  if (isStep1Valid.value) {
-    emit("next");
   }
 };
 
@@ -354,7 +678,6 @@ onMounted(async () => {
   &__row {
     display: flex;
     gap: 1rem;
-    margin-bottom: 1.5rem;
 
     @media (max-width: 48rem) {
       flex-direction: column;
@@ -380,17 +703,74 @@ onMounted(async () => {
     @include input-base;
     width: 100%;
     margin-top: 0.375rem;
+    transition:
+      border-color 0.2s ease,
+      box-shadow 0.2s ease;
+
+    &:disabled {
+      background-color: #f9fafb;
+      cursor: not-allowed;
+      opacity: 0.6;
+    }
+
+    &:focus {
+      outline: none;
+      border-color: #3b82f6;
+      box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+    }
   }
 
-  &__button-next {
+  &__divider {
+    border: none;
+    border-top: 1px solid #e5e7eb;
+    margin: 1rem 0;
+  }
+
+  &__button-submit {
     @include primary-button;
     margin-top: 1.25rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+
+    &:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
   }
 
   &__error-message {
+    display: block;
     color: #dc2626;
     font-size: 0.875rem;
     margin-top: 0.25rem;
+    line-height: 1.25;
+  }
+}
+
+.input-error {
+  border-color: #dc2626 !important;
+  background-color: #fef2f2 !important;
+
+  &:focus {
+    border-color: #dc2626 !important;
+    box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.1) !important;
+  }
+}
+
+.spinner {
+  width: 1rem;
+  height: 1rem;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-top-color: white;
+  border-radius: 50%;
+  animation: spin 0.6s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
   }
 }
 
@@ -450,38 +830,6 @@ onMounted(async () => {
     visibility: visible;
     transform: translateX(-50%) translateY(0);
     pointer-events: auto;
-  }
-
-  .tooltip-content {
-    &.tooltip-left {
-      left: 0;
-      transform: translateX(0);
-
-      &::before {
-        left: 1.25rem;
-        transform: translateX(0);
-      }
-
-      &:hover {
-        transform: translateX(0) translateY(0);
-      }
-    }
-
-    &.tooltip-right {
-      right: 0;
-      left: auto;
-      transform: translateX(0);
-
-      &::before {
-        right: 1.25rem;
-        left: auto;
-        transform: translateX(0);
-      }
-
-      &:hover {
-        transform: translateX(0) translateY(0);
-      }
-    }
   }
 
   @media (max-width: 48rem) {
