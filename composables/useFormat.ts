@@ -239,13 +239,232 @@ export const useFormat = () => {
     return phone;
   };
 
+  /**
+   * Formats a Costa Rican identification document (cédula) based on type.
+   * Physical IDs can have:
+   * - 7 digits: formatted with dashes (X-XXX-XXX)
+   * - 9 digits: no formatting, zeros are used as separators (X0XXX0XXX)
+   */
+  const formatCedula = (value: string, documentType: string): string => {
+    const numbersOnly = value.replace(/\D/g, "");
+
+    const normalizedType = documentType.toUpperCase();
+
+    const isCedulaFisica =
+      normalizedType === "PHYSICAL_DNI" ||
+      normalizedType === "CEDULA_FISICA" ||
+      normalizedType === "CF" ||
+      normalizedType === "FISICA" ||
+      normalizedType === "CÉDULA FÍSICA" ||
+      normalizedType.includes("FISICA") ||
+      normalizedType.includes("PHYSICAL");
+
+    const isCedulaJuridica =
+      normalizedType === "JURIDICAL_DNI" ||
+      normalizedType === "CEDULA_JURIDICA" ||
+      normalizedType === "CJ" ||
+      normalizedType === "JURIDICA" ||
+      normalizedType === "CÉDULA JURÍDICA" ||
+      normalizedType.includes("JURIDICA") ||
+      normalizedType.includes("JURIDICAL");
+
+    if (isCedulaFisica) {
+      const maxLength = 9;
+      const limited = numbersOnly.slice(0, maxLength);
+
+      if (limited.length === 0) return "";
+
+      if (limited.length === 9) {
+        return limited;
+      }
+
+      if (limited.length === 8) {
+        return limited;
+      }
+
+      if (limited.length === 1) {
+        return limited;
+      } else if (limited.length <= 4) {
+        return `${limited.slice(0, 1)}-${limited.slice(1)}`;
+      } else {
+        return `${limited.slice(0, 1)}-${limited.slice(1, 4)}-${limited.slice(4)}`;
+      }
+    }
+
+    if (isCedulaJuridica) {
+      const maxLength = 10;
+      const limited = numbersOnly.slice(0, maxLength);
+
+      if (limited.length === 0) return "";
+      if (limited.length === 1) return limited;
+      if (limited.length <= 4) {
+        return `${limited.slice(0, 1)}-${limited.slice(1)}`;
+      }
+      return `${limited.slice(0, 1)}-${limited.slice(1, 4)}-${limited.slice(4)}`;
+    }
+
+    return numbersOnly;
+  };
+
+  /**
+   * Validates if a Costa Rican cédula has the correct number of digits.
+   */
+  const validateCedula = (value: string, documentType: string): boolean => {
+    const numbersOnly = value.replace(/\D/g, "");
+    const normalizedType = documentType.toUpperCase();
+
+    const isCedulaFisica =
+      normalizedType === "PHYSICAL_DNI" ||
+      normalizedType === "CEDULA_FISICA" ||
+      normalizedType === "CF" ||
+      normalizedType === "FISICA" ||
+      normalizedType === "CÉDULA FÍSICA" ||
+      normalizedType.includes("FISICA") ||
+      normalizedType.includes("PHYSICAL");
+
+    const isCedulaJuridica =
+      normalizedType === "JURIDICAL_DNI" ||
+      normalizedType === "CEDULA_JURIDICA" ||
+      normalizedType === "CJ" ||
+      normalizedType === "JURIDICA" ||
+      normalizedType === "CÉDULA JURÍDICA" ||
+      normalizedType.includes("JURIDICA") ||
+      normalizedType.includes("JURIDICAL");
+
+    if (isCedulaFisica) {
+      return numbersOnly.length === 7 || numbersOnly.length === 9;
+    }
+
+    if (isCedulaJuridica) {
+      return numbersOnly.length === 10;
+    }
+
+    return numbersOnly.length > 0;
+  };
+
+  /**
+   * Removes all non-numeric characters from a cédula string.
+   */
+  const cleanCedula = (value: string): string => {
+    return value.replace(/\D/g, "");
+  };
+
+  /**
+   * Gets the appropriate placeholder text for a document input based on type.
+   */
+  const getCedulaPlaceholder = (documentType: string): string => {
+    const normalizedType = documentType.toUpperCase();
+
+    if (
+      normalizedType === "PHYSICAL_DNI" ||
+      normalizedType === "CEDULA_FISICA" ||
+      normalizedType === "CF" ||
+      normalizedType.includes("FISICA") ||
+      normalizedType.includes("PHYSICAL")
+    ) {
+      return "Ej: 2-843-648 o 208430648";
+    }
+
+    if (
+      normalizedType === "JURIDICAL_DNI" ||
+      normalizedType === "CEDULA_JURIDICA" ||
+      normalizedType === "CJ" ||
+      normalizedType.includes("JURIDICA") ||
+      normalizedType.includes("JURIDICAL")
+    ) {
+      return "Ej: 3-101-123456";
+    }
+
+    return "Ingrese su número de documento";
+  };
+
+  /**
+   * Gets the appropriate error message for invalid cédula format.
+   */
+  const getCedulaErrorMessage = (documentType: string): string => {
+    const normalizedType = documentType.toUpperCase();
+
+    if (
+      normalizedType === "PHYSICAL_DNI" ||
+      normalizedType === "CEDULA_FISICA" ||
+      normalizedType === "CF" ||
+      normalizedType.includes("FISICA") ||
+      normalizedType.includes("PHYSICAL")
+    ) {
+      return "La cédula física debe tener 7 o 9 dígitos (formato: #-###-### o #########)";
+    }
+
+    if (
+      normalizedType === "JURIDICAL_DNI" ||
+      normalizedType === "CEDULA_JURIDICA" ||
+      normalizedType === "CJ" ||
+      normalizedType.includes("JURIDICA") ||
+      normalizedType.includes("JURIDICAL")
+    ) {
+      return "La cédula jurídica debe tener 10 dígitos (formato: #-###-######)";
+    }
+
+    return "Número de documento inválido";
+  };
+
+  /**
+   * Converts a physical ID from dash format to zero-separator format for backend.
+   * If already in zero format or has 9 digits, returns as is.
+   *
+   * @param value - Cédula física in any format
+   * @param documentType - Type of document
+   * @returns Cédula in zero-separator format (X0XXX0XXX) for backend
+   *
+   * @example
+   * convertCedulaForBackend("2-843-648", "PHYSICAL_DNI");  // → "208430648"
+   * convertCedulaForBackend("208430648", "PHYSICAL_DNI");  // → "208430648"
+   * convertCedulaForBackend("5-023-056", "PHYSICAL_DNI");  // → "500230056"
+   * convertCedulaForBackend("3-101-123456", "JURIDICAL_DNI"); // → "3101123456" (removes dashes only)
+   */
+  const convertCedulaForBackend = (
+    value: string,
+    documentType: string
+  ): string => {
+    const numbersOnly = value.replace(/\D/g, "");
+    const normalizedType = documentType.toUpperCase();
+
+    const isCedulaFisica =
+      normalizedType === "PHYSICAL_DNI" ||
+      normalizedType === "CEDULA_FISICA" ||
+      normalizedType === "CF" ||
+      normalizedType === "FISICA" ||
+      normalizedType === "CÉDULA FÍSICA" ||
+      normalizedType.includes("FISICA") ||
+      normalizedType.includes("PHYSICAL");
+
+    if (isCedulaFisica) {
+      if (numbersOnly.length === 9) {
+        return numbersOnly;
+      }
+
+      if (numbersOnly.length === 7) {
+        return `${numbersOnly[0]}0${numbersOnly.slice(1, 4)}0${numbersOnly.slice(4)}`;
+      }
+
+      return numbersOnly;
+    }
+
+    return numbersOnly;
+  };
+
   return {
     formatTime,
     formatDate,
     formatDateTime,
     formatCurrency,
+    convertCedulaForBackend,
     formatNumber,
     capitalize,
     formatPhone,
+    formatCedula,
+    validateCedula,
+    cleanCedula,
+    getCedulaPlaceholder,
+    getCedulaErrorMessage,
   };
 };
