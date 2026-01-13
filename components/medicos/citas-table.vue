@@ -131,7 +131,10 @@
         </button>
 
         <button
-          v-else-if="item.appointment_status.code === 'WAITING_PROCEDURE'"
+          v-else-if="
+            item.appointment_status.code === 'WAITING_PROCEDURE' ||
+            item.appointment_status.code === 'CONFIRM_PROCEDURE'
+          "
           class="appointments-table__action-btn appointments-table__action-btn--complete"
           @click="handleOpenDetallesCita(item)"
           :aria-label="`Marcar como concretado procedimiento de ${item.customer.name}`"
