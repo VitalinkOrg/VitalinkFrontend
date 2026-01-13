@@ -1,5 +1,5 @@
 import type { ApiResponse, Location, Supplier } from "@/types";
-import useApi from "./useApi";
+import useApi, { type UsableAPI } from "./useApi";
 
 export interface Availability {
   id: number;
@@ -12,42 +12,94 @@ export interface Availability {
   updated_date: string;
 }
 
+export interface CreateAvailabilityPayload {
+  supplier_id: number;
+  location_id: number;
+  weekday: string;
+  from_hour: string;
+  to_hour: string;
+}
+
+export interface UpdateAvailabilityPayload {
+  supplier_id?: number;
+  location_id?: number;
+  weekday?: string;
+  from_hour?: string;
+  to_hour?: string;
+}
+
 export const useAvailability = () => {
   const config = useRuntimeConfig();
   const { getToken } = useAuthToken();
 
-  const fetchAvailability = () => {
+  const getHeaders = (): HeadersInit => {
     const token = getToken();
     if (!token) throw new Error("No authentication token found");
 
-    const url = `${config.public.API_BASE_URL}/availability/get_all`;
-
-    return useApi<ApiResponse<Availability[]>>(url, {
-      method: "GET",
-      headers: {
-        Authorization: token,
-        "Content-Type": "application/json",
-      },
-    });
+    return {
+      Authorization: token,
+      "Content-Type": "application/json",
+      "x-api-key": String(config.public.API_SECRET_KEY),
+    };
   };
 
-  const fetchAvailabilityBySupplierId = (supplierId: number) => {
-    const token = getToken();
-    if (!token) throw new Error("No authentication token found");
+  const fetchAvailability = (): UsableAPI<ApiResponse<Availability[]>> => {
+    return useApi<ApiResponse<Availability[]>>(
+      `${config.public.API_BASE_URL}/availability/get_all`,
+      { method: "GET", headers: getHeaders() }
+    );
+  };
 
-    const url = `${config.public.API_BASE_URL}/availability/get_all?supplier_id=${supplierId}`;
+  const fetchAvailabilityBySupplierId = (
+    supplierId: number
+  ): UsableAPI<ApiResponse<Availability[]>> => {
+    return useApi<ApiResponse<Availability[]>>(
+      `${config.public.API_BASE_URL}/availability/get_all?supplier_id=${supplierId}`,
+      { method: "GET", headers: getHeaders() }
+    );
+  };
 
-    return useApi<ApiResponse<Availability[]>>(url, {
-      method: "GET",
-      headers: {
-        Authorization: token,
-        "Content-Type": "application/json",
-      },
-    });
+  const fetchAvailabilityById = (
+    id: number
+  ): UsableAPI<ApiResponse<Availability>> => {
+    return useApi<ApiResponse<Availability>>(
+      `${config.public.API_BASE_URL}/availability/get?id=${id}`,
+      { method: "GET", headers: getHeaders() }
+    );
+  };
+
+  const createAvailability = (
+    payload: CreateAvailabilityPayload
+  ): UsableAPI<ApiResponse<Availability>> => {
+    return useApi<ApiResponse<Availability>>(
+      `${config.public.API_BASE_URL}/availability/add`,
+      { method: "POST", headers: getHeaders(), body: JSON.stringify(payload) }
+    );
+  };
+
+  const updateAvailability = (
+    id: number,
+    payload: UpdateAvailabilityPayload
+  ): UsableAPI<ApiResponse<Availability>> => {
+    return useApi<ApiResponse<Availability>>(
+      `${config.public.API_BASE_URL}/availability/edit?id=${id}`,
+      { method: "PUT", headers: getHeaders(), body: JSON.stringify(payload) }
+    );
+  };
+
+  const deleteAvailability = (id: number): UsableAPI<ApiResponse<void>> => {
+    return useApi<ApiResponse<void>>(
+      `${config.public.API_BASE_URL}/availability/delete?id=${id}`,
+      { method: "DELETE", headers: getHeaders() }
+    );
   };
 
   return {
     fetchAvailability,
     fetchAvailabilityBySupplierId,
+    fetchAvailabilityById,
+    createAvailability,
+    updateAvailability,
+    deleteAvailability,
   };
 };
