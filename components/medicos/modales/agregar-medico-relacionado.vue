@@ -4,14 +4,18 @@
 
     <AtomsModalBase
       :is-open="isOpen"
-      size="large"
+      size="extra-large"
       :show-close-button="true"
       :close-on-backdrop="false"
       @close="handleModalClose"
     >
       <template #title>
         <h2 v-if="currentStep !== 3" class="modal-title">
-          Agregar médico relacionado
+          {{
+            isEditMode
+              ? "Editar médico relacionado"
+              : "Agregar médico relacionado"
+          }}
         </h2>
       </template>
 
@@ -38,7 +42,7 @@
                   }))
                 "
                 placeholder="Seleccione tipo de documento"
-                :disabled="isLoadingSubmit"
+                :disabled="isLoadingSubmit || isEditMode"
               />
             </div>
 
@@ -51,7 +55,7 @@
                 type="text"
                 class="doctor-form__input"
                 placeholder="Ingrese número de documento"
-                :disabled="isLoadingSubmit"
+                :disabled="isLoadingSubmit || isEditMode"
                 required
               />
             </div>
@@ -71,6 +75,7 @@
             </div>
 
             <MedicosRegistroCargarArchivos
+              v-if="!isEditMode"
               label="Documento de identidad"
               accept=".pdf,.doc,.docx,.jpg,.jpeg,.png"
               id="identityFile"
@@ -95,6 +100,7 @@
             </div>
 
             <MedicosRegistroCargarArchivos
+              v-if="!isEditMode"
               label="Carnet vigente"
               accept=".pdf,.doc,.docx,.jpg,.jpeg,.png"
               id="validLicenseFile"
@@ -132,6 +138,7 @@
                   "
                   placeholder="Seleccione especialidad"
                   :disabled="isLoadingSubmit"
+                  searchable
                 />
                 <button
                   type="button"
@@ -184,12 +191,34 @@
           </div>
         </div>
 
-        <div v-if="currentStep === 2" class="step-content">
-          <MedicosModalesPreciosPacks v-model="packs" />
+        <div
+          v-if="currentStep === 2"
+          class="step-content step-content--with-preview"
+        >
+          <div class="packs-section">
+            <MedicosModalesPreciosPacks
+              v-model="packs"
+              :available-specialties="formData.specialties"
+              @update:modelValue="handlePacksUpdate"
+            />
 
-          <div v-if="errorMessage" class="doctor-form__error">
-            <AtomsIconsAlertCircleIcon size="20" />
-            <span>{{ errorMessage }}</span>
+            <div v-if="errorMessage" class="doctor-form__error">
+              <AtomsIconsAlertCircleIcon size="20" />
+              <span>{{ errorMessage }}</span>
+            </div>
+          </div>
+
+          <div class="preview-section">
+            <MedicosModalesPackPreview
+              v-for="(pack, index) in packs"
+              :key="`preview-${index}`"
+              :pack="pack"
+              :is-king-package="index === 0 && packs.length > 1"
+              :productos="productosForPreview"
+              :specialties="specialtiesForPreview"
+              :services-map="servicesMap"
+              class="preview-card"
+            />
           </div>
         </div>
 
@@ -197,10 +226,19 @@
           <div class="confirmation__icon">
             <img src="@/assets/check.svg" width="48" alt="Success" />
           </div>
-          <h5 class="confirmation__title">Médico creado exitosamente</h5>
+          <h5 class="confirmation__title">
+            {{
+              isEditMode
+                ? "Médico actualizado exitosamente"
+                : "Médico creado exitosamente"
+            }}
+          </h5>
           <p class="confirmation__description">
-            El médico se ha registrado correctamente con sus packs y servicios.
-            Ahora puedes verlo y administrarlo en el menú de médicos.
+            {{
+              isEditMode
+                ? "Los cambios se han guardado correctamente. Ahora puedes verlos en el menú de médicos."
+                : "El médico se ha registrado correctamente con sus packs y servicios. Ahora puedes verlo y administrarlo en el menú de médicos."
+            }}
           </p>
         </div>
       </div>
@@ -226,7 +264,6 @@
             </button>
           </template>
 
-          <!-- Footer Paso 2 -->
           <template v-if="currentStep === 2">
             <button
               type="button"
@@ -243,11 +280,18 @@
               @click="handleSubmit"
             >
               <span v-if="isLoadingSubmit" class="spinner"></span>
-              {{ isLoadingSubmit ? "Guardando..." : "Guardar médico" }}
+              {{
+                isLoadingSubmit
+                  ? isEditMode
+                    ? "Actualizando..."
+                    : "Guardando..."
+                  : isEditMode
+                    ? "Actualizar médico"
+                    : "Guardar médico"
+              }}
             </button>
           </template>
 
-          <!-- Footer Paso 3 -->
           <template v-if="currentStep === 3">
             <NuxtLink
               to="/medicos/mis-medicos"
@@ -256,11 +300,20 @@
               Ver en mis médicos
             </NuxtLink>
             <button
+              v-if="!isEditMode"
               type="button"
               class="modal-footer__button--primary modal-footer__button--full"
               @click="addAnotherDoctor"
             >
               Agregar otro médico
+            </button>
+            <button
+              v-else
+              type="button"
+              class="modal-footer__button--primary modal-footer__button--full"
+              @click="handleModalClose"
+            >
+              Cerrar
             </button>
           </template>
         </div>
@@ -270,9 +323,16 @@
 </template>
 
 <script lang="ts" setup>
-import { useDocuments, useSupplier, useUdc } from "@/composables/api";
+import {
+  useAvailability,
+  useDocuments,
+  usePackage,
+  useSupplier,
+  useUdc,
+} from "@/composables/api";
 import type { IRelatedMedicalFormData, IUdc, Supplier } from "@/types";
 import type { CreateSupplier } from "~/composables/api/useSupplier";
+import MedicosModalesPackPreview from "./pack-preview.vue";
 import MedicosModalesPreciosPacks from "./precios-packs.vue";
 
 interface TimeSlot {
@@ -286,26 +346,45 @@ interface DayAvailability {
 }
 
 interface Pack {
-  name: string;
+  especialidad: string;
+  procedimiento: string;
   producto: string;
-  servicios: string;
+  servicios: string[];
   precio: number;
-  moneda: string;
-  costoValoracion: number;
-  monedaValoracion: string;
   disponibilidad: DayAvailability[];
+}
+
+interface Props {
+  editMode?: boolean;
+  doctorData?: Partial<IRelatedMedicalFormData>;
+  existingPacks?: Pack[];
+  supplierId?: number;
 }
 
 interface Emits {
   (e: "doctor-added"): void;
+  (e: "doctor-updated"): void;
 }
+
+const props = withDefaults(defineProps<Props>(), {
+  editMode: false,
+  doctorData: undefined,
+  existingPacks: () => [],
+  supplierId: undefined,
+});
 
 const emit = defineEmits<Emits>();
 
 const { fetchUdc } = useUdc();
 const { uploadDocument } = useDocuments();
-const { createSupplier, uploadSpecialtyBySupplier, fetchAllSuppliers } =
-  useSupplier();
+const {
+  createSupplier,
+  uploadSpecialtyBySupplier,
+  fetchAllSuppliers,
+  updateSupplier,
+} = useSupplier();
+const { createPackage, updatePackage } = usePackage();
+const { createAvailability } = useAvailability();
 const { getToken } = useAuthToken();
 const { getUserInfo } = useUserInfo();
 
@@ -317,14 +396,20 @@ const isLoadingDocumentTypes = ref<boolean>(false);
 const isLoadingMedicalTypes = ref<boolean>(false);
 const isLoadingSpecialties = ref<boolean>(false);
 const isLoadingSubmit = ref<boolean>(false);
+const isLoadingProducts = ref<boolean>(false);
+const isLoadingServices = ref<boolean>(false);
 
 const documentTypeOptions = ref<IUdc[]>([]);
 const medicalTypes = ref<IUdc[]>([]);
 const specialties = ref<IUdc[]>([]);
 const selectedSpecialty = ref<string>("");
+const productosForPreview = ref<Array<{ value: string; label: string }>>([]);
+const servicesData = ref<IUdc[]>([]);
 
 const errorMessage = ref<string>("");
 const currentSupplier = ref<Supplier | null>(null);
+
+const isEditMode = computed(() => props.editMode);
 
 const formData = ref<IRelatedMedicalFormData>({
   documentType: "",
@@ -339,16 +424,38 @@ const formData = ref<IRelatedMedicalFormData>({
 
 const packs = ref<Pack[]>([]);
 
+const specialtiesForPreview = computed(() => {
+  return formData.value.specialties.map((s) => ({
+    value: s.code,
+    label: s.name,
+  }));
+});
+
+const servicesMap = computed(() => {
+  const map: Record<string, string> = {};
+  servicesData.value.forEach((service) => {
+    map[service.code] = service.name;
+  });
+  return map;
+});
+
 const isStep1Complete = computed(() => {
-  return (
+  const baseValidation =
     formData.value.documentType &&
     formData.value.documentNumber &&
     formData.value.fullName &&
-    formData.value.identityDocumentFile &&
     formData.value.medicalCode &&
-    formData.value.validLicenseFile &&
     formData.value.medicalType &&
-    formData.value.specialties.length > 0
+    formData.value.specialties.length > 0;
+
+  if (isEditMode.value) {
+    return baseValidation;
+  }
+
+  return (
+    baseValidation &&
+    formData.value.identityDocumentFile &&
+    formData.value.validLicenseFile
   );
 });
 
@@ -356,7 +463,12 @@ const isStep2Complete = computed(() => {
   return (
     packs.value.length > 0 &&
     packs.value.every(
-      (pack) => pack.name && pack.producto && pack.servicios && pack.precio > 0
+      (pack) =>
+        pack.especialidad &&
+        pack.procedimiento &&
+        pack.producto &&
+        pack.servicios.length > 0 &&
+        pack.precio > 0
     )
   );
 });
@@ -365,6 +477,29 @@ const openModal = () => {
   isOpen.value = true;
   currentStep.value = 1;
   errorMessage.value = "";
+
+  if (isEditMode.value && props.doctorData) {
+    loadDoctorData();
+  }
+
+  if (props.existingPacks && props.existingPacks.length > 0) {
+    packs.value = [...props.existingPacks];
+  }
+};
+
+const loadDoctorData = () => {
+  if (!props.doctorData) return;
+
+  formData.value = {
+    documentType: props.doctorData.documentType || "",
+    documentNumber: props.doctorData.documentNumber || "",
+    fullName: props.doctorData.fullName || "",
+    identityDocumentFile: null,
+    medicalCode: props.doctorData.medicalCode || "",
+    validLicenseFile: null,
+    medicalType: props.doctorData.medicalType || "",
+    specialties: props.doctorData.specialties || [],
+  };
 };
 
 const closeModal = () => {
@@ -394,6 +529,10 @@ const goToStep = (step: number) => {
 const addAnotherDoctor = () => {
   resetForm();
   currentStep.value = 1;
+};
+
+const handlePacksUpdate = (updatedPacks: Pack[]) => {
+  packs.value = updatedPacks;
 };
 
 const addSpecialty = () => {
@@ -551,6 +690,30 @@ const handleCreateSupplier = async (
   return supplierId;
 };
 
+const handleUpdateSupplier = async (
+  supplierId: number,
+  supplier: IRelatedMedicalFormData,
+  token: string
+): Promise<void> => {
+  const payload: Partial<CreateSupplier> = {
+    name: supplier.fullName,
+    medical_type_code: supplier.medicalType,
+    num_medical_enrollment: supplier.medicalCode,
+  };
+
+  console.log("📤 Actualizando supplier con payload:", payload);
+
+  const api = updateSupplier(supplierId, payload, token);
+  await api.request();
+
+  if (api.error.value) {
+    console.error("❌ Error al actualizar supplier:", api.error.value);
+    throw new Error(`Error actualizando médico: ${api.error.value}`);
+  }
+
+  console.log("✅ Supplier actualizado exitosamente");
+};
+
 const handleUploadSpecialtyBySupplier = async (
   supplierId: number,
   supplier: IRelatedMedicalFormData,
@@ -597,28 +760,95 @@ const fetchCurrentSupplier = async (): Promise<string | null> => {
   return null;
 };
 
-const handleSavePacks = async (supplierId: number, token: string) => {
+const handleSavePacks = async (supplierId: number) => {
   console.log("📦 Guardando packs para supplier:", supplierId);
+
+  // Encontrar la especialidad correspondiente del supplier
+  const specialtyId = formData.value.specialties[0]?.id || 0;
 
   for (const pack of packs.value) {
     try {
-      // Aquí necesitarás usar tu API composable para crear packages
-      // const api = createPackage({
-      //   supplier_id: supplierId,
-      //   name: pack.name,
-      //   product_name: pack.producto,
-      //   services_included: pack.servicios,
-      //   price: pack.precio,
-      //   currency: pack.moneda,
-      //   valoration_cost: pack.costoValoracion,
-      //   valoration_currency: pack.monedaValoracion,
-      //   availability: pack.disponibilidad
-      // }, token);
+      // Crear el package
+      const packagePayload = {
+        specialty_id: specialtyId,
+        procedure_code: pack.procedimiento,
+        product_code: pack.producto,
+        discount: 0,
+        services_offer: {
+          ASSESSMENT_DETAILS: pack.servicios,
+        },
+        is_king: 0,
+        observations: "",
+        postoperative_assessments: 0,
+      };
 
-      console.log("✅ Pack guardado:", pack.name);
+      console.log("📦 Creando package:", packagePayload);
+      const packageApi = createPackage(packagePayload);
+      await packageApi.request();
+
+      if (packageApi.error.value) {
+        throw new Error(`Error creando package: ${packageApi.error.value}`);
+      }
+
+      console.log("✅ Package creado exitosamente");
+
+      // Guardar disponibilidad
+      await handleSaveAvailability(supplierId, pack.disponibilidad);
     } catch (error) {
       console.error("❌ Error guardando pack:", error);
       throw error;
+    }
+  }
+};
+
+const handleSaveAvailability = async (
+  supplierId: number,
+  availability: DayAvailability[]
+) => {
+  console.log("📅 Guardando disponibilidad para supplier:", supplierId);
+
+  const weekDays = [
+    "Lunes",
+    "Martes",
+    "Miércoles",
+    "Jueves",
+    "Viernes",
+    "Sábado",
+    "Domingo",
+  ];
+
+  // Asumo que location_id es 1 o se puede obtener de alguna manera
+  const locationId = 1;
+
+  for (let i = 0; i < availability.length; i++) {
+    const day = availability[i];
+    if (!day.active) continue;
+
+    for (const timeSlot of day.timeSlots) {
+      if (!timeSlot.from || !timeSlot.to) continue;
+
+      try {
+        const availabilityPayload = {
+          supplier_id: supplierId,
+          location_id: locationId,
+          weekday: weekDays[i].toUpperCase(),
+          from_hour: timeSlot.from,
+          to_hour: timeSlot.to,
+        };
+
+        console.log("📅 Creando availability:", availabilityPayload);
+        const api = createAvailability(availabilityPayload);
+        await api.request();
+
+        if (api.error.value) {
+          throw new Error(`Error creando availability: ${api.error.value}`);
+        }
+
+        console.log("✅ Availability creada exitosamente");
+      } catch (error) {
+        console.error("❌ Error guardando availability:", error);
+        throw error;
+      }
     }
   }
 };
@@ -630,8 +860,6 @@ const handleSubmit = async () => {
     isLoadingSubmit.value = true;
     errorMessage.value = "";
 
-    console.log("🚀 Iniciando proceso de registro de médico...");
-
     const token = getToken();
     if (!token) {
       throw new Error("No se encontró token de autenticación");
@@ -639,73 +867,104 @@ const handleSubmit = async () => {
 
     console.log("✅ Token obtenido");
 
-    const legalRepresentativeId = await fetchCurrentSupplier();
-    if (!legalRepresentativeId) {
-      throw new Error("No se pudo obtener el representante legal");
+    if (isEditMode.value && props.supplierId) {
+      console.log("🔄 Modo edición - Actualizando médico existente");
+
+      await handleUpdateSupplier(props.supplierId, formData.value, token);
+      await delay(500);
+
+      if (formData.value.specialties.length > 0) {
+        console.log("🏥 Actualizando especialidades...");
+        await handleUploadSpecialtyBySupplier(
+          props.supplierId,
+          formData.value,
+          token
+        );
+      }
+
+      await delay(500);
+
+      if (packs.value.length > 0) {
+        console.log("📦 Actualizando packs...");
+        await handleSavePacks(props.supplierId);
+      }
+
+      console.log("🎉 ¡Médico actualizado exitosamente!");
+      emit("doctor-updated");
+    } else {
+      console.log("🚀 Modo creación - Registrando nuevo médico");
+
+      const legalRepresentativeId = await fetchCurrentSupplier();
+      if (!legalRepresentativeId) {
+        throw new Error("No se pudo obtener el representante legal");
+      }
+
+      await delay(500);
+
+      console.log("📄 Subiendo documento de identidad...");
+      if (!formData.value.identityDocumentFile) {
+        throw new Error("Documento de identidad requerido");
+      }
+
+      const codeCardIdFile = await handleUploadFile(
+        formData.value.identityDocumentFile,
+        "PERSONAL_DOCUMENT",
+        5
+      );
+
+      await delay(500);
+
+      console.log("📄 Subiendo licencia médica...");
+      if (!formData.value.validLicenseFile) {
+        throw new Error("Licencia médica requerida");
+      }
+
+      const codeMedicalLicenseFile = await handleUploadFile(
+        formData.value.validLicenseFile,
+        "PERSONAL_DOCUMENT",
+        5
+      );
+
+      await delay(500);
+
+      console.log("👨‍⚕️ Creando médico (supplier)...");
+      const supplierId = await handleCreateSupplier(
+        formData.value,
+        legalRepresentativeId,
+        codeCardIdFile,
+        codeMedicalLicenseFile,
+        token
+      );
+
+      await delay(500);
+
+      if (formData.value.specialties.length > 0) {
+        console.log("🏥 Asociando especialidades...");
+        await handleUploadSpecialtyBySupplier(
+          supplierId,
+          formData.value,
+          token
+        );
+      }
+
+      await delay(500);
+
+      if (packs.value.length > 0) {
+        console.log("📦 Guardando packs...");
+        await handleSavePacks(supplierId);
+      }
+
+      console.log("🎉 ¡Médico registrado exitosamente con sus packs!");
+      emit("doctor-added");
     }
-
-    await delay(500);
-
-    console.log("📄 Paso 2: Subiendo documento de identidad...");
-    if (!formData.value.identityDocumentFile) {
-      throw new Error("Documento de identidad requerido");
-    }
-
-    const codeCardIdFile = await handleUploadFile(
-      formData.value.identityDocumentFile,
-      "PERSONAL_DOCUMENT",
-      5
-    );
-
-    await delay(500);
-
-    console.log("📄 Paso 3: Subiendo licencia médica...");
-    if (!formData.value.validLicenseFile) {
-      throw new Error("Licencia médica requerida");
-    }
-
-    const codeMedicalLicenseFile = await handleUploadFile(
-      formData.value.validLicenseFile,
-      "PERSONAL_DOCUMENT",
-      5
-    );
-
-    await delay(500);
-
-    console.log("👨‍⚕️ Paso 4: Creando médico (supplier)...");
-    const supplierId = await handleCreateSupplier(
-      formData.value,
-      legalRepresentativeId,
-      codeCardIdFile,
-      codeMedicalLicenseFile,
-      token
-    );
-
-    await delay(500);
-
-    if (formData.value.specialties.length > 0) {
-      console.log("🏥 Paso 5: Asociando especialidades...");
-      await handleUploadSpecialtyBySupplier(supplierId, formData.value, token);
-    }
-
-    await delay(500);
-
-    if (packs.value.length > 0) {
-      console.log("📦 Paso 6: Guardando packs...");
-      await handleSavePacks(supplierId, token);
-    }
-
-    console.log("🎉 ¡Médico registrado exitosamente con sus packs!");
-
-    emit("doctor-added");
 
     currentStep.value = 3;
   } catch (error) {
-    console.error("❌ Error en el proceso de registro:", error);
+    console.error("❌ Error en el proceso:", error);
     errorMessage.value =
       error instanceof Error
         ? error.message
-        : "Error al guardar el médico. Por favor, intenta nuevamente.";
+        : "Error al procesar la solicitud. Por favor, intenta nuevamente.";
   } finally {
     isLoadingSubmit.value = false;
   }
@@ -759,8 +1018,51 @@ const loadSpecialties = async () => {
   }
 };
 
+const loadProducts = async () => {
+  try {
+    isLoadingProducts.value = true;
+    const api = fetchUdc("MEDICAL_PRODUCT", {}, { authRequired: false });
+    await api.request();
+    const response = api.response.value;
+
+    if (response && response.data) {
+      productosForPreview.value = response.data.map((item: any) => ({
+        value: item.code,
+        label: item.name,
+      }));
+    }
+  } catch (error) {
+    console.error("Error loading products:", error);
+  } finally {
+    isLoadingProducts.value = false;
+  }
+};
+
+const loadServices = async () => {
+  try {
+    isLoadingServices.value = true;
+    const api = fetchUdc("ASSESSMENT_DETAIL", {}, { authRequired: false });
+    await api.request();
+    const response = api.response.value;
+
+    if (response && response.data) {
+      servicesData.value = response.data;
+    }
+  } catch (error) {
+    console.error("Error loading services:", error);
+  } finally {
+    isLoadingServices.value = false;
+  }
+};
+
 onMounted(async () => {
-  await Promise.all([loadIdType(), loadSpecialties(), loadMedicalTypes()]);
+  await Promise.all([
+    loadIdType(),
+    loadSpecialties(),
+    loadMedicalTypes(),
+    loadProducts(),
+    loadServices(),
+  ]);
 });
 </script>
 
@@ -781,6 +1083,42 @@ onMounted(async () => {
 
 .step-content {
   padding: 1.25rem 0;
+
+  &--with-preview {
+    display: grid;
+    grid-template-columns: 1fr 350px;
+    gap: 2rem;
+    align-items: start;
+
+    @media (max-width: 1024px) {
+      grid-template-columns: 1fr;
+    }
+  }
+}
+
+.packs-section {
+  flex: 1;
+}
+
+.preview-section {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  position: sticky; // MOVER sticky aquí
+  top: 1.5rem;
+  height: fit-content;
+  max-height: calc(100vh - 3rem);
+  overflow-y: auto; // Permitir scroll interno
+
+  // Estilos del scrollbar
+  &::-webkit-scrollbar {
+    width: 0.5rem;
+  }
+
+  &::-webkit-scrollbar-thumb {
+    background: #cbd5e1;
+    border-radius: 0.25rem;
+  }
 }
 
 .doctor-form {

@@ -1,8 +1,7 @@
 <script lang="ts" setup>
-import MedicosModalesEditarMedicoRelacionado from "@/components/medicos/modales/editar-medico-relacionado.vue";
-import { useSupplier } from "@/composables/api";
+import type { TableColumn } from "@/components/ui/appointment-table-base.vue";
+import { usePackage, useSupplier } from "@/composables/api";
 import type { IRelatedMedicalFormData, Supplier } from "@/types";
-import { onClickOutside } from "@vueuse/core";
 import { jwtDecode } from "jwt-decode";
 
 definePageMeta({
@@ -18,16 +17,14 @@ interface Doctor extends IRelatedMedicalFormData {
   createdAt?: string;
 }
 
-type SortOption = "name" | "medicalCode" | "createdAt";
-
 const { getToken } = useAuthToken();
 const { fetchAllSuppliers, fetchSpecialtyBySupplier, deleteSupplier } =
   useSupplier();
+const { fetchPackagesBySupplierId } = usePackage();
 
 const decodedToken = jwtDecode<DecodedToken>(getToken()!);
 
-const showSort = ref(false);
-const sortDropdownRef = ref<HTMLElement | null>(null);
+const editModalRef = ref<any>(null);
 
 const isLoading = ref(false);
 const errorMessage = ref<string | null>(null);
@@ -40,16 +37,44 @@ const isDeleting = ref(false);
 const showDeleteModal = ref(false);
 const doctorToDelete = ref<Doctor | null>(null);
 
-const editModalRef = ref<InstanceType<
-  typeof MedicosModalesEditarMedicoRelacionado
-> | null>(null);
+const isEditModalOpen = ref(false);
+const doctorToEdit = ref<Doctor | null>(null);
+const editDoctorPacks = ref<any[]>([]);
 
-const sortBy = ref<SortOption>("name");
-const sortDirection = ref<"asc" | "desc">("asc");
-
-onClickOutside(sortDropdownRef, () => {
-  showSort.value = false;
-});
+const columns: TableColumn[] = [
+  {
+    key: "fullName",
+    label: "Nombre completo",
+    sortable: true,
+  },
+  {
+    key: "medicalCode",
+    label: "Código médico",
+    sortable: true,
+  },
+  {
+    key: "documentNumber",
+    label: "Documento",
+    sortable: true,
+  },
+  {
+    key: "medicalType",
+    label: "Tipo",
+    sortable: true,
+  },
+  {
+    key: "specialties",
+    label: "Especialidades",
+    sortable: false,
+  },
+  {
+    key: "actions",
+    label: "Acciones",
+    sortable: false,
+    headerClass: "appointment-table-base__header-cell--right",
+    cellClass: "appointment-table-base__cell--actions",
+  },
+];
 
 const fetchSupplierId = async (): Promise<number | null> => {
   const api = fetchAllSuppliers();
@@ -125,56 +150,50 @@ const loadRelatedDoctors = async (): Promise<void> => {
 };
 
 const filteredDoctors = computed(() => {
-  let list = [...relatedDoctors.value];
-
-  if (searchQuery.value) {
-    const q = searchQuery.value.toLowerCase();
-    list = list.filter(
-      (d) =>
-        d.fullName.toLowerCase().includes(q) ||
-        d.medicalCode.toLowerCase().includes(q) ||
-        d.documentNumber.toLowerCase().includes(q)
-    );
+  if (!searchQuery.value) {
+    return relatedDoctors.value;
   }
 
-  list.sort((a, b) => {
-    let result = 0;
-
-    switch (sortBy.value) {
-      case "name":
-        result = a.fullName.localeCompare(b.fullName);
-        break;
-      case "medicalCode":
-        result = a.medicalCode.localeCompare(b.medicalCode);
-        break;
-      case "createdAt":
-        result =
-          new Date(a.createdAt || 0).getTime() -
-          new Date(b.createdAt || 0).getTime();
-        break;
-    }
-
-    return sortDirection.value === "asc" ? result : -result;
-  });
-
-  return list;
+  const q = searchQuery.value.toLowerCase();
+  return relatedDoctors.value.filter(
+    (d) =>
+      d.fullName.toLowerCase().includes(q) ||
+      d.medicalCode.toLowerCase().includes(q) ||
+      d.documentNumber.toLowerCase().includes(q)
+  );
 });
 
-const setSort = (field: SortOption) => {
-  if (sortBy.value === field) {
-    sortDirection.value = sortDirection.value === "asc" ? "desc" : "asc";
-  } else {
-    sortBy.value = field;
-    sortDirection.value = "asc";
+const handleEditDoctor = async (doctor: Doctor) => {
+  try {
+    console.log("✏️ Editando médico:", doctor);
+    const packagesApi = fetchPackagesBySupplierId(doctor.id);
+    await packagesApi.request();
+    const packages = packagesApi.response.value?.data || [];
+
+    editDoctorPacks.value = packages.map((pkg: any) => ({
+      especialidad: pkg.specialty?.code || "",
+      procedimiento: pkg.procedure?.code || "",
+      producto: pkg.product?.code || "",
+      servicios: pkg.services_offer?.ASSESSMENT_DETAILS || [],
+      precio: parseFloat(pkg.product?.value1 || "0"),
+      disponibilidad: [],
+    }));
+
+    doctorToEdit.value = doctor;
+
+    nextTick(() => {
+      editModalRef.value?.openModal();
+    });
+  } catch (error) {
+    console.error("❌ Error cargando datos del médico:", error);
+    errorMessage.value = "Error al cargar los datos del médico";
   }
-  showSort.value = false;
 };
 
 const handleDoctorAdded = async () => loadRelatedDoctors();
-const handleDoctorUpdated = async () => loadRelatedDoctors();
-
-const handleEditDoctor = (doctor: Doctor) => {
-  editModalRef.value?.openModal(doctor);
+const handleDoctorUpdated = async () => {
+  isEditModalOpen.value = false;
+  await loadRelatedDoctors();
 };
 
 const confirmDeleteDoctor = (doctor: Doctor) => {
@@ -220,6 +239,13 @@ onMounted(async () => {
   <NuxtLayout name="medicos-dashboard">
     <div class="doctors__header">
       <UiHeaderBreadcrumb title="Mis médicos" />
+    </div>
+
+    <div class="doctors__controls">
+      <UiSearchInput
+        v-model="searchQuery"
+        placeholder="Buscar médico por nombre, código o documento"
+      />
 
       <MedicosModalesAgregarMedicoRelacionado @doctor-added="handleDoctorAdded">
         <template #trigger="{ open }">
@@ -231,45 +257,6 @@ onMounted(async () => {
       </MedicosModalesAgregarMedicoRelacionado>
     </div>
 
-    <div class="doctors__controls">
-      <UiSearchInput
-        v-model="searchQuery"
-        placeholder="Buscar médico por nombre, código o documento"
-      />
-
-      <div ref="sortDropdownRef" class="doctors__sort-dropdown">
-        <button
-          class="doctors__sort-button"
-          type="button"
-          @click="showSort = !showSort"
-        >
-          Ordenar por
-          <AtomsIconsChevronDown size="18" />
-        </button>
-
-        <ul v-if="showSort" class="doctors__sort-menu">
-          <li>
-            <a class="doctors__sort-item" @click.prevent="setSort('name')">
-              Nombre
-            </a>
-          </li>
-          <li>
-            <a
-              class="doctors__sort-item"
-              @click.prevent="setSort('medicalCode')"
-            >
-              Código médico
-            </a>
-          </li>
-          <li>
-            <a class="doctors__sort-item" @click.prevent="setSort('createdAt')">
-              Fecha de registro
-            </a>
-          </li>
-        </ul>
-      </div>
-    </div>
-
     <WebsitePerfilDoctorPantallaCarga v-if="isLoading" />
 
     <div v-else-if="errorMessage" class="doctors__error">
@@ -277,109 +264,96 @@ onMounted(async () => {
       <p>{{ errorMessage }}</p>
     </div>
 
-    <div v-else-if="filteredDoctors.length > 0" class="doctors__table-wrapper">
-      <table class="doctors__table">
-        <thead class="doctors__table-head">
-          <tr>
-            <th>Nombre completo</th>
-            <th>Código médico</th>
-            <th>Documento</th>
-            <th>Tipo</th>
-            <th>Especialidades</th>
-            <th class="doctors__table-header--actions">Acciones</th>
-          </tr>
-        </thead>
+    <UiAppointmentTableBase
+      v-else
+      :items="filteredDoctors"
+      :columns="columns"
+      title="Lista de médicos relacionados"
+      aria-label="Tabla de médicos relacionados"
+      :items-per-page="10"
+      default-sort-column="fullName"
+      default-sort-direction="asc"
+      empty-state-title="No hay médicos registrados"
+      empty-state-description="Agrega médicos relacionados para gestionar tus servicios."
+      empty-state-action="Agregar primer médico"
+      @empty-action="() => {}"
+    >
+      <template #cell-fullName="{ value }">
+        <strong class="doctors__table-name">{{ value }}</strong>
+      </template>
 
-        <tbody class="doctors__table-body">
-          <tr
-            v-for="doctor in filteredDoctors"
-            :key="doctor.id"
-            class="doctors__table-row"
+      <template #cell-medicalCode="{ value }">
+        <span class="doctors__code">{{ value }}</span>
+      </template>
+
+      <template #cell-documentNumber="{ item }">
+        <div class="doctors__document">
+          <span class="doctors__document-type">{{ item.documentType }}</span>
+          <span class="doctors__document-number">{{
+            item.documentNumber
+          }}</span>
+        </div>
+      </template>
+
+      <template #cell-medicalType="{ value }">
+        <span class="doctors__type-badge">{{ value }}</span>
+      </template>
+
+      <template #cell-specialties="{ item }">
+        <div class="doctors__specialties">
+          <span
+            v-for="spec in item.specialties"
+            :key="spec.code"
+            class="doctors__specialty-badge"
           >
-            <td>
-              <strong class="doctors__table-name">{{ doctor.fullName }}</strong>
-            </td>
+            {{ spec.name }}
+          </span>
+        </div>
+      </template>
 
-            <td>
-              <span class="doctors__code">
-                {{ doctor.medicalCode }}
-              </span>
-            </td>
+      <template #cell-actions="{ item }">
+        <div class="doctors__actions">
+          <button
+            class="doctors__action-button doctors__action-button--edit"
+            @click="handleEditDoctor(item)"
+            title="Editar médico"
+          >
+            <AtomsIconsEditPencilIcon size="18" />
+          </button>
 
-            <td>
-              <div class="doctors__document">
-                <span class="doctors__document-type">
-                  {{ doctor.documentType }}
-                </span>
-                <span class="doctors__document-number">
-                  {{ doctor.documentNumber }}
-                </span>
-              </div>
-            </td>
+          <button
+            class="doctors__action-button doctors__action-button--delete"
+            @click="confirmDeleteDoctor(item)"
+            title="Eliminar médico"
+          >
+            <AtomsIconsTrashIcon size="18" />
+          </button>
+        </div>
+      </template>
 
-            <td>
-              <span class="doctors__type-badge">
-                {{ doctor.medicalType }}
-              </span>
-            </td>
+      <template #empty-state>
+        <div class="doctors__empty-state">
+          <AtomsIconsUserIcon size="48" class="doctors__empty-icon" />
+          <h3 class="doctors__empty-title">No hay médicos registrados</h3>
+          <p class="doctors__empty-text">
+            Agrega médicos relacionados para gestionar tus servicios.
+          </p>
 
-            <td>
-              <div class="doctors__specialties">
-                <span
-                  v-for="spec in doctor.specialties"
-                  :key="spec.code"
-                  class="doctors__specialty-badge"
-                >
-                  {{ spec.name }}
-                </span>
-              </div>
-            </td>
+          <MedicosModalesAgregarMedicoRelacionado
+            @doctor-added="handleDoctorAdded"
+          >
+            <template #trigger="{ open }">
+              <button class="doctors__empty-button" @click="open">
+                <AtomsIconsPlusIcon size="20" />
+                Agregar primer médico
+              </button>
+            </template>
+          </MedicosModalesAgregarMedicoRelacionado>
+        </div>
+      </template>
+    </UiAppointmentTableBase>
 
-            <td class="doctors__table-cell--actions">
-              <div class="doctors__actions">
-                <button
-                  class="doctors__action-button doctors__action-button--edit"
-                  @click="handleEditDoctor(doctor)"
-                  title="Editar médico"
-                >
-                  <AtomsIconsEditPencilIcon size="18" />
-                </button>
-
-                <button
-                  class="doctors__action-button doctors__action-button--delete"
-                  @click="confirmDeleteDoctor(doctor)"
-                  title="Eliminar médico"
-                >
-                  <AtomsIconsTrashIcon size="18" />
-                </button>
-              </div>
-            </td>
-          </tr>
-        </tbody>
-      </table>
-    </div>
-
-    <div v-else class="doctors__empty">
-      <div class="doctors__empty-state">
-        <AtomsIconsUserIcon size="48" class="doctors__empty-icon" />
-        <h3 class="doctors__empty-title">No hay médicos registrados</h3>
-        <p class="doctors__empty-text">
-          Agrega médicos relacionados para gestionar tus servicios.
-        </p>
-
-        <MedicosModalesAgregarMedicoRelacionado
-          @doctor-added="handleDoctorAdded"
-        >
-          <template #trigger="{ open }">
-            <button class="doctors__empty-button" @click="open">
-              <AtomsIconsPlusIcon size="20" />
-              Agregar primer médico
-            </button>
-          </template>
-        </MedicosModalesAgregarMedicoRelacionado>
-      </div>
-    </div>
-
+    <!-- Modal de confirmación de eliminación -->
     <AtomsModalBase
       :is-open="showDeleteModal"
       size="small"
@@ -412,34 +386,25 @@ onMounted(async () => {
       </template>
     </AtomsModalBase>
 
-    <MedicosModalesEditarMedicoRelacionado
-      ref="editModalRef"
-      :doctor="null"
+    <!-- Modal de edición usando el mismo componente -->
+    <MedicosModalesAgregarMedicoRelacionado
+      v-if="isEditModalOpen && doctorToEdit"
+      :edit-mode="true"
+      :doctor-data="doctorToEdit"
+      :existing-packs="editDoctorPacks"
+      :supplier-id="doctorToEdit.id"
       @doctor-updated="handleDoctorUpdated"
-    />
+    >
+      <template #trigger="{ open }">
+        <!-- El modal se abre programáticamente -->
+      </template>
+    </MedicosModalesAgregarMedicoRelacionado>
   </NuxtLayout>
 </template>
 
 <style lang="scss" scoped>
 .doctors__header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
   margin-bottom: $spacing-lg;
-  gap: $spacing-md;
-
-  @include respond-to-max(sm) {
-    flex-direction: column;
-    align-items: stretch;
-  }
-}
-
-.doctors__button--primary {
-  @include primary-button;
-
-  @include respond-to-max(sm) {
-    width: 100%;
-  }
 }
 
 .doctors__controls {
@@ -455,129 +420,12 @@ onMounted(async () => {
   }
 }
 
-.doctors__sort-dropdown {
-  position: relative;
-}
-
-.doctors__sort-button {
-  @include outline-button;
-  gap: $spacing-sm;
+.doctors__button--primary {
+  @include primary-button;
   white-space: nowrap;
 
   @include respond-to-max(md) {
     width: 100%;
-  }
-}
-
-.doctors__sort-arrow {
-  font-size: 16px;
-  color: $color-text-muted;
-}
-
-.doctors__sort-menu {
-  position: absolute;
-  top: calc(100% + $spacing-sm);
-  right: 0;
-  min-width: 200px;
-  background-color: $white;
-  border: 1px solid #e5e7eb;
-  border-radius: $border-radius-md;
-  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
-  padding: $spacing-sm 0;
-  list-style: none;
-  z-index: 50;
-  animation: fadeInDown 0.2s ease;
-
-  @include respond-to-max(md) {
-    left: 0;
-    right: 0;
-  }
-}
-
-@keyframes fadeInDown {
-  from {
-    opacity: 0;
-    transform: translateY(-8px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-.doctors__sort-item {
-  @include link-base;
-  display: block;
-  padding: 10px 16px;
-  font-size: 14px;
-  color: $color-foreground;
-  cursor: pointer;
-  transition: background-color 0.15s ease;
-
-  &:hover {
-    background-color: #f3f4f6;
-  }
-
-  &:active {
-    background-color: #e5e7eb;
-  }
-}
-
-.doctors__table-wrapper {
-  background-color: $white;
-  border-radius: $border-radius-md;
-  border: 1px solid #e5e7eb;
-  overflow: hidden;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
-}
-
-.doctors__table {
-  width: 100%;
-  border-collapse: collapse;
-  font-size: 14px;
-  font-family: $font-family-main;
-}
-
-.doctors__table-head {
-  background-color: #f9fafb;
-  border-bottom: 1px solid #e5e7eb;
-
-  th {
-    color: $color-text-secondary;
-    font-weight: 600;
-    text-align: left;
-    padding: $spacing-md;
-    white-space: nowrap;
-    font-size: 13px;
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-  }
-}
-
-.doctors__table-header--actions {
-  text-align: right;
-}
-
-.doctors__table-body {
-  tr {
-    transition: background-color 0.15s ease;
-  }
-}
-
-.doctors__table-row {
-  border-bottom: 1px solid #f3f4f6;
-
-  &:last-child {
-    border-bottom: none;
-  }
-
-  &:hover {
-    background-color: #f9fafb;
-  }
-
-  td {
-    padding: $spacing-md;
-    vertical-align: middle;
   }
 }
 
@@ -638,13 +486,10 @@ onMounted(async () => {
   font-weight: 500;
 }
 
-.doctors__table-cell--actions {
-  text-align: right;
-}
-
 .doctors__actions {
   display: inline-flex;
   gap: $spacing-sm;
+  justify-content: flex-end;
 }
 
 .doctors__action-button {
@@ -687,16 +532,9 @@ onMounted(async () => {
   }
 }
 
-.doctors__empty {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  padding: 80px 20px;
-}
-
 .doctors__empty-state {
   text-align: center;
-  max-width: 480px;
+  padding: 40px 20px;
 }
 
 .doctors__empty-icon {
@@ -753,16 +591,6 @@ onMounted(async () => {
   }
 }
 
-@include respond-to-max(lg) {
-  .doctors__table-wrapper {
-    overflow-x: auto;
-  }
-
-  .doctors__table {
-    min-width: 800px;
-  }
-}
-
 @include respond-to-max(sm) {
   .doctors__header {
     margin-bottom: 20px;
@@ -770,15 +598,6 @@ onMounted(async () => {
 
   .doctors__controls {
     margin-bottom: 20px;
-  }
-
-  .doctors__table-head th {
-    padding: 12px;
-    font-size: 12px;
-  }
-
-  .doctors__table-row td {
-    padding: 12px;
   }
 }
 </style>

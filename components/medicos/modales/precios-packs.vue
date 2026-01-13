@@ -24,86 +24,118 @@
       </div>
 
       <div class="packs-config__field">
-        <label class="packs-config__label">Nombre del pack</label>
+        <label class="packs-config__label">Especialidad médica</label>
+        <UiDropdownBase
+          v-model="pack.especialidad"
+          :loading="isLoadingSpecialties"
+          :items="specialtiesForDropdown"
+          placeholder="Seleccione una especialidad"
+          searchable
+          clearable
+        />
+      </div>
+
+      <div class="packs-config__field">
+        <label class="packs-config__label">Nombre del procedimiento</label>
         <input
           type="text"
           class="packs-config__input"
-          v-model="pack.name"
-          placeholder="Ej: Pack Premium, Pack Básico"
+          v-model="pack.procedimiento"
+          placeholder="Ej: Rinoplastia, Liposucción, etc."
         />
       </div>
 
       <div class="packs-config__field">
         <label class="packs-config__label">Producto</label>
-        <input
-          type="text"
-          class="packs-config__input"
+        <UiDropdownBase
           v-model="pack.producto"
-          placeholder="Nombre del producto o procedimiento"
+          :loading="isLoadingProducts"
+          :items="productos"
+          placeholder="Seleccione un producto"
+          searchable
+          clearable
         />
       </div>
 
       <div class="packs-config__field">
         <label class="packs-config__label">Servicios incluidos</label>
-        <textarea
-          rows="3"
-          class="packs-config__textarea"
-          v-model="pack.servicios"
-          placeholder="Ej: Consulta inicial, valoración, seguimiento post-operatorio"
-        ></textarea>
+        <p class="packs-config__field-description">
+          Selecciona los servicios que incluye este pack
+        </p>
+        <div class="packs-config__services-selector">
+          <UiDropdownBase
+            v-model="selectedService"
+            :loading="isLoadingServices"
+            :items="availableServices"
+            placeholder="Seleccione un servicio"
+            searchable
+          />
+          <button
+            type="button"
+            class="packs-config__add-service-button"
+            :disabled="
+              !selectedService || pack.servicios.includes(selectedService)
+            "
+            @click="addService(pack, selectedService)"
+          >
+            Agregar
+          </button>
+        </div>
+
+        <div
+          v-if="pack.servicios.length > 0"
+          class="packs-config__services-list"
+        >
+          <div
+            v-for="(serviceCode, serviceIdx) in pack.servicios"
+            :key="serviceIdx"
+            class="packs-config__service-item"
+          >
+            <span class="packs-config__service-name">
+              {{ getServiceName(serviceCode) }}
+            </span>
+            <button
+              type="button"
+              class="packs-config__service-remove"
+              @click="removeService(pack, serviceIdx)"
+              title="Eliminar servicio"
+            >
+              <AtomsIconsXIcon size="16" />
+            </button>
+          </div>
+        </div>
       </div>
 
       <div class="packs-config__field">
         <label class="packs-config__label">Precio del pack</label>
         <div class="packs-config__price-group">
           <span class="packs-config__price-label">Desde</span>
-          <div class="packs-config__price-inputs">
+          <div class="packs-config__price-input-wrapper">
+            <span class="packs-config__currency-symbol">₡</span>
             <input
               type="number"
               v-model.number="pack.precio"
               placeholder="0.00"
               min="0"
-              step="0.01"
-              class="packs-config__price-input"
+              step="1000"
+              class="packs-config__price-input packs-config__price-input--with-symbol"
             />
-            <select class="packs-config__currency-select" v-model="pack.moneda">
-              <option
-                v-for="currency in currencies"
-                :key="currency.code"
-                :value="currency.code"
-              >
-                {{ currency.code }}
-              </option>
-            </select>
           </div>
         </div>
       </div>
 
       <div class="packs-config__field">
-        <label class="packs-config__label">
-          Costo de cita de valoración (opcional)
-        </label>
-        <div class="packs-config__price-inputs">
-          <input
-            type="number"
-            v-model.number="pack.costoValoracion"
-            placeholder="0.00"
-            min="0"
-            step="0.01"
-            class="packs-config__price-input"
-          />
-          <select
-            class="packs-config__currency-select"
-            v-model="pack.monedaValoracion"
-          >
-            <option
-              v-for="currency in currencies"
-              :key="currency.code"
-              :value="currency.code"
-            >
-              {{ currency.code }}
-            </option>
-          </select>
+        <label class="packs-config__label"> Costo de cita de valoración </label>
+        <div class="packs-config__valoracion-info">
+          <div class="packs-config__price-display">
+            <span class="packs-config__currency-symbol">₡</span>
+            <span class="packs-config__valoracion-price">{{
+              VALORACION_COST.toLocaleString("es-CR")
+            }}</span>
+          </div>
+          <p class="packs-config__valoracion-note">
+            Costo fijo para todas las citas de valoración
+          </p>
         </div>
       </div>
 
@@ -195,6 +227,9 @@
 </template>
 
 <script lang="ts" setup>
+import { useUdc } from "@/composables/api";
+import type { IUdc } from "@/types";
+
 interface TimeSlot {
   from: string;
   to: string;
@@ -206,23 +241,17 @@ interface DayAvailability {
 }
 
 interface Pack {
-  name: string;
+  especialidad: string;
+  procedimiento: string;
   producto: string;
-  servicios: string;
+  servicios: string[];
   precio: number;
-  moneda: string;
-  costoValoracion: number;
-  monedaValoracion: string;
   disponibilidad: DayAvailability[];
-}
-
-interface Currency {
-  code: string;
-  symbol: string;
 }
 
 interface Props {
   modelValue?: Pack[];
+  availableSpecialties?: Array<{ code: string; name: string }>;
 }
 
 interface Emits {
@@ -231,9 +260,22 @@ interface Emits {
 
 const props = withDefaults(defineProps<Props>(), {
   modelValue: () => [],
+  availableSpecialties: () => [],
 });
 
 const emit = defineEmits<Emits>();
+
+const { fetchUdc } = useUdc();
+
+const VALORACION_COST = 25000; // Costo fijo de valoración en colones
+
+const isLoadingProducts = ref<boolean>(false);
+const isLoadingServices = ref<boolean>(false);
+const isLoadingSpecialties = ref<boolean>(false);
+
+const productos = ref<Array<{ value: string; label: string }>>([]);
+const services = ref<IUdc[]>([]);
+const selectedService = ref<string>("");
 
 const weekDays = [
   "Lunes",
@@ -245,21 +287,26 @@ const weekDays = [
   "Domingo",
 ];
 
-const currencies: Currency[] = [
-  { code: "CRC", symbol: "₡" },
-  { code: "USD", symbol: "$" },
-  { code: "EUR", symbol: "€" },
-  { code: "GBP", symbol: "£" },
-];
+const specialtiesForDropdown = computed(() => {
+  return props.availableSpecialties.map((s) => ({
+    value: s.code,
+    label: s.name,
+  }));
+});
+
+const availableServices = computed(() => {
+  return services.value.map((s) => ({
+    value: s.code,
+    label: s.name,
+  }));
+});
 
 const createEmptyPack = (): Pack => ({
-  name: "",
+  especialidad: "",
+  procedimiento: "",
   producto: "",
-  servicios: "",
+  servicios: [],
   precio: 0,
-  moneda: "USD",
-  costoValoracion: 0,
-  monedaValoracion: "USD",
   disponibilidad: weekDays.map(() => ({
     active: false,
     timeSlots: [{ from: "", to: "" }],
@@ -269,6 +316,59 @@ const createEmptyPack = (): Pack => ({
 const internalPacks = ref<Pack[]>(
   props.modelValue.length > 0 ? [...props.modelValue] : [createEmptyPack()]
 );
+
+const getServiceName = (code: string): string => {
+  const service = services.value.find((s) => s.code === code);
+  return service?.name || code;
+};
+
+const addService = (pack: Pack, serviceCode: string): void => {
+  if (serviceCode && !pack.servicios.includes(serviceCode)) {
+    pack.servicios.push(serviceCode);
+    selectedService.value = "";
+  }
+};
+
+const removeService = (pack: Pack, index: number): void => {
+  pack.servicios.splice(index, 1);
+};
+
+const loadProducts = async () => {
+  try {
+    isLoadingProducts.value = true;
+    const api = fetchUdc("MEDICAL_PRODUCT", {}, { authRequired: false });
+    await api.request();
+    const response = api.response.value;
+
+    if (response && response.data) {
+      productos.value = response.data.map((item: any) => ({
+        value: item.code,
+        label: item.name,
+      }));
+    }
+  } catch (error) {
+    console.error("Error loading products:", error);
+  } finally {
+    isLoadingProducts.value = false;
+  }
+};
+
+const loadServices = async () => {
+  try {
+    isLoadingServices.value = true;
+    const api = fetchUdc("ASSESSMENT_DETAIL", {}, { authRequired: false });
+    await api.request();
+    const response = api.response.value;
+
+    if (response && response.data) {
+      services.value = response.data;
+    }
+  } catch (error) {
+    console.error("Error loading services:", error);
+  } finally {
+    isLoadingServices.value = false;
+  }
+};
 
 watch(
   internalPacks,
@@ -307,6 +407,10 @@ const removeTimeSlot = (timeSlots: TimeSlot[], index: number): void => {
     timeSlots.splice(index, 1);
   }
 };
+
+onMounted(async () => {
+  await Promise.all([loadProducts(), loadServices()]);
+});
 </script>
 
 <style lang="scss" scoped>
@@ -369,6 +473,14 @@ const removeTimeSlot = (timeSlots: TimeSlot[], index: number): void => {
     @include space-y(0.5rem);
   }
 
+  &__field-description {
+    @include text-base;
+    font-size: 0.75rem;
+    color: $color-text-muted;
+    margin: 0;
+    font-style: italic;
+  }
+
   &__label {
     @include label-base;
     font-weight: 600;
@@ -387,6 +499,7 @@ const removeTimeSlot = (timeSlots: TimeSlot[], index: number): void => {
     width: 100%;
     resize: vertical;
     font-family: inherit;
+    min-height: 100px;
   }
 
   &__price-group {
@@ -408,16 +521,137 @@ const removeTimeSlot = (timeSlots: TimeSlot[], index: number): void => {
     flex: 1;
   }
 
-  &__price-input {
-    @include input-base;
+  &__price-input-wrapper {
+    position: relative;
     flex: 1;
-    max-width: 12rem;
+    max-width: 16rem;
   }
 
-  &__currency-select {
-    @include input-base;
-    width: 6.25rem;
-    cursor: pointer;
+  &__currency-symbol {
+    position: absolute;
+    left: 1rem;
+    top: 50%;
+    transform: translateY(-50%);
+    font-weight: 600;
+    font-size: 1rem;
+    color: #344054;
+    pointer-events: none;
+  }
+
+  &__price-input--with-symbol {
+    padding-left: 2.5rem;
+  }
+
+  &__valoracion-info {
+    background-color: #f0f9ff;
+    border: 1px solid #bae6fd;
+    border-radius: 0.5rem;
+    padding: 1rem;
+    @include space-y(0.5rem);
+  }
+
+  &__price-display {
+    display: flex;
+    align-items: baseline;
+    gap: 0.5rem;
+
+    .packs-config__currency-symbol {
+      position: static;
+      transform: none;
+      font-size: 1.25rem;
+      color: #0cadbb;
+    }
+  }
+
+  &__valoracion-price {
+    font-weight: 700;
+    font-size: 1.5rem;
+    color: #0cadbb;
+  }
+
+  &__valoracion-note {
+    @include text-base;
+    font-size: 0.875rem;
+    color: #0369a1;
+    margin: 0;
+    font-style: italic;
+  }
+
+  &__services-selector {
+    display: flex;
+    gap: 0.5rem;
+    margin-bottom: 0.75rem;
+  }
+
+  &__add-service-button {
+    @include button-base;
+    background-color: #7f56d9;
+    color: white;
+    border: none;
+    padding: 0.625rem 1rem;
+    border-radius: 0.5rem;
+    font-size: 0.875rem;
+    font-weight: 500;
+    white-space: nowrap;
+
+    &:hover:not(:disabled) {
+      background-color: #6941c6;
+    }
+
+    &:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+  }
+
+  &__services-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    background-color: #f9fafb;
+    border: 1px solid #e4e7ec;
+    border-radius: 0.5rem;
+    padding: 0.75rem;
+    max-height: 200px;
+    overflow-y: auto;
+  }
+
+  &__service-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background-color: white;
+    border: 1px solid #e4e7ec;
+    border-radius: 0.375rem;
+    padding: 0.5rem 0.75rem;
+    transition: all 0.2s;
+
+    &:hover {
+      border-color: #d0d5dd;
+      box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+    }
+  }
+
+  &__service-name {
+    @include text-base;
+    font-size: 0.875rem;
+    color: #344054;
+    flex: 1;
+  }
+
+  &__service-remove {
+    @include button-base;
+    background: none;
+    border: none;
+    color: #f04438;
+    padding: 0.25rem;
+    border-radius: 0.25rem;
+    line-height: 1;
+    transition: all 0.2s;
+
+    &:hover {
+      background-color: #fef3f2;
+    }
   }
 
   &__day {
