@@ -285,6 +285,21 @@ export const useSupplier = () => {
     });
   };
 
+  const checkSupplierExists = (cardId: string, token?: string) => {
+    const authToken = token || getToken();
+    if (!authToken) throw new Error("No authentication token found");
+
+    const url = `${config.public.API_BASE_URL}/supplier/get_all?card_id=${cardId}`;
+
+    return useApi<ApiResponse<Supplier[]>>(url, {
+      method: "GET",
+      headers: {
+        Authorization: authToken,
+        "Content-Type": "application/json",
+      },
+    });
+  };
+
   return {
     createSupplier,
     fetchAllSuppliers,
@@ -298,5 +313,6 @@ export const useSupplier = () => {
     deleteSupplier,
     deleteSpecialtyBySupplier,
     updateSupplier,
+    checkSupplierExists,
   };
 };
