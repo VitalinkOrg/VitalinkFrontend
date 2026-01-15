@@ -19,7 +19,11 @@
       <div class="service-card__wrapper">
         <div class="service-card__header">
           <span v-if="isKingPackage">
-            <img src="@/assets/crown.svg" alt="Recomendado" class="img-fluid" />
+            <img
+              src="@/src/assets/crown.svg"
+              alt="Recomendado"
+              class="img-fluid"
+            />
           </span>
           {{ procedureLabel || "Nombre del procedimiento" }}
         </div>
@@ -44,7 +48,7 @@
 
           <p class="service-card__rating-wrapper">
             <span class="service-card__rating">
-              <img src="@/assets/star.svg" alt="Rating" class="img-fluid" />
+              <AtomsIconsStarFilled alt="Rating" class="img-fluid" />
               5.0
             </span>
             <span class="service-card__reviews"> (0 Reseñas) </span>

@@ -230,7 +230,7 @@
 
           <div v-if="currentStep === 3" class="confirmation">
             <div class="confirmation__icon">
-              <img src="@/assets/check.svg" width="48" alt="Success" />
+              <AtomsIconsCheckIcon size="20" />
             </div>
             <h5 class="confirmation__title">
               {{
