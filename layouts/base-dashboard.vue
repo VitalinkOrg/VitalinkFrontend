@@ -35,9 +35,9 @@ const isMobile: Ref<boolean> = ref(false);
 const isTablet: Ref<boolean> = ref(false);
 const { getUserInfo } = useUserInfo();
 
-const userInfo = getUserInfo();
+const userInfo = getUserInfo() || {};
 
-const userProfilePicture = computed(() => userInfo.profile_picture_url);
+const userProfilePicture = computed(() => userInfo.profile_picture_url ?? null);
 const userMenuTrigger = ref<HTMLButtonElement>();
 
 const token = useCookie("token");
