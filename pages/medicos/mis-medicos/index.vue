@@ -296,7 +296,7 @@ const loadRelatedDoctors = async (): Promise<void> => {
 
         return {
           id: supplier.id,
-          documentType: supplier.id_type?.code || "PHYSICAL_DNI",
+          documentType: supplier.id_type?.name || "N/A",
           documentNumber: supplier.card_id,
           fullName: supplier.name,
           identityDocumentFile: null,
