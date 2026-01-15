@@ -30,6 +30,7 @@ export interface Supplier {
   code_medical_license_file: string | null;
   gender: string | null;
   medical_type: MedicalType;
+  medical_type_code: string;
   legal_representative: LegalRepresentative;
   created_date: string;
   updated_date: string | null;
@@ -83,6 +84,7 @@ export interface Service {
   id: number;
   medical_specialty: IUdc;
   procedures: Procedures[];
+  medical_specialty_code?: string;
 }
 
 export interface MedicalSpecialty {

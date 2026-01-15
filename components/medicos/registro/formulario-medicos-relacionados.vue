@@ -15,20 +15,6 @@
         Médico adicional #{{ index + 1 }}
       </h4>
 
-      <div class="doctor-section__checkbox checkbox-group" v-if="index === 0">
-        <input
-          v-model="doctor.useSameDataAsSupplier"
-          type="checkbox"
-          class="form-check-input"
-          :id="`sameInfoCheckbox-${index}`"
-          @change="toggleSupplierInformation(index)"
-          :disabled="isLoadingSubmit"
-        />
-        <label class="checkbox-group__label" :for="`sameInfoCheckbox-${index}`">
-          Misma información que el paso 1
-        </label>
-      </div>
-
       <div class="registro-form__row">
         <div class="registro-form__group">
           <label
@@ -48,9 +34,7 @@
               documentTypeOptions.map((s) => ({ value: s.code, label: s.name }))
             "
             placeholder="Seleccione tipo de documento"
-            :disabled="
-              (doctor.useSameDataAsSupplier && index === 0) || isLoadingSubmit
-            "
+            :disabled="isLoadingSubmit"
             @update:model-value="
               updateRelatedMedicalFormData(index, {
                 documentType: ($event as string) ?? '',
@@ -71,9 +55,7 @@
             class="registro-form__input-text"
             placeholder="Ingrese su número de documento"
             :id="`doctorDocumentNumber-${index}`"
-            :disabled="
-              (doctor.useSameDataAsSupplier && index === 0) || isLoadingSubmit
-            "
+            :disabled="isLoadingSubmit"
             required
             @input="
               updateRelatedMedicalFormData(index, {
@@ -94,9 +76,7 @@
           class="registro-form__input-text"
           placeholder="Ingrese nombre completo"
           :id="`doctorFullName-${index}`"
-          :disabled="
-            (doctor.useSameDataAsSupplier && index === 0) || isLoadingSubmit
-          "
+          :disabled="isLoadingSubmit"
           required
           @input="
             updateRelatedMedicalFormData(index, { fullName: doctor.fullName })
@@ -265,11 +245,10 @@
 
 <script lang="ts" setup>
 import { useUdc } from "@/composables/api";
-import type { IRelatedMedicalFormData, ISupplierFormData, IUdc } from "@/types";
+import type { IRelatedMedicalFormData, IUdc } from "@/types";
 
 interface Props {
   relatedMedicalFormData: IRelatedMedicalFormData[];
-  supplierFormData: ISupplierFormData;
   loading?: boolean;
 }
 
@@ -437,25 +416,6 @@ const removeSpecialty = (doctorIndex: number, specialtyIndex: number) => {
   });
 };
 
-const toggleSupplierInformation = (index: number) => {
-  if (props.relatedMedicalFormData[index].useSameDataAsSupplier) {
-    const supplierData: Partial<IRelatedMedicalFormData> = {
-      documentType: props.supplierFormData.documentType,
-      documentNumber: props.supplierFormData.documentNumber,
-      fullName: props.supplierFormData.fullName,
-      useSameDataAsSupplier: true,
-    };
-    updateRelatedMedicalFormData(index, supplierData);
-  } else {
-    updateRelatedMedicalFormData(index, {
-      documentType: "",
-      documentNumber: "",
-      fullName: "",
-      useSameDataAsSupplier: false,
-    });
-  }
-};
-
 const updateRelatedMedicalFormData = (
   index: number,
   newData: Partial<IRelatedMedicalFormData>
@@ -602,24 +562,6 @@ onMounted(async () => {
     font-weight: 600;
     color: #1f2937;
     margin-bottom: 1rem;
-  }
-
-  &__checkbox {
-    @extend .checkbox-group;
-  }
-}
-
-.checkbox-group {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-
-  &__label {
-    @include label-base;
-    font-weight: 500;
-    line-height: 1.25rem;
-    color: #344054;
-    letter-spacing: 0;
   }
 }
 
