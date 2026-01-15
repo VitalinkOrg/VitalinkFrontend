@@ -84,6 +84,7 @@ export interface Service {
   id: number;
   medical_specialty: IUdc;
   procedures: Procedures[];
+  medical_specialty_code?: string;
 }
 
 export interface MedicalSpecialty {
