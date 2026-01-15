@@ -1,3 +1,4 @@
+// components\medicos\modales\pack-preview.vue
 <template>
   <div class="pack-preview">
     <h3 class="pack-preview__title">Previsualización del Pack</h3>
@@ -20,7 +21,7 @@
           <span v-if="isKingPackage">
             <img src="@/assets/crown.svg" alt="Recomendado" class="img-fluid" />
           </span>
-          {{ pack.procedimiento || "Nombre del procedimiento" }}
+          {{ procedureLabel || "Nombre del procedimiento" }}
         </div>
 
         <div class="service-card__body">
@@ -98,6 +99,9 @@
 </template>
 
 <script lang="ts" setup>
+import { useUdc } from "@/composables/api";
+import type { IUdc } from "@/types";
+
 interface TimeSlot {
   from: string;
   to: string;
@@ -133,7 +137,11 @@ const props = withDefaults(defineProps<Props>(), {
 });
 
 const { formatCurrency } = useFormat();
+const { fetchUdc } = useUdc();
+
 const VALORACION_COST = 25000;
+
+const procedures = ref<IUdc[]>([]);
 
 const weekDays = [
   "Lunes",
@@ -158,6 +166,14 @@ const monthlyPayment = computed(() => {
   if (!props.pack.precio) return "₡0";
   const monthly = (props.pack.precio / 12) * 1.1;
   return `₡${Math.round(monthly).toLocaleString("es-CR")}`;
+});
+
+const procedureLabel = computed(() => {
+  if (!props.pack.procedimiento) return "";
+  const procedure = procedures.value.find(
+    (p) => p.code === props.pack.procedimiento
+  );
+  return procedure?.name || props.pack.procedimiento;
 });
 
 const specialtyLabel = computed(() => {
@@ -192,6 +208,16 @@ const availableDays = computed(() => {
 
 const hasAvailability = computed(() => {
   return availableDays.value.length > 0;
+});
+
+onMounted(async () => {
+  const proceduresApi = fetchUdc(
+    "MEDICAL_PROCEDURE",
+    {},
+    { authRequired: false }
+  );
+  await proceduresApi.request();
+  procedures.value = proceduresApi.response.value?.data ?? [];
 });
 </script>
 

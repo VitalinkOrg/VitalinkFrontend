@@ -20,187 +20,176 @@
       </template>
 
       <div class="modal-body">
-        <WebsiteStepper
-          v-if="currentStep !== 0 && currentStep !== 3"
-          :steps="steps"
-          :currentStep="currentStep"
-        />
-
-        <div v-if="currentStep === 1" class="step-content">
-          <form @submit.prevent="goToStep(2)" class="doctor-form">
-            <div class="doctor-form__group">
-              <label for="documentType" class="doctor-form__label">
-                Tipo de documento de identidad
-              </label>
-              <UiDropdownBase
-                v-model="formData.documentType"
-                :loading="isLoadingDocumentTypes"
-                :items="
-                  documentTypeOptions.map((s) => ({
-                    value: s.code,
-                    label: s.name,
-                  }))
-                "
-                placeholder="Seleccione tipo de documento"
-                :disabled="isLoadingSubmit || isEditMode"
-              />
-            </div>
-
-            <div class="doctor-form__group">
-              <label for="documentNumber" class="doctor-form__label">
-                Número de documento
-              </label>
-              <input
-                v-model="formData.documentNumber"
-                type="text"
-                class="doctor-form__input"
-                placeholder="Ingrese número de documento"
-                :disabled="isLoadingSubmit || isEditMode"
-                required
-              />
-            </div>
-
-            <div class="doctor-form__group">
-              <label for="fullName" class="doctor-form__label">
-                Nombre y Apellidos
-              </label>
-              <input
-                v-model="formData.fullName"
-                type="text"
-                class="doctor-form__input"
-                placeholder="Ingrese nombre completo"
-                :disabled="isLoadingSubmit"
-                required
-              />
-            </div>
-
-            <MedicosRegistroCargarArchivos
-              v-if="!isEditMode"
-              label="Documento de identidad"
-              accept=".pdf,.doc,.docx,.jpg,.jpeg,.png"
-              id="identityFile"
-              inputId="identityFileInput"
-              :uploadedFile="formData.identityDocumentFile"
-              :disabled="isLoadingSubmit"
-              @update:file="formData.identityDocumentFile = $event"
-            />
-
-            <div class="doctor-form__group">
-              <label for="medicalCode" class="doctor-form__label">
-                Código de médico
-              </label>
-              <input
-                v-model="formData.medicalCode"
-                type="text"
-                class="doctor-form__input"
-                placeholder="Ingrese el código de médico"
-                :disabled="isLoadingSubmit"
-                required
-              />
-            </div>
-
-            <MedicosRegistroCargarArchivos
-              v-if="!isEditMode"
-              label="Carnet vigente"
-              accept=".pdf,.doc,.docx,.jpg,.jpeg,.png"
-              id="validLicenseFile"
-              inputId="validLicenseFileInput"
-              :uploadedFile="formData.validLicenseFile"
-              :disabled="isLoadingSubmit"
-              @update:file="formData.validLicenseFile = $event"
-            />
-
-            <div class="doctor-form__group">
-              <label for="medicalType" class="doctor-form__label">
-                Tipo de médico
-              </label>
-              <UiDropdownBase
-                v-model="formData.medicalType"
-                :loading="isLoadingMedicalTypes"
-                :items="
-                  medicalTypes.map((s) => ({ value: s.code, label: s.name }))
-                "
-                placeholder="Seleccione tipo de médico"
-                :disabled="isLoadingSubmit"
-              />
-            </div>
-
-            <div class="doctor-form__group">
-              <label for="medicalSpecialty" class="doctor-form__label">
-                Especialidad (máximo 3)
-              </label>
-              <div class="doctor-form__input-group">
-                <UiDropdownBase
-                  v-model="selectedSpecialty"
-                  :loading="isLoadingSpecialties"
-                  :items="
-                    specialties.map((s) => ({ value: s.code, label: s.name }))
-                  "
-                  placeholder="Seleccione especialidad"
-                  :disabled="isLoadingSubmit"
-                  searchable
-                />
-                <button
-                  type="button"
-                  class="doctor-form__add-button"
-                  :disabled="
-                    !selectedSpecialty ||
-                    formData.specialties.length >= 3 ||
-                    formData.specialties.some(
-                      (s) => s.code === selectedSpecialty
-                    ) ||
-                    isLoadingSubmit
-                  "
-                  @click="addSpecialty"
-                >
-                  Agregar
-                </button>
-              </div>
-              <div
-                v-if="formData.specialties.length > 0"
-                class="doctor-form__specialties"
-              >
-                <span
-                  v-for="(specialty, specIndex) in formData.specialties"
-                  :key="specIndex"
-                  class="specialty-badge"
-                >
-                  {{ specialty.name }}
-                  <button
-                    type="button"
-                    class="specialty-badge__remove"
-                    @click="removeSpecialty(specIndex)"
-                    :disabled="isLoadingSubmit"
-                  >
-                    <AtomsIconsXIcon size="12" />
-                  </button>
-                </span>
-              </div>
-              <small
-                v-if="formData.specialties.length >= 3"
-                class="doctor-form__limit-text"
-              >
-                Has alcanzado el máximo de 3 especialidades
-              </small>
-            </div>
-          </form>
-
-          <div v-if="errorMessage" class="doctor-form__error">
-            <AtomsIconsAlertCircleIcon size="20" />
-            <span>{{ errorMessage }}</span>
-          </div>
+        <div v-if="isLoadingModalData" class="modal-loading">
+          <div class="modal-loading__spinner"></div>
+          <p class="modal-loading__text">Cargando datos del médico...</p>
         </div>
 
-        <div
-          v-if="currentStep === 2"
-          class="step-content step-content--with-preview"
-        >
-          <div class="packs-section">
-            <MedicosModalesPreciosPacks
-              v-model="packs"
-              :available-specialties="formData.specialties"
-              @update:modelValue="handlePacksUpdate"
-            />
+        <template v-else>
+          <WebsiteStepper
+            v-if="currentStep !== 0 && currentStep !== 3"
+            :steps="steps"
+            :currentStep="currentStep"
+          />
+
+          <div v-if="currentStep === 1" class="step-content">
+            <form @submit.prevent="goToStep(2)" class="doctor-form">
+              <div class="doctor-form__group">
+                <label for="documentType" class="doctor-form__label">
+                  Tipo de documento de identidad
+                </label>
+                <UiDropdownBase
+                  v-model="formData.documentType"
+                  :loading="isLoadingDocumentTypes"
+                  :items="
+                    documentTypeOptions.map((s) => ({
+                      value: s.code,
+                      label: s.name,
+                    }))
+                  "
+                  placeholder="Seleccione tipo de documento"
+                  :disabled="isLoadingSubmit || isEditMode"
+                />
+              </div>
+
+              <div class="doctor-form__group">
+                <label for="documentNumber" class="doctor-form__label">
+                  Número de documento
+                </label>
+                <input
+                  v-model="formData.documentNumber"
+                  type="text"
+                  class="doctor-form__input"
+                  placeholder="Ingrese número de documento"
+                  :disabled="isLoadingSubmit || isEditMode"
+                  required
+                />
+              </div>
+
+              <div class="doctor-form__group">
+                <label for="fullName" class="doctor-form__label">
+                  Nombre y Apellidos
+                </label>
+                <input
+                  v-model="formData.fullName"
+                  type="text"
+                  class="doctor-form__input"
+                  placeholder="Ingrese nombre completo"
+                  :disabled="isLoadingSubmit"
+                  required
+                />
+              </div>
+
+              <MedicosRegistroCargarArchivos
+                v-if="!isEditMode"
+                label="Documento de identidad"
+                accept=".pdf,.doc,.docx,.jpg,.jpeg,.png"
+                id="identityFile"
+                inputId="identityFileInput"
+                :uploadedFile="formData.identityDocumentFile"
+                :disabled="isLoadingSubmit"
+                @update:file="formData.identityDocumentFile = $event"
+              />
+
+              <div class="doctor-form__group">
+                <label for="medicalCode" class="doctor-form__label">
+                  Código de médico
+                </label>
+                <input
+                  v-model="formData.medicalCode"
+                  type="text"
+                  class="doctor-form__input"
+                  placeholder="Ingrese el código de médico"
+                  :disabled="isLoadingSubmit"
+                  required
+                />
+              </div>
+
+              <MedicosRegistroCargarArchivos
+                v-if="!isEditMode"
+                label="Carnet vigente"
+                accept=".pdf,.doc,.docx,.jpg,.jpeg,.png"
+                id="validLicenseFile"
+                inputId="validLicenseFileInput"
+                :uploadedFile="formData.validLicenseFile"
+                :disabled="isLoadingSubmit"
+                @update:file="formData.validLicenseFile = $event"
+              />
+
+              <div class="doctor-form__group">
+                <label for="medicalType" class="doctor-form__label">
+                  Tipo de médico
+                </label>
+                <UiDropdownBase
+                  v-model="formData.medicalType"
+                  :loading="isLoadingMedicalTypes"
+                  :items="
+                    medicalTypes.map((s) => ({ value: s.code, label: s.name }))
+                  "
+                  placeholder="Seleccione tipo de médico"
+                  :disabled="isLoadingSubmit"
+                />
+              </div>
+
+              <div class="doctor-form__group">
+                <label for="medicalSpecialty" class="doctor-form__label">
+                  Especialidad (máximo 3)
+                </label>
+                <div class="doctor-form__input-group">
+                  <UiDropdownBase
+                    v-model="selectedSpecialty"
+                    :loading="isLoadingSpecialties"
+                    :items="
+                      specialties.map((s) => ({ value: s.code, label: s.name }))
+                    "
+                    placeholder="Seleccione especialidad"
+                    :disabled="isLoadingSubmit"
+                    searchable
+                  />
+                  <button
+                    type="button"
+                    class="doctor-form__add-button"
+                    :disabled="
+                      !selectedSpecialty ||
+                      formData.specialties.length >= 3 ||
+                      formData.specialties.some(
+                        (s) => s.code === selectedSpecialty
+                      ) ||
+                      isLoadingSubmit
+                    "
+                    @click="addSpecialty"
+                  >
+                    Agregar
+                  </button>
+                </div>
+                <div
+                  v-if="formData.specialties.length > 0"
+                  class="doctor-form__specialties"
+                >
+                  <span
+                    v-for="(specialty, specIndex) in formData.specialties"
+                    :key="specIndex"
+                    class="specialty-badge"
+                  >
+                    {{ specialty.name }}
+                    <button
+                      type="button"
+                      class="specialty-badge__remove"
+                      @click="removeSpecialty(specIndex)"
+                      :disabled="isLoadingSubmit"
+                    >
+                      <AtomsIconsXIcon size="12" />
+                    </button>
+                  </span>
+                </div>
+                <small
+                  v-if="formData.specialties.length >= 3"
+                  class="doctor-form__limit-text"
+                >
+                  Has alcanzado el máximo de 3 especialidades
+                </small>
+              </div>
+            </form>
 
             <div v-if="errorMessage" class="doctor-form__error">
               <AtomsIconsAlertCircleIcon size="20" />
@@ -208,39 +197,57 @@
             </div>
           </div>
 
-          <div class="preview-section">
-            <MedicosModalesPackPreview
-              v-for="(pack, index) in packs"
-              :key="`preview-${index}`"
-              :pack="pack"
-              :is-king-package="index === 0 && packs.length > 1"
-              :productos="productosForPreview"
-              :specialties="specialtiesForPreview"
-              :services-map="servicesMap"
-              class="preview-card"
-            />
-          </div>
-        </div>
+          <div
+            v-if="currentStep === 2"
+            class="step-content step-content--with-preview"
+          >
+            <div class="packs-section">
+              <MedicosModalesPreciosPacks
+                v-model="packs"
+                :available-specialties="formData.specialties"
+                @update:activePackIndex="activePackIndex = $event"
+              />
 
-        <div v-if="currentStep === 3" class="confirmation">
-          <div class="confirmation__icon">
-            <img src="@/assets/check.svg" width="48" alt="Success" />
+              <div v-if="errorMessage" class="doctor-form__error">
+                <AtomsIconsAlertCircleIcon size="20" />
+                <span>{{ errorMessage }}</span>
+              </div>
+            </div>
+
+            <div class="preview-section">
+              <MedicosModalesPackPreview
+                v-if="packs[activePackIndex]"
+                :key="`preview-${activePackIndex}`"
+                :pack="packs[activePackIndex]"
+                :is-king-package="activePackIndex === 0 && packs.length > 1"
+                :productos="productosForPreview"
+                :specialties="specialtiesForPreview"
+                :services-map="servicesMap"
+                class="preview-card"
+              />
+            </div>
           </div>
-          <h5 class="confirmation__title">
-            {{
-              isEditMode
-                ? "Médico actualizado exitosamente"
-                : "Médico creado exitosamente"
-            }}
-          </h5>
-          <p class="confirmation__description">
-            {{
-              isEditMode
-                ? "Los cambios se han guardado correctamente. Ahora puedes verlos en el menú de médicos."
-                : "El médico se ha registrado correctamente con sus packs y servicios. Ahora puedes verlo y administrarlo en el menú de médicos."
-            }}
-          </p>
-        </div>
+
+          <div v-if="currentStep === 3" class="confirmation">
+            <div class="confirmation__icon">
+              <img src="@/assets/check.svg" width="48" alt="Success" />
+            </div>
+            <h5 class="confirmation__title">
+              {{
+                isEditMode
+                  ? "Médico actualizado exitosamente"
+                  : "Médico creado exitosamente"
+              }}
+            </h5>
+            <p class="confirmation__description">
+              {{
+                isEditMode
+                  ? "Los cambios se han guardado correctamente. Ahora puedes verlos en el menú de médicos."
+                  : "El médico se ha registrado correctamente con sus packs y servicios. Ahora puedes verlo y administrarlo en el menú de médicos."
+              }}
+            </p>
+          </div>
+        </template>
       </div>
 
       <template #footer>
@@ -330,7 +337,7 @@ import {
   useSupplier,
   useUdc,
 } from "@/composables/api";
-import type { IRelatedMedicalFormData, IUdc, Supplier } from "@/types";
+import type { IRelatedMedicalFormData, IUdc, Service, Supplier } from "@/types";
 import type { CreateSupplier } from "~/composables/api/useSupplier";
 import MedicosModalesPackPreview from "./pack-preview.vue";
 import MedicosModalesPreciosPacks from "./precios-packs.vue";
@@ -351,6 +358,7 @@ interface Pack {
   producto: string;
   servicios: string[];
   precio: number;
+  precioValoracion?: number;
   disponibilidad: DayAvailability[];
 }
 
@@ -365,6 +373,8 @@ interface Emits {
   (e: "doctor-added"): void;
   (e: "doctor-updated"): void;
 }
+
+const DEFAULT_VALORACION_COST = 25000;
 
 const props = withDefaults(defineProps<Props>(), {
   editMode: false,
@@ -382,8 +392,10 @@ const {
   uploadSpecialtyBySupplier,
   fetchAllSuppliers,
   updateSupplier,
+  fetchSpecialtyBySupplier,
+  deleteSpecialtyBySupplier,
 } = useSupplier();
-const { createPackage, updatePackage } = usePackage();
+const { createPackage } = usePackage();
 const { createAvailability } = useAvailability();
 const { getToken } = useAuthToken();
 const { getUserInfo } = useUserInfo();
@@ -398,6 +410,7 @@ const isLoadingSpecialties = ref<boolean>(false);
 const isLoadingSubmit = ref<boolean>(false);
 const isLoadingProducts = ref<boolean>(false);
 const isLoadingServices = ref<boolean>(false);
+const isLoadingModalData = ref<boolean>(false);
 
 const documentTypeOptions = ref<IUdc[]>([]);
 const medicalTypes = ref<IUdc[]>([]);
@@ -422,7 +435,10 @@ const formData = ref<IRelatedMedicalFormData>({
   specialties: [],
 });
 
+const originalFormData = ref<IRelatedMedicalFormData | null>(null);
+
 const packs = ref<Pack[]>([]);
+const originalPacks = ref<Pack[]>([]);
 
 const specialtiesForPreview = computed(() => {
   return formData.value.specialties.map((s) => ({
@@ -440,36 +456,52 @@ const servicesMap = computed(() => {
 });
 
 const isStep1Complete = computed(() => {
-  const baseValidation =
+  if (isEditMode.value) {
+    return true;
+  }
+
+  return (
     formData.value.documentType &&
     formData.value.documentNumber &&
     formData.value.fullName &&
     formData.value.medicalCode &&
     formData.value.medicalType &&
-    formData.value.specialties.length > 0;
-
-  if (isEditMode.value) {
-    return baseValidation;
-  }
-
-  return (
-    baseValidation &&
+    formData.value.specialties.length > 0 &&
     formData.value.identityDocumentFile &&
     formData.value.validLicenseFile
   );
 });
 
 const isStep2Complete = computed(() => {
-  return (
-    packs.value.length > 0 &&
-    packs.value.every(
-      (pack) =>
-        pack.especialidad &&
-        pack.procedimiento &&
-        pack.producto &&
-        pack.servicios.length > 0 &&
-        pack.precio > 0
-    )
+  if (!isEditMode.value) {
+    return (
+      packs.value.length > 0 &&
+      packs.value.every(
+        (pack) =>
+          pack.especialidad &&
+          pack.procedimiento &&
+          pack.producto &&
+          pack.servicios.length > 0 &&
+          pack.precio > 0
+      )
+    );
+  }
+
+  const newPacks = packs.value.filter(
+    (pack, index) => index >= originalPacks.value.length
+  );
+
+  if (newPacks.length === 0) {
+    return true;
+  }
+
+  return newPacks.every(
+    (pack) =>
+      pack.especialidad &&
+      pack.procedimiento &&
+      pack.producto &&
+      pack.servicios.length > 0 &&
+      pack.precio > 0
   );
 });
 
@@ -479,18 +511,36 @@ const openModal = () => {
   errorMessage.value = "";
 
   if (isEditMode.value && props.doctorData) {
-    loadDoctorData();
-  }
+    isLoadingModalData.value = true;
 
-  if (props.existingPacks && props.existingPacks.length > 0) {
-    packs.value = [...props.existingPacks];
+    nextTick(() => {
+      loadDoctorData();
+
+      if (
+        Array.isArray(props.existingPacks) &&
+        props.existingPacks.length > 0
+      ) {
+        packs.value = props.existingPacks.map((pack) => ({
+          ...pack,
+          precioValoracion: pack.precioValoracion || DEFAULT_VALORACION_COST,
+        }));
+        originalPacks.value = JSON.parse(JSON.stringify(props.existingPacks));
+      }
+
+      isLoadingModalData.value = false;
+    });
+  } else {
+    isLoadingModalData.value = false;
+    resetForm();
   }
 };
 
 const loadDoctorData = () => {
-  if (!props.doctorData) return;
+  if (!props.doctorData) {
+    return;
+  }
 
-  formData.value = {
+  const data = {
     documentType: props.doctorData.documentType || "",
     documentNumber: props.doctorData.documentNumber || "",
     fullName: props.doctorData.fullName || "",
@@ -500,12 +550,20 @@ const loadDoctorData = () => {
     medicalType: props.doctorData.medicalType || "",
     specialties: props.doctorData.specialties || [],
   };
+
+  formData.value = { ...data };
+  originalFormData.value = JSON.parse(JSON.stringify(data));
 };
 
 const closeModal = () => {
   isOpen.value = false;
   currentStep.value = 1;
   errorMessage.value = "";
+  isLoadingModalData.value = false;
+
+  if (!isEditMode.value) {
+    resetForm();
+  }
 };
 
 const handleModalClose = () => {
@@ -529,10 +587,6 @@ const goToStep = (step: number) => {
 const addAnotherDoctor = () => {
   resetForm();
   currentStep.value = 1;
-};
-
-const handlePacksUpdate = (updatedPacks: Pack[]) => {
-  packs.value = updatedPacks;
 };
 
 const addSpecialty = () => {
@@ -565,65 +619,98 @@ const resetForm = () => {
     medicalType: "",
     specialties: [],
   };
+  originalFormData.value = null;
   packs.value = [];
+  originalPacks.value = [];
   selectedSpecialty.value = "";
   errorMessage.value = "";
+  isLoadingModalData.value = false;
 };
 
 const delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
+const getChangedFields = (): Partial<CreateSupplier> => {
+  if (!originalFormData.value) return {};
+
+  const changes: Partial<CreateSupplier> = {};
+
+  if (formData.value.fullName !== originalFormData.value.fullName) {
+    changes.name = formData.value.fullName;
+  }
+
+  if (formData.value.medicalType !== originalFormData.value.medicalType) {
+    changes.medical_type_code = formData.value.medicalType;
+  }
+
+  if (formData.value.medicalCode !== originalFormData.value.medicalCode) {
+    changes.num_medical_enrollment = formData.value.medicalCode;
+  }
+
+  return changes;
+};
+
+const activePackIndex = ref<number>(0);
+
 const handleUploadFile = async (
   file: File,
   actionType: string,
-  tableId: number = 5
+  tableId: number = 5,
+  retries: number = 3
 ): Promise<string> => {
-  const userInfo = getUserInfo();
-  const userId = userInfo?.id || "";
+  for (let attempt = 1; attempt <= retries; attempt++) {
+    try {
+      const userInfo = getUserInfo();
+      const userId = userInfo?.id || "";
 
-  const extension = file.name.split(".").pop()?.toLowerCase();
-  const fileType =
-    extension === "pdf" || extension === "doc" || extension === "docx"
-      ? "DOC"
-      : "IMG";
+      const extension = file.name.split(".").pop()?.toLowerCase();
+      const fileType =
+        extension === "pdf" || extension === "doc" || extension === "docx"
+          ? "DOC"
+          : "IMG";
 
-  const fields = {
-    title: file.name,
-    type: fileType,
-    description:
-      actionType === "PERSONAL_DOCUMENT"
-        ? "Documento personal del médico"
-        : "Licencia médica",
-    id_for_table: tableId.toString(),
-    table: "SUPPLIER",
-    action_type: actionType,
-    user_id: userId,
-    is_public: 0,
-  };
+      const fields = {
+        title: file.name,
+        type: fileType,
+        description:
+          actionType === "PERSONAL_DOCUMENT"
+            ? "Documento personal del médico"
+            : "Licencia médica",
+        id_for_table: tableId.toString(),
+        table: "SUPPLIER",
+        action_type: actionType,
+        user_id: userId,
+        is_public: 0,
+      };
 
-  console.log("📤 Subiendo documento:", {
-    fileName: file.name,
-    fileType,
-    actionType,
-    fields,
-  });
+      const api = uploadDocument(file, fields);
+      await api.request();
 
-  const api = uploadDocument(file, fields);
-  await api.request();
+      if (api.error.value) {
+        throw new Error(`Error subiendo documento: ${api.error.value}`);
+      }
 
-  if (api.error.value) {
-    console.error("❌ Error al subir documento:", api.error.value);
-    throw new Error(`Error subiendo documento: ${api.error.value}`);
+      const code = api.response.value?.data?.code;
+
+      if (!code) {
+        throw new Error("No se pudo obtener el código del documento");
+      }
+
+      return code;
+    } catch (error) {
+      if (attempt === retries) {
+        throw new Error(
+          `Error al subir documento después de ${retries} intentos: ${
+            error instanceof Error ? error.message : "Error desconocido"
+          }`
+        );
+      }
+
+      const waitTime = Math.pow(2, attempt) * 1000;
+      await delay(waitTime);
+    }
   }
 
-  const code = api.response.value?.data?.code;
-
-  if (!code) {
-    console.error("❌ No se recibió código del documento");
-    throw new Error("No se pudo obtener el código del documento");
-  }
-
-  console.log("✅ Documento subido exitosamente. Code:", code);
-  return code;
+  throw new Error("Error inesperado al subir documento");
 };
 
 const handleCreateSupplier = async (
@@ -669,24 +756,19 @@ const handleCreateSupplier = async (
     vision: "",
   };
 
-  console.log("📤 Creando supplier con payload:", payload);
-
   const api = createSupplier(payload, token);
   await api.request();
 
   if (api.error.value) {
-    console.error("❌ Error al crear supplier:", api.error.value);
-    throw new Error(`Error creando médico: ${api.error.value}`);
+    throw api.error.value;
   }
 
   const supplierId = api.response.value?.data?.id;
 
   if (!supplierId) {
-    console.error("❌ No se recibió ID del supplier");
     throw new Error("No se pudo obtener el ID del médico");
   }
 
-  console.log("✅ Supplier creado exitosamente. ID:", supplierId);
   return supplierId;
 };
 
@@ -695,23 +777,18 @@ const handleUpdateSupplier = async (
   supplier: IRelatedMedicalFormData,
   token: string
 ): Promise<void> => {
-  const payload: Partial<CreateSupplier> = {
-    name: supplier.fullName,
-    medical_type_code: supplier.medicalType,
-    num_medical_enrollment: supplier.medicalCode,
-  };
+  const payload = getChangedFields();
 
-  console.log("📤 Actualizando supplier con payload:", payload);
+  if (Object.keys(payload).length === 0) {
+    return;
+  }
 
   const api = updateSupplier(supplierId, payload, token);
   await api.request();
 
   if (api.error.value) {
-    console.error("❌ Error al actualizar supplier:", api.error.value);
     throw new Error(`Error actualizando médico: ${api.error.value}`);
   }
-
-  console.log("✅ Supplier actualizado exitosamente");
 };
 
 const handleUploadSpecialtyBySupplier = async (
@@ -724,22 +801,15 @@ const handleUploadSpecialtyBySupplier = async (
     medical_specialty_code: specialty.code,
   }));
 
-  console.log("📤 Asociando especialidades:", body);
-
   const api = uploadSpecialtyBySupplier(body, token);
   await api.request();
 
   if (api.error.value) {
-    console.error("❌ Error al asociar especialidades:", api.error.value);
     throw new Error(`Error asociando especialidades: ${api.error.value}`);
   }
-
-  console.log("✅ Especialidades asociadas exitosamente");
 };
 
 const fetchCurrentSupplier = async (): Promise<string | null> => {
-  console.log("🔍 Obteniendo supplier actual...");
-
   const api = fetchAllSuppliers();
   await api.request();
 
@@ -752,52 +822,82 @@ const fetchCurrentSupplier = async (): Promise<string | null> => {
         ? currentSupplier.value.legal_representative
         : currentSupplier.value.legal_representative?.id;
 
-    console.log("✅ Legal representative encontrado:", legalRep);
     return legalRep ? String(legalRep) : null;
   }
 
-  console.error("❌ No se encontró supplier actual");
   return null;
 };
 
 const handleSavePacks = async (supplierId: number) => {
-  console.log("📦 Guardando packs para supplier:", supplierId);
+  const token = getToken();
+  if (!token) {
+    throw new Error("No se encontró token de autenticación");
+  }
 
-  // Encontrar la especialidad correspondiente del supplier
-  const specialtyId = formData.value.specialties[0]?.id || 0;
+  try {
+    const fetchApi = fetchSpecialtyBySupplier(supplierId, token);
+    await fetchApi.request();
 
-  for (const pack of packs.value) {
-    try {
-      // Crear el package
-      const packagePayload = {
-        specialty_id: specialtyId,
-        procedure_code: pack.procedimiento,
-        product_code: pack.producto,
-        discount: 0,
-        services_offer: {
-          ASSESSMENT_DETAILS: pack.servicios,
-        },
-        is_king: 0,
-        observations: "",
-        postoperative_assessments: 0,
-      };
+    const supplierSpecialties: Service[] = fetchApi.response.value?.data || [];
 
-      console.log("📦 Creando package:", packagePayload);
-      const packageApi = createPackage(packagePayload);
-      await packageApi.request();
-
-      if (packageApi.error.value) {
-        throw new Error(`Error creando package: ${packageApi.error.value}`);
-      }
-
-      console.log("✅ Package creado exitosamente");
-
-      // Guardar disponibilidad
-      await handleSaveAvailability(supplierId, pack.disponibilidad);
-    } catch (error) {
-      console.error("❌ Error guardando pack:", error);
-      throw error;
+    if (supplierSpecialties.length === 0) {
+      throw new Error("No se encontraron especialidades asociadas al médico");
     }
+
+    const packsToSave = packs.value.filter(
+      (pack, index) => index >= originalPacks.value.length
+    );
+
+    for (const pack of packsToSave) {
+      try {
+        const packSpecialtyCode = pack.especialidad;
+
+        const matchingSpecialty = supplierSpecialties.find(
+          (spec) => spec.medical_specialty.code === packSpecialtyCode
+        );
+
+        if (!matchingSpecialty) {
+          console.warn(
+            `⚠️ No se encontró especialidad para código: ${packSpecialtyCode}`
+          );
+          continue;
+        }
+
+        const specialtyId = matchingSpecialty.id;
+
+        const packagePayload = {
+          specialty_id: specialtyId,
+          procedure_code: pack.procedimiento,
+          product_code: pack.producto,
+          discount: 0,
+          services_offer: {
+            ASSESSMENT_DETAILS: pack.servicios,
+          },
+          is_king: 0,
+          observations: "",
+          postoperative_assessments: 0,
+        };
+
+        console.log("📦 Creando package en edición:", packagePayload);
+
+        const packageApi = createPackage(packagePayload);
+        await packageApi.request();
+
+        if (packageApi.error.value) {
+          throw new Error(`Error creando package: ${packageApi.error.value}`);
+        }
+
+        console.log("✅ Package creado exitosamente");
+
+        await handleSaveAvailability(supplierId, pack.disponibilidad);
+      } catch (error) {
+        console.error("❌ Error guardando pack:", error);
+        throw error;
+      }
+    }
+  } catch (error) {
+    console.error("❌ Error en handleSavePacks:", error);
+    throw error;
   }
 };
 
@@ -805,8 +905,6 @@ const handleSaveAvailability = async (
   supplierId: number,
   availability: DayAvailability[]
 ) => {
-  console.log("📅 Guardando disponibilidad para supplier:", supplierId);
-
   const weekDays = [
     "Lunes",
     "Martes",
@@ -817,7 +915,6 @@ const handleSaveAvailability = async (
     "Domingo",
   ];
 
-  // Asumo que location_id es 1 o se puede obtener de alguna manera
   const locationId = 1;
 
   for (let i = 0; i < availability.length; i++) {
@@ -836,20 +933,108 @@ const handleSaveAvailability = async (
           to_hour: timeSlot.to,
         };
 
-        console.log("📅 Creando availability:", availabilityPayload);
         const api = createAvailability(availabilityPayload);
         await api.request();
 
         if (api.error.value) {
           throw new Error(`Error creando availability: ${api.error.value}`);
         }
-
-        console.log("✅ Availability creada exitosamente");
       } catch (error) {
-        console.error("❌ Error guardando availability:", error);
         throw error;
       }
     }
+  }
+};
+
+const handleSyncSpecialties = async (
+  supplierId: number,
+  token: string
+): Promise<void> => {
+  try {
+    const fetchApi = fetchSpecialtyBySupplier(supplierId, token);
+    await fetchApi.request();
+
+    const currentSpecialties: Service[] = fetchApi.response.value?.data || [];
+
+    const desiredCodes = formData.value.specialties.map((s) => s.code);
+
+    const groupedByCode = currentSpecialties.reduce(
+      (acc, spec) => {
+        const code = spec.medical_specialty.code;
+        if (!acc[code]) acc[code] = [];
+        acc[code].push(spec);
+        return acc;
+      },
+      {} as Record<string, Service[]>
+    );
+
+    let hasDeletePermission = true;
+
+    for (const [code, specs] of Object.entries(groupedByCode)) {
+      if (desiredCodes.includes(code)) {
+        const toDeleteDuplicates = specs.slice(1);
+
+        for (const spec of toDeleteDuplicates) {
+          const deleteApi = deleteSpecialtyBySupplier(spec.id, token);
+          await deleteApi.request();
+
+          if (deleteApi.error.value) {
+            const errorData = deleteApi.error.value as any;
+            if (errorData.httpCode === 401) {
+              hasDeletePermission = false;
+              break;
+            }
+          }
+          await delay(300);
+        }
+
+        if (!hasDeletePermission) break;
+      } else {
+        for (const spec of specs) {
+          const deleteApi = deleteSpecialtyBySupplier(spec.id, token);
+          await deleteApi.request();
+
+          if (deleteApi.error.value) {
+            const errorData = deleteApi.error.value as any;
+            if (errorData.httpCode === 401) {
+              hasDeletePermission = false;
+              break;
+            }
+          }
+          await delay(300);
+        }
+
+        if (!hasDeletePermission) break;
+      }
+    }
+
+    const existingUniqueCodes = Object.keys(groupedByCode);
+    const toAdd = formData.value.specialties.filter(
+      (newSpec) => !existingUniqueCodes.includes(newSpec.code)
+    );
+
+    if (toAdd.length > 0) {
+      const body = toAdd.map((specialty) => ({
+        supplier_id: supplierId,
+        medical_specialty_code: specialty.code,
+      }));
+
+      const addApi = uploadSpecialtyBySupplier(body, token);
+      await addApi.request();
+
+      if (addApi.error.value) {
+        throw new Error(
+          `Error agregando especialidades: ${addApi.error.value}`
+        );
+      }
+    }
+
+    if (!hasDeletePermission) {
+      errorMessage.value =
+        "Las especialidades nuevas se agregaron correctamente, pero no se pudieron eliminar duplicados o especialidades antiguas. Contacta al administrador.";
+    }
+  } catch (error) {
+    throw error;
   }
 };
 
@@ -865,43 +1050,29 @@ const handleSubmit = async () => {
       throw new Error("No se encontró token de autenticación");
     }
 
-    console.log("✅ Token obtenido");
-
     if (isEditMode.value && props.supplierId) {
-      console.log("🔄 Modo edición - Actualizando médico existente");
-
       await handleUpdateSupplier(props.supplierId, formData.value, token);
-      await delay(500);
+      await delay(1000);
 
-      if (formData.value.specialties.length > 0) {
-        console.log("🏥 Actualizando especialidades...");
-        await handleUploadSpecialtyBySupplier(
-          props.supplierId,
-          formData.value,
-          token
-        );
-      }
+      await handleSyncSpecialties(props.supplierId, token);
+      await delay(1000);
 
-      await delay(500);
-
-      if (packs.value.length > 0) {
-        console.log("📦 Actualizando packs...");
+      const newPacks = packs.value.filter(
+        (pack, index) => index >= originalPacks.value.length
+      );
+      if (newPacks.length > 0) {
         await handleSavePacks(props.supplierId);
       }
 
-      console.log("🎉 ¡Médico actualizado exitosamente!");
       emit("doctor-updated");
     } else {
-      console.log("🚀 Modo creación - Registrando nuevo médico");
-
       const legalRepresentativeId = await fetchCurrentSupplier();
       if (!legalRepresentativeId) {
         throw new Error("No se pudo obtener el representante legal");
       }
 
-      await delay(500);
+      await delay(1000);
 
-      console.log("📄 Subiendo documento de identidad...");
       if (!formData.value.identityDocumentFile) {
         throw new Error("Documento de identidad requerido");
       }
@@ -912,9 +1083,8 @@ const handleSubmit = async () => {
         5
       );
 
-      await delay(500);
+      await delay(2000);
 
-      console.log("📄 Subiendo licencia médica...");
       if (!formData.value.validLicenseFile) {
         throw new Error("Licencia médica requerida");
       }
@@ -925,9 +1095,8 @@ const handleSubmit = async () => {
         5
       );
 
-      await delay(500);
+      await delay(1000);
 
-      console.log("👨‍⚕️ Creando médico (supplier)...");
       const supplierId = await handleCreateSupplier(
         formData.value,
         legalRepresentativeId,
@@ -936,10 +1105,9 @@ const handleSubmit = async () => {
         token
       );
 
-      await delay(500);
+      await delay(1000);
 
       if (formData.value.specialties.length > 0) {
-        console.log("🏥 Asociando especialidades...");
         await handleUploadSpecialtyBySupplier(
           supplierId,
           formData.value,
@@ -947,26 +1115,95 @@ const handleSubmit = async () => {
         );
       }
 
-      await delay(500);
+      await delay(1000);
 
       if (packs.value.length > 0) {
-        console.log("📦 Guardando packs...");
-        await handleSavePacks(supplierId);
+        await handleSavePacksForNewSupplier(supplierId, token);
       }
 
-      console.log("🎉 ¡Médico registrado exitosamente con sus packs!");
       emit("doctor-added");
     }
 
     currentStep.value = 3;
   } catch (error) {
-    console.error("❌ Error en el proceso:", error);
-    errorMessage.value =
-      error instanceof Error
-        ? error.message
-        : "Error al procesar la solicitud. Por favor, intenta nuevamente.";
+    const errorObj = error as any;
+    if (
+      errorObj?.raw?.includes("ER_DUP_ENTRY") ||
+      errorObj?.raw?.includes("Duplicate Entry")
+    ) {
+      errorMessage.value = `La cédula "${formData.value.documentNumber}" ya está registrada en el sistema. Si deseas actualizar la información de este médico, búscalo en "Mis Médicos" y usa la opción de editar.`;
+    } else {
+      errorMessage.value =
+        error instanceof Error
+          ? error.message
+          : "Error al procesar la solicitud. Por favor, intenta nuevamente.";
+    }
   } finally {
     isLoadingSubmit.value = false;
+  }
+};
+
+const handleSavePacksForNewSupplier = async (
+  supplierId: number,
+  token: string
+) => {
+  try {
+    const fetchApi = fetchSpecialtyBySupplier(supplierId, token);
+    await fetchApi.request();
+
+    const supplierSpecialties: Service[] = fetchApi.response.value?.data || [];
+
+    if (supplierSpecialties.length === 0) {
+      throw new Error("No se encontraron especialidades asociadas al médico");
+    }
+
+    const firstSpecialtyCode = formData.value.specialties[0]?.code;
+
+    const matchingSpecialty = supplierSpecialties.find(
+      (spec) => spec.medical_specialty.code === firstSpecialtyCode
+    );
+
+    if (!matchingSpecialty) {
+      throw new Error("No se encontró la especialidad correspondiente");
+    }
+
+    const specialtyId = matchingSpecialty.id;
+
+    for (const pack of packs.value) {
+      try {
+        const packagePayload = {
+          specialty_id: specialtyId,
+          procedure_code: pack.procedimiento,
+          product_code: pack.producto,
+          discount: 0,
+          services_offer: {
+            ASSESSMENT_DETAILS: pack.servicios,
+          },
+          is_king: 0,
+          observations: "",
+          postoperative_assessments: 0,
+        };
+
+        console.log("📦 Creando package para nuevo supplier:", packagePayload);
+
+        const packageApi = createPackage(packagePayload);
+        await packageApi.request();
+
+        if (packageApi.error.value) {
+          throw new Error(`Error creando package: ${packageApi.error.value}`);
+        }
+
+        console.log("✅ Package creado exitosamente");
+
+        await handleSaveAvailability(supplierId, pack.disponibilidad);
+      } catch (error) {
+        console.error("❌ Error guardando pack:", error);
+        throw error;
+      }
+    }
+  } catch (error) {
+    console.error("❌ Error en handleSavePacksForNewSupplier:", error);
+    throw error;
   }
 };
 
@@ -1055,6 +1292,48 @@ const loadServices = async () => {
   }
 };
 
+watch(
+  () => props.editMode,
+  (newEditMode) => {
+    if (newEditMode && isOpen.value && props.doctorData) {
+      nextTick(() => {
+        loadDoctorData();
+      });
+    }
+  },
+  { immediate: true }
+);
+
+watch(
+  () => props.existingPacks,
+  (newPacks) => {
+    if (
+      isOpen.value &&
+      isEditMode.value &&
+      Array.isArray(newPacks) &&
+      newPacks.length > 0
+    ) {
+      packs.value = newPacks.map((pack) => ({
+        ...pack,
+        precioValoracion: pack.precioValoracion || DEFAULT_VALORACION_COST,
+      }));
+      originalPacks.value = JSON.parse(JSON.stringify(newPacks));
+      isLoadingModalData.value = false;
+    }
+  },
+  { immediate: true, deep: true }
+);
+
+watch(
+  () => props.doctorData,
+  (newData) => {
+    if (isOpen.value && isEditMode.value && newData) {
+      loadDoctorData();
+    }
+  },
+  { immediate: true, deep: true }
+);
+
 onMounted(async () => {
   await Promise.all([
     loadIdType(),
@@ -1063,6 +1342,12 @@ onMounted(async () => {
     loadProducts(),
     loadServices(),
   ]);
+});
+
+defineExpose({
+  openModal,
+  closeModal,
+  isLoadingModalData,
 });
 </script>
 
@@ -1079,6 +1364,32 @@ onMounted(async () => {
 
 .modal-body {
   padding: 1.5rem;
+}
+
+.modal-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 4rem 2rem;
+  min-height: 400px;
+
+  &__spinner {
+    width: 48px;
+    height: 48px;
+    border: 4px solid #e5e7eb;
+    border-top-color: $color-primary;
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+    margin-bottom: 1.5rem;
+  }
+
+  &__text {
+    @include text-base;
+    font-size: 1rem;
+    color: $color-text-muted;
+    margin: 0;
+  }
 }
 
 .step-content {
@@ -1104,13 +1415,12 @@ onMounted(async () => {
   display: flex;
   flex-direction: column;
   gap: 1.5rem;
-  position: sticky; // MOVER sticky aquí
+  position: sticky;
   top: 1.5rem;
   height: fit-content;
   max-height: calc(100vh - 3rem);
-  overflow-y: auto; // Permitir scroll interno
+  overflow-y: auto;
 
-  // Estilos del scrollbar
   &::-webkit-scrollbar {
     width: 0.5rem;
   }
