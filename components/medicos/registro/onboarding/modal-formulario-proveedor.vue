@@ -75,125 +75,71 @@
             </div>
           </fieldset>
 
-          <div class="onboarding-modal__field-group">
-            <fieldset class="onboarding-modal__field">
-              <legend class="onboarding-modal__label">
-                Tipo de Procedimiento
-              </legend>
-              <div class="dropdown" ref="procedureDropdown" @click.stop>
-                <button
-                  type="button"
-                  class="dropdown__trigger"
-                  @click="toggleDropdown('procedimiento')"
+          <fieldset class="onboarding-modal__field">
+            <legend class="onboarding-modal__label">
+              Tipo de Procedimiento
+            </legend>
+            <div class="dropdown" ref="procedureDropdown" @click.stop>
+              <button
+                type="button"
+                class="dropdown__trigger"
+                @click="toggleDropdown('procedimiento')"
+                :class="{
+                  'dropdown__trigger--active':
+                    activeDropdown === 'procedimiento',
+                }"
+                :aria-expanded="activeDropdown === 'procedimiento'"
+                aria-haspopup="listbox"
+                role="combobox"
+              >
+                <span class="dropdown__selected">
+                  {{ selectedProcedure?.name || "Selecciona un procedimiento" }}
+                </span>
+                <Icon
+                  name="mdi:chevron-down"
+                  class="dropdown__icon"
                   :class="{
-                    'dropdown__trigger--active':
+                    'dropdown__icon--rotated':
                       activeDropdown === 'procedimiento',
                   }"
-                  :aria-expanded="activeDropdown === 'procedimiento'"
-                  aria-haspopup="listbox"
-                  role="combobox"
+                  aria-hidden="true"
+                />
+              </button>
+              <ul
+                class="dropdown__menu"
+                :class="{
+                  'dropdown__menu--open': activeDropdown === 'procedimiento',
+                }"
+                role="listbox"
+                aria-label="Lista de procedimientos"
+              >
+                <li
+                  v-for="procedure in procedures"
+                  :key="procedure.id"
+                  class="dropdown__item"
+                  @click="selectProcedure(procedure)"
+                  role="option"
+                  :aria-selected="selectedProcedure?.id === procedure.id"
                 >
-                  <span class="dropdown__selected">
-                    {{
-                      selectedProcedure?.name || "Selecciona un procedimiento"
-                    }}
-                  </span>
-                  <Icon
-                    name="mdi:chevron-down"
-                    class="dropdown__icon"
-                    :class="{
-                      'dropdown__icon--rotated':
-                        activeDropdown === 'procedimiento',
-                    }"
-                    aria-hidden="true"
-                  />
-                </button>
-                <ul
-                  class="dropdown__menu"
-                  :class="{
-                    'dropdown__menu--open': activeDropdown === 'procedimiento',
-                  }"
-                  role="listbox"
-                  aria-label="Lista de procedimientos"
-                >
-                  <li
-                    v-for="procedure in procedures"
-                    :key="procedure.id"
-                    class="dropdown__item"
-                    @click="selectProcedure(procedure)"
-                    role="option"
-                    :aria-selected="selectedProcedure?.id === procedure.id"
-                  >
-                    {{ procedure.name }}
-                  </li>
-                </ul>
-              </div>
-            </fieldset>
+                  {{ procedure.name }}
+                </li>
+              </ul>
+            </div>
+          </fieldset>
+
+          <section class="onboarding-modal__section">
+            <h3 class="onboarding-modal__section-title">Packs y Precios</h3>
 
             <fieldset class="onboarding-modal__field">
-              <legend
-                class="onboarding-modal__label"
-                :class="{
-                  'onboarding-modal__label--disabled': !selectedProcedure,
-                }"
-                :disabled="!selectedProcedure"
-              >
-                Producto
-              </legend>
-              <div class="dropdown" ref="productDropdown" @click.stop>
-                <button
-                  type="button"
-                  class="dropdown__trigger"
-                  @click="toggleDropdown('producto')"
-                  :class="{
-                    'dropdown__trigger--active': activeDropdown === 'producto',
-                    'dropdown__trigger--disabled': !selectedProcedure,
-                  }"
-                  :disabled="!selectedProcedure"
-                  :aria-expanded="activeDropdown === 'producto'"
-                  aria-haspopup="listbox"
-                  role="combobox"
-                >
-                  <span class="dropdown__selected">
-                    {{
-                      !selectedProcedure
-                        ? "Selecciona un producto"
-                        : selectedProduct?.name || "Selecciona un producto"
-                    }}
-                  </span>
-                  <Icon
-                    name="mdi:chevron-down"
-                    class="dropdown__icon"
-                    :class="{
-                      'dropdown__icon--rotated': activeDropdown === 'producto',
-                      'dropdown__icon--disabled': !selectedProcedure,
-                    }"
-                    aria-hidden="true"
-                  />
-                </button>
-                <ul
-                  class="dropdown__menu"
-                  :class="{
-                    'dropdown__menu--open':
-                      activeDropdown === 'producto' && selectedProcedure,
-                  }"
-                  role="listbox"
-                  aria-label="Lista de productos"
-                >
-                  <li
-                    v-for="product in products"
-                    :key="product.id"
-                    class="dropdown__item"
-                    @click="selectProduct(product)"
-                    role="option"
-                    :aria-selected="selectedProduct?.id === product.id"
-                  >
-                    {{ product.name }}
-                  </li>
-                </ul>
-              </div>
+              <legend class="onboarding-modal__label">Producto</legend>
+              <input
+                type="text"
+                class="onboarding-modal__input"
+                placeholder="Ingresa el producto"
+                v-model="productName"
+              />
             </fieldset>
-          </div>
+          </section>
 
           <fieldset
             v-if="preoperativeAssessment"
@@ -213,7 +159,7 @@
           </fieldset>
 
           <section class="onboarding-modal__services">
-            <div v-if="generalAssessments.length > 0">
+            <div>
               <h3 class="onboarding-modal__services-title">
                 Servicios incluidos
               </h3>
@@ -226,42 +172,39 @@
                   </caption>
                   <tbody>
                     <tr
-                      v-for="assessment in generalAssessments"
-                      :key="assessment.id"
+                      v-for="service in fixedServices"
+                      :key="service.code"
                       class="services-table__row"
                     >
                       <th scope="row" class="services-table__header">
-                        {{ assessment.name }}
+                        {{ service.name }}
                       </th>
                       <td class="services-table__cell">
                         <fieldset
                           class="radio-group"
                           role="radiogroup"
-                          :aria-labelledby="`${assessment.code}-label`"
+                          :aria-labelledby="`${service.code}-label`"
                         >
-                          <legend
-                            :id="`${assessment.code}-label`"
-                            class="sr-only"
-                          >
-                            {{ assessment.name }}
+                          <legend :id="`${service.code}-label`" class="sr-only">
+                            {{ service.name }}
                           </legend>
                           <label class="radio-group__item">
                             <input
                               type="radio"
-                              :name="assessment.code"
+                              :name="service.code"
                               value="si"
                               class="radio-group__input"
-                              v-model="dynamicServices[assessment.code]"
+                              v-model="fixedServicesModel[service.code]"
                             />
                             <span class="radio-group__label">Sí</span>
                           </label>
                           <label class="radio-group__item">
                             <input
                               type="radio"
-                              :name="assessment.code"
+                              :name="service.code"
                               value="no"
                               class="radio-group__input"
-                              v-model="dynamicServices[assessment.code]"
+                              v-model="fixedServicesModel[service.code]"
                             />
                             <span class="radio-group__label">No</span>
                           </label>
@@ -391,36 +334,38 @@ const isLoading = ref<boolean>(false);
 
 const selectedSupplier = ref<Supplier | null>(null);
 const selectedProcedure = ref<IUdc | null>(null);
-const selectedProduct = ref<IUdc | null>(null);
+const productName = ref<string>("");
 const PostoperativeAssessments = ref<number>(0);
 const observations = ref<string>("");
 
 const supplierDropdown = ref<HTMLElement | null>(null);
 const procedureDropdown = ref<HTMLElement | null>(null);
-const productDropdown = ref<HTMLElement | null>(null);
 
 const suppliers = ref<Supplier[]>([]);
 const procedures = ref<IUdc[]>([]);
-const products = ref<IUdc[]>();
 const assessments = ref<AssessmentDetail[]>([]);
 
-const dynamicServices = reactive<Record<string, string>>({});
+const fixedServices = [
+  { code: "SALA_OPERACIONES", name: "Sala de Operaciones" },
+  { code: "INSUMOS_MEDICOS", name: "Insumos Médicos" },
+  { code: "ANESTESIA_CONTROL", name: "Anestesia y Control del dolor" },
+  { code: "IMAGENES_DIAGNOSTICO", name: "Imágenes y diagnóstico" },
+  { code: "MEDICAMENTOS_POSTOP", name: "Medicamentos post operatorios" },
+];
+
+const fixedServicesModel = reactive<Record<string, string>>({
+  SALA_OPERACIONES: "si",
+  INSUMOS_MEDICOS: "si",
+  ANESTESIA_CONTROL: "si",
+  IMAGENES_DIAGNOSTICO: "si",
+  MEDICAMENTOS_POSTOP: "si",
+});
+
 const dynamicTreatment = reactive<Record<string, string>>({});
 
 const preoperativeAssessment = computed(() => {
   return assessments.value.find(
     (assessment) => assessment.code === "PREOPERATIVE_ASSESSMENT"
-  );
-});
-
-const generalAssessments = computed(() => {
-  const excludedCodes = [
-    "PREOPERATIVE_ASSESSMENT",
-    "POSTOP_TREATMENT",
-    "GENERAL",
-  ];
-  return assessments.value.filter(
-    (assessment) => !excludedCodes.includes(assessment.code)
   );
 });
 
@@ -456,11 +401,11 @@ const handleFinish = async () => {
     const formData = {
       specialty_id: specialtyId,
       procedure_code: selectedProcedure.value?.code || "",
-      product_code: selectedProduct.value?.code || "",
+      product_code: productName.value || "",
       discount: 7,
       services_offer: {
         ASSESSMENT_DETAILS: [
-          ...Object.entries(dynamicServices)
+          ...Object.entries(fixedServicesModel)
             .filter(([_, value]) => value === "si")
             .map(([code]) => code),
           ...Object.entries(dynamicTreatment)
@@ -493,10 +438,6 @@ const handleFinish = async () => {
 };
 
 const toggleDropdown = (dropdownName: string) => {
-  if (dropdownName === "producto" && !selectedProcedure.value) {
-    return;
-  }
-
   if (activeDropdown.value === dropdownName) {
     activeDropdown.value = null;
   } else {
@@ -515,13 +456,6 @@ const selectSupplier = (medico: Supplier) => {
 
 const selectProcedure = (procedure: IUdc) => {
   selectedProcedure.value = procedure;
-  selectedProduct.value = null;
-  closeAllDropdowns();
-  loadProducts(procedure.code);
-};
-
-const selectProduct = (product: IUdc) => {
-  selectedProduct.value = product;
   closeAllDropdowns();
 };
 
@@ -581,26 +515,7 @@ const loadProcedures = async () => {
   }
 };
 
-const loadProducts = async (procedimientoCode: string) => {
-  if (!procedimientoCode) return;
-
-  try {
-    const api = fetchUdc("MEDICAL_PRODUCT", { father_code: procedimientoCode });
-    await api.request();
-
-    products.value = api.response.value?.data || [];
-  } catch (error) {
-    console.error("Error loading products:", error);
-  }
-};
-
 const initializeDynamicStates = () => {
-  generalAssessments.value.forEach((assessment) => {
-    if (!dynamicServices[assessment.code]) {
-      dynamicServices[assessment.code] = "";
-    }
-  });
-
   postopTreatmentAssessments.value.forEach((assessment) => {
     if (!dynamicTreatment[assessment.code]) {
       dynamicTreatment[assessment.code] = "";
@@ -614,10 +529,6 @@ onClickOutside(supplierDropdown, () => {
 
 onClickOutside(procedureDropdown, () => {
   if (activeDropdown.value === "procedimiento") activeDropdown.value = null;
-});
-
-onClickOutside(productDropdown, () => {
-  if (activeDropdown.value === "producto") activeDropdown.value = null;
 });
 
 onMounted(async () => {
@@ -709,14 +620,17 @@ defineExpose({
     }
   }
 
-  &__field-group {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
+  &__section {
+    display: flex;
+    flex-direction: column;
     gap: 0.625rem;
+  }
 
-    @media (max-width: $breakpoint-md) {
-      grid-template-columns: 1fr;
-    }
+  &__section-title {
+    font-size: 1rem;
+    font-weight: 600;
+    color: #2d3748;
+    margin: 0;
   }
 
   &__label {

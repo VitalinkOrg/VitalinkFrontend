@@ -7,7 +7,9 @@
       :id="inputId"
       ref="fileInput"
       @change="handleFileUpload"
-      accept=".pdf,.doc,.docx"
+      @blur="$emit('blur')"
+      accept=".pdf,.doc,.docx,.jpg,.jpeg,.png"
+      :disabled="disabled"
       class="file-upload__input"
       required
     />
@@ -19,45 +21,65 @@
 
     <div v-else>
       <label
+        v-if="!uploadedFile"
         :for="inputId"
         class="file-upload__dropzone"
         :class="{
-          'file-upload__dropzone--uploaded': uploadedFile,
           'file-upload__dropzone--dragover': isDragOver,
+          'file-upload__dropzone--error': hasError,
+          'file-upload__dropzone--disabled': disabled,
         }"
         @dragover.prevent="handleDragOver"
         @dragleave.prevent="handleDragLeave"
         @drop.prevent="handleDrop"
-        v-if="!uploadedFile"
       >
         <div class="file-upload__content">
           <AtomsIconsUploadContractIcon />
           <div>
             <p>Arrastra para subir un <span>Archivo</span></p>
-            <small>Limitado a PDF y word</small>
+            <small>PDF, Word, JPG o PNG (máx. 10MB)</small>
           </div>
         </div>
       </label>
 
-      <div v-else v-if="uploadedFile" class="file-upload__success">
+      <!-- Archivo cargado -->
+      <div v-else class="file-upload__success">
         <img
           v-if="uploadedFile.type === 'application/pdf'"
           src="@/src/assets/pdf-file.png"
+          alt="PDF"
         />
-        <img v-else src="@/src/assets/docx-file.png" />
-        {{ uploadedFile.name }}
+        <img
+          v-else-if="
+            uploadedFile.type === 'application/msword' ||
+            uploadedFile.type ===
+              'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+          "
+          src="@/src/assets/docx-file.png"
+          alt="Word"
+        />
+        <AtomsIconsFileIcon v-else size="43" class="file-upload__file-icon" />
+        <div class="file-upload__file-info">
+          <span class="file-upload__file-name">{{ uploadedFile.name }}</span>
+          <span class="file-upload__file-size">{{
+            formatFileSize(uploadedFile.size)
+          }}</span>
+        </div>
       </div>
 
+      <!-- Botón para eliminar archivo -->
       <button
-        v-if="uploadedFile"
+        v-if="uploadedFile && !disabled"
         @click.stop="removeFile"
         class="file-upload__delete"
         type="button"
       >
-        Eliminar contrato
+        Eliminar archivo
       </button>
 
+      <!-- Mensaje de error -->
       <div v-if="fileError" class="file-upload__error">
+        <AtomsIconsAlertIcon size="16" />
         {{ fileError }}
       </div>
     </div>
@@ -72,15 +94,24 @@ interface Props {
   inputId: string;
   uploadedFile?: File | null;
   isLoading?: boolean;
+  disabled?: boolean;
+  hasError?: boolean;
+  accept?: string;
 }
 
 interface Emits {
   (e: "update:file", file: File | null): void;
   (e: "delete:contract-file"): void;
+  (e: "blur"): void;
 }
 
 const emit = defineEmits<Emits>();
-const props = defineProps<Props>();
+const props = withDefaults(defineProps<Props>(), {
+  isLoading: false,
+  disabled: false,
+  hasError: false,
+  accept: ".pdf,.doc,.docx,.jpg,.jpeg,.png",
+});
 
 const uploadedFile = ref<File | null>(props.uploadedFile || null);
 const fileError = ref<string>("");
@@ -90,26 +121,55 @@ const isLoading = ref<boolean>(false);
 
 watch(
   () => props.isLoading,
-  (newFile) => {
-    isLoading.value = newFile || false;
+  (newValue) => {
+    isLoading.value = newValue || false;
   }
 );
 
-const validTypes = [
-  "application/pdf",
-  "application/msword",
-  "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-];
+watch(
+  () => props.uploadedFile,
+  (newFile) => {
+    uploadedFile.value = newFile || null;
+  }
+);
+
+const validTypes: Record<string, string[]> = {
+  "application/pdf": [".pdf"],
+  "application/msword": [".doc"],
+  "application/vnd.openxmlformats-officedocument.wordprocessingml.document": [
+    ".docx",
+  ],
+  "image/jpeg": [".jpg", ".jpeg"],
+  "image/png": [".png"],
+};
+
+const validExtensions = [".pdf", ".doc", ".docx", ".jpg", ".jpeg", ".png"];
+const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
 
 const validateFile = (file: File): boolean => {
-  if (!validTypes.includes(file.type)) {
-    fileError.value = "Formato no válido. Solo se permiten PDF, DOC y DOCX.";
+  const extension = "." + file.name.split(".").pop()?.toLowerCase();
+
+  if (!validExtensions.includes(extension)) {
+    fileError.value = `Formato no permitido. Solo se aceptan: ${validExtensions.join(", ")}`;
     return false;
   }
 
-  const maxSize = 5 * 1024 * 1024; // 5MB
-  if (file.size > maxSize) {
-    fileError.value = "El archivo es demasiado grande. Máximo 5MB.";
+  const isValidType = Object.keys(validTypes).includes(file.type);
+
+  if (!isValidType) {
+    fileError.value =
+      "Formato no válido. Solo se permiten PDF, Word (DOC/DOCX), JPG y PNG.";
+    return false;
+  }
+
+  if (file.size > MAX_FILE_SIZE) {
+    fileError.value = `El archivo es demasiado grande. El tamaño máximo es ${formatFileSize(MAX_FILE_SIZE)}.`;
+    return false;
+  }
+
+  if (file.size === 0) {
+    fileError.value =
+      "El archivo está vacío. Por favor, selecciona un archivo válido.";
     return false;
   }
 
@@ -137,16 +197,20 @@ const handleFileUpload = (event: Event) => {
 };
 
 const handleDragOver = (event: DragEvent) => {
+  if (props.disabled) return;
   event.preventDefault();
   isDragOver.value = true;
 };
 
 const handleDragLeave = (event: DragEvent) => {
+  if (props.disabled) return;
   event.preventDefault();
   isDragOver.value = false;
 };
 
 const handleDrop = (event: DragEvent) => {
+  if (props.disabled) return;
+
   event.preventDefault();
   isDragOver.value = false;
 
@@ -170,6 +234,14 @@ const removeFile = () => {
   emit("update:file", null);
   emit("delete:contract-file");
 };
+
+const formatFileSize = (bytes: number): string => {
+  if (bytes === 0) return "0 Bytes";
+  const k = 1024;
+  const sizes = ["Bytes", "KB", "MB", "GB"];
+  const i = Math.floor(Math.log(bytes) / Math.log(k));
+  return Math.round((bytes / Math.pow(k, i)) * 100) / 100 + " " + sizes[i];
+};
 </script>
 
 <style lang="scss" scoped>
@@ -188,7 +260,8 @@ const removeFile = () => {
   }
 
   &__loading {
-    width: 17.1875rem;
+    width: 100%;
+    max-width: 17.1875rem;
     height: 8.8125rem;
     border-radius: 0.25rem;
     border: 0.125rem solid #e0e7ff;
@@ -220,20 +293,20 @@ const removeFile = () => {
   }
 
   &__dropzone {
-    width: 17.1875rem;
+    width: 100%;
+    max-width: 17.1875rem;
     height: 8.8125rem;
     border-radius: 0.25rem;
-
     display: flex;
     align-items: center;
-    justify-content: space-between;
+    justify-content: center;
     padding: 1rem;
     border: 0.125rem dashed #ebecf7;
     cursor: pointer;
     transition: all 0.3s ease;
     background-color: #f8f8ff;
 
-    &:hover {
+    &:hover:not(&--disabled):not(&--error) {
       border-color: $color-primary;
       background-color: #f0f8ff;
     }
@@ -244,13 +317,26 @@ const removeFile = () => {
       transform: scale(1.02);
     }
 
-    &--uploaded {
-      border: 0.125rem solid #28a745;
-      background-color: #e6ffe6;
+    &--error {
+      border-color: #dc2626;
+      background-color: #fef2f2;
+      border-style: dashed;
 
       &:hover {
-        border-color: #28a745;
-        background-color: #e6ffe6;
+        border-color: #dc2626;
+        background-color: #fee2e2;
+      }
+    }
+
+    &--disabled {
+      cursor: not-allowed;
+      opacity: 0.6;
+      background-color: #f9fafb;
+
+      &:hover {
+        border-color: #ebecf7;
+        background-color: #f9fafb;
+        transform: none;
       }
     }
   }
@@ -280,6 +366,7 @@ const removeFile = () => {
           text-decoration: underline;
         }
       }
+
       small {
         font-family: $font-family-mulish;
         font-weight: 400;
@@ -295,39 +382,84 @@ const removeFile = () => {
   &__success {
     display: flex;
     align-items: center;
-    gap: 0.625rem;
-    margin-bottom: 1.25rem;
+    gap: 0.75rem;
+    padding: 1rem;
+    margin-bottom: 0.75rem;
+    border-radius: 0.375rem;
+    background-color: #f0fdf4;
+    border: 1px solid #86efac;
 
     img {
       height: 2.6875rem;
+      width: auto;
+      flex-shrink: 0;
     }
-    span {
-      font-weight: 400;
-      font-size: 0.875rem;
-      line-height: 1.5rem;
-      letter-spacing: 0;
-      color: $color-foreground;
-    }
+  }
+
+  &__file-icon {
+    color: #3b82f6;
+    flex-shrink: 0;
+  }
+
+  &__file-info {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+    min-width: 0;
+  }
+
+  &__file-name {
+    font-weight: 500;
+    font-size: 0.875rem;
+    line-height: 1.25rem;
+    color: #166534;
+    word-break: break-all;
+  }
+
+  &__file-size {
+    font-weight: 400;
+    font-size: 0.75rem;
+    line-height: 1rem;
+    color: #15803d;
   }
 
   &__delete {
     @include label-base;
     color: $color-primary;
+    font-size: 0.875rem;
+    padding: 0.5rem 0;
+    transition: color 0.2s ease;
 
     &:hover {
-      color: darken($color-primary, 4%);
+      color: darken($color-primary, 10%);
       text-decoration: underline;
+    }
+
+    &:focus {
+      outline: 2px solid rgba($color-primary, 0.3);
+      outline-offset: 2px;
+      border-radius: 0.25rem;
     }
   }
 
   &__error {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
     margin-top: 0.5rem;
-    padding: 0.5rem;
-    font-size: 0.85rem;
-    color: #dc3545;
-    background-color: #fee;
-    border: 1px solid #fcc;
-    border-radius: 0.25rem;
+    padding: 0.75rem;
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: #dc2626;
+    background-color: #fef2f2;
+    border: 1px solid #fecaca;
+    border-radius: 0.375rem;
+    line-height: 1.25;
+
+    svg {
+      flex-shrink: 0;
+    }
   }
 }
 

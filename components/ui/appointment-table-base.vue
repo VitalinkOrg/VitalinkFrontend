@@ -340,6 +340,9 @@ defineExpose({
 }
 
 .appointment-table-base {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
   &__container {
     background: $white;
     border-radius: 0.625rem;
@@ -347,10 +350,12 @@ defineExpose({
     min-height: 25rem;
     display: flex;
     flex-direction: column;
+    flex: 1;
   }
 
   &__wrapper {
     overflow-x: auto;
+    flex: 1;
   }
 
   &__table {

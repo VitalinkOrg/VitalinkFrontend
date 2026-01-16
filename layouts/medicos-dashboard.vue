@@ -3,7 +3,6 @@ import AtomsIconsCitasIcon from "~/components/atoms/icons/citas-icon.vue";
 import AtomsIconsHomeIcon from "~/components/atoms/icons/home-icon.vue";
 import AtomsIconsHospitalesIcon from "~/components/atoms/icons/hospitales-icon.vue";
 import AtomsIconsPacientesIcon from "~/components/atoms/icons/pacientes-icon.vue";
-import AtomsIconsServiciosIcon from "~/components/atoms/icons/servicios-icon.vue";
 import BaseDashboard from "./base-dashboard.vue";
 
 definePageMeta({
@@ -25,21 +24,15 @@ const navigationItems = [
     visible: true,
   },
   {
-    href: "/medicos/servicios",
-    label: "Servicios",
-    icon: AtomsIconsServiciosIcon,
+    href: "/medicos/mis-medicos",
+    label: "Mis medicos",
+    icon: AtomsIconsHospitalesIcon,
     visible: true,
   },
   {
     href: "/medicos/pacientes",
     label: "Pacientes",
     icon: AtomsIconsPacientesIcon,
-    visible: true,
-  },
-  {
-    href: "/medicos/hospitales",
-    label: "Mis Hospitales",
-    icon: AtomsIconsHospitalesIcon,
     visible: true,
   },
 ];

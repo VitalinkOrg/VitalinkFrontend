@@ -260,6 +260,21 @@ export interface ApiResponse<T = any> {
   data?: T;
 }
 
+export interface IRelatedMedicalFormData {
+  id?: number;
+  documentType: string;
+  documentNumber: string;
+  fullName: string;
+  identityDocumentFile: File | null;
+  medicalCode: string;
+  validLicenseFile: File | null;
+  medicalType: string;
+  specialties: MedicalSpecialty[];
+  useSameDataAsSupplier?: boolean;
+  codeCardIdFile?: string;
+  codeMedicalLicenseFile?: string;
+}
+
 export interface IdType extends IUdc {}
 
 export interface Procedures {
