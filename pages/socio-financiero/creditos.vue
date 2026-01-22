@@ -1,3 +1,5 @@
+// pages\socio-financiero\creditos.vue
+
 <script lang="ts" setup>
 import { useAppointmentCredit } from "@/composables/api";
 import type { Credit } from "@/types";
@@ -8,10 +10,20 @@ definePageMeta({
   middleware: ["auth-insurances"],
 });
 
+type SortOption =
+  | "date-desc"
+  | "date-asc"
+  | "amount-desc"
+  | "amount-asc"
+  | "status"
+  | "patient";
+
 const loading = ref<boolean>(false);
 const isRefreshing = ref<boolean>(false);
 const creditsData = ref<Credit[]>([]);
-const activeStatus = ref<string>("Todos");
+const selectedStatuses = ref<Set<string>>(new Set(["Todos"]));
+const sortOption = ref<SortOption>("date-desc");
+const searchQuery = ref<string>("");
 
 const statusMap: Record<string, string> = {
   Todos: "Todos",
@@ -24,22 +36,154 @@ const statusMap: Record<string, string> = {
 
 const { fetchAllAppointmentCredit } = useAppointmentCredit();
 
+const isStatusSelected = (status: string): boolean => {
+  return selectedStatuses.value.has(status);
+};
+
+const toggleStatus = (status: string): void => {
+  const newSelectedStatuses = new Set(selectedStatuses.value);
+
+  if (status === "Todos") {
+    newSelectedStatuses.clear();
+    newSelectedStatuses.add("Todos");
+  } else {
+    newSelectedStatuses.delete("Todos");
+
+    if (newSelectedStatuses.has(status)) {
+      newSelectedStatuses.delete(status);
+    } else {
+      newSelectedStatuses.add(status);
+    }
+
+    if (newSelectedStatuses.size === 0) {
+      newSelectedStatuses.add("Todos");
+    }
+  }
+
+  selectedStatuses.value = newSelectedStatuses;
+};
+
+const removeStatusBadge = (status: string): void => {
+  const newSelectedStatuses = new Set(selectedStatuses.value);
+  newSelectedStatuses.delete(status);
+
+  if (newSelectedStatuses.size === 0) {
+    newSelectedStatuses.add("Todos");
+  }
+
+  selectedStatuses.value = newSelectedStatuses;
+};
+
+const selectedStatusBadges = computed((): string[] => {
+  if (selectedStatuses.value.has("Todos")) {
+    return ["Todos"];
+  }
+  return Array.from(selectedStatuses.value);
+});
+
 const filteredCredits = computed<Credit[]>(() => {
   if (!creditsData.value || creditsData.value.length === 0) {
     return [];
   }
 
-  if (activeStatus.value === "Todos") {
-    return creditsData.value;
+  let filtered = [...creditsData.value];
+
+  // Búsqueda
+  if (searchQuery.value.trim()) {
+    const query = searchQuery.value.toLowerCase();
+    filtered = filtered.filter((credit) => {
+      const patientName =
+        credit.appointment?.customer?.name?.toLowerCase() || "";
+      const observations = credit.credit_observations?.toLowerCase() || "";
+      const statusName = credit.credit_status?.name?.toLowerCase() || "";
+      const amount = credit.requested_amount?.toString() || "";
+
+      return (
+        patientName.includes(query) ||
+        observations.includes(query) ||
+        statusName.includes(query) ||
+        amount.includes(query)
+      );
+    });
   }
 
-  const filtered = creditsData.value.filter((credit) => {
-    const statusCode = credit?.credit_status?.code;
-    return statusCode === activeStatus.value;
-  });
+  // Filtrar por estado
+  if (!selectedStatuses.value.has("Todos")) {
+    filtered = filtered.filter((credit) => {
+      const statusCode = credit?.credit_status?.code;
+      return Array.from(selectedStatuses.value).some((selectedStatus) => {
+        const mappedCode = statusMap[selectedStatus];
+        return statusCode === mappedCode;
+      });
+    });
+  }
 
-  return filtered;
+  // Ordenar
+  return sortCredits(filtered);
 });
+
+const sortCredits = (credits: Credit[]) => {
+  const sorted = [...credits];
+
+  switch (sortOption.value) {
+    case "date-desc":
+      return sorted.sort((a, b) => {
+        const dateA = a.created_date ? new Date(a.created_date).getTime() : 0;
+        const dateB = b.created_date ? new Date(b.created_date).getTime() : 0;
+        return dateB - dateA;
+      });
+    case "date-asc":
+      return sorted.sort((a, b) => {
+        const dateA = a.created_date ? new Date(a.created_date).getTime() : 0;
+        const dateB = b.created_date ? new Date(b.created_date).getTime() : 0;
+        return dateA - dateB;
+      });
+    case "amount-desc":
+      return sorted.sort((a, b) => {
+        const amountA = parseFloat(a.requested_amount || "0");
+        const amountB = parseFloat(b.requested_amount || "0");
+        return amountB - amountA;
+      });
+    case "amount-asc":
+      return sorted.sort((a, b) => {
+        const amountA = parseFloat(a.requested_amount || "0");
+        const amountB = parseFloat(b.requested_amount || "0");
+        return amountA - amountB;
+      });
+    case "status":
+      return sorted.sort((a, b) => {
+        const statusA = a.credit_status?.code || "";
+        const statusB = b.credit_status?.code || "";
+        return statusA.localeCompare(statusB);
+      });
+    case "patient":
+      return sorted.sort((a, b) => {
+        const patientA = a.appointment?.customer?.name || "";
+        const patientB = b.appointment?.customer?.name || "";
+        return patientA.localeCompare(patientB);
+      });
+    default:
+      return sorted;
+  }
+};
+
+const applySortOption = (option: SortOption) => {
+  sortOption.value = option;
+};
+
+interface SortOptionType {
+  label: string;
+  value: SortOption;
+}
+
+const sortOptions: SortOptionType[] = [
+  { label: "Fecha (más reciente)", value: "date-desc" },
+  { label: "Fecha (más antigua)", value: "date-asc" },
+  { label: "Monto (mayor a menor)", value: "amount-desc" },
+  { label: "Monto (menor a mayor)", value: "amount-asc" },
+  { label: "Estado", value: "status" },
+  { label: "Paciente (A-Z)", value: "patient" },
+];
 
 const loadCredits = async () => {
   loading.value = true;
@@ -112,10 +256,6 @@ const handleRefresh = async () => {
 
 provide("handleRefresh", handleRefresh);
 
-const setStatusFilter = (status: string) => {
-  activeStatus.value = status;
-};
-
 const downloadAllCredits = () => {
   const currentCredits = filteredCredits.value;
   if (!currentCredits || currentCredits.length === 0) {
@@ -141,7 +281,7 @@ const downloadAllCredits = () => {
     `Generado el: ${new Date().toLocaleDateString("es-ES")}`,
     pageWidth / 2,
     yPosition,
-    { align: "center" }
+    { align: "center" },
   );
   yPosition += 15;
 
@@ -188,7 +328,7 @@ const downloadAllCredits = () => {
       },
       { text: credit.credit_observations || "N/A", width: columnWidths[1] },
       { text: `$${credit.requested_amount || 0}`, width: columnWidths[2] },
-      { text: credit.credit_status?.code || "N/A", width: columnWidths[3] },
+      { text: credit.credit_status?.name || "N/A", width: columnWidths[3] },
       {
         text:
           credit.appointment?.supplier?.services?.[0]?.medical_specialty
@@ -219,7 +359,7 @@ const downloadAllCredits = () => {
         doc.text(
           lines,
           columnPositions[i],
-          yPosition + (maxLines - lines.length) * 5
+          yPosition + (maxLines - lines.length) * 5,
         );
       } else {
         doc.text(cell.text, columnPositions[i], yPosition);
@@ -262,8 +402,9 @@ onMounted(async () => {
       <div class="credits-page__header">
         <div class="credits-page__search">
           <UiSearchInput
+            v-model="searchQuery"
             placeholder="Buscar"
-            aria-label="Buscar"
+            aria-label="Buscar en solicitudes de crédito"
             max-width="320px"
           />
         </div>
@@ -272,84 +413,94 @@ onMounted(async () => {
             class="credits-page__button credits-page__button--download"
             @click="downloadAllCredits"
             :disabled="filteredCredits.length === 0"
+            :aria-label="`Descargar reporte de ${filteredCredits.length} créditos`"
           >
-            <AtomsIconsDownloadIcon />
+            <AtomsIconsDownloadIcon size="20" aria-hidden="true" />
             <span class="credits-page__button-text">Descargar</span>
           </button>
-          <button
-            class="credits-page__button credits-page__button--dropdown"
-            type="button"
-            data-bs-toggle="dropdown"
-            aria-expanded="false"
-          >
-            <span class="credits-page__button-text">Ordenar por</span>
-            <span class="credits-page__button-text--short">Ordenar</span>
-          </button>
-          <ul class="credits-page__dropdown-menu">
-            <li>
-              <a class="credits-page__dropdown-item" href="#">Action</a>
-            </li>
-            <li>
-              <a class="credits-page__dropdown-item" href="#">Another action</a>
-            </li>
-            <li>
-              <a class="credits-page__dropdown-item" href="#"
-                >Something else here</a
-              >
-            </li>
-          </ul>
-          <button
-            class="credits-page__button credits-page__button--dropdown"
-            type="button"
-            data-bs-toggle="dropdown"
-            aria-expanded="false"
-          >
-            <span class="credits-page__button-text">Estado de solicitud:</span>
-            <span class="credits-page__button-text--short">Estado:</span>
-            <span class="credits-page__badge">{{ activeStatus }}</span>
-          </button>
-          <ul class="credits-page__dropdown-menu">
-            <li>
-              <a
+
+          <WebsiteBaseDropdown>
+            <template #button>
+              <span class="dropdown-button__text">Ordenar por</span>
+              <span
+                class="dropdown-button__icon icon-chevron-down"
+                aria-hidden="true"
+              />
+            </template>
+            <template #menu>
+              <li
+                v-for="option in sortOptions"
+                :key="option.value"
                 class="credits-page__dropdown-item"
-                href="#"
-                @click.prevent="setStatusFilter('Todos')"
-                >Todos</a
               >
-            </li>
-            <li>
-              <a
+                <button
+                  type="button"
+                  role="menuitem"
+                  class="dropdown__item"
+                  @click="applySortOption(option.value)"
+                  :aria-pressed="sortOption === option.value"
+                >
+                  {{ option.label }}
+                </button>
+              </li>
+            </template>
+          </WebsiteBaseDropdown>
+
+          <WebsiteBaseDropdown>
+            <template #button>
+              <span class="dropdown-button__text">Estado de solicitud:</span>
+              <div class="badges-container" aria-live="polite">
+                <span
+                  v-for="status in selectedStatusBadges"
+                  :key="status"
+                  class="badge"
+                  :aria-label="`Filtro activo: ${status}`"
+                >
+                  {{ status }}
+                  <button
+                    v-if="status !== 'Todos'"
+                    type="button"
+                    class="badge__remove"
+                    @click.stop="removeStatusBadge(status)"
+                    :aria-label="`Remover filtro ${status}`"
+                  >
+                    <AtomsIconsXIcon size="14" aria-hidden="true" />
+                  </button>
+                </span>
+              </div>
+            </template>
+            <template #menu>
+              <li
+                v-for="status in Object.keys(statusMap)"
+                :key="status"
                 class="credits-page__dropdown-item"
-                href="#"
-                @click.prevent="setStatusFilter('Pendiente')"
-                >Pendiente</a
+                role="none"
               >
-            </li>
-            <li>
-              <a
-                class="credits-page__dropdown-item"
-                href="#"
-                @click.prevent="setStatusFilter('Aprobada')"
-                >Aprobada</a
-              >
-            </li>
-            <li>
-              <a
-                class="credits-page__dropdown-item"
-                href="#"
-                @click.prevent="setStatusFilter('Completada')"
-                >Confirmado</a
-              >
-            </li>
-            <li>
-              <a
-                class="credits-page__dropdown-item"
-                href="#"
-                @click.prevent="setStatusFilter('Cancelada')"
-                >Cancelada</a
-              >
-            </li>
-          </ul>
+                <label class="credits-page__checkbox-label">
+                  <input
+                    type="checkbox"
+                    class="credits-page__checkbox"
+                    :checked="isStatusSelected(status)"
+                    @change="toggleStatus(status)"
+                    :aria-label="`${isStatusSelected(status) ? 'Deseleccionar' : 'Seleccionar'} filtro ${status}`"
+                  />
+                  <span
+                    class="credits-page__checkbox-custom"
+                    aria-hidden="true"
+                  ></span>
+                </label>
+                <button
+                  type="button"
+                  role="menuitem"
+                  class="dropdown__item"
+                  @click="toggleStatus(status)"
+                  :aria-pressed="isStatusSelected(status)"
+                >
+                  {{ status }}
+                </button>
+              </li>
+            </template>
+          </WebsiteBaseDropdown>
         </div>
       </div>
 
@@ -357,7 +508,11 @@ onMounted(async () => {
         Cargando créditos...
       </div>
 
-      <div v-else-if="creditsData.length === 0" class="credits-page__empty">
+      <div
+        v-else-if="creditsData.length === 0"
+        class="credits-page__empty"
+        role="status"
+      >
         No hay solicitudes de crédito disponibles
       </div>
 
@@ -413,22 +568,23 @@ onMounted(async () => {
     white-space: nowrap;
     font-size: 0.875rem;
     padding: 0.5rem 0.75rem;
+    gap: 0.375rem;
 
     @media (min-width: 576px) {
       flex: 0 1 auto;
       font-size: 1rem;
       padding: 0.625rem 1rem;
+      gap: 0.5rem;
     }
 
     &:disabled {
-      opacity: 0.5;
+      opacity: 0.6;
       cursor: not-allowed;
     }
 
     &--download {
       display: flex;
       align-items: center;
-      gap: 0.25rem;
       justify-content: center;
 
       svg {
@@ -436,107 +592,74 @@ onMounted(async () => {
       }
     }
 
-    &--dropdown {
-      &::after {
-        content: "";
-        display: inline-block;
-        margin-left: 0.5rem;
-        vertical-align: middle;
-        border-top: 0.3em solid;
-        border-right: 0.3em solid transparent;
-        border-left: 0.3em solid transparent;
-        flex-shrink: 0;
-      }
-    }
-
     &-text {
-      display: none;
-
-      @media (min-width: 576px) {
-        display: inline;
-      }
-
-      &--short {
-        display: inline;
-
-        @media (min-width: 576px) {
-          display: none;
-        }
+      @include respond-to-max(sm) {
+        display: none;
       }
     }
   }
 
-  &__badge {
-    display: inline-block;
-    padding: 0.25rem 0.5rem;
-    margin-left: 0.25rem;
-    font-size: 0.75rem;
-    color: #6c757d;
-    background-color: #f8f9fa;
-    border-radius: 0.25rem;
+  &__dropdown-item {
+    display: flex;
+    gap: 0.75rem;
+    padding: 0.625rem 1rem;
+    align-items: center;
 
-    @media (min-width: 576px) {
-      margin-left: 0.5rem;
-      font-size: 0.875rem;
+    &:hover {
+      background-color: #f1f3f7;
     }
   }
 
-  &__dropdown {
+  &__checkbox-label {
     position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+  }
 
-    &-menu {
-      position: absolute;
-      top: 100%;
-      right: 0;
-      z-index: 1000;
-      display: none;
-      min-width: 10rem;
-      max-width: 90vw;
-      padding: 0.5rem 0;
-      margin: 0.125rem 0 0;
-      font-size: 0.875rem;
-      color: #212529;
-      text-align: left;
-      list-style: none;
-      background-color: #fff;
-      background-clip: padding-box;
-      border: 1px solid rgba(0, 0, 0, 0.15);
-      border-radius: 0.25rem;
-      box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.175);
+  &__checkbox {
+    position: absolute;
+    opacity: 0;
+    width: 0;
+    height: 0;
 
-      @media (min-width: 576px) {
-        font-size: 1rem;
-        left: 0;
-        right: auto;
-      }
-
-      &.show {
-        display: block;
-      }
+    &:focus-visible + &-custom {
+      outline: 2px solid $color-primary;
+      outline-offset: 2px;
     }
 
-    &-item {
-      display: block;
-      width: 100%;
-      padding: 0.375rem 1rem;
-      clear: both;
-      font-weight: 400;
-      color: #212529;
-      text-align: inherit;
-      text-decoration: none;
-      white-space: nowrap;
-      background-color: transparent;
-      border: 0;
-      cursor: pointer;
+    &:checked + &-custom {
+      background-color: $color-primary;
+      border-color: $color-primary;
 
-      @media (min-width: 576px) {
-        padding: 0.25rem 1rem;
+      &::after {
+        opacity: 1;
       }
+    }
+  }
 
-      &:hover {
-        color: #1e2125;
-        background-color: #f8f9fa;
-      }
+  &__checkbox-custom {
+    width: 1.125rem;
+    height: 1.125rem;
+    border: 2px solid #dee2e6;
+    border-radius: 0.25rem;
+    background: $white;
+    position: relative;
+    transition: all 0.2s ease;
+
+    &::after {
+      content: "";
+      position: absolute;
+      left: 0.25rem;
+      top: 0.0625rem;
+      width: 0.375rem;
+      height: 0.625rem;
+      border: solid $white;
+      border-width: 0 2px 2px 0;
+      transform: rotate(45deg);
+      opacity: 0;
+      transition: opacity 0.2s ease;
     }
   }
 
@@ -561,5 +684,111 @@ onMounted(async () => {
       padding: 3rem;
     }
   }
+}
+
+.dropdown-button {
+  &__text {
+    @include respond-to-max(sm) {
+      font-size: 0.875rem;
+    }
+  }
+
+  &__icon {
+    margin-left: 0.25rem;
+
+    @include respond-to-max(sm) {
+      margin-left: 0.125rem;
+    }
+  }
+}
+
+.badges-container {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem;
+  margin-left: 0.5rem;
+
+  @include respond-to-max(sm) {
+    margin-left: 0.25rem;
+  }
+}
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  border-radius: 1rem;
+  padding: 0.125rem 0.5rem;
+  background-color: #f2f4f7;
+  font-weight: 500;
+  font-size: 0.75rem;
+  line-height: 1.125rem;
+  color: #344054;
+
+  @include respond-to-max(sm) {
+    font-size: 0.625rem;
+    padding: 0.125rem 0.375rem;
+  }
+
+  &__remove {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+    margin: 0;
+    background: none;
+    border: none;
+    color: #6c757d;
+    cursor: pointer;
+    border-radius: 50%;
+    transition: all 0.2s ease;
+
+    &:hover,
+    &:focus-visible {
+      background-color: rgba(0, 0, 0, 0.05);
+      color: #344054;
+    }
+
+    &:focus-visible {
+      outline: 2px solid $color-primary;
+      outline-offset: 1px;
+    }
+  }
+}
+
+.dropdown__item {
+  width: 100%;
+  text-align: left;
+  padding: 0.5rem 0;
+  background: none;
+  border: none;
+  color: inherit;
+  cursor: pointer;
+  font-size: 0.875rem;
+  transition: all 0.2s ease;
+
+  @include respond-to-max(sm) {
+    font-size: 0.8125rem;
+    padding: 0.625rem 0;
+  }
+
+  &:hover,
+  &:focus-visible {
+    color: $color-primary;
+  }
+
+  &:focus-visible {
+    outline: 2px solid $color-primary;
+    outline-offset: 2px;
+  }
+
+  &[aria-pressed="true"] {
+    font-weight: 600;
+    color: $color-primary;
+  }
+}
+
+.visually-hidden {
+  @include visually-hidden;
 }
 </style>

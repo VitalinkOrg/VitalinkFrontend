@@ -208,7 +208,7 @@
 
         <p class="registration__login-prompt">
           <span class="registration__login-text">Ya tienes Cuenta? </span>
-          <NuxtLink href="/pacientes/login" class="registration__login-link">
+          <NuxtLink href="/auth/login" class="registration__login-link">
             Iniciar Sesión
           </NuxtLink>
         </p>
@@ -285,7 +285,7 @@ watch(
       birthdateValue.value = new Date(newBirthdate);
     }
   },
-  { immediate: true }
+  { immediate: true },
 );
 
 const validateField = (field: string, value: string) => {
@@ -419,7 +419,7 @@ const handleRegister = async () => {
   Object.keys(registerData.value).forEach((field) => {
     validateField(
       field,
-      registerData.value[field as keyof typeof registerData.value]
+      registerData.value[field as keyof typeof registerData.value],
     );
   });
 
@@ -447,7 +447,7 @@ const handleRegister = async () => {
         alert("Por favor, verifica los datos ingresados");
       } else {
         alert(
-          "Ocurrió un error al crear la cuenta. Por favor, inténtalo de nuevo."
+          "Ocurrió un error al crear la cuenta. Por favor, inténtalo de nuevo.",
         );
       }
     })
