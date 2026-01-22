@@ -23,7 +23,7 @@ export const useSpecialties = () => {
   const { getToken } = useAuthToken();
 
   const fetchSpecialtiesBySupplier = (
-    supplierId: number
+    supplierId: number,
   ): UsableAPI<ApiResponse<SpecialtyBySupplierResponse[]>> => {
     const token = getToken();
     if (!token) throw new Error("No authentication token found");
@@ -40,7 +40,7 @@ export const useSpecialties = () => {
   };
 
   const addSpecialtyToSupplier = (
-    data: AddSpecialtyBySupplierRequest
+    data: AddSpecialtyBySupplierRequest,
   ): UsableAPI<ApiResponse<SpecialtyBySupplierResponse>> => {
     const token = getToken();
     if (!token) throw new Error("No authentication token found");
@@ -58,7 +58,7 @@ export const useSpecialties = () => {
   };
 
   const addMultipleSpecialties = (
-    data: AddMultipleSpecialtiesRequest
+    data: AddMultipleSpecialtiesRequest,
   ): UsableAPI<ApiResponse<SpecialtyBySupplierResponse[]>> => {
     const token = getToken();
     if (!token) throw new Error("No authentication token found");
@@ -77,7 +77,7 @@ export const useSpecialties = () => {
 
   const updateSpecialtyBySupplier = (
     id: number,
-    data: Partial<AddSpecialtyBySupplierRequest>
+    data: Partial<AddSpecialtyBySupplierRequest>,
   ): UsableAPI<ApiResponse<SpecialtyBySupplierResponse>> => {
     const token = getToken();
     if (!token) throw new Error("No authentication token found");
@@ -95,7 +95,7 @@ export const useSpecialties = () => {
   };
 
   const deleteSpecialtyFromSupplier = (
-    id: number
+    id: number,
   ): UsableAPI<ApiResponse<void>> => {
     const token = getToken();
     if (!token) throw new Error("No authentication token found");
@@ -112,7 +112,7 @@ export const useSpecialties = () => {
   };
 
   const fetchSpecialtyById = (
-    id: number
+    id: number,
   ): UsableAPI<ApiResponse<SpecialtyBySupplierResponse>> => {
     const token = getToken();
     if (!token) throw new Error("No authentication token found");

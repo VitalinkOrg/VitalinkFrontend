@@ -39,58 +39,57 @@ export const useAvailability = () => {
     return {
       Authorization: token,
       "Content-Type": "application/json",
-      "x-api-key": String(config.public.API_SECRET_KEY),
     };
   };
 
   const fetchAvailability = (): UsableAPI<ApiResponse<Availability[]>> => {
     return useApi<ApiResponse<Availability[]>>(
       `${config.public.API_BASE_URL}/availability/get_all`,
-      { method: "GET", headers: getHeaders() }
+      { method: "GET", headers: getHeaders() },
     );
   };
 
   const fetchAvailabilityBySupplierId = (
-    supplierId: number
+    supplierId: number,
   ): UsableAPI<ApiResponse<Availability[]>> => {
     return useApi<ApiResponse<Availability[]>>(
       `${config.public.API_BASE_URL}/availability/get_all?supplier_id=${supplierId}`,
-      { method: "GET", headers: getHeaders() }
+      { method: "GET", headers: getHeaders() },
     );
   };
 
   const fetchAvailabilityById = (
-    id: number
+    id: number,
   ): UsableAPI<ApiResponse<Availability>> => {
     return useApi<ApiResponse<Availability>>(
       `${config.public.API_BASE_URL}/availability/get?id=${id}`,
-      { method: "GET", headers: getHeaders() }
+      { method: "GET", headers: getHeaders() },
     );
   };
 
   const createAvailability = (
-    payload: CreateAvailabilityPayload
+    payload: CreateAvailabilityPayload,
   ): UsableAPI<ApiResponse<Availability>> => {
     return useApi<ApiResponse<Availability>>(
       `${config.public.API_BASE_URL}/availability/add`,
-      { method: "POST", headers: getHeaders(), body: JSON.stringify(payload) }
+      { method: "POST", headers: getHeaders(), body: JSON.stringify(payload) },
     );
   };
 
   const updateAvailability = (
     id: number,
-    payload: UpdateAvailabilityPayload
+    payload: UpdateAvailabilityPayload,
   ): UsableAPI<ApiResponse<Availability>> => {
     return useApi<ApiResponse<Availability>>(
       `${config.public.API_BASE_URL}/availability/edit?id=${id}`,
-      { method: "PUT", headers: getHeaders(), body: JSON.stringify(payload) }
+      { method: "PUT", headers: getHeaders(), body: JSON.stringify(payload) },
     );
   };
 
   const deleteAvailability = (id: number): UsableAPI<ApiResponse<void>> => {
     return useApi<ApiResponse<void>>(
       `${config.public.API_BASE_URL}/availability/delete?id=${id}`,
-      { method: "DELETE", headers: getHeaders() }
+      { method: "DELETE", headers: getHeaders() },
     );
   };
 
