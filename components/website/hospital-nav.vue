@@ -46,7 +46,7 @@ export default {
       if (authenticated.value) {
         this.open = true;
       } else {
-        this.$router.push("/pacientes/login");
+        this.$router.push("/auth/login");
       }
     },
     closeModal() {

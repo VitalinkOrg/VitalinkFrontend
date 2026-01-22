@@ -36,7 +36,7 @@ const user_info = {
 
 const handleLogout = () => {
   logout();
-  router.push("/pacientes/login");
+  router.push("/auth/login");
 };
 </script>
 <template>

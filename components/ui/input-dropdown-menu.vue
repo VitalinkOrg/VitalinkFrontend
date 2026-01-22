@@ -254,7 +254,7 @@ function handleLogout() {
     announceText.value = "Sesión cerrada correctamente. Redirigiendo...";
 
     setTimeout(() => {
-      if (route.path !== "/") router.push("/pacientes/login");
+      if (route.path !== "/") router.push("/auth/login");
     }, 500);
   } catch (error) {
     console.error("Error durante el logout:", error);
@@ -446,7 +446,7 @@ watch(
       imageError.value = true;
     }
   },
-  { immediate: true }
+  { immediate: true },
 );
 
 onMounted(async () => {

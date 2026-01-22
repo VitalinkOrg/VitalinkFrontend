@@ -1,3 +1,4 @@
+// components\website\base-dropdown.vue
 <template>
   <div class="dropdown" ref="dropdownRef">
     <!-- Activador -->
@@ -56,6 +57,8 @@ onMounted(() => {
 onBeforeUnmount(() => {
   document.removeEventListener("click", handleClickOutside);
 });
+
+defineExpose({ close });
 </script>
 
 <style lang="scss">
