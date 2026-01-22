@@ -1,5 +1,3 @@
-// components\medicos\registro\formulario-proveedor-medico.vue
-
 <template>
   <div class="form-container">
     <form @submit.prevent="handleSubmit" novalidate class="registro-form">
@@ -366,7 +364,7 @@
       <p class="auth-already-account" id="register-link-label">
         <span>¿Ya tienes cuenta?</span>
         <NuxtLink
-          to="/medicos/login"
+          to="/auth/login"
           class="auth-login-link"
           aria-describedby="register-link-label"
         >
@@ -458,7 +456,7 @@ const isDocumentValid = computed(() => {
   if (!props.supplierFormData.documentNumber) return true;
   return validateCedula(
     props.supplierFormData.documentNumber,
-    props.supplierFormData.documentType
+    props.supplierFormData.documentType,
   );
 });
 
@@ -534,7 +532,7 @@ const handleDocumentNumberInput = (event: Event) => {
 
   const formattedValue = formatCedula(
     target.value,
-    props.supplierFormData.documentType
+    props.supplierFormData.documentType,
   );
 
   const numbersBeforeCursor = target.value

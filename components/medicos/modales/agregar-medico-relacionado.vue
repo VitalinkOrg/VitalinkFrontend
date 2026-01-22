@@ -33,23 +33,37 @@
           />
 
           <div v-if="currentStep === 1" class="step-content">
-            <form @submit.prevent="goToStep(2)" class="doctor-form">
+            <form @submit.prevent="handleStep1Submit" class="doctor-form">
               <div class="doctor-form__group">
                 <label for="documentType" class="doctor-form__label">
                   Tipo de documento de identidad
                 </label>
                 <UiDropdownBase
-                  v-model="formData.documentType"
-                  :loading="isLoadingDocumentTypes"
+                  :model-value="formData.documentType"
                   :items="
                     documentTypeOptions.map((s) => ({
                       value: s.code,
                       label: s.name,
                     }))
                   "
-                  placeholder="Seleccione tipo de documento"
+                  :loading="isLoadingDocumentTypes"
                   :disabled="isLoadingSubmit || isEditMode"
+                  :class="{
+                    'input-error':
+                      touched.documentType && !formData.documentType,
+                  }"
+                  placeholder="Seleccione tipo de documento"
+                  @update:model-value="
+                    handleDocumentTypeChange($event as string)
+                  "
+                  @blur="touched.documentType = true"
                 />
+                <small
+                  v-if="touched.documentType && !formData.documentType"
+                  class="doctor-form__error-message"
+                >
+                  Debes seleccionar un tipo de documento
+                </small>
               </div>
 
               <div class="doctor-form__group">
@@ -57,13 +71,33 @@
                   Número de documento
                 </label>
                 <input
-                  v-model="formData.documentNumber"
+                  :value="formData.documentNumber"
+                  @input="handleDocumentNumberInput"
+                  @blur="touched.documentNumber = true"
                   type="text"
                   class="doctor-form__input"
-                  placeholder="Ingrese número de documento"
+                  :class="{
+                    'input-error':
+                      touched.documentNumber &&
+                      (!formData.documentNumber || !isDocumentValid),
+                  }"
+                  :placeholder="getCedulaPlaceholder(formData.documentType)"
                   :disabled="isLoadingSubmit || isEditMode"
+                  id="documentNumber"
                   required
                 />
+                <small
+                  v-if="touched.documentNumber && !formData.documentNumber"
+                  class="doctor-form__error-message"
+                >
+                  El número de documento es requerido
+                </small>
+                <small
+                  v-else-if="formData.documentNumber && !isDocumentValid"
+                  class="doctor-form__error-message"
+                >
+                  {{ getCedulaErrorMessage(formData.documentType) }}
+                </small>
               </div>
 
               <div class="doctor-form__group">
@@ -72,12 +106,24 @@
                 </label>
                 <input
                   v-model="formData.fullName"
+                  @blur="touched.fullName = true"
                   type="text"
                   class="doctor-form__input"
+                  :class="{
+                    'input-error':
+                      touched.fullName && !formData.fullName.trim(),
+                  }"
                   placeholder="Ingrese nombre completo"
                   :disabled="isLoadingSubmit"
+                  id="fullName"
                   required
                 />
+                <small
+                  v-if="touched.fullName && !formData.fullName.trim()"
+                  class="doctor-form__error-message"
+                >
+                  El nombre completo es requerido
+                </small>
               </div>
 
               <MedicosRegistroCargarArchivos
@@ -88,8 +134,28 @@
                 inputId="identityFileInput"
                 :uploadedFile="formData.identityDocumentFile"
                 :disabled="isLoadingSubmit"
-                @update:file="formData.identityDocumentFile = $event"
+                :has-error="
+                  touched.identityDocumentFile && !formData.identityDocumentFile
+                "
+                @update:file="handleIdentityFileChange"
+                @blur="touched.identityDocumentFile = true"
               />
+              <small
+                v-if="
+                  !isEditMode &&
+                  touched.identityDocumentFile &&
+                  !formData.identityDocumentFile
+                "
+                class="doctor-form__error-message"
+              >
+                Debes cargar el documento de identidad (PDF, Word, JPG o PNG)
+              </small>
+              <small
+                v-if="identityFileError"
+                class="doctor-form__error-message"
+              >
+                {{ identityFileError }}
+              </small>
 
               <div class="doctor-form__group">
                 <label for="medicalCode" class="doctor-form__label">
@@ -97,12 +163,24 @@
                 </label>
                 <input
                   v-model="formData.medicalCode"
+                  @blur="touched.medicalCode = true"
                   type="text"
                   class="doctor-form__input"
+                  :class="{
+                    'input-error':
+                      touched.medicalCode && !formData.medicalCode.trim(),
+                  }"
                   placeholder="Ingrese el código de médico"
                   :disabled="isLoadingSubmit"
+                  id="medicalCode"
                   required
                 />
+                <small
+                  v-if="touched.medicalCode && !formData.medicalCode.trim()"
+                  class="doctor-form__error-message"
+                >
+                  El código de médico es requerido
+                </small>
               </div>
 
               <MedicosRegistroCargarArchivos
@@ -113,8 +191,25 @@
                 inputId="validLicenseFileInput"
                 :uploadedFile="formData.validLicenseFile"
                 :disabled="isLoadingSubmit"
-                @update:file="formData.validLicenseFile = $event"
+                :has-error="
+                  touched.validLicenseFile && !formData.validLicenseFile
+                "
+                @update:file="handleLicenseFileChange"
+                @blur="touched.validLicenseFile = true"
               />
+              <small
+                v-if="
+                  !isEditMode &&
+                  touched.validLicenseFile &&
+                  !formData.validLicenseFile
+                "
+                class="doctor-form__error-message"
+              >
+                Debes cargar el carnet vigente (PDF, Word, JPG o PNG)
+              </small>
+              <small v-if="licenseFileError" class="doctor-form__error-message">
+                {{ licenseFileError }}
+              </small>
 
               <div class="doctor-form__group">
                 <label for="medicalType" class="doctor-form__label">
@@ -126,9 +221,19 @@
                   :items="
                     medicalTypes.map((s) => ({ value: s.code, label: s.name }))
                   "
+                  :class="{
+                    'input-error': touched.medicalType && !formData.medicalType,
+                  }"
                   placeholder="Seleccione tipo de médico"
                   :disabled="isLoadingSubmit"
+                  @blur="touched.medicalType = true"
                 />
+                <small
+                  v-if="touched.medicalType && !formData.medicalType"
+                  class="doctor-form__error-message"
+                >
+                  Debes seleccionar un tipo de médico
+                </small>
               </div>
 
               <div class="doctor-form__group">
@@ -182,6 +287,14 @@
                     </button>
                   </span>
                 </div>
+                <small
+                  v-if="
+                    touched.specialties && formData.specialties.length === 0
+                  "
+                  class="doctor-form__error-message"
+                >
+                  Debes agregar al menos una especialidad
+                </small>
                 <small
                   v-if="formData.specialties.length >= 3"
                   class="doctor-form__limit-text"
@@ -265,7 +378,7 @@
               type="button"
               class="modal-footer__button--primary"
               :disabled="!isStep1Complete || isLoadingSubmit"
-              @click="goToStep(2)"
+              @click="handleStep1Submit"
             >
               Continuar
             </button>
@@ -337,6 +450,7 @@ import {
   useSupplier,
   useUdc,
 } from "@/composables/api";
+import { useFormat } from "@/composables/useFormat";
 import type { IRelatedMedicalFormData, IUdc, Service, Supplier } from "@/types";
 import type { CreateSupplier } from "~/composables/api/useSupplier";
 import MedicosModalesPackPreview from "./pack-preview.vue";
@@ -375,6 +489,8 @@ interface Emits {
 }
 
 const DEFAULT_VALORACION_COST = 25000;
+const ALLOWED_EXTENSIONS = [".pdf", ".doc", ".docx", ".jpg", ".jpeg", ".png"];
+const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
 
 const props = withDefaults(defineProps<Props>(), {
   editMode: false,
@@ -399,6 +515,12 @@ const { createPackage } = usePackage();
 const { createAvailability } = useAvailability();
 const { getToken } = useAuthToken();
 const { getUserInfo } = useUserInfo();
+const {
+  formatCedula,
+  validateCedula,
+  getCedulaPlaceholder,
+  getCedulaErrorMessage,
+} = useFormat();
 
 const isOpen = ref(false);
 const currentStep = ref(1);
@@ -421,6 +543,8 @@ const servicesData = ref<IUdc[]>([]);
 
 const errorMessage = ref<string>("");
 const currentSupplier = ref<Supplier | null>(null);
+const identityFileError = ref<string>("");
+const licenseFileError = ref<string>("");
 
 const isEditMode = computed(() => props.editMode);
 
@@ -436,6 +560,17 @@ const formData = ref<IRelatedMedicalFormData>({
 });
 
 const originalFormData = ref<IRelatedMedicalFormData | null>(null);
+
+const touched = reactive({
+  documentType: false,
+  documentNumber: false,
+  fullName: false,
+  identityDocumentFile: false,
+  medicalCode: false,
+  validLicenseFile: false,
+  medicalType: false,
+  specialties: false,
+});
 
 const packs = ref<Pack[]>([]);
 const originalPacks = ref<Pack[]>([]);
@@ -455,20 +590,32 @@ const servicesMap = computed(() => {
   return map;
 });
 
+const isDocumentValid = computed(() => {
+  if (!formData.value.documentNumber) return true;
+  return validateCedula(
+    formData.value.documentNumber,
+    formData.value.documentType
+  );
+});
+
 const isStep1Complete = computed(() => {
+  const baseValidation =
+    formData.value.documentType.trim() !== "" &&
+    formData.value.documentNumber.trim() !== "" &&
+    isDocumentValid.value &&
+    formData.value.fullName.trim() !== "" &&
+    formData.value.medicalCode.trim() !== "" &&
+    formData.value.medicalType.trim() !== "" &&
+    formData.value.specialties.length > 0;
+
   if (isEditMode.value) {
-    return true;
+    return baseValidation;
   }
 
   return (
-    formData.value.documentType &&
-    formData.value.documentNumber &&
-    formData.value.fullName &&
-    formData.value.medicalCode &&
-    formData.value.medicalType &&
-    formData.value.specialties.length > 0 &&
-    formData.value.identityDocumentFile &&
-    formData.value.validLicenseFile
+    baseValidation &&
+    formData.value.identityDocumentFile !== null &&
+    formData.value.validLicenseFile !== null
   );
 });
 
@@ -504,6 +651,104 @@ const isStep2Complete = computed(() => {
       pack.precio > 0
   );
 });
+
+const validateFileType = (file: File, errorRef: Ref<string>): boolean => {
+  const extension = "." + file.name.split(".").pop()?.toLowerCase();
+
+  if (!ALLOWED_EXTENSIONS.includes(extension)) {
+    errorRef.value = `Formato no permitido. Solo se aceptan archivos: ${ALLOWED_EXTENSIONS.join(", ")}`;
+    return false;
+  }
+
+  if (file.size > MAX_FILE_SIZE) {
+    errorRef.value = "El archivo es demasiado grande. El tamaño máximo es 10MB";
+    return false;
+  }
+
+  errorRef.value = "";
+  return true;
+};
+
+const handleIdentityFileChange = (file: File | null) => {
+  touched.identityDocumentFile = true;
+
+  if (file && !validateFileType(file, identityFileError)) {
+    formData.value.identityDocumentFile = null;
+    return;
+  }
+
+  formData.value.identityDocumentFile = file;
+};
+
+const handleLicenseFileChange = (file: File | null) => {
+  touched.validLicenseFile = true;
+
+  if (file && !validateFileType(file, licenseFileError)) {
+    formData.value.validLicenseFile = null;
+    return;
+  }
+
+  formData.value.validLicenseFile = file;
+};
+
+const handleDocumentTypeChange = (documentType: string) => {
+  touched.documentType = true;
+  formData.value.documentType = documentType ?? "";
+  formData.value.documentNumber = "";
+  touched.documentNumber = false;
+};
+
+const handleDocumentNumberInput = (event: Event) => {
+  touched.documentNumber = true;
+  const target = event.target as HTMLInputElement;
+  const cursorPosition = target.selectionStart || 0;
+
+  const formattedValue = formatCedula(
+    target.value,
+    formData.value.documentType
+  );
+
+  const numbersBeforeCursor = target.value
+    .substring(0, cursorPosition)
+    .replace(/\D/g, "").length;
+
+  let numbersCount = 0;
+  let newCursorPosition = 0;
+
+  for (let i = 0; i < formattedValue.length; i++) {
+    if (formattedValue[i].match(/\d/)) {
+      numbersCount++;
+      if (numbersCount === numbersBeforeCursor) {
+        newCursorPosition = i + 1;
+        break;
+      }
+    }
+  }
+
+  if (numbersCount < numbersBeforeCursor || newCursorPosition === 0) {
+    newCursorPosition = formattedValue.length;
+  }
+
+  formData.value.documentNumber = formattedValue;
+
+  nextTick(() => {
+    target.setSelectionRange(newCursorPosition, newCursorPosition);
+  });
+};
+
+const markAllTouched = () => {
+  Object.keys(touched).forEach((key) => {
+    touched[key as keyof typeof touched] = true;
+  });
+};
+
+const handleStep1Submit = () => {
+  markAllTouched();
+
+  if (isStep1Complete.value && !isLoadingSubmit.value) {
+    goToStep(2);
+  }
+};
 
 const openModal = () => {
   isOpen.value = true;
@@ -591,9 +836,11 @@ const addAnotherDoctor = () => {
 
 const addSpecialty = () => {
   if (!selectedSpecialty.value) return;
+
   const specialtyToAdd = specialties.value.find(
     (s) => s.code === selectedSpecialty.value
   );
+
   if (
     specialtyToAdd &&
     !formData.value.specialties.some((s) => s.code === specialtyToAdd.code) &&
@@ -601,11 +848,13 @@ const addSpecialty = () => {
   ) {
     formData.value.specialties.push(specialtyToAdd);
     selectedSpecialty.value = "";
+    touched.specialties = true;
   }
 };
 
 const removeSpecialty = (index: number) => {
   formData.value.specialties.splice(index, 1);
+  touched.specialties = true;
 };
 
 const resetForm = () => {
@@ -624,7 +873,13 @@ const resetForm = () => {
   originalPacks.value = [];
   selectedSpecialty.value = "";
   errorMessage.value = "";
+  identityFileError.value = "";
+  licenseFileError.value = "";
   isLoadingModalData.value = false;
+
+  Object.keys(touched).forEach((key) => {
+    touched[key as keyof typeof touched] = false;
+  });
 };
 
 const delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
@@ -878,16 +1133,12 @@ const handleSavePacks = async (supplierId: number) => {
           postoperative_assessments: 0,
         };
 
-        console.log("📦 Creando package en edición:", packagePayload);
-
         const packageApi = createPackage(packagePayload);
         await packageApi.request();
 
         if (packageApi.error.value) {
           throw new Error(`Error creando package: ${packageApi.error.value}`);
         }
-
-        console.log("✅ Package creado exitosamente");
 
         await handleSaveAvailability(supplierId, pack.disponibilidad);
       } catch (error) {
@@ -1184,16 +1435,12 @@ const handleSavePacksForNewSupplier = async (
           postoperative_assessments: 0,
         };
 
-        console.log("📦 Creando package para nuevo supplier:", packagePayload);
-
         const packageApi = createPackage(packagePayload);
         await packageApi.request();
 
         if (packageApi.error.value) {
           throw new Error(`Error creando package: ${packageApi.error.value}`);
         }
-
-        console.log("✅ Package creado exitosamente");
 
         await handleSaveAvailability(supplierId, pack.disponibilidad);
       } catch (error) {
@@ -1447,6 +1694,21 @@ defineExpose({
   &__input {
     @include input-base;
     width: 100%;
+    transition:
+      border-color 0.2s ease,
+      box-shadow 0.2s ease;
+
+    &:disabled {
+      background-color: #f9fafb;
+      cursor: not-allowed;
+      opacity: 0.6;
+    }
+
+    &:focus {
+      outline: none;
+      border-color: #3b82f6;
+      box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+    }
   }
 
   &__input-group {
@@ -1490,6 +1752,24 @@ defineExpose({
     border-radius: 0.375rem;
     color: #dc2626;
     font-size: 0.875rem;
+  }
+
+  &__error-message {
+    display: block;
+    color: #dc2626;
+    font-size: 0.875rem;
+    margin-top: 0.25rem;
+    line-height: 1.25;
+  }
+}
+
+.input-error {
+  border-color: #dc2626 !important;
+  background-color: #fef2f2 !important;
+
+  &:focus {
+    border-color: #dc2626 !important;
+    box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.1) !important;
   }
 }
 

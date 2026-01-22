@@ -11,18 +11,15 @@
     <h2 id="appointments-heading" class="sr-only">Tabla de Citas Médicas</h2>
 
     <UiAppointmentTableBase
-      :items="appointments"
+      :items="localAppointments"
       :columns="dynamicColumns"
       title="Tabla de Citas Médicas"
       aria-label="Lista de citas médicas"
       :items-per-page="itemsPerPage"
-      default-sort-column="appointment_date"
-      default-sort-direction="asc"
       empty-state-title="Aún no tienes actividad en tu tablero"
       empty-state-description="Muy pronto podrás administrar y verificar tu actividad."
       empty-state-action="Empezar"
       :show-pagination-info="false"
-      @sort-changed="handleSortChange"
       @page-changed="handlePageChange"
       @empty-action="handleEmptyAction"
     >
@@ -238,7 +235,7 @@
               role="none"
               v-if="
                 !['CONCRETED_APPOINTMENT', 'CANCEL_APPOINTMENT'].includes(
-                  item.appointment_status.code
+                  item.appointment_status.code,
                 )
               "
             >
@@ -367,6 +364,7 @@ const { openModal, isOpen } = useMedicalModalManager();
 
 const selectedAppointments = ref<Set<number>>(new Set());
 const allSelected = ref<boolean>(false);
+const localAppointments = ref<Appointment[]>([]);
 
 const dynamicColumns = computed<TableColumn[]>(() => {
   const baseColumns: TableColumn[] = [];
@@ -399,7 +397,7 @@ const dynamicColumns = computed<TableColumn[]>(() => {
       label: "Procedimiento",
       width: props.useDropdown ? "150px" : "200px",
       sortField: "package.procedure.name",
-    }
+    },
   );
 
   if (props.useDropdown) {
@@ -545,25 +543,15 @@ const downloadSummary = (appointment: Appointment): void => {
   doc.text(
     "Documento generado el: " + formatDate(new Date().toISOString()),
     20,
-    280
+    280,
   );
   doc.text("Vitalink - Sistema de Gestión Médica", 105, 280, {
     align: "center",
   });
 
   doc.save(
-    `Cita_${appointment.customer.name}_${appointment.appointment_date}.pdf`
+    `Cita_${appointment.customer.name}_${appointment.appointment_date}.pdf`,
   );
-};
-
-const handleSortChange = ({
-  column,
-  direction,
-}: {
-  column: string;
-  direction: "asc" | "desc";
-}) => {
-  console.log(`Ordenando por ${column} en dirección ${direction}`);
 };
 
 const handlePageChange = (page: number) => {
@@ -578,10 +566,10 @@ const handleEmptyAction = () => {
 
 watch(
   () => props.appointments,
-  () => {
-    selectedAppointments.value.clear();
-    allSelected.value = false;
-  }
+  (newAppointments) => {
+    localAppointments.value = [...newAppointments];
+  },
+  { immediate: true },
 );
 </script>
 

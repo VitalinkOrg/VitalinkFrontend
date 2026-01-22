@@ -271,7 +271,7 @@
       </div>
       <p class="text-center mt-3">
         <span class="text-muted">Ya tienes Cuenta? </span>
-        <NuxtLink href="/pacientes/login" class="btn-link text-dark fw-medium"
+        <NuxtLink href="/auth/login" class="btn-link text-dark fw-medium"
           >Iniciar Sesión</NuxtLink
         >
       </p>
@@ -303,14 +303,14 @@ const { data: specialties } = await useFetch(
   config.public.API_BASE_URL + "/specialties",
   {
     transform: (_specialties) => _specialties.data,
-  }
+  },
 );
 
 const { data: services } = await useFetch(
   config.public.API_BASE_URL + "/services",
   {
     transform: (_services) => _services.data,
-  }
+  },
 );
 
 const nextStep = () => {
@@ -355,7 +355,7 @@ const register = async (e) => {
         legal_name,
         group_name: "Test",
       },
-    }
+    },
   );
   if (data.value) {
     router.push("/");

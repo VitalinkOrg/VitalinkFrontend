@@ -1,253 +1,92 @@
 <script lang="ts" setup>
+import { useAppointment } from "@/composables/api";
+import type { Appointment } from "@/types";
 import { jsPDF } from "jspdf";
 import "jspdf-autotable";
-import { computed, ref, watch, type Ref } from "vue";
-import type { Appointment } from "~/types";
+import { computed, ref, type Ref } from "vue";
+
+const { fetchAllAppointments } = useAppointment();
 
 definePageMeta({
   middleware: ["auth-doctors-hospitals"],
 });
 
-const config = useRuntimeConfig();
-const token = useCookie("token");
-const role = useCookie("role");
 const { formatDate } = useFormat();
 
-const tab: Ref<number> = ref(1);
+const tableKey = computed(() => sortOption.value);
+
 const searchQuery: Ref<string> = ref("");
-const sortOption: Ref<string> = ref("date");
+const sortOption: Ref<string> = ref("newest");
 const selectedStatuses: Ref<Set<string>> = ref(new Set(["Todos"]));
+const appointments: Ref<Appointment[]> = ref([]);
+
+const getAppointments = async () => {
+  const api = fetchAllAppointments();
+  await api.request();
+
+  const response = api.response.value;
+
+  if (response && response.data) {
+    appointments.value = response.data;
+  }
+};
 
 const statusMapping: Record<string, string> = {
   Pendiente: "Pendiente",
-  Completada: "Concretado",
+  Completada: "Completada",
   Cancelada: "Cancelada",
   Todos: "Todos",
 };
 
-const valorationAppointmentStates = [
-  "PENDING_VALORATION_APPOINTMENT",
-  "CONFIRM_VALIDATION_APPOINTMENT",
-  "VALUATION_PENDING_VALORATION_APPOINTMENT",
-  "VALUED_VALORATION_APPOINTMENT",
-];
+const statusCodeToCategory = (code: string): string => {
+  const completedCodes = [
+    "CONCRETED_APPOINTMENT",
+    "VALUED_VALORATION_APPOINTMENT",
+  ];
+  const pendingCodes = [
+    "PENDING_VALORATION_APPOINTMENT",
+    "PENDING_PROCEDURE",
+    "CONFIRM_PROCEDURE",
+    "CONFIRM_VALIDATION_APPOINTMENT",
+    "VALUATION_PENDING_VALORATION_APPOINTMENT",
+    "WAITING_PROCEDURE",
+  ];
+  const cancelledCodes = ["CANCEL_APPOINTMENT"];
 
-const procedureStates = [
-  "PENDING_PROCEDURE",
-  "CONFIRM_PROCEDURE",
-  "WAITING_PROCEDURE",
-  "CONCRETED_APPOINTMENT",
-  "CANCEL_APPOINTMENT",
-];
+  if (completedCodes.includes(code)) return "Completada";
+  if (cancelledCodes.includes(code)) return "Cancelada";
+  if (pendingCodes.includes(code)) return "Pendiente";
+
+  return "Pendiente";
+};
 
 const loading: Ref<boolean> = ref(false);
-const isRefreshing: Ref<boolean> = ref(false);
-const previousAppointments: Ref<Appointment[]> = ref([]);
-const allAppointmentsData: Ref<Appointment[] | null> = ref(null);
 
-const appointmentsData = computed(() => {
-  return allAppointmentsData.value || previousAppointments.value;
-});
-
-let url: string;
-if (role.value == "R_HOS") {
-  url = "/hospital_dashboard/history_appointments";
-} else {
-  url = "/doctor_dashboard/history_appointments";
-}
-
-try {
-  const { data: appointmentsResponse } = await useFetch<Appointment[]>(
-    config.public.API_BASE_URL + "/appointment/get_all",
-    {
-      headers: { Authorization: token.value ?? "" },
-      transform: (_appointments: any) => _appointments.data,
-    }
-  );
-
-  if (appointmentsResponse.value) {
-    allAppointmentsData.value = appointmentsResponse.value;
-    previousAppointments.value = appointmentsResponse.value;
-    useRefreshToken();
-  }
-} catch (error) {
-  console.error("Initial fetch error:", error);
-}
-
-const fetchAppointments = async (isRefresh: boolean = false): Promise<void> => {
-  if (isRefresh) {
-    isRefreshing.value = true;
-  } else {
-    loading.value = true;
-  }
-
-  try {
-    const { data } = await useFetch<Appointment[]>(
-      config.public.API_BASE_URL + "/appointment/get_all",
-      {
-        headers: { Authorization: token.value ?? "" },
-        transform: (_appointments: any) => _appointments.data,
-        server: false,
-        key: isRefresh ? `appointments-${Date.now()}` : "appointments",
-      }
-    );
-
-    if (data.value) {
-      if (allAppointmentsData.value) {
-        previousAppointments.value = allAppointmentsData.value;
-      }
-
-      allAppointmentsData.value = data.value;
-      useRefreshToken();
-    }
-  } catch (error) {
-    console.error("Fetch error:", error);
-  } finally {
-    loading.value = false;
-    isRefreshing.value = false;
-  }
+const isStatusSelected = (status: string): boolean => {
+  return selectedStatuses.value.has(status);
 };
 
-watch(
-  allAppointmentsData,
-  (newVal, oldVal) => {
-    if (oldVal && newVal !== oldVal) {
-      previousAppointments.value = oldVal;
-    }
-  },
-  { deep: true }
-);
-
-const refreshAppointments = async (): Promise<void> => {
-  await fetchAppointments(true);
-};
-
-provide("refreshAppointments", refreshAppointments);
-
-const handleRefresh = async (): Promise<void> => {
-  await refreshAppointments();
-};
-
-provide("handleRefresh", handleRefresh);
-
-const allAppointments = computed((): Appointment[] => {
-  return appointmentsData.value || [];
-});
-
-const getAppointmentState = (appointment: Appointment): string => {
-  return appointment.appointment_status.code;
-};
-
-const filteredAppointments = computed((): Appointment[] => {
-  let filtered = allAppointments.value;
-
-  if (tab.value === 1) {
-    filtered = filtered.filter((appointment) => {
-      const state = getAppointmentState(appointment);
-      return valorationAppointmentStates.includes(state);
-    });
-  } else if (tab.value === 2) {
-    filtered = filtered.filter((appointment) => {
-      const state = getAppointmentState(appointment);
-      return procedureStates.includes(state);
-    });
-  }
-
-  if (!selectedStatuses.value.has("Todos")) {
-    const mappedStatuses = Array.from(selectedStatuses.value).map(
-      (status) => statusMapping[status]
-    );
-    filtered = filtered.filter((appointment) => {
-      const appointmentStatus = getAppointmentState(appointment);
-      return mappedStatuses.includes(appointmentStatus);
-    });
-  }
-
-  if (searchQuery.value) {
-    const query = searchQuery.value.toLowerCase();
-    filtered = filtered.filter((appointment) => {
-      const patientName =
-        appointment.customer?.name ||
-        `${appointment.customer?.name || ""} ${appointment.customer?.name || ""}`.trim() ||
-        "";
-
-      const serviceName =
-        appointment.package?.product?.name ||
-        appointment.package?.procedure?.name ||
-        "";
-
-      const appointmentCode =
-        appointment.id?.toString() ||
-        appointment.package?.procedure?.code ||
-        "";
-
-      return (
-        patientName.toLowerCase().includes(query) ||
-        serviceName.toLowerCase().includes(query) ||
-        appointmentCode.toLowerCase().includes(query)
-      );
-    });
-  }
-
-  filtered = [...filtered].sort((a, b) => {
-    if (sortOption.value === "date" || sortOption.value === "fecha") {
-      const dateA = new Date(a.appointment_date || "");
-      const dateB = new Date(b.appointment_date || "");
-      return dateA.getTime() - dateB.getTime();
-    } else if (sortOption.value === "name" || sortOption.value === "nombre") {
-      const nameA = (
-        a.customer?.name ||
-        `${a.customer?.name || ""} ${a.customer?.name || ""}`.trim() ||
-        ""
-      ).toLowerCase();
-
-      const nameB = (
-        b.customer?.name ||
-        `${b.customer?.name || ""} ${b.customer?.name || ""}`.trim() ||
-        ""
-      ).toLowerCase();
-
-      return nameA.localeCompare(nameB);
-    }
-    return 0;
-  });
-
-  return filtered;
-});
-
-const changeTab = (newTab: number): void => {
-  tab.value = newTab;
-  selectedStatuses.value = new Set(["Todos"]);
-};
-
-const toggleStatusFilter = (status: string): void => {
+const toggleStatus = (status: string): void => {
   const newSelectedStatuses = new Set(selectedStatuses.value);
 
   if (status === "Todos") {
-    if (newSelectedStatuses.has("Todos")) {
-      return;
-    } else {
-      newSelectedStatuses.clear();
-      newSelectedStatuses.add("Todos");
-    }
+    newSelectedStatuses.clear();
+    newSelectedStatuses.add("Todos");
   } else {
     newSelectedStatuses.delete("Todos");
 
     if (newSelectedStatuses.has(status)) {
       newSelectedStatuses.delete(status);
-      if (newSelectedStatuses.size === 0) {
-        newSelectedStatuses.add("Todos");
-      }
     } else {
       newSelectedStatuses.add(status);
+    }
+
+    if (newSelectedStatuses.size === 0) {
+      newSelectedStatuses.add("Todos");
     }
   }
 
   selectedStatuses.value = newSelectedStatuses;
-};
-
-const isStatusSelected = (status: string): boolean => {
-  return selectedStatuses.value.has(status);
 };
 
 const removeStatusBadge = (status: string): void => {
@@ -268,20 +107,86 @@ const selectedStatusBadges = computed((): string[] => {
   return Array.from(selectedStatuses.value);
 });
 
-const downloadAllAppointments = (): void => {
-  if (!filteredAppointments.value || filteredAppointments.value.length === 0)
-    return;
+const filteredAndSortedAppointments = computed((): Appointment[] => {
+  let result = [...appointments.value];
 
+  // Búsqueda
+  if (searchQuery.value.trim()) {
+    const query = searchQuery.value.toLowerCase();
+    result = result.filter((appointment) => {
+      const customerName = appointment.customer?.name?.toLowerCase() || "";
+      const serviceName =
+        appointment.package?.product?.name?.toLowerCase() || "";
+      const appointmentType =
+        appointment.appointment_type?.name?.toLowerCase() || "";
+      const status =
+        appointment.appointment_status?.value1?.toLowerCase() || "";
+
+      return (
+        customerName.includes(query) ||
+        serviceName.includes(query) ||
+        appointmentType.includes(query) ||
+        status.includes(query)
+      );
+    });
+  }
+
+  // Filtro por estado
+  if (!selectedStatuses.value.has("Todos")) {
+    result = result.filter((appointment) => {
+      const category = statusCodeToCategory(
+        appointment.appointment_status.code,
+      );
+      return selectedStatuses.value.has(category);
+    });
+  }
+
+  // Ordenamiento
+  return result.sort((a, b) => {
+    switch (sortOption.value) {
+      case "newest": {
+        const dateA = new Date(
+          `${a.appointment_date}T${a.appointment_hour}`,
+        ).getTime();
+        const dateB = new Date(
+          `${b.appointment_date}T${b.appointment_hour}`,
+        ).getTime();
+        return dateB - dateA;
+      }
+      case "oldest": {
+        const dateA = new Date(
+          `${a.appointment_date}T${a.appointment_hour}`,
+        ).getTime();
+        const dateB = new Date(
+          `${b.appointment_date}T${b.appointment_hour}`,
+        ).getTime();
+        return dateA - dateB;
+      }
+      case "type":
+        return (a.appointment_type?.name || "").localeCompare(
+          b.appointment_type?.name || "",
+          "es",
+        );
+
+      case "status":
+        return (a.appointment_status?.value1 || "").localeCompare(
+          b.appointment_status?.value1 || "",
+          "es",
+        );
+
+      default:
+        return 0;
+    }
+  });
+});
+
+const downloadAllAppointments = (): void => {
   const doc = new jsPDF();
   const pageWidth = doc.internal.pageSize.getWidth();
   const margin = 15;
   let yPosition = 20;
 
-  // Título del reporte según el tab activo
-  const reportTitle =
-    tab.value === 1
-      ? "Reporte de Citas de Valoración"
-      : "Reporte de Procedimientos";
+  const reportTitle = "Reporte de Citas";
 
   doc.setFontSize(18);
   doc.setFont("helvetica", "bold");
@@ -296,7 +201,7 @@ const downloadAllAppointments = (): void => {
     `Generado el: ${formatDate(new Date().toISOString())}`,
     pageWidth / 2,
     yPosition,
-    { align: "center" }
+    { align: "center" },
   );
   yPosition += 15;
 
@@ -318,7 +223,7 @@ const downloadAllAppointments = (): void => {
   doc.setFontSize(10);
   doc.setFont("helvetica", "normal");
 
-  filteredAppointments.value.forEach((appointment, index) => {
+  filteredAndSortedAppointments.value.forEach((appointment, index) => {
     if (yPosition > 270) {
       doc.addPage();
       yPosition = 20;
@@ -329,7 +234,7 @@ const downloadAllAppointments = (): void => {
     const timeFrom = appointment.appointment_hour || "";
     const serviceName = appointment.package?.product?.name || "N/A";
     const appointmentType = appointment.appointment_type?.name || "N/A";
-    const status = getAppointmentState(appointment) || "N/A";
+    const status = appointment.appointment_status?.value1 || "N/A";
 
     const row = [
       patientName,
@@ -348,7 +253,7 @@ const downloadAllAppointments = (): void => {
 
     yPosition += 8;
 
-    if (index < filteredAppointments.value.length - 1) {
+    if (index < filteredAndSortedAppointments.value.length - 1) {
       doc.setDrawColor(220, 220, 220);
       doc.line(margin, yPosition - 2, pageWidth - margin, yPosition - 2);
       doc.setDrawColor(0, 0, 0);
@@ -358,37 +263,19 @@ const downloadAllAppointments = (): void => {
 
   doc.setFontSize(8);
   doc.setTextColor(100);
-  doc.text(`Total citas: ${filteredAppointments.value.length}`, margin, 280);
+  doc.text(
+    `Total citas: ${filteredAndSortedAppointments.value.length}`,
+    margin,
+    280,
+  );
   doc.text("Sistema de Gestión Médica - Vitalink", pageWidth / 2, 280, {
     align: "center",
   });
 
-  const fileName =
-    tab.value === 1
-      ? `Reporte_Citas_Valoracion_${new Date().toISOString().slice(0, 10)}.pdf`
-      : `Reporte_Procedimientos_${new Date().toISOString().slice(0, 10)}.pdf`;
+  const fileName = `Reporte_Citas_${new Date().toISOString().slice(0, 10)}.pdf`;
 
   doc.save(fileName);
 };
-
-interface TabFilter {
-  label: string;
-  value: string;
-  aria: string;
-}
-
-const tabFilters: TabFilter[] = [
-  {
-    label: "Citas de valoración",
-    value: "VALORATION",
-    aria: "valoration-appointments-tab",
-  },
-  {
-    label: "Procedimientos",
-    value: "PROCEDURES",
-    aria: "procedures-tab",
-  },
-];
 
 interface SortOption {
   label: string;
@@ -396,12 +283,26 @@ interface SortOption {
 }
 
 const sortOptions: SortOption[] = [
-  { label: "Fecha", value: "fecha" },
-  { label: "Nombre", value: "nombre" },
+  { label: "Fecha (más reciente)", value: "newest" },
+  { label: "Fecha (más antigua)", value: "oldest" },
+  { label: "Tipo de reserva", value: "type" },
+  { label: "Estado", value: "status" },
 ];
 
 const setSort = (value: string): void => {
   sortOption.value = value;
+};
+
+onMounted(async () => {
+  loading.value = true;
+  await getAppointments();
+  loading.value = false;
+});
+
+const refreshAppointments = async (): Promise<void> => {
+  loading.value = true;
+  await getAppointments();
+  loading.value = false;
 };
 
 provide("refreshAppointments", refreshAppointments);
@@ -435,26 +336,12 @@ provide("refreshAppointments", refreshAppointments);
     <main class="appointment-tracking__main">
       <nav class="appointments-tabs" aria-label="Filtros de citas médicas">
         <ul class="appointments-tabs__list" role="tablist">
-          <li
-            class="appointments-tabs__item"
-            role="presentation"
-            v-for="(filter, index) in tabFilters"
-            :key="filter.value"
-          >
+          <li class="appointments-tabs__item" role="presentation">
             <button
-              class="appointments-tabs__button"
-              :class="{
-                'appointments-tabs__button--active': tab === index + 1,
-              }"
+              class="appointments-tabs__button appointments-tabs__button--active"
               role="tab"
-              :aria-selected="tab === index + 1"
-              :aria-controls="filter.aria"
-              :tabindex="tab === index + 1 ? 0 : -1"
-              @click="changeTab(index + 1)"
-              @keydown.enter="changeTab(index + 1)"
-              @keydown.space.prevent="changeTab(index + 1)"
             >
-              {{ filter.label }}
+              Todas las citas
             </button>
           </li>
         </ul>
@@ -476,8 +363,8 @@ provide("refreshAppointments", refreshAppointments);
             type="button"
             class="button button--outline"
             @click="downloadAllAppointments"
-            :disabled="!filteredAppointments.length"
-            :aria-label="`Descargar reporte de ${filteredAppointments.length} citas`"
+            :disabled="!filteredAndSortedAppointments.length"
+            :aria-label="`Descargar reporte de ${filteredAndSortedAppointments.length} citas`"
           >
             <AtomsIconsDownloadIcon
               size="20"
@@ -549,7 +436,7 @@ provide("refreshAppointments", refreshAppointments);
                     type="checkbox"
                     class="appointments-toolbar__checkbox"
                     :checked="isStatusSelected(status)"
-                    @change="toggleStatusFilter(status)"
+                    @change="toggleStatus(status)"
                     :aria-label="`${isStatusSelected(status) ? 'Deseleccionar' : 'Seleccionar'} filtro ${status}`"
                   />
                   <span
@@ -561,7 +448,7 @@ provide("refreshAppointments", refreshAppointments);
                   type="button"
                   role="menuitem"
                   class="dropdown__item"
-                  @click="toggleStatusFilter(status)"
+                  @click="toggleStatus(status)"
                   :aria-pressed="isStatusSelected(status)"
                 >
                   {{ status }}
@@ -579,22 +466,20 @@ provide("refreshAppointments", refreshAppointments);
           </div>
 
           <div
-            v-else-if="!filteredAppointments.length"
+            v-else-if="!filteredAndSortedAppointments.length"
             class="empty-state"
             role="status"
           >
             <p class="empty-state__message">
-              No se encontraron
-              {{ tab === 1 ? "citas de valoración" : "procedimientos" }} que
-              coincidan con los filtros aplicados.
+              No se encontraron citas que coincidan con los filtros aplicados.
             </p>
           </div>
 
           <MedicosCitasTable
             v-else
-            :appointments="filteredAppointments"
+            :key="tableKey"
+            :appointments="filteredAndSortedAppointments"
             :useDropdown="true"
-            :aria-label="`Tabla con ${filteredAppointments.length} ${tab === 1 ? 'citas de valoración' : 'procedimientos'}`"
           />
         </div>
       </section>
