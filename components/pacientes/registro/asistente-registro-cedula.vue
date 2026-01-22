@@ -121,9 +121,7 @@
         </ol>
       </nav>
 
-      <!-- Formulario dinámico -->
       <form @submit.prevent="nextStep" novalidate>
-        <!-- Paso 1: Cédula -->
         <div class="input-section">
           <div class="input-field-group">
             <label for="idCardField" class="form-label">Nº de Cédula*</label>
@@ -212,6 +210,32 @@
               required
               aria-describedby="addressHint"
             />
+          </div>
+          <div class="input-field-group">
+            <label for="phoneField" class="form-label"
+              >Número de Teléfono*</label
+            >
+            <input
+              id="phoneField"
+              type="tel"
+              class="input-field"
+              placeholder="+506 8888-8888"
+              v-model="phoneNumber"
+              aria-required="true"
+              required
+            />
+          </div>
+
+          <div class="checkbox-field-group">
+            <input
+              type="checkbox"
+              id="whatsappEnabled"
+              v-model="whatsappEnabled"
+              class="form-check-input"
+            />
+            <label for="whatsappEnabled" class="checkbox-label">
+              Enviar notificaciones por WhatsApp a este número
+            </label>
           </div>
         </div>
 
@@ -302,6 +326,9 @@ const isIdCardEdited = ref(false);
 const originalIdCard = ref("");
 const isPersonalInfoEditable = ref(false);
 
+const phoneNumber = ref("");
+const whatsappEnabled = ref(false);
+
 const emit = defineEmits<{
   (e: "back-to-selector"): void;
 }>();
@@ -311,7 +338,9 @@ const isCurrentStepValid = computed(() => {
     case "idCard":
       return isValidIdCardFormat(idCard.value);
     case "personalInfo":
-      return address.value.trim().length > 0;
+      return (
+        address.value.trim().length > 0 && phoneNumber.value.trim().length > 0
+      );
     case "create":
       return (
         password.value.length >= 8 &&
@@ -490,7 +519,7 @@ watch(
     if (newValue && isIdCardVerified.value) {
       isIdCardVerified.value = false;
     }
-  }
+  },
 );
 </script>
 

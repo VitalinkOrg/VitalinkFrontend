@@ -71,7 +71,6 @@
           </button>
           <button
             class="pay-appointment-modal__button--primary"
-            :disabled="isLoading || !canProceedToPayment()"
             @click="initiatePayment"
           >
             <span v-if="!isLoading">Continuar al pago</span>
@@ -125,7 +124,7 @@ interface PaymentResultMessage {
 }
 
 interface Emits {
-  (e: "open-modal", modalName: ModalName): void;
+  (e: "open-modal", modalName: ModalName, data?: any): void;
   (e: "close-modal", modalName: ModalName): void;
   (e: "refresh"): void;
 }
@@ -163,7 +162,7 @@ const parseJWT = (token: string): any => {
       atob(base64)
         .split("")
         .map((c) => "%" + ("00" + c.charCodeAt(0).toString(16)).slice(-2))
-        .join("")
+        .join(""),
     );
     return JSON.parse(jsonPayload);
   } catch (error) {
@@ -225,8 +224,8 @@ const canProceedToPayment = () => {
   return Number(amount) > 0 && Number.isFinite(amount);
 };
 
-const handleOpenModal = (modalName: ModalName): void => {
-  emit("open-modal", modalName);
+const handleOpenModal = (modalName: ModalName, data?: any): void => {
+  emit("open-modal", modalName, data);
 };
 
 const handleCloseModal = (modalName: ModalName): void => {
@@ -339,7 +338,7 @@ const handleIframeMessage = (event: MessageEvent) => {
 
 const handlePaymentResult = (
   status: "success" | "declined" | "error" | "canceled",
-  reference: string
+  reference: string,
 ) => {
   console.log(`[Payment] Procesando resultado: ${status}`);
   console.log("[Payment] Referencia:", reference);
@@ -376,6 +375,8 @@ const handleSuccessfulPayment = async (reference: string) => {
 
     console.log("[Payment] Procesando pago exitoso:", reference);
 
+    const amountPaid = balanceToPay(props.appointment);
+
     const appointmentType =
       props.appointment.appointment_type.code === "VALORATION_APPOINTMENT"
         ? "VALORATION_APPOINTMENT"
@@ -408,7 +409,7 @@ const handleSuccessfulPayment = async (reference: string) => {
     if (error.value) {
       console.error("[Payment] Error en API:", error.value);
       throw new Error(
-        error.value.data?.message || "Error al actualizar la cita"
+        error.value.data?.message || "Error al actualizar la cita",
       );
     }
 
@@ -420,7 +421,10 @@ const handleSuccessfulPayment = async (reference: string) => {
 
     handleCloseModal("appointmentDetails");
     handleCloseModal("payAppointment");
-    handleOpenModal("successfulPayment");
+    handleOpenModal("successfulPayment", {
+      amountPaid,
+      reference,
+    });
   } catch (error: any) {
     console.error("[Payment] Error al actualizar cita:", error);
     errorMessage.value = `El pago fue exitoso pero hubo un error al actualizar la cita. Contacta a soporte con la referencia: ${reference}`;

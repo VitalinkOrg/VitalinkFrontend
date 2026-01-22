@@ -34,7 +34,7 @@ import { ref, watchEffect } from "vue";
 
 const lastSelectedOption = useState<"email" | "idCard">(
   "registrationOption",
-  () => "idCard"
+  () => "idCard",
 );
 const selectedOption = ref<"email" | "idCard">(lastSelectedOption.value);
 

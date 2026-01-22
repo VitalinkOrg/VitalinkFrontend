@@ -1,7 +1,11 @@
-<script setup>
+// pages\pacientes\citas.vue
+
+<script setup lang="ts">
 import { useRefreshToken } from "#imports";
+import type { Appointment } from "@/types";
 import { jsPDF } from "jspdf";
-import { computed, ref, watch } from "vue";
+import { computed, onMounted, ref, watch } from "vue";
+import { useAppointment } from "~/composables/api";
 
 definePageMeta({
   middleware: "auth-pacientes",
@@ -22,67 +26,48 @@ const PROCEDURE_STATUS_CODES = [
   "CANCEL_APPOINTMENT",
 ];
 
-const config = useRuntimeConfig();
-const token = useCookie("token");
-const user_info = useCookie("user_info");
-const loading = ref(false);
-const isRefreshing = ref(false);
-const previousAppointments = ref([]);
+type SortOption = "date-desc" | "date-asc" | "status" | "supplier";
 
-const appointmentsResponse = ref(null);
+const isRefreshing = ref(false);
+const previousAppointments = ref<Appointment[]>([]);
+const appointmentsResponse = ref<Appointment[] | null>(null);
+const tab = ref(1);
+const sort = ref(false);
+const searchQuery = ref("");
+const sortOption = ref<SortOption>("date-desc");
+
+const { response, request, loading } = useAppointment().fetchAllAppointments();
 
 const appointmentsData = computed(() => {
   return appointmentsResponse.value || previousAppointments.value;
 });
 
-const { data: fetchedData } = await useFetch(
-  config.public.API_BASE_URL + "/appointment/get_all",
-  {
-    headers: { Authorization: token.value },
-    params: {
-      customer_id: user_info.id,
-    },
-    transform: (_appointments) => _appointments.data,
+onMounted(async () => {
+  await request();
+  if (response.value?.data) {
+    appointmentsResponse.value = response.value.data;
+    previousAppointments.value = response.value.data;
+    useRefreshToken();
   }
-);
-
-if (fetchedData.value) {
-  appointmentsResponse.value = fetchedData.value;
-  previousAppointments.value = fetchedData.value;
-  useRefreshToken();
-}
+});
 
 const fetchAppointments = async (isRefresh = false) => {
   if (isRefresh) {
     isRefreshing.value = true;
-  } else {
-    loading.value = true;
   }
 
   try {
-    const { data } = await useFetch(
-      config.public.API_BASE_URL + "/appointment/get_all",
-      {
-        headers: { Authorization: token.value },
-        params: { customer_id: user_info.id },
-        transform: (_appointments) => _appointments.data,
-        server: false,
-        key: isRefresh ? `appointments-${Date.now()}` : "appointments",
-      }
-    );
-
-    if (data.value) {
+    await request();
+    if (response.value?.data) {
       if (appointmentsResponse.value) {
         previousAppointments.value = appointmentsResponse.value;
       }
-
-      appointmentsResponse.value = data.value;
+      appointmentsResponse.value = response.value.data;
       useRefreshToken();
     }
   } catch (error) {
     console.error("Fetch error:", error);
   } finally {
-    loading.value = false;
     isRefreshing.value = false;
   }
 };
@@ -94,21 +79,14 @@ watch(
       previousAppointments.value = oldVal;
     }
   },
-  { deep: true }
+  { deep: true },
 );
-
-fetchAppointments();
 
 const refreshAppointments = async () => {
   await fetchAppointments(true);
 };
 
 provide("refreshAppointments", refreshAppointments);
-
-const tab = ref(1);
-const sort = ref(false);
-const filteredAppointments = ref([]);
-const searchQuery = ref("");
 
 const displayAppointments = computed(() => {
   const sourceData = appointmentsData.value || [];
@@ -143,7 +121,7 @@ const displayAppointments = computed(() => {
         appointment.customer?.email,
         appointment.customer?.phone_number,
         appointment.reservation_type?.name,
-        appointment.payment_method?.name,
+        appointment.payment_method,
         appointment.payment_status?.value1,
         appointment.user_description,
         appointment.appointment_qr_code,
@@ -156,31 +134,60 @@ const displayAppointments = computed(() => {
       ];
 
       return searchableFields.some(
-        (field) => field && field.toString().toLowerCase().includes(query)
+        (field) => field && field.toString().toLowerCase().includes(query),
       );
     });
   }
 
-  return filtered;
+  return sortAppointments(filtered);
 });
 
-const getAppointmentTypeByStatus = (statusCode) => {
-  if (PROCEDURE_STATUS_CODES.includes(statusCode)) {
-    return "Procedimiento";
-  } else if (VALORATION_STATUS_CODES.includes(statusCode)) {
-    return "Valoración";
+const sortAppointments = (appointments: Appointment[]) => {
+  const sorted = [...appointments];
+
+  switch (sortOption.value) {
+    case "date-desc":
+      return sorted.sort((a, b) => {
+        const dateA = new Date(`${a.appointment_date} ${a.appointment_hour}`);
+        const dateB = new Date(`${b.appointment_date} ${b.appointment_hour}`);
+        return dateB.getTime() - dateA.getTime();
+      });
+    case "date-asc":
+      return sorted.sort((a, b) => {
+        const dateA = new Date(`${a.appointment_date} ${a.appointment_hour}`);
+        const dateB = new Date(`${b.appointment_date} ${b.appointment_hour}`);
+        return dateA.getTime() - dateB.getTime();
+      });
+    case "status":
+      return sorted.sort((a, b) => {
+        const statusA = a.appointment_status?.value1 || "";
+        const statusB = b.appointment_status?.value1 || "";
+        return statusA.localeCompare(statusB);
+      });
+    case "supplier":
+      return sorted.sort((a, b) => {
+        const supplierA = a.supplier?.name || "";
+        const supplierB = b.supplier?.name || "";
+        return supplierA.localeCompare(supplierB);
+      });
+    default:
+      return sorted;
   }
-  return "Otro";
+};
+
+const applySortOption = (option: SortOption) => {
+  sortOption.value = option;
+  sort.value = false;
 };
 
 const getFilterText = () => {
-  if (tab.value === 1) return "Todas las citas";
+  if (tab.value === 1) return "Mis Citas";
   if (tab.value === 2) return "Procedimientos";
   if (tab.value === 3) return "Valoraciones";
-  return "Todas las citas";
+  return "Mis Citas";
 };
 
-const applyFilter = (typeFilter, tabNumber) => {
+const applyFilter = (typeFilter: string, tabNumber: number) => {
   tab.value = tabNumber;
 };
 
@@ -214,7 +221,7 @@ const downloadAppointmentsSummary = () => {
   let yPosition = 45;
   doc.setFontSize(12);
 
-  const addPatientField = (label, value) => {
+  const addPatientField = (label: string, value: string) => {
     doc.setFont("helvetica", "bold");
     doc.text(`${label}:`, 20, yPosition);
     doc.setFont("helvetica", "normal");
@@ -231,10 +238,8 @@ const downloadAppointmentsSummary = () => {
     addPatientField("Teléfono", firstAppointment.customer.phone_number);
     addPatientField(
       "Dirección",
-      `${firstAppointment.customer.city_name || ""}, ${firstAppointment.customer.province || ""}`
+      `${firstAppointment.customer.city_name || ""}, ${firstAppointment.customer.province || ""}`,
     );
-  } else {
-    addPatientField("Nombre", user_info.value?.name);
   }
 
   yPosition += 5;
@@ -274,14 +279,14 @@ const downloadAppointmentsSummary = () => {
     doc.text(
       `Cita ${index + 1} - ${appointment.appointment_type?.value1 || "N/A"}`,
       22,
-      yPosition
+      yPosition,
     );
     yPosition += 12;
 
     doc.setFont("helvetica", "normal");
     doc.setFontSize(10);
 
-    const addAppointmentField = (label, value) => {
+    const addAppointmentField = (label: string, value: string) => {
       if (yPosition > pageHeight - 20) {
         doc.addPage();
         yPosition = 20;
@@ -304,33 +309,39 @@ const downloadAppointmentsSummary = () => {
       addAppointmentField("Clínica/Hospital", appointment.supplier.name);
       addAppointmentField(
         "Ubicación",
-        `${appointment.supplier.city_name || ""}, ${appointment.supplier.province || ""}`
+        `${appointment.supplier.city_name || ""}, ${appointment.supplier.province || ""}`,
       );
       addAppointmentField("Teléfono", appointment.supplier.phone_number);
     }
 
     if (appointment.package) {
-      addAppointmentField("Procedimiento", appointment.package.procedure?.name);
-      addAppointmentField("Producto", appointment.package.product?.name);
+      addAppointmentField(
+        "Procedimiento",
+        appointment.package.procedure?.name || "",
+      );
+      addAppointmentField("Producto", appointment.package.product?.name || "");
       if (appointment.package.product?.description) {
         doc.setFont("helvetica", "bold");
         doc.text("Descripción:", 25, yPosition);
         doc.setFont("helvetica", "normal");
         const splitDescription = doc.splitTextToSize(
           appointment.package.product.description,
-          120
+          120,
         );
         doc.text(splitDescription, 70, yPosition);
         yPosition += splitDescription.length * 6;
       }
     }
 
-    addAppointmentField("Estado", appointment.appointment_status?.value1);
-    addAppointmentField("Tipo de reserva", appointment.reservation_type?.name);
+    addAppointmentField("Estado", appointment.appointment_status?.value1 || "");
+    addAppointmentField(
+      "Tipo de reserva",
+      appointment.reservation_type?.name || "",
+    );
 
     if (appointment.payment_status) {
       addAppointmentField("Estado de pago", appointment.payment_status.value1);
-      addAppointmentField("Método de pago", appointment.payment_method?.name);
+      addAppointmentField("Método de pago", appointment.payment_method || "");
     }
 
     if (appointment.price_procedure) {
@@ -339,14 +350,14 @@ const downloadAppointmentsSummary = () => {
         {
           style: "currency",
           currency: "CRC",
-        }
+        },
       );
       addAppointmentField("Precio procedimiento", price);
     }
 
     if (appointment.price_valoration_appointment) {
       const valuationPrice = parseFloat(
-        appointment.price_valoration_appointment
+        appointment.price_valoration_appointment,
       ).toLocaleString("es-CR", {
         style: "currency",
         currency: "CRC",
@@ -361,13 +372,13 @@ const downloadAppointmentsSummary = () => {
       yPosition += 6;
 
       const requestedAmount = parseFloat(
-        appointment.appointment_credit.requested_amount
+        appointment.appointment_credit.requested_amount,
       ).toLocaleString("es-CR", {
         style: "currency",
         currency: "CRC",
       });
       const approvedAmount = parseFloat(
-        appointment.appointment_credit.approved_amount
+        appointment.appointment_credit.approved_amount,
       ).toLocaleString("es-CR", {
         style: "currency",
         currency: "CRC",
@@ -375,7 +386,7 @@ const downloadAppointmentsSummary = () => {
 
       addAppointmentField(
         "  Estado crédito",
-        appointment.appointment_credit.credit_status?.name
+        appointment.appointment_credit.credit_status?.name || "",
       );
       addAppointmentField("  Monto solicitado", requestedAmount);
       addAppointmentField("  Monto aprobado", approvedAmount);
@@ -383,7 +394,7 @@ const downloadAppointmentsSummary = () => {
       if (appointment.appointment_credit.credit_observations) {
         addAppointmentField(
           "  Observaciones",
-          appointment.appointment_credit.credit_observations
+          appointment.appointment_credit.credit_observations,
         );
       }
     }
@@ -396,7 +407,7 @@ const downloadAppointmentsSummary = () => {
       doc.setFont("helvetica", "normal");
       const splitUserDescription = doc.splitTextToSize(
         appointment.user_description,
-        140
+        140,
       );
       doc.text(splitUserDescription, 25, yPosition);
       yPosition += splitUserDescription.length * 6;
@@ -421,14 +432,13 @@ const downloadAppointmentsSummary = () => {
   doc.text(
     "Documento generado el: " + new Date().toLocaleDateString("es-ES"),
     20,
-    yPosition
+    yPosition,
   );
   doc.text("Vitalink - Sistema de Gestión Médica", 105, yPosition, {
     align: "center",
   });
 
-  const patientName =
-    firstAppointment?.customer?.name || user_info.value?.name || "Usuario";
+  const patientName = firstAppointment?.customer?.name || "Usuario";
   const fileName = `${patientName.replace(/\s+/g, "_")}_Citas_${getFilterText().replace(/\s+/g, "_")}_${new Date().toISOString().split("T")[0]}.pdf`;
   doc.save(fileName);
 };
@@ -454,25 +464,7 @@ provide("handleRefresh", handleRefresh);
                   :class="{ 'appointments-tabs__button--active': tab === 1 }"
                   @click="applyFilter('ALL', 1)"
                 >
-                  Todas las citas
-                </button>
-              </li>
-              <li class="appointments-tabs__item">
-                <button
-                  class="appointments-tabs__button"
-                  :class="{ 'appointments-tabs__button--active': tab === 2 }"
-                  @click="applyFilter('Procedimiento', 2)"
-                >
-                  Procedimientos
-                </button>
-              </li>
-              <li class="appointments-tabs__item">
-                <button
-                  class="appointments-tabs__button"
-                  :class="{ 'appointments-tabs__button--active': tab === 3 }"
-                  @click="applyFilter('Valoración', 3)"
-                >
-                  Valoraciones
+                  Mis citas
                 </button>
               </li>
             </ul>
@@ -507,7 +499,7 @@ provide("handleRefresh", handleRefresh);
                 class="sort-dropdown__toggle"
                 @click="sort = !sort"
                 type="button"
-                aria-expanded="false"
+                :aria-expanded="sort"
               >
                 Ordenar por
                 <AtomsIconsChevronDown size="20" />
@@ -516,14 +508,37 @@ provide("handleRefresh", handleRefresh);
                 class="sort-dropdown__menu"
                 :class="{ 'sort-dropdown__menu--show': sort }"
               >
-                <li><a class="sort-dropdown__item" href="#">Action</a></li>
                 <li>
-                  <a class="sort-dropdown__item" href="#">Another action</a>
+                  <a
+                    class="sort-dropdown__item"
+                    @click="applySortOption('date-desc')"
+                  >
+                    Fecha (más reciente)
+                  </a>
                 </li>
                 <li>
-                  <a class="sort-dropdown__item" href="#"
-                    >Something else here</a
+                  <a
+                    class="sort-dropdown__item"
+                    @click="applySortOption('date-asc')"
                   >
+                    Fecha (más antigua)
+                  </a>
+                </li>
+                <li>
+                  <a
+                    class="sort-dropdown__item"
+                    @click="applySortOption('status')"
+                  >
+                    Estado
+                  </a>
+                </li>
+                <li>
+                  <a
+                    class="sort-dropdown__item"
+                    @click="applySortOption('supplier')"
+                  >
+                    Clínica/Hospital
+                  </a>
                 </li>
               </ul>
             </div>
@@ -813,6 +828,7 @@ provide("handleRefresh", handleRefresh);
     text-decoration: none;
     white-space: nowrap;
     transition: background-color 0.2s ease;
+    cursor: pointer;
 
     &:hover {
       background-color: #f8f9fa;
