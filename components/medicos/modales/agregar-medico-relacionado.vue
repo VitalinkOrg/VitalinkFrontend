@@ -258,7 +258,7 @@
                       !selectedSpecialty ||
                       formData.specialties.length >= 3 ||
                       formData.specialties.some(
-                        (s) => s.code === selectedSpecialty
+                        (s) => s.code === selectedSpecialty,
                       ) ||
                       isLoadingSubmit
                     "
@@ -300,6 +300,37 @@
                   class="doctor-form__limit-text"
                 >
                   Has alcanzado el máximo de 3 especialidades
+                </small>
+              </div>
+
+              <div class="doctor-form__group">
+                <label for="valoracionCost" class="doctor-form__label">
+                  Costo de cita de valoración
+                </label>
+                <div class="doctor-form__price-input-wrapper">
+                  <span class="doctor-form__currency-symbol">₡</span>
+                  <input
+                    v-model.number="formData.valoracionCost"
+                    @blur="touched.valoracionCost = true"
+                    type="number"
+                    min="0"
+                    step="1000"
+                    class="doctor-form__input doctor-form__input--with-symbol"
+                    :class="{
+                      'input-error':
+                        touched.valoracionCost && !formData.valoracionCost,
+                    }"
+                    placeholder="Ingrese el costo de valoración"
+                    :disabled="isLoadingSubmit"
+                    id="valoracionCost"
+                    required
+                  />
+                </div>
+                <small
+                  v-if="touched.valoracionCost && !formData.valoracionCost"
+                  class="doctor-form__error-message"
+                >
+                  El costo de valoración es requerido
                 </small>
               </div>
             </form>
@@ -472,7 +503,6 @@ interface Pack {
   producto: string;
   servicios: string[];
   precio: number;
-  precioValoracion?: number;
   disponibilidad: DayAvailability[];
 }
 
@@ -488,7 +518,6 @@ interface Emits {
   (e: "doctor-updated"): void;
 }
 
-const DEFAULT_VALORACION_COST = 25000;
 const ALLOWED_EXTENSIONS = [".pdf", ".doc", ".docx", ".jpg", ".jpeg", ".png"];
 const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
 
@@ -557,6 +586,7 @@ const formData = ref<IRelatedMedicalFormData>({
   validLicenseFile: null,
   medicalType: "",
   specialties: [],
+  valoracionCost: 0,
 });
 
 const originalFormData = ref<IRelatedMedicalFormData | null>(null);
@@ -570,6 +600,7 @@ const touched = reactive({
   validLicenseFile: false,
   medicalType: false,
   specialties: false,
+  valoracionCost: false,
 });
 
 const packs = ref<Pack[]>([]);
@@ -594,7 +625,7 @@ const isDocumentValid = computed(() => {
   if (!formData.value.documentNumber) return true;
   return validateCedula(
     formData.value.documentNumber,
-    formData.value.documentType
+    formData.value.documentType,
   );
 });
 
@@ -606,7 +637,8 @@ const isStep1Complete = computed(() => {
     formData.value.fullName.trim() !== "" &&
     formData.value.medicalCode.trim() !== "" &&
     formData.value.medicalType.trim() !== "" &&
-    formData.value.specialties.length > 0;
+    formData.value.specialties.length > 0 &&
+    formData.value.valoracionCost > 0;
 
   if (isEditMode.value) {
     return baseValidation;
@@ -629,13 +661,13 @@ const isStep2Complete = computed(() => {
           pack.procedimiento &&
           pack.producto &&
           pack.servicios.length > 0 &&
-          pack.precio > 0
+          pack.precio > 0,
       )
     );
   }
 
   const newPacks = packs.value.filter(
-    (pack, index) => index >= originalPacks.value.length
+    (pack, index) => index >= originalPacks.value.length,
   );
 
   if (newPacks.length === 0) {
@@ -648,7 +680,7 @@ const isStep2Complete = computed(() => {
       pack.procedimiento &&
       pack.producto &&
       pack.servicios.length > 0 &&
-      pack.precio > 0
+      pack.precio > 0,
   );
 });
 
@@ -705,7 +737,7 @@ const handleDocumentNumberInput = (event: Event) => {
 
   const formattedValue = formatCedula(
     target.value,
-    formData.value.documentType
+    formData.value.documentType,
   );
 
   const numbersBeforeCursor = target.value
@@ -765,10 +797,7 @@ const openModal = () => {
         Array.isArray(props.existingPacks) &&
         props.existingPacks.length > 0
       ) {
-        packs.value = props.existingPacks.map((pack) => ({
-          ...pack,
-          precioValoracion: pack.precioValoracion || DEFAULT_VALORACION_COST,
-        }));
+        packs.value = [...props.existingPacks];
         originalPacks.value = JSON.parse(JSON.stringify(props.existingPacks));
       }
 
@@ -794,6 +823,7 @@ const loadDoctorData = () => {
     validLicenseFile: null,
     medicalType: props.doctorData.medicalType || "",
     specialties: props.doctorData.specialties || [],
+    valoracionCost: props.doctorData.valoracionCost || 0,
   };
 
   formData.value = { ...data };
@@ -838,7 +868,7 @@ const addSpecialty = () => {
   if (!selectedSpecialty.value) return;
 
   const specialtyToAdd = specialties.value.find(
-    (s) => s.code === selectedSpecialty.value
+    (s) => s.code === selectedSpecialty.value,
   );
 
   if (
@@ -867,6 +897,7 @@ const resetForm = () => {
     validLicenseFile: null,
     medicalType: "",
     specialties: [],
+    valoracionCost: 0,
   };
   originalFormData.value = null;
   packs.value = [];
@@ -910,7 +941,7 @@ const handleUploadFile = async (
   file: File,
   actionType: string,
   tableId: number = 5,
-  retries: number = 3
+  retries: number = 3,
 ): Promise<string> => {
   for (let attempt = 1; attempt <= retries; attempt++) {
     try {
@@ -956,7 +987,7 @@ const handleUploadFile = async (
         throw new Error(
           `Error al subir documento después de ${retries} intentos: ${
             error instanceof Error ? error.message : "Error desconocido"
-          }`
+          }`,
         );
       }
 
@@ -973,7 +1004,7 @@ const handleCreateSupplier = async (
   legalRepresentativeId: string,
   codeCardIdFile: string,
   codeMedicalLicenseFile: string,
-  token: string
+  token: string,
 ): Promise<number> => {
   const userInfo = getUserInfo();
   const email = userInfo?.email || "";
@@ -1030,7 +1061,7 @@ const handleCreateSupplier = async (
 const handleUpdateSupplier = async (
   supplierId: number,
   supplier: IRelatedMedicalFormData,
-  token: string
+  token: string,
 ): Promise<void> => {
   const payload = getChangedFields();
 
@@ -1049,7 +1080,7 @@ const handleUpdateSupplier = async (
 const handleUploadSpecialtyBySupplier = async (
   supplierId: number,
   supplier: IRelatedMedicalFormData,
-  token: string
+  token: string,
 ) => {
   const body = supplier.specialties.map((specialty) => ({
     supplier_id: supplierId,
@@ -1100,7 +1131,7 @@ const handleSavePacks = async (supplierId: number) => {
     }
 
     const packsToSave = packs.value.filter(
-      (pack, index) => index >= originalPacks.value.length
+      (pack, index) => index >= originalPacks.value.length,
     );
 
     for (const pack of packsToSave) {
@@ -1108,12 +1139,12 @@ const handleSavePacks = async (supplierId: number) => {
         const packSpecialtyCode = pack.especialidad;
 
         const matchingSpecialty = supplierSpecialties.find(
-          (spec) => spec.medical_specialty.code === packSpecialtyCode
+          (spec) => spec.medical_specialty.code === packSpecialtyCode,
         );
 
         if (!matchingSpecialty) {
           console.warn(
-            `⚠️ No se encontró especialidad para código: ${packSpecialtyCode}`
+            `⚠️ No se encontró especialidad para código: ${packSpecialtyCode}`,
           );
           continue;
         }
@@ -1154,7 +1185,7 @@ const handleSavePacks = async (supplierId: number) => {
 
 const handleSaveAvailability = async (
   supplierId: number,
-  availability: DayAvailability[]
+  availability: DayAvailability[],
 ) => {
   const weekDays = [
     "Lunes",
@@ -1199,7 +1230,7 @@ const handleSaveAvailability = async (
 
 const handleSyncSpecialties = async (
   supplierId: number,
-  token: string
+  token: string,
 ): Promise<void> => {
   try {
     const fetchApi = fetchSpecialtyBySupplier(supplierId, token);
@@ -1216,7 +1247,7 @@ const handleSyncSpecialties = async (
         acc[code].push(spec);
         return acc;
       },
-      {} as Record<string, Service[]>
+      {} as Record<string, Service[]>,
     );
 
     let hasDeletePermission = true;
@@ -1261,7 +1292,7 @@ const handleSyncSpecialties = async (
 
     const existingUniqueCodes = Object.keys(groupedByCode);
     const toAdd = formData.value.specialties.filter(
-      (newSpec) => !existingUniqueCodes.includes(newSpec.code)
+      (newSpec) => !existingUniqueCodes.includes(newSpec.code),
     );
 
     if (toAdd.length > 0) {
@@ -1275,7 +1306,7 @@ const handleSyncSpecialties = async (
 
       if (addApi.error.value) {
         throw new Error(
-          `Error agregando especialidades: ${addApi.error.value}`
+          `Error agregando especialidades: ${addApi.error.value}`,
         );
       }
     }
@@ -1309,7 +1340,7 @@ const handleSubmit = async () => {
       await delay(1000);
 
       const newPacks = packs.value.filter(
-        (pack, index) => index >= originalPacks.value.length
+        (pack, index) => index >= originalPacks.value.length,
       );
       if (newPacks.length > 0) {
         await handleSavePacks(props.supplierId);
@@ -1331,7 +1362,7 @@ const handleSubmit = async () => {
       const codeCardIdFile = await handleUploadFile(
         formData.value.identityDocumentFile,
         "PERSONAL_DOCUMENT",
-        5
+        5,
       );
 
       await delay(2000);
@@ -1343,7 +1374,7 @@ const handleSubmit = async () => {
       const codeMedicalLicenseFile = await handleUploadFile(
         formData.value.validLicenseFile,
         "PERSONAL_DOCUMENT",
-        5
+        5,
       );
 
       await delay(1000);
@@ -1353,7 +1384,7 @@ const handleSubmit = async () => {
         legalRepresentativeId,
         codeCardIdFile,
         codeMedicalLicenseFile,
-        token
+        token,
       );
 
       await delay(1000);
@@ -1362,7 +1393,7 @@ const handleSubmit = async () => {
         await handleUploadSpecialtyBySupplier(
           supplierId,
           formData.value,
-          token
+          token,
         );
       }
 
@@ -1396,7 +1427,7 @@ const handleSubmit = async () => {
 
 const handleSavePacksForNewSupplier = async (
   supplierId: number,
-  token: string
+  token: string,
 ) => {
   try {
     const fetchApi = fetchSpecialtyBySupplier(supplierId, token);
@@ -1411,7 +1442,7 @@ const handleSavePacksForNewSupplier = async (
     const firstSpecialtyCode = formData.value.specialties[0]?.code;
 
     const matchingSpecialty = supplierSpecialties.find(
-      (spec) => spec.medical_specialty.code === firstSpecialtyCode
+      (spec) => spec.medical_specialty.code === firstSpecialtyCode,
     );
 
     if (!matchingSpecialty) {
@@ -1548,7 +1579,7 @@ watch(
       });
     }
   },
-  { immediate: true }
+  { immediate: true },
 );
 
 watch(
@@ -1560,15 +1591,12 @@ watch(
       Array.isArray(newPacks) &&
       newPacks.length > 0
     ) {
-      packs.value = newPacks.map((pack) => ({
-        ...pack,
-        precioValoracion: pack.precioValoracion || DEFAULT_VALORACION_COST,
-      }));
+      packs.value = [...newPacks];
       originalPacks.value = JSON.parse(JSON.stringify(newPacks));
       isLoadingModalData.value = false;
     }
   },
-  { immediate: true, deep: true }
+  { immediate: true, deep: true },
 );
 
 watch(
@@ -1578,7 +1606,7 @@ watch(
       loadDoctorData();
     }
   },
-  { immediate: true, deep: true }
+  { immediate: true, deep: true },
 );
 
 onMounted(async () => {
@@ -1709,6 +1737,24 @@ defineExpose({
       border-color: #3b82f6;
       box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
     }
+
+    &--with-symbol {
+      padding-left: 2.25rem;
+    }
+  }
+
+  &__price-input-wrapper {
+    position: relative;
+    width: 100%;
+  }
+
+  &__currency-symbol {
+    position: absolute;
+    left: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    font-weight: 600;
+    color: #667085;
   }
 
   &__input-group {
