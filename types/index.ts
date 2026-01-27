@@ -261,7 +261,6 @@ export interface ApiResponse<T = any> {
 }
 
 export interface IRelatedMedicalFormData {
-  id?: number;
   documentType: string;
   documentNumber: string;
   fullName: string;
@@ -270,9 +269,8 @@ export interface IRelatedMedicalFormData {
   validLicenseFile: File | null;
   medicalType: string;
   specialties: MedicalSpecialty[];
+  valoracionCost: number;
   useSameDataAsSupplier?: boolean;
-  codeCardIdFile?: string;
-  codeMedicalLicenseFile?: string;
 }
 
 export interface IdType extends IUdc {}
