@@ -305,30 +305,12 @@ const handleDownloadBaseProforma = async () => {
   proformaError.value = "";
 
   try {
-    const filters = {
-      action_type: "BASE_PROFORMA",
-      table: "proforma_base",
-    };
-
-    const api = getDocumentsByFilters(filters);
-    await api.request();
-
-    if (api.error.value) {
-      throw new Error(api.error.value.raw);
-    }
-
-    if (api.response.value?.data?.[0]?.url) {
-      const documentData = api.response.value.data[0];
-      const link = document.createElement("a");
-      link.href = documentData.url;
-      link.download = documentData.file_name || "proforma_base.pdf";
-      link.target = "_blank";
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-    } else {
-      throw new Error("No se encontró la proforma base");
-    }
+    const link = document.createElement("a");
+    link.href = "/docs/Proforma_Procedimiento_Médico_Vitalink.pdf";
+    link.download = "Proforma Procedimiento Médico Vitalink.pdf";
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
   } catch (error) {
     console.error("Error descargando proforma base:", error);
     proformaError.value =
