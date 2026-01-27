@@ -27,6 +27,29 @@ export interface ILoginResponse {
   screens_access: any[];
 }
 
+export interface IForgotPassword {
+  email: string;
+}
+
+export interface IResetPassword {
+  password: string;
+}
+
+export interface IForgotPasswordResponse {
+  message: string;
+  token?: string;
+}
+
+export interface IVerifyTokenResponse {
+  valid: boolean;
+  message: string;
+}
+
+export interface IResetPasswordResponse {
+  message: string;
+  success: boolean;
+}
+
 export const useAuth = () => {
   const config = useRuntimeConfig();
   const { getToken, clearTokens } = useAuthToken();
@@ -111,6 +134,48 @@ export const useAuth = () => {
     });
   };
 
+  const forgotPassword = (
+    body: IForgotPassword
+  ): UsableAPI<ApiResponse<IForgotPasswordResponse>> => {
+    const url = `${config.public.API_BASE_URL}/forgot_password`;
+
+    return useApi<ApiResponse<IForgotPasswordResponse>>(url, {
+      method: "POST",
+      body: JSON.stringify(body),
+      headers: {
+        "Content-Type": "application/json",
+      },
+    });
+  };
+
+  const verifyForgotPasswordToken = (
+    token: string
+  ): UsableAPI<ApiResponse<IVerifyTokenResponse>> => {
+    const url = `${config.public.API_BASE_URL}/verify_forgot_password/${token}`;
+
+    return useApi<ApiResponse<IVerifyTokenResponse>>(url, {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+      },
+    });
+  };
+
+  const resetPassword = (
+    token: string,
+    body: IResetPassword
+  ): UsableAPI<ApiResponse<IResetPasswordResponse>> => {
+    const url = `${config.public.API_BASE_URL}/reset_password/${token}`;
+
+    return useApi<ApiResponse<IResetPasswordResponse>>(url, {
+      method: "POST",
+      body: JSON.stringify(body),
+      headers: {
+        "Content-Type": "application/json",
+      },
+    });
+  };
+
   const logout = () => {
     clearTokens();
     clearAuthState();
@@ -124,5 +189,8 @@ export const useAuth = () => {
     fetchUserInfo,
     fetchHospitalInfo,
     deleteUser,
+    forgotPassword,
+    verifyForgotPasswordToken,
+    resetPassword,
   };
 };

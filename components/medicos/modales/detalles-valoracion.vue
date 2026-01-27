@@ -22,6 +22,20 @@
         <template #data-proforma>
           <div v-if="isEditing">
             <template v-if="!currentProformaFileName">
+              <button
+                class="valoration-details__download-base-proforma"
+                type="button"
+                @click="handleDownloadBaseProforma"
+                :disabled="isDownloadingProforma"
+              >
+                <AtomsIconsDownloadIcon size="20" aria-hidden="true" />
+                {{
+                  isDownloadingProforma
+                    ? "Descargando..."
+                    : "Descargar proforma base"
+                }}
+              </button>
+
               <label
                 for="attach-proforma"
                 class="valoration-details__attach-proforma"
@@ -190,6 +204,7 @@ import type { TablaBaseRow } from "../tabla-detalles-cita.vue";
 const isLoading = ref(false);
 const isEditing = ref(true);
 const changesSaved = ref(false);
+const isDownloadingProforma = ref(false);
 
 const currentRecommendation = ref("");
 const currentDiagnostic = ref("");
@@ -211,7 +226,7 @@ const { isOpen, closeModal, getSharedData, openModal } =
 
 const modalData = computed(() => {
   const data = getSharedData<{ appointment: Appointment }>(
-    "detallesValoracion"
+    "detallesValoracion",
   );
   return data || null;
 });
@@ -223,7 +238,7 @@ const currentAppointment = computed(() => {
 const isModalOpen = computed(() => isOpen.detallesValoracion);
 
 const { uploadProforma } = useAppointment();
-const { uploadDocument } = useDocuments();
+const { uploadDocument, getDocumentsByFilters } = useDocuments();
 const { formatDate, formatTime, formatCurrency } = useFormat();
 
 const isValidationAppointment = computed(() => {
@@ -263,11 +278,11 @@ const hasChanges = computed(
     currentRecommendation.value !== originalRecommendation.value ||
     currentDiagnostic.value !== originalDiagnostic.value ||
     currentPriceProcedure.value !== originalPriceProcedure.value ||
-    currentProformaFileName.value !== originalProformaFileName.value
+    currentProformaFileName.value !== originalProformaFileName.value,
 );
 
 const canSave = computed(
-  () => hasChanges.value && !!currentProformaFileName.value
+  () => hasChanges.value && !!currentProformaFileName.value,
 );
 
 const canSaveProforma = computed(() => {
@@ -282,8 +297,28 @@ const canSaveProforma = computed(() => {
 const formattedPriceDisplay = computed(() =>
   !currentPriceProcedure.value || currentPriceProcedure.value === "0"
     ? ""
-    : formatCurrency(currentPriceProcedure.value, { decimalPlaces: 0 })
+    : formatCurrency(currentPriceProcedure.value, { decimalPlaces: 0 }),
 );
+
+const handleDownloadBaseProforma = async () => {
+  isDownloadingProforma.value = true;
+  proformaError.value = "";
+
+  try {
+    const link = document.createElement("a");
+    link.href = "/docs/Proforma_Procedimiento_Médico_Vitalink.pdf";
+    link.download = "Proforma Procedimiento Médico Vitalink.pdf";
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  } catch (error) {
+    console.error("Error descargando proforma base:", error);
+    proformaError.value =
+      "Error al descargar la proforma base. Por favor intenta nuevamente.";
+  } finally {
+    isDownloadingProforma.value = false;
+  }
+};
 
 const handleOpenConfirmValorationModal = () => {
   if (!currentAppointment.value) return;
@@ -405,6 +440,7 @@ const resetState = () => {
   changesSaved.value = false;
   isLoading.value = false;
   proformaError.value = "";
+  isDownloadingProforma.value = false;
 };
 
 const handleFileUpload = (event: Event) => {
@@ -436,7 +472,7 @@ const handleUploadDocument = async () => {
     title: proformaFile.value.name,
     type: "DOC",
     description: "",
-    id_for_table: 6,
+    id_for_table: "6",
     table: "",
     action_type: "PRIVATE_CONTRACT",
     user_id: "",
@@ -577,6 +613,23 @@ watch(isModalOpen, (isOpen) => {
 
   &__body {
     padding: 1.5rem;
+  }
+
+  &__download-base-proforma {
+    @include outline-button;
+    padding: 0.625rem 1rem;
+    margin-bottom: 0.75rem;
+    width: 100%;
+
+    svg {
+      width: 1.25rem;
+      height: 1.25rem;
+    }
+
+    &:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
   }
 
   &__attach-proforma {

@@ -263,7 +263,7 @@ const isProcedureDetails = computed(() => {
 });
 
 const waitingForCreditResponse = computed(
-  () => props.appointment.appointment_credit?.credit_status_code === "REQUIRED"
+  () => props.appointment.appointment_credit?.credit_status_code === "REQUIRED",
 );
 const canRequestCredit = computed(() => !props.appointment.appointment_credit);
 
@@ -336,7 +336,7 @@ const tableRows = computed((): TablaBaseRow[] => {
 
   const serviceTypeValue =
     props.appointment.appointment_type.code === "PROCEDURE_APPOINTMENT"
-      ? "Cita de procedimiento"
+      ? "Procedimiento médico"
       : props.appointment.appointment_type.code === "VALORATION_APPOINTMENT" &&
           props.appointment.appointment_status.code ===
             "VALUED_VALORATION_APPOINTMENT"
@@ -362,7 +362,7 @@ const tableRows = computed((): TablaBaseRow[] => {
         header: "Hora de la cita:",
         value: formatTime(props.appointment.appointment_hour, "hs"),
         isEndRow: true,
-      }
+      },
     );
   }
 
@@ -377,7 +377,7 @@ const tableRows = computed((): TablaBaseRow[] => {
     header: "Teléfono de Contacto:",
     value: formatPhone(
       props.appointment.phone_number_external_user ??
-        props.appointment.customer.phone_number
+        props.appointment.customer.phone_number,
     ),
   });
 
@@ -478,7 +478,7 @@ const tableRows = computed((): TablaBaseRow[] => {
           props.appointment.appointment_credit?.approved_amount || 0,
           {
             decimalPlaces: 0,
-          }
+          },
         ),
       });
     }

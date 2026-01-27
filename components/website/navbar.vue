@@ -1,11 +1,13 @@
 <template>
-  <header class="header" :class="{ 'header--hidden': isHidden }">
+  <a href="#main-content" class="skip-link">Saltar al contenido principal</a>
+
+  <header class="header" :class="{ 'header--hidden': isHidden }" role="banner">
     <nav class="nav" aria-label="Navegación principal">
       <div>
         <NuxtLink
           class="nav__brand"
           to="/"
-          aria-label="Ir a la página de inicio"
+          aria-label="Vitalink - Ir a la página de inicio"
         >
           <img src="@/src/assets/img-vitalink-logo.svg" alt="Vitalink" />
         </NuxtLink>
@@ -15,13 +17,23 @@
         class="nav__toggle"
         :aria-expanded="isMenuOpen"
         aria-controls="nav-menu"
-        aria-label="Menú de navegación"
+        :aria-label="
+          isMenuOpen ? 'Cerrar menú de navegación' : 'Abrir menú de navegación'
+        "
         @click="toggleMenu"
         @keydown.enter="toggleMenu"
         @keydown.space.prevent="toggleMenu"
+        @keydown.esc="closeMenu"
       >
         <span class="nav__toggle-icon" aria-hidden="true"></span>
       </button>
+
+      <div
+        v-if="isMenuOpen"
+        class="nav__overlay"
+        @click="closeMenu"
+        aria-hidden="true"
+      ></div>
 
       <ul
         id="nav-menu"
@@ -30,65 +42,111 @@
         role="list"
       >
         <li class="nav__menu-item" role="listitem">
-          <NuxtLink to="#home" class="nav__menu-link" @click="closeMenu"
-            >Home</NuxtLink
+          <NuxtLink
+            to="#home"
+            class="nav__menu-link"
+            :aria-current="isCurrentSection('home') ? 'page' : undefined"
+            @click="closeMenu"
+            ref="firstMenuItem"
           >
+            Home
+          </NuxtLink>
         </li>
         <li class="nav__menu-item" role="listitem">
           <NuxtLink
-            href="#key_benefits"
+            to="#key_benefits"
             class="nav__menu-link"
+            :aria-current="
+              isCurrentSection('key_benefits') ? 'page' : undefined
+            "
             @click="closeMenu"
-            >Beneficios clave</NuxtLink
           >
+            Beneficios clave
+          </NuxtLink>
         </li>
         <li class="nav__menu-item" role="listitem">
           <NuxtLink
             to="#how-does-it-work"
             class="nav__menu-link"
+            :aria-current="
+              isCurrentSection('how-does-it-work') ? 'page' : undefined
+            "
             @click="closeMenu"
-            >¿Cómo funciona?</NuxtLink
           >
+            ¿Cómo funciona?
+          </NuxtLink>
         </li>
         <li class="nav__menu-item" role="listitem">
-          <NuxtLink to="#trust" class="nav__menu-link" @click="closeMenu"
-            >Confianza</NuxtLink
+          <NuxtLink
+            to="#trust"
+            class="nav__menu-link"
+            :aria-current="isCurrentSection('trust') ? 'page' : undefined"
+            @click="closeMenu"
           >
+            Confianza
+          </NuxtLink>
         </li>
         <li class="nav__menu-item" role="listitem">
-          <NuxtLink to="#specialties" class="nav__menu-link" @click="closeMenu"
-            >Especialidades</NuxtLink
+          <NuxtLink
+            to="#specialties"
+            class="nav__menu-link"
+            :aria-current="isCurrentSection('specialties') ? 'page' : undefined"
+            @click="closeMenu"
           >
+            Especialidades
+          </NuxtLink>
         </li>
         <li class="nav__menu-item" role="listitem">
-          <NuxtLink to="#faqs" class="nav__menu-link" @click="closeMenu"
-            >Preguntas frecuentes</NuxtLink
+          <NuxtLink
+            to="#faqs"
+            class="nav__menu-link"
+            :aria-current="isCurrentSection('faqs') ? 'page' : undefined"
+            @click="closeMenu"
+            ref="lastMenuItem"
           >
+            Preguntas frecuentes
+          </NuxtLink>
         </li>
       </ul>
 
-      <div class="nav__actions">
+      <div
+        class="nav__actions"
+        :class="{ 'nav__actions--visible': isMenuOpen }"
+      >
         <template v-if="isAuthenticated">
-          <button class="nav__button--primary" @click="handleLogout">
+          <button
+            class="nav__button--primary"
+            @click="handleLogout"
+            @keydown.enter="handleLogout"
+            aria-label="Cerrar sesión de su cuenta"
+          >
             Cerrar Sesión
           </button>
         </template>
         <template v-else>
           <NuxtLink
-            to="/pacientes/login"
+            to="/auth/login"
             class="nav__button--outline"
             @click="closeMenu"
-            >Ingresar</NuxtLink
+            aria-label="Ingresar a su cuenta"
           >
+            Ingresar
+          </NuxtLink>
           <NuxtLink
-            to="/registro"
+            to="/pacientes/registro"
             class="nav__button--primary"
             @click="closeMenu"
-            >Registrarse</NuxtLink
+            aria-label="Registrarse como nuevo usuario"
           >
+            Registrarse
+          </NuxtLink>
         </template>
       </div>
     </nav>
+
+    <div role="status" aria-live="polite" aria-atomic="true" class="sr-only">
+      {{ statusMessage }}
+    </div>
   </header>
 </template>
 
@@ -103,6 +161,14 @@ const route = useRoute();
 const isHidden = ref(false);
 const isMenuOpen = ref(false);
 const isAuthenticated = ref(false);
+const isMobile = ref(false);
+const statusMessage = ref("");
+const currentSection = ref("");
+
+const firstMenuItem = ref<HTMLElement | null>(null);
+const lastMenuItem = ref<HTMLElement | null>(null);
+const previousActiveElement = ref<HTMLElement | null>(null);
+
 let lastScrollY = 0;
 let ticking = false;
 
@@ -111,26 +177,99 @@ watch(
   (newToken) => {
     isAuthenticated.value = !!newToken;
   },
-  { immediate: true }
+  { immediate: true },
 );
 
+watch(
+  () => route.hash,
+  (newHash) => {
+    currentSection.value = newHash.replace("#", "");
+  },
+  { immediate: true },
+);
+
+const isCurrentSection = (section: string) => {
+  return currentSection.value === section;
+};
+
 const toggleMenu = () => {
-  isMenuOpen.value = !isMenuOpen.value;
   if (isMenuOpen.value) {
-    document.body.style.overflow = "hidden";
+    closeMenu();
   } else {
-    document.body.style.overflow = "";
+    openMenu();
+  }
+};
+
+const openMenu = () => {
+  isMenuOpen.value = true;
+  previousActiveElement.value = document.activeElement as HTMLElement;
+
+  document.body.style.overflow = "hidden";
+
+  statusMessage.value = "Menú de navegación abierto";
+
+  nextTick(() => {
+    if (firstMenuItem.value) {
+      (firstMenuItem.value as any).$el?.focus();
+    }
+  });
+
+  document.addEventListener("keydown", handleEscapeKey);
+
+  if (isMobile.value) {
+    document.addEventListener("keydown", handleFocusTrap);
   }
 };
 
 const closeMenu = () => {
+  if (!isMenuOpen.value) return;
+
   isMenuOpen.value = false;
   document.body.style.overflow = "";
+
+  statusMessage.value = "Menú de navegación cerrado";
+
+  nextTick(() => {
+    if (previousActiveElement.value) {
+      previousActiveElement.value.focus();
+    }
+  });
+
+  document.removeEventListener("keydown", handleEscapeKey);
+  document.removeEventListener("keydown", handleFocusTrap);
+
+  setTimeout(() => {
+    statusMessage.value = "";
+  }, 1000);
+};
+
+const handleEscapeKey = (e: KeyboardEvent) => {
+  if (e.key === "Escape" || e.key === "Esc") {
+    closeMenu();
+  }
+};
+
+const handleFocusTrap = (e: KeyboardEvent) => {
+  if (e.key !== "Tab") return;
+
+  const firstElement = firstMenuItem.value;
+  const lastElement = lastMenuItem.value;
+
+  if (!firstElement || !lastElement) return;
+
+  if (e.shiftKey && document.activeElement === firstElement) {
+    e.preventDefault();
+    lastElement.focus();
+  } else if (!e.shiftKey && document.activeElement === lastElement) {
+    e.preventDefault();
+    firstElement.focus();
+  }
 };
 
 const handleLogout = () => {
   logout();
-  if (route.path !== "/") router.push("/pacientes/login");
+  statusMessage.value = "Sesión cerrada correctamente";
+  if (route.path !== "/") router.push("/auth/login");
   closeMenu();
 };
 
@@ -153,18 +292,64 @@ const handleScroll = () => {
   }
 };
 
+const checkIsMobile = () => {
+  isMobile.value = window.innerWidth < 992;
+};
+
 onMounted(() => {
   lastScrollY = window.scrollY;
+  checkIsMobile();
+
   window.addEventListener("scroll", handleScroll, { passive: true });
+  window.addEventListener("resize", checkIsMobile);
 });
 
 onUnmounted(() => {
   window.removeEventListener("scroll", handleScroll);
+  window.removeEventListener("resize", checkIsMobile);
+  document.removeEventListener("keydown", handleEscapeKey);
+  document.removeEventListener("keydown", handleFocusTrap);
   document.body.style.overflow = "";
 });
 </script>
 
 <style lang="scss" scoped>
+.skip-link {
+  position: absolute;
+  top: -100%;
+  left: 0;
+  background: $color-primary;
+  color: $white;
+  padding: 0.75rem 1.5rem;
+  text-decoration: none;
+  z-index: 10001;
+  font-weight: 600;
+  font-size: 1rem;
+  transition: top 0.2s ease;
+
+  &:focus {
+    top: 0;
+    outline: 0.25rem solid $white;
+    outline-offset: 0.25rem;
+  }
+
+  &:focus-visible {
+    top: 0;
+  }
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border-width: 0;
+}
+
 .header {
   position: sticky;
   top: 0;
@@ -172,6 +357,10 @@ onUnmounted(() => {
   background: $white;
   box-shadow: 0 0.25rem 1.25rem 0 rgba(0, 0, 0, 0.03);
   transition: transform 0.3s ease;
+
+  @media (prefers-reduced-motion: reduce) {
+    transition: none;
+  }
 
   &--hidden {
     transform: translateY(-100%);
@@ -244,6 +433,10 @@ onUnmounted(() => {
     background-color: $color-foreground;
     transition: all 0.3s ease;
 
+    @media (prefers-reduced-motion: reduce) {
+      transition: none;
+    }
+
     &::before,
     &::after {
       content: "";
@@ -252,6 +445,10 @@ onUnmounted(() => {
       height: 0.125rem;
       background-color: $color-foreground;
       transition: all 0.3s ease;
+
+      @media (prefers-reduced-motion: reduce) {
+        transition: none;
+      }
     }
 
     &::before {
@@ -277,6 +474,22 @@ onUnmounted(() => {
     }
   }
 
+  &__overlay {
+    @include respond-to-max(lg) {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100vh;
+      background: rgba(0, 0, 0, 0.5);
+      z-index: 999;
+    }
+
+    @include respond-to(lg) {
+      display: none;
+    }
+  }
+
   &__menu {
     display: none;
     list-style: none;
@@ -297,6 +510,10 @@ onUnmounted(() => {
       gap: 1.5rem;
       transform: translateX(-100%);
       transition: transform 0.3s ease;
+
+      @media (prefers-reduced-motion: reduce) {
+        transition: none;
+      }
     }
 
     @include respond-to(lg) {
@@ -332,6 +549,11 @@ onUnmounted(() => {
     transition:
       color 0.2s ease,
       background-color 0.2s ease;
+    position: relative;
+
+    @media (prefers-reduced-motion: reduce) {
+      transition: none;
+    }
 
     @include respond-to-max(lg) {
       font-size: 1.125rem;
@@ -350,6 +572,11 @@ onUnmounted(() => {
 
     &:active {
       color: $color-primary-darkened-10;
+    }
+
+    &[aria-current="page"] {
+      color: $color-primary;
+      font-weight: 600;
     }
   }
 
@@ -372,14 +599,16 @@ onUnmounted(() => {
       opacity: 0;
       pointer-events: none;
       transition: opacity 0.3s ease;
-    }
-  }
 
-  &__menu--open ~ &__actions {
-    @include respond-to-max(lg) {
-      display: flex;
-      opacity: 1;
-      pointer-events: all;
+      @media (prefers-reduced-motion: reduce) {
+        transition: none;
+      }
+
+      &--visible {
+        display: flex;
+        opacity: 1;
+        pointer-events: all;
+      }
     }
   }
 

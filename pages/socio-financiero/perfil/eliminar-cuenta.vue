@@ -16,7 +16,7 @@ const deleteAccount = async () => {
     {
       method: "DELETE",
       headers: { Authorization: token.value },
-    }
+    },
   );
   if (data) {
     token.value = null;
@@ -24,7 +24,7 @@ const deleteAccount = async () => {
     role.value = null;
     authenticated.value = null;
     user_info.value = null;
-    router.push("/pacientes/login");
+    router.push("/auth/login");
   }
   if (error.value) {
     console.log(error.value, "data");

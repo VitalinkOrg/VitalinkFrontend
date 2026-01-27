@@ -43,26 +43,56 @@
       </div>
 
       <div class="registration-options-group">
-        <div class="registration-option">
-          <input type="checkbox" id="recordarme" class="form-check-input" />
-          <label for="recordarme" class="registration-option-label">
-            <span>Recordarme</span>
-          </label>
-        </div>
+        <div class="registration-terms-group">
+          <div class="registration-option">
+            <input
+              type="checkbox"
+              id="terms"
+              v-model="acceptedTerms"
+              class="form-check-input"
+            />
+            <label for="terms" class="registration-option-label">
+              <span>
+                He leído y acepto los
+                <a
+                  href="/documentos/terminos-condiciones.pdf"
+                  target="_blank"
+                  download
+                >
+                  Términos y Condiciones
+                </a>
+              </span>
+            </label>
+          </div>
 
-        <div class="registration-option">
-          <input type="checkbox" id="condiciones" class="form-check-input" />
-          <label for="condiciones" class="registration-option-label">
-            <span>
-              He leído y acepto la
-              <NuxtLink to="/">Política de Privacidad</NuxtLink> y
-              <NuxtLink to="/">condiciones de uso</NuxtLink>
-            </span>
-          </label>
+          <div class="registration-option">
+            <input
+              type="checkbox"
+              id="privacy"
+              v-model="acceptedPrivacy"
+              class="form-check-input"
+            />
+            <label for="privacy" class="registration-option-label">
+              <span>
+                He leído y acepto la
+                <a
+                  href="/documentos/politica-privacidad.pdf"
+                  target="_blank"
+                  download
+                >
+                  Política de Privacidad
+                </a>
+              </span>
+            </label>
+          </div>
         </div>
       </div>
 
-      <button type="submit" class="registration-submit-button">
+      <button
+        type="submit"
+        class="registration-submit-button"
+        :disabled="!acceptedTerms || !acceptedPrivacy"
+      >
         Registrarme
       </button>
     </form>
@@ -102,11 +132,18 @@ const name = ref("");
 const email = ref("");
 const password = ref("");
 
+const acceptedTerms = ref(false);
+const acceptedPrivacy = ref(false);
+
 const config = useRuntimeConfig();
 const router = useRouter();
 
 const register = async () => {
-  const { data, error }: any = await useFetch(
+  if (!acceptedTerms.value || !acceptedPrivacy.value) {
+    return;
+  }
+
+  const { data, error } = await useFetch(
     config.public.API_BASE_URL + "/auth/register",
     {
       method: "POST",
@@ -114,16 +151,20 @@ const register = async () => {
         name: name.value,
         email: email.value,
         password: password.value,
+        role_code: "CUSTOMER",
+        accepted_terms: true,
+        accepted_privacy: true,
       },
-    }
+    },
   );
 
   if (data.value) {
-    router.push("/");
-  }
+    await useFetch(config.public.API_BASE_URL + "/forgot_password", {
+      method: "POST",
+      body: { email: email.value },
+    });
 
-  if (error.value) {
-    console.error(error.value);
+    router.push("/auth/registro-exitoso");
   }
 };
 </script>

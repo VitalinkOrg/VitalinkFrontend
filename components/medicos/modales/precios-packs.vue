@@ -1,3 +1,4 @@
+// components\medicos\modales\precios-packs.vue
 <template>
   <div class="packs-config">
     <p class="packs-config__subtitle">Configura tus packs:</p>
@@ -135,20 +136,6 @@
           />
         </div>
       </div>
-
-      <div class="packs-config__field">
-        <label class="packs-config__label">Costo de cita de valoración</label>
-        <div class="packs-config__price-input-wrapper">
-          <span class="packs-config__currency-symbol">₡</span>
-          <input
-            type="number"
-            min="0"
-            step="1000"
-            v-model.number="pack.precioValoracion"
-            class="packs-config__price-input packs-config__price-input--with-symbol"
-          />
-        </div>
-      </div>
     </div>
   </div>
 </template>
@@ -163,7 +150,6 @@ interface Pack {
   producto: string;
   servicios: string[];
   precio: number;
-  precioValoracion?: number;
   disponibilidad: DayAvailability[];
 }
 
@@ -181,8 +167,6 @@ interface Props {
   modelValue?: Pack[];
   availableSpecialties?: Array<{ code: string; name: string }>;
 }
-
-const DEFAULT_VALORACION_COST = 25000;
 
 const props = withDefaults(defineProps<Props>(), {
   modelValue: () => [],
@@ -206,14 +190,14 @@ const specialtiesForDropdown = computed(() =>
   props.availableSpecialties.map((s) => ({
     value: s.code,
     label: s.name,
-  }))
+  })),
 );
 
 const availableServices = computed(() =>
   services.value.map((s) => ({
     value: s.code,
     label: s.name,
-  }))
+  })),
 );
 
 const internalPacks = ref<Pack[]>(
@@ -226,10 +210,9 @@ const internalPacks = ref<Pack[]>(
           producto: "",
           servicios: [],
           precio: 0,
-          precioValoracion: DEFAULT_VALORACION_COST,
           disponibilidad: [],
         },
-      ]
+      ],
 );
 
 watch(internalPacks, (val) => emit("update:modelValue", val), { deep: true });
@@ -257,7 +240,6 @@ const addPack = () => {
     producto: "",
     servicios: [],
     precio: 0,
-    precioValoracion: DEFAULT_VALORACION_COST,
     disponibilidad: [],
   });
   activePackIndex.value = internalPacks.value.length - 1;
@@ -308,12 +290,12 @@ onMounted(async () => {
   const servicesApi = fetchUdc(
     "ASSESSMENT_DETAIL",
     {},
-    { authRequired: false }
+    { authRequired: false },
   );
   const proceduresApi = fetchUdc(
     "MEDICAL_PROCEDURE",
     {},
-    { authRequired: false }
+    { authRequired: false },
   );
 
   await Promise.all([

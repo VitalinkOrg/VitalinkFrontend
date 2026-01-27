@@ -205,12 +205,10 @@ const handleCancel = () => {
 };
 
 const handleClose = () => {
-  // Limpiar errores al cerrar
   amountError.value = "";
   modalManager.closeModal("details");
 };
 
-// Limpiar el error cuando se abre el modal con un nuevo crédito
 watch(
   () => modalManager.credit.value?.id,
   () => {

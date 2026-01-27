@@ -107,7 +107,7 @@ const tableRows = computed((): TablaBaseRow[] => {
 
   const serviceTypeValue =
     props.appointment.appointment_type.code === "PROCEDURE_APPOINTMENT"
-      ? "Cita de procedimiento"
+      ? "Procedimiento médico"
       : props.appointment.appointment_type.code === "VALORATION_APPOINTMENT" &&
           props.appointment.appointment_status.code ===
             "VALUED_VALORATION_APPOINTMENT"

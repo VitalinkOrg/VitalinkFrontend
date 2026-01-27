@@ -1,9 +1,9 @@
 <template>
   <NuxtLayout name="web">
-    <main class="main">
-      <section class="hero" id="home">
+    <main id="main-content" class="main" tabindex="-1">
+      <section class="hero" id="home" aria-labelledby="hero-title">
         <div class="hero__content">
-          <h1 class="hero__title">
+          <h1 id="hero-title" class="hero__title">
             Tu procedimiento médico,
             <span class="hero__title--highlight">más fácil que nunca</span>.
             Encuentra, agenda y empieza hoy
@@ -18,16 +18,32 @@
         <WebsiteUltimasBusquedas />
       </section>
 
-      <section class="featured" id="key_benefits">
+      <section
+        class="featured"
+        id="key_benefits"
+        aria-labelledby="benefits-title"
+      >
         <div class="featured__header">
-          <span class="featured__header-badge">Beneficios Clave</span>
-          <h2 class="featured__header-title">¿Por qué elegir Vitalink?</h2>
+          <span
+            class="featured__header-badge"
+            role="text"
+            aria-label="Sección de beneficios clave"
+          >
+            Beneficios Clave
+          </span>
+          <h2 id="benefits-title" class="featured__header-title">
+            ¿Por qué elegir Vitalink?
+          </h2>
         </div>
 
-        <div class="featured__card-grid">
-          <div class="featured__card">
+        <div
+          class="featured__card-grid"
+          role="list"
+          aria-label="Lista de beneficios"
+        >
+          <article class="featured__card" role="listitem">
             <div class="featured__card-wrapper">
-              <div class="featured__card-icon">
+              <div class="featured__card-icon" aria-hidden="true">
                 <AtomsIconsDoctorIcon size="25" />
               </div>
               <h3 class="featured__card-text">
@@ -37,10 +53,11 @@
                 Confianza y experiencia en cada procedimiento
               </p>
             </div>
-          </div>
-          <div class="featured__card">
+          </article>
+
+          <article class="featured__card" role="listitem">
             <div class="featured__card-wrapper">
-              <div class="featured__card-icon">
+              <div class="featured__card-icon" aria-hidden="true">
                 <AtomsIconsDollarIcon size="25" />
               </div>
               <h3 class="featured__card-text">
@@ -50,11 +67,11 @@
                 Accede a todos los servicios sin pagos recurrentes
               </p>
             </div>
-          </div>
+          </article>
 
-          <div class="featured__card">
+          <article class="featured__card" role="listitem">
             <div class="featured__card-wrapper">
-              <div class="featured__card-icon">
+              <div class="featured__card-icon" aria-hidden="true">
                 <Icon name="mynaui:credit-card" size="25" />
               </div>
               <h3 class="featured__card-text">Opciones de pago flexibles</h3>
@@ -63,11 +80,11 @@
                 procedimiento
               </p>
             </div>
-          </div>
+          </article>
 
-          <div class="featured__card">
+          <article class="featured__card" role="listitem">
             <div class="featured__card-wrapper">
-              <div class="featured__card-icon">
+              <div class="featured__card-icon" aria-hidden="true">
                 <Icon name="ri:guide-line" size="25" />
               </div>
               <h3 class="featured__card-text">Acompañamiento personalizado</h3>
@@ -76,23 +93,25 @@
                 procedimiento
               </p>
             </div>
-          </div>
+          </article>
         </div>
       </section>
 
       <WebsiteSteps />
 
-      <section class="banner" id="trust">
+      <section class="banner" id="trust" aria-labelledby="trust-title">
         <div class="banner__content">
           <img
             class="banner__background-pattern"
             src="@/src/assets/banner-background-pattern.svg"
             alt=""
+            aria-hidden="true"
+            role="presentation"
           />
           <div class="banner__text-wrapper">
-            <h3 class="banner__title">
+            <h2 id="trust-title" class="banner__title">
               Tu seguridad y bienestar, nuestra prioridad
-            </h3>
+            </h2>
             <p class="banner__description">
               Protegemos tus datos, garantizamos transacciones seguras y solo
               trabajamos con profesionales de la salud con trayectoria
@@ -104,20 +123,29 @@
 
       <WebsiteContenidoInformativo />
 
-      <section class="call-to-action">
+      <section class="call-to-action" aria-labelledby="cta-title">
         <img
           class="call-to-action__background-pattern"
           src="@/src/assets/banner-background-pattern.svg"
           alt=""
+          aria-hidden="true"
+          role="presentation"
         />
         <div class="call-to-action__content">
-          <h3 class="call-to-action__text">
+          <h2 id="cta-title" class="call-to-action__text">
             Da el primer paso hacia tu bienestar, hoy
-          </h3>
-          <button class="call-to-action__button">
+          </h2>
+          <button
+            class="call-to-action__button"
+            @click="scrollToBusqueda"
+            aria-label="Ir al formulario de búsqueda de especialistas"
+          >
             <span class="call-to-action__button--text">
               Buscar especialista
-              <AtomsIconsArrowRightIcon class="call-to-action__button--icon" />
+              <AtomsIconsArrowRightIcon
+                class="call-to-action__button--icon"
+                aria-hidden="true"
+              />
             </span>
           </button>
         </div>
@@ -128,9 +156,28 @@
   </NuxtLayout>
 </template>
 
+<script setup lang="ts">
+const scrollToBusqueda = () => {
+  const element = document.getElementById("home");
+  if (element) {
+    element.scrollIntoView({ behavior: "smooth", block: "start" });
+    const searchInput = element.querySelector("input");
+    if (searchInput) {
+      setTimeout(() => {
+        searchInput.focus();
+      }, 500);
+    }
+  }
+};
+</script>
+
 <style lang="scss" scoped>
 .main {
   overflow-x: hidden;
+
+  &:focus {
+    outline: none;
+  }
 }
 
 .hero {
@@ -305,6 +352,23 @@
     border-radius: 20px;
     box-shadow: 0px 4px 20.9px 0px rgba(12, 173, 187, 0.1);
     padding: 10px;
+    transition:
+      transform 0.2s ease,
+      box-shadow 0.2s ease;
+
+    @media (prefers-reduced-motion: reduce) {
+      transition: none;
+    }
+
+    &:focus-within {
+      outline: 2px solid $color-primary;
+      outline-offset: 2px;
+    }
+
+    &:hover {
+      transform: translateY(-2px);
+      box-shadow: 0px 6px 24px 0px rgba(12, 173, 187, 0.15);
+    }
   }
 
   &__card-wrapper {
@@ -429,6 +493,7 @@
     position: absolute;
     opacity: 0.1;
     width: 100%;
+    pointer-events: none;
   }
 
   &__text-wrapper {
@@ -462,7 +527,7 @@
     }
 
     @include respond-to(lg) {
-      font-size: 18px;
+      font-size: 2rem;
     }
   }
 
@@ -479,7 +544,7 @@
     }
 
     @include respond-to(lg) {
-      font-size: 18px;
+      font-size: 1.125rem;
     }
   }
 }
@@ -644,6 +709,7 @@
     opacity: 0.1;
     width: 100%;
     z-index: 0;
+    pointer-events: none;
   }
 
   &__content {
@@ -704,9 +770,30 @@
     padding: 12px 20px;
     width: 100%;
     max-width: 280px;
+    transition:
+      transform 0.2s ease,
+      box-shadow 0.2s ease;
+
+    @media (prefers-reduced-motion: reduce) {
+      transition: none;
+    }
 
     @include respond-to(sm) {
       width: auto;
+    }
+
+    &:hover {
+      transform: translateY(-2px);
+      box-shadow: 0px 4px 12px rgba(0, 0, 0, 0.15);
+    }
+
+    &:active {
+      transform: translateY(0);
+    }
+
+    &:focus-visible {
+      outline: 3px solid $white;
+      outline-offset: 3px;
     }
 
     &--text {
@@ -718,6 +805,7 @@
       display: flex;
       align-items: center;
       gap: 8px;
+      font-weight: 600;
     }
 
     &--icon {

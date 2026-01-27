@@ -85,6 +85,7 @@
 </template>
 
 <script lang="ts" setup>
+import { useUserNotification } from "@/composables/api/useNotification";
 import { useModalManager } from "@/composables/useModalManager";
 
 interface DocumentFields {
@@ -103,6 +104,7 @@ const token = useCookie<string>("token");
 const user_info = useCookie<{ id: number | string }>("user_info");
 
 const modalManager = useModalManager();
+const { createUserNotification } = useUserNotification();
 const fileInputRef = ref<HTMLInputElement | null>(null);
 const fileError = ref<string>("");
 const isLoading = ref<boolean>(false);
@@ -114,11 +116,11 @@ const uploadedFile = computed({
 });
 
 const approvedAmount = computed(() =>
-  modalManager.getSharedData<string>("approvedAmount")
+  modalManager.getSharedData<string>("approvedAmount"),
 );
 
 const description = computed(() =>
-  modalManager.getSharedData<string>("description")
+  modalManager.getSharedData<string>("description"),
 );
 
 const handleFileChange = (event: Event): void => {
@@ -192,7 +194,7 @@ const handleConfirm = async (): Promise<void> => {
         method: "POST",
         headers: { Authorization: token.value || "" },
         body: formData,
-      }
+      },
     );
 
     if (!documentResponse.ok) {
@@ -206,6 +208,13 @@ const handleConfirm = async (): Promise<void> => {
       throw new Error("No se pudo obtener el código del documento");
     }
 
+    const creditStatusCode =
+      Number(approvedAmount.value) &&
+      Number(approvedAmount.value) <
+        parseFloat(modalManager.credit.value.requested_amount)
+        ? "APPROVED_PERCENTAGE"
+        : "APPROVED";
+
     const { data, error } = await useFetch(
       `${config.public.API_BASE_URL}/appointmentcredit/edit?id=${modalManager.credit.value.id}`,
       {
@@ -215,23 +224,47 @@ const handleConfirm = async (): Promise<void> => {
           "Content-Type": "application/json",
         },
         body: {
-          credit_status_code:
-            Number(approvedAmount.value) &&
-            Number(approvedAmount.value) <
-              parseFloat(modalManager.credit.value.requested_amount)
-              ? "APPROVED_PERCENTAGE"
-              : "APPROVED",
+          credit_status_code: creditStatusCode,
           approved_amount: approvedAmount.value,
           credit_observations: description.value || "Solicitud Aprobada",
           pagare_file_code: documentCode,
         },
-      }
+      },
     );
 
     if (error.value) {
       throw new Error(
-        (error.value as any).data?.info || "Error al aprobar el crédito"
+        (error.value as any).data?.info || "Error al aprobar el crédito",
       );
+    }
+
+    const creditCode =
+      modalManager.credit.value.appointment?.appointment_qr_code ||
+      `CREDIT-${modalManager.credit.value.id}`;
+
+    const customerName =
+      modalManager.credit.value.appointment?.customer?.name || "Cliente";
+    const customerId = modalManager.credit.value.appointment?.customer?.id;
+
+    if (customerId) {
+      const notificationPayload = {
+        notification: "credit_approved",
+        user_send: user_info.value?.id?.toString() || "",
+        user_receive: customerId.toString(),
+        action_url: `${window.location.origin}/citas/${modalManager.credit.value.appointment?.id}`,
+        payload: JSON.stringify({
+          credit_code: creditCode,
+          approved_amount: approvedAmount.value,
+          user: customerName,
+          credit_status:
+            creditStatusCode === "APPROVED"
+              ? "Aprobado"
+              : "Aprobado Parcialmente",
+        }),
+        is_read: false,
+      };
+
+      await createUserNotification(notificationPayload);
     }
 
     if (modalManager.credit.value) {

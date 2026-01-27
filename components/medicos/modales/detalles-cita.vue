@@ -88,7 +88,7 @@
                     formatCurrency(
                       currentAppointment?.appointment_credit?.approved_amount ??
                         0,
-                      { decimalPlaces: 0 }
+                      { decimalPlaces: 0 },
                     )
                   }}
                 </span>
@@ -139,7 +139,7 @@
                   formatCurrency(
                     currentAppointment?.appointment_credit?.approved_amount ??
                       0,
-                    { decimalPlaces: 0 }
+                    { decimalPlaces: 0 },
                   )
                 }}
               </span>
@@ -306,7 +306,7 @@ const { fetchAllAppointmentCreditByQrCode } = useAppointmentCredit();
 const isModalOpen = computed(() => isOpen.detallesCita);
 
 const modalData = computed(() =>
-  getSharedData<{ appointment: Appointment }>("detallesCita")
+  getSharedData<{ appointment: Appointment }>("detallesCita"),
 );
 const currentAppointment = computed(() => modalData.value?.appointment);
 
@@ -331,7 +331,7 @@ const pendingBalance = computed(() => {
 
   const price = Number(appointment.price_procedure);
   const approvedAmount = Number(
-    appointment.appointment_credit?.approved_amount
+    appointment.appointment_credit?.approved_amount,
   );
 
   return Math.max(0, price - approvedAmount);
@@ -483,7 +483,7 @@ const isPaidByCustomer = computed(() => {
   if (!appointment) return false;
 
   const approvedAmount = Number(
-    appointment.appointment_credit?.approved_amount ?? 0
+    appointment.appointment_credit?.approved_amount ?? 0,
   );
   const price = Number(appointment.price_procedure);
 

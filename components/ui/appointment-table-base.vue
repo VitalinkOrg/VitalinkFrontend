@@ -261,30 +261,13 @@ const getSortValue = (item: TableItem, columnKey: string): any => {
 };
 
 const sortedItems = computed(() => {
-  if (!props.items || !Array.isArray(props.items)) {
-    return [];
-  }
-
-  return [...props.items].sort((a, b) => {
-    const valueA = getSortValue(a, sortColumn.value);
-    const valueB = getSortValue(b, sortColumn.value);
-
-    let comparison = 0;
-
-    if (valueA < valueB) {
-      comparison = -1;
-    } else if (valueA > valueB) {
-      comparison = 1;
-    }
-
-    return sortDirection.value === "asc" ? comparison : -comparison;
-  });
+  return props.items;
 });
 
 const totalItems = computed(() => sortedItems.value.length);
 
 const totalPages = computed(() =>
-  Math.ceil(totalItems.value / props.itemsPerPage)
+  Math.ceil(totalItems.value / props.itemsPerPage),
 );
 
 const paginatedItems = computed(() => {
@@ -294,7 +277,7 @@ const paginatedItems = computed(() => {
 });
 
 const hasItems = computed(
-  () => props.items && Array.isArray(props.items) && props.items.length > 0
+  () => props.items && Array.isArray(props.items) && props.items.length > 0,
 );
 
 const getItemKey = (item: TableItem, index: number): string | number => {
@@ -319,7 +302,7 @@ watch(
     if (currentPage.value > totalPages.value && totalPages.value > 0) {
       currentPage.value = totalPages.value;
     }
-  }
+  },
 );
 
 defineExpose({

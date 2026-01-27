@@ -58,7 +58,7 @@ const user_info: Partial<Supplier> = {
 };
 
 const visibleNavItems = computed(() =>
-  props.navigationItems.filter((item) => item.visible)
+  props.navigationItems.filter((item) => item.visible),
 );
 
 const checkScreenSize = (): void => {
@@ -106,7 +106,7 @@ const logout = (): void => {
   role.value = null;
   authenticated.value = null;
   const redirectPath =
-    props.userType === "medical" ? "/pacientes/login" : "/socios/login";
+    props.userType === "medical" ? "/auth/login" : "/socios/login";
   router.push(redirectPath);
 };
 

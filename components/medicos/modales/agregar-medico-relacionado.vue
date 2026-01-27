@@ -33,23 +33,37 @@
           />
 
           <div v-if="currentStep === 1" class="step-content">
-            <form @submit.prevent="goToStep(2)" class="doctor-form">
+            <form @submit.prevent="handleStep1Submit" class="doctor-form">
               <div class="doctor-form__group">
                 <label for="documentType" class="doctor-form__label">
                   Tipo de documento de identidad
                 </label>
                 <UiDropdownBase
-                  v-model="formData.documentType"
-                  :loading="isLoadingDocumentTypes"
+                  :model-value="formData.documentType"
                   :items="
                     documentTypeOptions.map((s) => ({
                       value: s.code,
                       label: s.name,
                     }))
                   "
-                  placeholder="Seleccione tipo de documento"
+                  :loading="isLoadingDocumentTypes"
                   :disabled="isLoadingSubmit || isEditMode"
+                  :class="{
+                    'input-error':
+                      touched.documentType && !formData.documentType,
+                  }"
+                  placeholder="Seleccione tipo de documento"
+                  @update:model-value="
+                    handleDocumentTypeChange($event as string)
+                  "
+                  @blur="touched.documentType = true"
                 />
+                <small
+                  v-if="touched.documentType && !formData.documentType"
+                  class="doctor-form__error-message"
+                >
+                  Debes seleccionar un tipo de documento
+                </small>
               </div>
 
               <div class="doctor-form__group">
@@ -57,13 +71,33 @@
                   Número de documento
                 </label>
                 <input
-                  v-model="formData.documentNumber"
+                  :value="formData.documentNumber"
+                  @input="handleDocumentNumberInput"
+                  @blur="touched.documentNumber = true"
                   type="text"
                   class="doctor-form__input"
-                  placeholder="Ingrese número de documento"
+                  :class="{
+                    'input-error':
+                      touched.documentNumber &&
+                      (!formData.documentNumber || !isDocumentValid),
+                  }"
+                  :placeholder="getCedulaPlaceholder(formData.documentType)"
                   :disabled="isLoadingSubmit || isEditMode"
+                  id="documentNumber"
                   required
                 />
+                <small
+                  v-if="touched.documentNumber && !formData.documentNumber"
+                  class="doctor-form__error-message"
+                >
+                  El número de documento es requerido
+                </small>
+                <small
+                  v-else-if="formData.documentNumber && !isDocumentValid"
+                  class="doctor-form__error-message"
+                >
+                  {{ getCedulaErrorMessage(formData.documentType) }}
+                </small>
               </div>
 
               <div class="doctor-form__group">
@@ -72,12 +106,24 @@
                 </label>
                 <input
                   v-model="formData.fullName"
+                  @blur="touched.fullName = true"
                   type="text"
                   class="doctor-form__input"
+                  :class="{
+                    'input-error':
+                      touched.fullName && !formData.fullName.trim(),
+                  }"
                   placeholder="Ingrese nombre completo"
                   :disabled="isLoadingSubmit"
+                  id="fullName"
                   required
                 />
+                <small
+                  v-if="touched.fullName && !formData.fullName.trim()"
+                  class="doctor-form__error-message"
+                >
+                  El nombre completo es requerido
+                </small>
               </div>
 
               <MedicosRegistroCargarArchivos
@@ -88,8 +134,28 @@
                 inputId="identityFileInput"
                 :uploadedFile="formData.identityDocumentFile"
                 :disabled="isLoadingSubmit"
-                @update:file="formData.identityDocumentFile = $event"
+                :has-error="
+                  touched.identityDocumentFile && !formData.identityDocumentFile
+                "
+                @update:file="handleIdentityFileChange"
+                @blur="touched.identityDocumentFile = true"
               />
+              <small
+                v-if="
+                  !isEditMode &&
+                  touched.identityDocumentFile &&
+                  !formData.identityDocumentFile
+                "
+                class="doctor-form__error-message"
+              >
+                Debes cargar el documento de identidad (PDF, Word, JPG o PNG)
+              </small>
+              <small
+                v-if="identityFileError"
+                class="doctor-form__error-message"
+              >
+                {{ identityFileError }}
+              </small>
 
               <div class="doctor-form__group">
                 <label for="medicalCode" class="doctor-form__label">
@@ -97,12 +163,24 @@
                 </label>
                 <input
                   v-model="formData.medicalCode"
+                  @blur="touched.medicalCode = true"
                   type="text"
                   class="doctor-form__input"
+                  :class="{
+                    'input-error':
+                      touched.medicalCode && !formData.medicalCode.trim(),
+                  }"
                   placeholder="Ingrese el código de médico"
                   :disabled="isLoadingSubmit"
+                  id="medicalCode"
                   required
                 />
+                <small
+                  v-if="touched.medicalCode && !formData.medicalCode.trim()"
+                  class="doctor-form__error-message"
+                >
+                  El código de médico es requerido
+                </small>
               </div>
 
               <MedicosRegistroCargarArchivos
@@ -113,8 +191,25 @@
                 inputId="validLicenseFileInput"
                 :uploadedFile="formData.validLicenseFile"
                 :disabled="isLoadingSubmit"
-                @update:file="formData.validLicenseFile = $event"
+                :has-error="
+                  touched.validLicenseFile && !formData.validLicenseFile
+                "
+                @update:file="handleLicenseFileChange"
+                @blur="touched.validLicenseFile = true"
               />
+              <small
+                v-if="
+                  !isEditMode &&
+                  touched.validLicenseFile &&
+                  !formData.validLicenseFile
+                "
+                class="doctor-form__error-message"
+              >
+                Debes cargar el carnet vigente (PDF, Word, JPG o PNG)
+              </small>
+              <small v-if="licenseFileError" class="doctor-form__error-message">
+                {{ licenseFileError }}
+              </small>
 
               <div class="doctor-form__group">
                 <label for="medicalType" class="doctor-form__label">
@@ -126,9 +221,19 @@
                   :items="
                     medicalTypes.map((s) => ({ value: s.code, label: s.name }))
                   "
+                  :class="{
+                    'input-error': touched.medicalType && !formData.medicalType,
+                  }"
                   placeholder="Seleccione tipo de médico"
                   :disabled="isLoadingSubmit"
+                  @blur="touched.medicalType = true"
                 />
+                <small
+                  v-if="touched.medicalType && !formData.medicalType"
+                  class="doctor-form__error-message"
+                >
+                  Debes seleccionar un tipo de médico
+                </small>
               </div>
 
               <div class="doctor-form__group">
@@ -153,7 +258,7 @@
                       !selectedSpecialty ||
                       formData.specialties.length >= 3 ||
                       formData.specialties.some(
-                        (s) => s.code === selectedSpecialty
+                        (s) => s.code === selectedSpecialty,
                       ) ||
                       isLoadingSubmit
                     "
@@ -183,10 +288,49 @@
                   </span>
                 </div>
                 <small
+                  v-if="
+                    touched.specialties && formData.specialties.length === 0
+                  "
+                  class="doctor-form__error-message"
+                >
+                  Debes agregar al menos una especialidad
+                </small>
+                <small
                   v-if="formData.specialties.length >= 3"
                   class="doctor-form__limit-text"
                 >
                   Has alcanzado el máximo de 3 especialidades
+                </small>
+              </div>
+
+              <div class="doctor-form__group">
+                <label for="valoracionCost" class="doctor-form__label">
+                  Costo de cita de valoración
+                </label>
+                <div class="doctor-form__price-input-wrapper">
+                  <span class="doctor-form__currency-symbol">₡</span>
+                  <input
+                    v-model.number="formData.valoracionCost"
+                    @blur="touched.valoracionCost = true"
+                    type="number"
+                    min="0"
+                    step="1000"
+                    class="doctor-form__input doctor-form__input--with-symbol"
+                    :class="{
+                      'input-error':
+                        touched.valoracionCost && !formData.valoracionCost,
+                    }"
+                    placeholder="Ingrese el costo de valoración"
+                    :disabled="isLoadingSubmit"
+                    id="valoracionCost"
+                    required
+                  />
+                </div>
+                <small
+                  v-if="touched.valoracionCost && !formData.valoracionCost"
+                  class="doctor-form__error-message"
+                >
+                  El costo de valoración es requerido
                 </small>
               </div>
             </form>
@@ -265,7 +409,7 @@
               type="button"
               class="modal-footer__button--primary"
               :disabled="!isStep1Complete || isLoadingSubmit"
-              @click="goToStep(2)"
+              @click="handleStep1Submit"
             >
               Continuar
             </button>
@@ -337,6 +481,7 @@ import {
   useSupplier,
   useUdc,
 } from "@/composables/api";
+import { useFormat } from "@/composables/useFormat";
 import type { IRelatedMedicalFormData, IUdc, Service, Supplier } from "@/types";
 import type { CreateSupplier } from "~/composables/api/useSupplier";
 import MedicosModalesPackPreview from "./pack-preview.vue";
@@ -358,7 +503,6 @@ interface Pack {
   producto: string;
   servicios: string[];
   precio: number;
-  precioValoracion?: number;
   disponibilidad: DayAvailability[];
 }
 
@@ -374,7 +518,8 @@ interface Emits {
   (e: "doctor-updated"): void;
 }
 
-const DEFAULT_VALORACION_COST = 25000;
+const ALLOWED_EXTENSIONS = [".pdf", ".doc", ".docx", ".jpg", ".jpeg", ".png"];
+const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
 
 const props = withDefaults(defineProps<Props>(), {
   editMode: false,
@@ -399,6 +544,12 @@ const { createPackage } = usePackage();
 const { createAvailability } = useAvailability();
 const { getToken } = useAuthToken();
 const { getUserInfo } = useUserInfo();
+const {
+  formatCedula,
+  validateCedula,
+  getCedulaPlaceholder,
+  getCedulaErrorMessage,
+} = useFormat();
 
 const isOpen = ref(false);
 const currentStep = ref(1);
@@ -421,6 +572,8 @@ const servicesData = ref<IUdc[]>([]);
 
 const errorMessage = ref<string>("");
 const currentSupplier = ref<Supplier | null>(null);
+const identityFileError = ref<string>("");
+const licenseFileError = ref<string>("");
 
 const isEditMode = computed(() => props.editMode);
 
@@ -433,9 +586,22 @@ const formData = ref<IRelatedMedicalFormData>({
   validLicenseFile: null,
   medicalType: "",
   specialties: [],
+  valoracionCost: 0,
 });
 
 const originalFormData = ref<IRelatedMedicalFormData | null>(null);
+
+const touched = reactive({
+  documentType: false,
+  documentNumber: false,
+  fullName: false,
+  identityDocumentFile: false,
+  medicalCode: false,
+  validLicenseFile: false,
+  medicalType: false,
+  specialties: false,
+  valoracionCost: false,
+});
 
 const packs = ref<Pack[]>([]);
 const originalPacks = ref<Pack[]>([]);
@@ -455,20 +621,33 @@ const servicesMap = computed(() => {
   return map;
 });
 
+const isDocumentValid = computed(() => {
+  if (!formData.value.documentNumber) return true;
+  return validateCedula(
+    formData.value.documentNumber,
+    formData.value.documentType,
+  );
+});
+
 const isStep1Complete = computed(() => {
+  const baseValidation =
+    formData.value.documentType.trim() !== "" &&
+    formData.value.documentNumber.trim() !== "" &&
+    isDocumentValid.value &&
+    formData.value.fullName.trim() !== "" &&
+    formData.value.medicalCode.trim() !== "" &&
+    formData.value.medicalType.trim() !== "" &&
+    formData.value.specialties.length > 0 &&
+    formData.value.valoracionCost > 0;
+
   if (isEditMode.value) {
-    return true;
+    return baseValidation;
   }
 
   return (
-    formData.value.documentType &&
-    formData.value.documentNumber &&
-    formData.value.fullName &&
-    formData.value.medicalCode &&
-    formData.value.medicalType &&
-    formData.value.specialties.length > 0 &&
-    formData.value.identityDocumentFile &&
-    formData.value.validLicenseFile
+    baseValidation &&
+    formData.value.identityDocumentFile !== null &&
+    formData.value.validLicenseFile !== null
   );
 });
 
@@ -482,13 +661,13 @@ const isStep2Complete = computed(() => {
           pack.procedimiento &&
           pack.producto &&
           pack.servicios.length > 0 &&
-          pack.precio > 0
+          pack.precio > 0,
       )
     );
   }
 
   const newPacks = packs.value.filter(
-    (pack, index) => index >= originalPacks.value.length
+    (pack, index) => index >= originalPacks.value.length,
   );
 
   if (newPacks.length === 0) {
@@ -501,9 +680,107 @@ const isStep2Complete = computed(() => {
       pack.procedimiento &&
       pack.producto &&
       pack.servicios.length > 0 &&
-      pack.precio > 0
+      pack.precio > 0,
   );
 });
+
+const validateFileType = (file: File, errorRef: Ref<string>): boolean => {
+  const extension = "." + file.name.split(".").pop()?.toLowerCase();
+
+  if (!ALLOWED_EXTENSIONS.includes(extension)) {
+    errorRef.value = `Formato no permitido. Solo se aceptan archivos: ${ALLOWED_EXTENSIONS.join(", ")}`;
+    return false;
+  }
+
+  if (file.size > MAX_FILE_SIZE) {
+    errorRef.value = "El archivo es demasiado grande. El tamaño máximo es 10MB";
+    return false;
+  }
+
+  errorRef.value = "";
+  return true;
+};
+
+const handleIdentityFileChange = (file: File | null) => {
+  touched.identityDocumentFile = true;
+
+  if (file && !validateFileType(file, identityFileError)) {
+    formData.value.identityDocumentFile = null;
+    return;
+  }
+
+  formData.value.identityDocumentFile = file;
+};
+
+const handleLicenseFileChange = (file: File | null) => {
+  touched.validLicenseFile = true;
+
+  if (file && !validateFileType(file, licenseFileError)) {
+    formData.value.validLicenseFile = null;
+    return;
+  }
+
+  formData.value.validLicenseFile = file;
+};
+
+const handleDocumentTypeChange = (documentType: string) => {
+  touched.documentType = true;
+  formData.value.documentType = documentType ?? "";
+  formData.value.documentNumber = "";
+  touched.documentNumber = false;
+};
+
+const handleDocumentNumberInput = (event: Event) => {
+  touched.documentNumber = true;
+  const target = event.target as HTMLInputElement;
+  const cursorPosition = target.selectionStart || 0;
+
+  const formattedValue = formatCedula(
+    target.value,
+    formData.value.documentType,
+  );
+
+  const numbersBeforeCursor = target.value
+    .substring(0, cursorPosition)
+    .replace(/\D/g, "").length;
+
+  let numbersCount = 0;
+  let newCursorPosition = 0;
+
+  for (let i = 0; i < formattedValue.length; i++) {
+    if (formattedValue[i].match(/\d/)) {
+      numbersCount++;
+      if (numbersCount === numbersBeforeCursor) {
+        newCursorPosition = i + 1;
+        break;
+      }
+    }
+  }
+
+  if (numbersCount < numbersBeforeCursor || newCursorPosition === 0) {
+    newCursorPosition = formattedValue.length;
+  }
+
+  formData.value.documentNumber = formattedValue;
+
+  nextTick(() => {
+    target.setSelectionRange(newCursorPosition, newCursorPosition);
+  });
+};
+
+const markAllTouched = () => {
+  Object.keys(touched).forEach((key) => {
+    touched[key as keyof typeof touched] = true;
+  });
+};
+
+const handleStep1Submit = () => {
+  markAllTouched();
+
+  if (isStep1Complete.value && !isLoadingSubmit.value) {
+    goToStep(2);
+  }
+};
 
 const openModal = () => {
   isOpen.value = true;
@@ -520,10 +797,7 @@ const openModal = () => {
         Array.isArray(props.existingPacks) &&
         props.existingPacks.length > 0
       ) {
-        packs.value = props.existingPacks.map((pack) => ({
-          ...pack,
-          precioValoracion: pack.precioValoracion || DEFAULT_VALORACION_COST,
-        }));
+        packs.value = [...props.existingPacks];
         originalPacks.value = JSON.parse(JSON.stringify(props.existingPacks));
       }
 
@@ -549,6 +823,7 @@ const loadDoctorData = () => {
     validLicenseFile: null,
     medicalType: props.doctorData.medicalType || "",
     specialties: props.doctorData.specialties || [],
+    valoracionCost: props.doctorData.valoracionCost || 0,
   };
 
   formData.value = { ...data };
@@ -591,9 +866,11 @@ const addAnotherDoctor = () => {
 
 const addSpecialty = () => {
   if (!selectedSpecialty.value) return;
+
   const specialtyToAdd = specialties.value.find(
-    (s) => s.code === selectedSpecialty.value
+    (s) => s.code === selectedSpecialty.value,
   );
+
   if (
     specialtyToAdd &&
     !formData.value.specialties.some((s) => s.code === specialtyToAdd.code) &&
@@ -601,11 +878,13 @@ const addSpecialty = () => {
   ) {
     formData.value.specialties.push(specialtyToAdd);
     selectedSpecialty.value = "";
+    touched.specialties = true;
   }
 };
 
 const removeSpecialty = (index: number) => {
   formData.value.specialties.splice(index, 1);
+  touched.specialties = true;
 };
 
 const resetForm = () => {
@@ -618,13 +897,20 @@ const resetForm = () => {
     validLicenseFile: null,
     medicalType: "",
     specialties: [],
+    valoracionCost: 0,
   };
   originalFormData.value = null;
   packs.value = [];
   originalPacks.value = [];
   selectedSpecialty.value = "";
   errorMessage.value = "";
+  identityFileError.value = "";
+  licenseFileError.value = "";
   isLoadingModalData.value = false;
+
+  Object.keys(touched).forEach((key) => {
+    touched[key as keyof typeof touched] = false;
+  });
 };
 
 const delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
@@ -655,7 +941,7 @@ const handleUploadFile = async (
   file: File,
   actionType: string,
   tableId: number = 5,
-  retries: number = 3
+  retries: number = 3,
 ): Promise<string> => {
   for (let attempt = 1; attempt <= retries; attempt++) {
     try {
@@ -701,7 +987,7 @@ const handleUploadFile = async (
         throw new Error(
           `Error al subir documento después de ${retries} intentos: ${
             error instanceof Error ? error.message : "Error desconocido"
-          }`
+          }`,
         );
       }
 
@@ -718,7 +1004,7 @@ const handleCreateSupplier = async (
   legalRepresentativeId: string,
   codeCardIdFile: string,
   codeMedicalLicenseFile: string,
-  token: string
+  token: string,
 ): Promise<number> => {
   const userInfo = getUserInfo();
   const email = userInfo?.email || "";
@@ -775,7 +1061,7 @@ const handleCreateSupplier = async (
 const handleUpdateSupplier = async (
   supplierId: number,
   supplier: IRelatedMedicalFormData,
-  token: string
+  token: string,
 ): Promise<void> => {
   const payload = getChangedFields();
 
@@ -794,7 +1080,7 @@ const handleUpdateSupplier = async (
 const handleUploadSpecialtyBySupplier = async (
   supplierId: number,
   supplier: IRelatedMedicalFormData,
-  token: string
+  token: string,
 ) => {
   const body = supplier.specialties.map((specialty) => ({
     supplier_id: supplierId,
@@ -845,7 +1131,7 @@ const handleSavePacks = async (supplierId: number) => {
     }
 
     const packsToSave = packs.value.filter(
-      (pack, index) => index >= originalPacks.value.length
+      (pack, index) => index >= originalPacks.value.length,
     );
 
     for (const pack of packsToSave) {
@@ -853,12 +1139,12 @@ const handleSavePacks = async (supplierId: number) => {
         const packSpecialtyCode = pack.especialidad;
 
         const matchingSpecialty = supplierSpecialties.find(
-          (spec) => spec.medical_specialty.code === packSpecialtyCode
+          (spec) => spec.medical_specialty.code === packSpecialtyCode,
         );
 
         if (!matchingSpecialty) {
           console.warn(
-            `⚠️ No se encontró especialidad para código: ${packSpecialtyCode}`
+            `⚠️ No se encontró especialidad para código: ${packSpecialtyCode}`,
           );
           continue;
         }
@@ -878,16 +1164,12 @@ const handleSavePacks = async (supplierId: number) => {
           postoperative_assessments: 0,
         };
 
-        console.log("📦 Creando package en edición:", packagePayload);
-
         const packageApi = createPackage(packagePayload);
         await packageApi.request();
 
         if (packageApi.error.value) {
           throw new Error(`Error creando package: ${packageApi.error.value}`);
         }
-
-        console.log("✅ Package creado exitosamente");
 
         await handleSaveAvailability(supplierId, pack.disponibilidad);
       } catch (error) {
@@ -903,7 +1185,7 @@ const handleSavePacks = async (supplierId: number) => {
 
 const handleSaveAvailability = async (
   supplierId: number,
-  availability: DayAvailability[]
+  availability: DayAvailability[],
 ) => {
   const weekDays = [
     "Lunes",
@@ -948,7 +1230,7 @@ const handleSaveAvailability = async (
 
 const handleSyncSpecialties = async (
   supplierId: number,
-  token: string
+  token: string,
 ): Promise<void> => {
   try {
     const fetchApi = fetchSpecialtyBySupplier(supplierId, token);
@@ -965,7 +1247,7 @@ const handleSyncSpecialties = async (
         acc[code].push(spec);
         return acc;
       },
-      {} as Record<string, Service[]>
+      {} as Record<string, Service[]>,
     );
 
     let hasDeletePermission = true;
@@ -1010,7 +1292,7 @@ const handleSyncSpecialties = async (
 
     const existingUniqueCodes = Object.keys(groupedByCode);
     const toAdd = formData.value.specialties.filter(
-      (newSpec) => !existingUniqueCodes.includes(newSpec.code)
+      (newSpec) => !existingUniqueCodes.includes(newSpec.code),
     );
 
     if (toAdd.length > 0) {
@@ -1024,7 +1306,7 @@ const handleSyncSpecialties = async (
 
       if (addApi.error.value) {
         throw new Error(
-          `Error agregando especialidades: ${addApi.error.value}`
+          `Error agregando especialidades: ${addApi.error.value}`,
         );
       }
     }
@@ -1058,7 +1340,7 @@ const handleSubmit = async () => {
       await delay(1000);
 
       const newPacks = packs.value.filter(
-        (pack, index) => index >= originalPacks.value.length
+        (pack, index) => index >= originalPacks.value.length,
       );
       if (newPacks.length > 0) {
         await handleSavePacks(props.supplierId);
@@ -1080,7 +1362,7 @@ const handleSubmit = async () => {
       const codeCardIdFile = await handleUploadFile(
         formData.value.identityDocumentFile,
         "PERSONAL_DOCUMENT",
-        5
+        5,
       );
 
       await delay(2000);
@@ -1092,7 +1374,7 @@ const handleSubmit = async () => {
       const codeMedicalLicenseFile = await handleUploadFile(
         formData.value.validLicenseFile,
         "PERSONAL_DOCUMENT",
-        5
+        5,
       );
 
       await delay(1000);
@@ -1102,7 +1384,7 @@ const handleSubmit = async () => {
         legalRepresentativeId,
         codeCardIdFile,
         codeMedicalLicenseFile,
-        token
+        token,
       );
 
       await delay(1000);
@@ -1111,7 +1393,7 @@ const handleSubmit = async () => {
         await handleUploadSpecialtyBySupplier(
           supplierId,
           formData.value,
-          token
+          token,
         );
       }
 
@@ -1145,7 +1427,7 @@ const handleSubmit = async () => {
 
 const handleSavePacksForNewSupplier = async (
   supplierId: number,
-  token: string
+  token: string,
 ) => {
   try {
     const fetchApi = fetchSpecialtyBySupplier(supplierId, token);
@@ -1160,7 +1442,7 @@ const handleSavePacksForNewSupplier = async (
     const firstSpecialtyCode = formData.value.specialties[0]?.code;
 
     const matchingSpecialty = supplierSpecialties.find(
-      (spec) => spec.medical_specialty.code === firstSpecialtyCode
+      (spec) => spec.medical_specialty.code === firstSpecialtyCode,
     );
 
     if (!matchingSpecialty) {
@@ -1184,16 +1466,12 @@ const handleSavePacksForNewSupplier = async (
           postoperative_assessments: 0,
         };
 
-        console.log("📦 Creando package para nuevo supplier:", packagePayload);
-
         const packageApi = createPackage(packagePayload);
         await packageApi.request();
 
         if (packageApi.error.value) {
           throw new Error(`Error creando package: ${packageApi.error.value}`);
         }
-
-        console.log("✅ Package creado exitosamente");
 
         await handleSaveAvailability(supplierId, pack.disponibilidad);
       } catch (error) {
@@ -1301,7 +1579,7 @@ watch(
       });
     }
   },
-  { immediate: true }
+  { immediate: true },
 );
 
 watch(
@@ -1313,15 +1591,12 @@ watch(
       Array.isArray(newPacks) &&
       newPacks.length > 0
     ) {
-      packs.value = newPacks.map((pack) => ({
-        ...pack,
-        precioValoracion: pack.precioValoracion || DEFAULT_VALORACION_COST,
-      }));
+      packs.value = [...newPacks];
       originalPacks.value = JSON.parse(JSON.stringify(newPacks));
       isLoadingModalData.value = false;
     }
   },
-  { immediate: true, deep: true }
+  { immediate: true, deep: true },
 );
 
 watch(
@@ -1331,7 +1606,7 @@ watch(
       loadDoctorData();
     }
   },
-  { immediate: true, deep: true }
+  { immediate: true, deep: true },
 );
 
 onMounted(async () => {
@@ -1447,6 +1722,39 @@ defineExpose({
   &__input {
     @include input-base;
     width: 100%;
+    transition:
+      border-color 0.2s ease,
+      box-shadow 0.2s ease;
+
+    &:disabled {
+      background-color: #f9fafb;
+      cursor: not-allowed;
+      opacity: 0.6;
+    }
+
+    &:focus {
+      outline: none;
+      border-color: #3b82f6;
+      box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+    }
+
+    &--with-symbol {
+      padding-left: 2.25rem;
+    }
+  }
+
+  &__price-input-wrapper {
+    position: relative;
+    width: 100%;
+  }
+
+  &__currency-symbol {
+    position: absolute;
+    left: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    font-weight: 600;
+    color: #667085;
   }
 
   &__input-group {
@@ -1490,6 +1798,24 @@ defineExpose({
     border-radius: 0.375rem;
     color: #dc2626;
     font-size: 0.875rem;
+  }
+
+  &__error-message {
+    display: block;
+    color: #dc2626;
+    font-size: 0.875rem;
+    margin-top: 0.25rem;
+    line-height: 1.25;
+  }
+}
+
+.input-error {
+  border-color: #dc2626 !important;
+  background-color: #fef2f2 !important;
+
+  &:focus {
+    border-color: #dc2626 !important;
+    box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.1) !important;
   }
 }
 
