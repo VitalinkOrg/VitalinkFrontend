@@ -395,6 +395,11 @@ const appointmentRowsWithData = computed((): TablaBaseRow[] => {
       value: currentAppointment.value.appointment_status.value1,
     },
     {
+      key: "cedula-usuario",
+      header: "Cédula:",
+      value: currentAppointment.value.customer.card_id,
+    },
+    {
       key: "validacion-credito",
       header: "Validación de Crédito:",
       show: shouldShowCreditRow.value,
