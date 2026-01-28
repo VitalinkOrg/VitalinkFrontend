@@ -23,13 +23,12 @@
 
       <div class="header-container__nav">
         <div class="collapse navbar-collapse" id="navbarTogglerDemo03">
-          <ul class="navbar-nav mx-auto mb-2 mb-lg-0" role="menubar">
+          <ul class="navbar-nav mx-auto mb-2 mb-lg-0">
             <li class="header-container__nav-item">
               <NuxtLink
                 href="/pacientes/inicio"
                 class="header-container__nav-link"
                 active-class="header-container__nav-link--active"
-                role="menuitem"
                 >Home</NuxtLink
               >
             </li>
@@ -38,7 +37,6 @@
                 href="/pacientes/citas"
                 class="header-container__nav-link"
                 active-class="header-container__nav-link--active"
-                role="menuitem"
                 >Mis Citas</NuxtLink
               >
             </li>
@@ -46,19 +44,16 @@
         </div>
 
         <ul class="header-container__actions">
-          <li class="header-container__search nav-item" role="none">
-            <NuxtLink
-              href="/buscar"
-              class="nav-link"
-              aria-label="Buscar"
-              role="menuitem"
-            >
+          <li class="header-container__search nav-item">
+            <NuxtLink href="/buscar" class="nav-link" aria-label="Buscar">
               <svg
                 width="24"
                 height="24"
                 viewBox="0 0 25 25"
                 fill="none"
                 xmlns="http://www.w3.org/2000/svg"
+                aria-hidden="true"
+                focusable="false"
               >
                 <path
                   d="M17.4268 17.5401L20.9 20.9001M19.78 11.9401C19.78 16.27 16.2699 19.7801 11.94 19.7801C7.61006 19.7801 4.09998 16.27 4.09998 11.9401C4.09998 7.61019 7.61006 4.1001 11.94 4.1001C16.2699 4.1001 19.78 7.61019 19.78 11.9401Z"
@@ -67,18 +62,19 @@
                   stroke-linecap="round"
                 />
               </svg>
-              <span class="visually-hidden">Buscar</span>
             </NuxtLink>
           </li>
 
-          <li class="header-container__notifications nav-item" role="none">
-            <button class="nav-link" aria-label="Notificaciones">
+          <li class="header-container__notifications nav-item">
+            <button class="nav-link" aria-label="Notificaciones" type="button">
               <svg
                 width="24"
                 height="24"
                 viewBox="0 0 25 25"
                 fill="none"
                 xmlns="http://www.w3.org/2000/svg"
+                aria-hidden="true"
+                focusable="false"
               >
                 <path
                   d="M14.23 21.5C14.0542 21.8031 13.8018 22.0547 13.4982 22.2295C13.1946 22.4044 12.8504 22.4965 12.5 22.4965C12.1496 22.4965 11.8054 22.4044 11.5018 22.2295C11.1982 22.0547 10.9458 21.8031 10.77 21.5M18.5 8.5C18.5 6.9087 17.8679 5.38258 16.7426 4.25736C15.6174 3.13214 14.0913 2.5 12.5 2.5C10.9087 2.5 9.38258 3.13214 8.25736 4.25736C7.13214 5.38258 6.5 6.9087 6.5 8.5C6.5 15.5 3.5 17.5 3.5 17.5H21.5C21.5 17.5 18.5 15.5 18.5 8.5Z"
@@ -88,10 +84,10 @@
                   stroke-linejoin="round"
                 />
               </svg>
-              <span class="visually-hidden">Notificaciones</span>
             </button>
           </li>
           <UiInputDropdownMenu
+            v-if="userProfilePicture"
             :src="userProfilePicture"
             :hide-default-items="['perfil', 'configuracion', 'resenas']"
             :custom-urls="{
@@ -108,15 +104,9 @@
 <script lang="ts" setup>
 const { getUserInfo } = useUserInfo();
 
-const userInfo = getUserInfo?.() ?? null;
+const userInfo = getUserInfo();
 
-const userProfilePicture = computed(() => {
-  return (
-    userInfo?.value?.profile_picture_url ??
-    userInfo?.profile_picture_url ??
-    "@/assets/img-avatar-sm.png"
-  );
-});
+const userProfilePicture = computed(() => userInfo?.profile_picture_url || "");
 </script>
 
 <style lang="scss" scoped>
@@ -280,6 +270,8 @@ const userProfilePicture = computed(() => {
 
   &:focus {
     box-shadow: none;
+    outline: 2px solid #6c78e8;
+    outline-offset: 2px;
   }
 
   @include respond-to(lg) {
@@ -369,6 +361,17 @@ const userProfilePicture = computed(() => {
 }
 
 .nav-link {
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  padding: 0.25rem;
+
+  &:focus-visible {
+    outline: 2px solid #6c78e8;
+    outline-offset: 2px;
+    border-radius: 0.25rem;
+  }
+
   svg {
     width: 1.25rem;
     height: 1.25rem;

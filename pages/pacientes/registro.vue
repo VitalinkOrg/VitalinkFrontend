@@ -1,64 +1,101 @@
 <template>
   <NuxtLayout name="pacientes-autenticacion">
-    <div class="signup-container">
-      <div class="signup-content">
-        <!-- Botón de regresar -->
+    <div class="signup-container" role="main" aria-labelledby="signup-title">
+      <div
+        class="signup-content"
+        role="region"
+        aria-live="polite"
+        aria-atomic="false"
+      >
         <div v-if="signupOption === 'email'" class="signup-back-button">
           <button
             type="button"
             class="signup-back-button__control"
-            @click="signupOption = null"
-            aria-label="Go back"
+            @click="handleBack"
+            aria-label="Volver a opciones de registro"
           >
-            <AtomsIconsArrowLeftIcon color="#6D758F" size="24px" />
+            <AtomsIconsArrowLeftIcon
+              color="#6D758F"
+              size="24px"
+              aria-hidden="true"
+            />
           </button>
         </div>
 
-        <!-- Título y subtítulo -->
         <div class="signup-header">
-          <h1 class="signup-header__title">Registrarse</h1>
-          <p class="signup-header__subtitle">Es gratis y fácil</p>
+          <h1
+            id="signup-title"
+            class="signup-header__title"
+            tabindex="-1"
+            ref="titleRef"
+          >
+            Registrarse
+          </h1>
+          <p class="signup-header__subtitle" aria-describedby="signup-title">
+            Es gratis y fácil
+          </p>
         </div>
 
-        <!-- Sección de opciones -->
         <section
           v-if="signupOption === null"
           class="signup-section signup-section--option-selector"
+          aria-labelledby="signup-title"
         >
           <RegisterOptionSelector ref="selectorRef" />
         </section>
 
-        <!-- Formulario por correo -->
         <section
           v-else-if="signupOption === 'email'"
           class="signup-section signup-section--form-email"
+          aria-label="Formulario de registro con correo electrónico"
         >
           <RegisterWithEmailForm />
         </section>
 
-        <!-- Formulario por cédula -->
         <section
           v-else-if="signupOption === 'idCard'"
           class="signup-section signup-section--form-idcard"
+          aria-label="Formulario de registro con cédula"
         >
-          <RegisterWithIdCardWizard @back-to-selector="signupOption = null" />
+          <RegisterWithIdCardWizard @back-to-selector="handleBackToSelector" />
         </section>
       </div>
 
-      <!-- Acciones inferiores -->
-      <div class="signup-actions" v-if="signupOption === null">
+      <div
+        class="signup-actions"
+        v-if="signupOption === null"
+        role="navigation"
+        aria-label="Acciones de registro"
+      >
         <p class="signup-login-redirect">
           <span class="signup-login-redirect__text"
             >¿Ya tienes una cuenta?</span
           >
-          <NuxtLink href="/pacientes/login" class="signup-login-redirect__link">
+          <NuxtLink
+            href="/auth/login"
+            class="signup-login-redirect__link"
+            aria-label="Ir a iniciar sesión"
+          >
             Iniciar sesión
           </NuxtLink>
         </p>
 
-        <button class="signup-actions__button" @click="continueSignup">
+        <button
+          class="signup-actions__button"
+          @click="continueSignup"
+          :aria-label="`Continuar con registro por ${selectorRef?.selectedOption === 'idCard' ? 'cédula' : 'correo electrónico'}`"
+        >
           Continuar
         </button>
+      </div>
+
+      <div
+        class="sr-only"
+        role="status"
+        aria-live="assertive"
+        aria-atomic="true"
+      >
+        {{ statusMessage }}
       </div>
     </div>
   </NuxtLayout>
@@ -68,15 +105,33 @@
 import RegisterWithIdCardWizard from "@/components/pacientes/registro/asistente-registro-cedula.vue";
 import RegisterWithEmailForm from "@/components/pacientes/registro/formulario-registro-correo.vue";
 import RegisterOptionSelector from "@/components/pacientes/registro/selector-opcion-registro.vue";
-import { ref } from "vue";
+import { nextTick, ref, watch } from "vue";
 
 const signupOption = ref<"email" | "idCard" | null>(null);
 const selectorRef = ref();
+const titleRef = ref<HTMLElement>();
+const statusMessage = ref("");
 
 const continueSignup = () => {
   const option = selectorRef.value?.selectedOption || "email";
   signupOption.value = option;
+  statusMessage.value = `Mostrando formulario de registro por ${option === "idCard" ? "cédula" : "correo electrónico"}`;
 };
+
+const handleBack = () => {
+  signupOption.value = null;
+  statusMessage.value = "Volviendo a opciones de registro";
+};
+
+const handleBackToSelector = () => {
+  signupOption.value = null;
+  statusMessage.value = "Volviendo a opciones de registro";
+};
+
+watch(signupOption, async () => {
+  await nextTick();
+  titleRef.value?.focus();
+});
 </script>
 
 <style lang="scss" scoped>
@@ -103,6 +158,11 @@ const continueSignup = () => {
       line-height: 136%;
       letter-spacing: 0;
       margin: 0;
+
+      &:focus {
+        outline: 2px solid $color-primary;
+        outline-offset: 4px;
+      }
     }
 
     &__subtitle {
@@ -124,14 +184,22 @@ const continueSignup = () => {
       border: none;
       outline: none;
       cursor: pointer;
-      padding: 0;
+      padding: 8px;
+      margin: -8px;
+      border-radius: $border-radius-md;
 
       &:hover {
         opacity: 0.8;
+        background-color: rgba(109, 117, 143, 0.1);
       }
 
-      &:focus {
-        outline: none;
+      &:focus-visible {
+        outline: 2px solid $color-primary;
+        outline-offset: 2px;
+      }
+
+      &:active {
+        transform: scale(0.95);
       }
     }
   }
@@ -177,11 +245,21 @@ const continueSignup = () => {
         text-decoration: underline;
         color: $color-primary-darkened-5;
       }
+
+      &:focus-visible {
+        outline: 2px solid $color-primary;
+        outline-offset: 2px;
+        border-radius: 2px;
+      }
     }
   }
 
   &__button {
     @include primary-button;
   }
+}
+
+.sr-only {
+  @include visually-hidden;
 }
 </style>

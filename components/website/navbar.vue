@@ -21,126 +21,73 @@
           isMenuOpen ? 'Cerrar menú de navegación' : 'Abrir menú de navegación'
         "
         @click="toggleMenu"
-        @keydown.enter="toggleMenu"
-        @keydown.space.prevent="toggleMenu"
-        @keydown.esc="closeMenu"
       >
         <span class="nav__toggle-icon" aria-hidden="true"></span>
       </button>
 
       <div
-        v-if="isMenuOpen"
+        v-show="isMenuOpen"
         class="nav__overlay"
         @click="closeMenu"
         aria-hidden="true"
       ></div>
 
-      <ul
-        id="nav-menu"
-        class="nav__menu"
-        :class="{ 'nav__menu--open': isMenuOpen }"
-        role="list"
-      >
-        <li class="nav__menu-item" role="listitem">
-          <NuxtLink
-            to="#home"
-            class="nav__menu-link"
-            :aria-current="isCurrentSection('home') ? 'page' : undefined"
-            @click="closeMenu"
-            ref="firstMenuItem"
-          >
-            Home
-          </NuxtLink>
-        </li>
-        <li class="nav__menu-item" role="listitem">
-          <NuxtLink
-            to="#key_benefits"
-            class="nav__menu-link"
-            :aria-current="
-              isCurrentSection('key_benefits') ? 'page' : undefined
-            "
-            @click="closeMenu"
-          >
-            Beneficios clave
-          </NuxtLink>
-        </li>
-        <li class="nav__menu-item" role="listitem">
-          <NuxtLink
-            to="#how-does-it-work"
-            class="nav__menu-link"
-            :aria-current="
-              isCurrentSection('how-does-it-work') ? 'page' : undefined
-            "
-            @click="closeMenu"
-          >
-            ¿Cómo funciona?
-          </NuxtLink>
-        </li>
-        <li class="nav__menu-item" role="listitem">
-          <NuxtLink
-            to="#trust"
-            class="nav__menu-link"
-            :aria-current="isCurrentSection('trust') ? 'page' : undefined"
-            @click="closeMenu"
-          >
-            Confianza
-          </NuxtLink>
-        </li>
-        <li class="nav__menu-item" role="listitem">
-          <NuxtLink
-            to="#specialties"
-            class="nav__menu-link"
-            :aria-current="isCurrentSection('specialties') ? 'page' : undefined"
-            @click="closeMenu"
-          >
-            Especialidades
-          </NuxtLink>
-        </li>
-        <li class="nav__menu-item" role="listitem">
-          <NuxtLink
-            to="#faqs"
-            class="nav__menu-link"
-            :aria-current="isCurrentSection('faqs') ? 'page' : undefined"
-            @click="closeMenu"
-            ref="lastMenuItem"
-          >
-            Preguntas frecuentes
-          </NuxtLink>
-        </li>
-      </ul>
-
       <div
-        class="nav__actions"
-        :class="{ 'nav__actions--visible': isMenuOpen }"
+        id="nav-menu"
+        class="nav__container"
+        :class="{ 'nav__container--open': isMenuOpen }"
       >
-        <template v-if="isAuthenticated">
-          <button
-            class="nav__button--primary"
-            @click="handleLogout"
-            @keydown.enter="handleLogout"
-            aria-label="Cerrar sesión de su cuenta"
+        <ul class="nav__menu" role="menu">
+          <li
+            v-for="item in menuItems"
+            :key="item.id"
+            class="nav__menu-item"
+            role="none"
           >
-            Cerrar Sesión
-          </button>
-        </template>
-        <template v-else>
-          <NuxtLink
-            to="/auth/login"
-            class="nav__button--outline"
-            @click="closeMenu"
-            aria-label="Ingresar a su cuenta"
-          >
-            Ingresar
-          </NuxtLink>
-          <NuxtLink
-            to="/pacientes/registro"
-            class="nav__button--primary"
-            @click="closeMenu"
-            aria-label="Registrarse como nuevo usuario"
-          >
-            Registrarse
-          </NuxtLink>
-        </template>
+            <NuxtLink
+              :to="item.to"
+              class="nav__menu-link"
+              :aria-current="isCurrentSection(item.id) ? 'page' : undefined"
+              role="menuitem"
+              @click="closeMenu"
+            >
+              {{ item.label }}
+            </NuxtLink>
+          </li>
+        </ul>
+
+        <div
+          class="nav__actions"
+          :class="{ 'nav__actions--visible': isMenuOpen }"
+        >
+          <template v-if="isAuthenticated">
+            <button
+              class="nav__button--primary"
+              @click="handleLogout"
+              aria-label="Cerrar sesión de su cuenta"
+            >
+              Cerrar Sesión
+            </button>
+          </template>
+          <template v-else>
+            <NuxtLink
+              to="/auth/login"
+              class="nav__button--outline"
+              @click="closeMenu"
+              aria-label="Ingresar a su cuenta"
+            >
+              Ingresar
+            </NuxtLink>
+            <NuxtLink
+              to="/pacientes/registro"
+              class="nav__button--primary"
+              @click="closeMenu"
+              aria-label="Registrarse como nuevo usuario"
+            >
+              Registrarse
+            </NuxtLink>
+          </template>
+        </div>
       </div>
     </nav>
 
@@ -165,12 +112,18 @@ const isMobile = ref(false);
 const statusMessage = ref("");
 const currentSection = ref("");
 
-const firstMenuItem = ref<HTMLElement | null>(null);
-const lastMenuItem = ref<HTMLElement | null>(null);
-const previousActiveElement = ref<HTMLElement | null>(null);
+const menuItems = [
+  { id: "home", to: "#home", label: "Home" },
+  { id: "key_benefits", to: "#key_benefits", label: "Beneficios clave" },
+  { id: "how-does-it-work", to: "#how-does-it-work", label: "¿Cómo funciona?" },
+  { id: "trust", to: "#trust", label: "Confianza" },
+  { id: "specialties", to: "#specialties", label: "Especialidades" },
+  { id: "faqs", to: "#faqs", label: "Preguntas frecuentes" },
+];
 
 let lastScrollY = 0;
 let ticking = false;
+let previousActiveElement: HTMLElement | null = null;
 
 watch(
   () => getToken(),
@@ -188,37 +141,19 @@ watch(
   { immediate: true },
 );
 
-const isCurrentSection = (section: string) => {
-  return currentSection.value === section;
-};
+const isCurrentSection = (section: string) => currentSection.value === section;
 
 const toggleMenu = () => {
-  if (isMenuOpen.value) {
-    closeMenu();
-  } else {
-    openMenu();
-  }
+  isMenuOpen.value ? closeMenu() : openMenu();
 };
 
 const openMenu = () => {
   isMenuOpen.value = true;
-  previousActiveElement.value = document.activeElement as HTMLElement;
-
+  previousActiveElement = document.activeElement as HTMLElement;
   document.body.style.overflow = "hidden";
-
   statusMessage.value = "Menú de navegación abierto";
 
-  nextTick(() => {
-    if (firstMenuItem.value) {
-      (firstMenuItem.value as any).$el?.focus();
-    }
-  });
-
-  document.addEventListener("keydown", handleEscapeKey);
-
-  if (isMobile.value) {
-    document.addEventListener("keydown", handleFocusTrap);
-  }
+  document.addEventListener("keydown", handleKeyboard);
 };
 
 const closeMenu = () => {
@@ -226,43 +161,40 @@ const closeMenu = () => {
 
   isMenuOpen.value = false;
   document.body.style.overflow = "";
-
   statusMessage.value = "Menú de navegación cerrado";
 
   nextTick(() => {
-    if (previousActiveElement.value) {
-      previousActiveElement.value.focus();
-    }
+    previousActiveElement?.focus();
   });
 
-  document.removeEventListener("keydown", handleEscapeKey);
-  document.removeEventListener("keydown", handleFocusTrap);
+  document.removeEventListener("keydown", handleKeyboard);
 
   setTimeout(() => {
     statusMessage.value = "";
   }, 1000);
 };
 
-const handleEscapeKey = (e: KeyboardEvent) => {
-  if (e.key === "Escape" || e.key === "Esc") {
+const handleKeyboard = (e: KeyboardEvent) => {
+  if (e.key === "Escape") {
     closeMenu();
   }
-};
 
-const handleFocusTrap = (e: KeyboardEvent) => {
-  if (e.key !== "Tab") return;
+  if (e.key === "Tab" && isMobile.value) {
+    const focusableElements = document.querySelectorAll(
+      "#nav-menu a, .nav__actions a, .nav__actions button",
+    );
+    const firstElement = focusableElements[0] as HTMLElement;
+    const lastElement = focusableElements[
+      focusableElements.length - 1
+    ] as HTMLElement;
 
-  const firstElement = firstMenuItem.value;
-  const lastElement = lastMenuItem.value;
-
-  if (!firstElement || !lastElement) return;
-
-  if (e.shiftKey && document.activeElement === firstElement) {
-    e.preventDefault();
-    lastElement.focus();
-  } else if (!e.shiftKey && document.activeElement === lastElement) {
-    e.preventDefault();
-    firstElement.focus();
+    if (e.shiftKey && document.activeElement === firstElement) {
+      e.preventDefault();
+      lastElement?.focus();
+    } else if (!e.shiftKey && document.activeElement === lastElement) {
+      e.preventDefault();
+      firstElement?.focus();
+    }
   }
 };
 
@@ -307,8 +239,7 @@ onMounted(() => {
 onUnmounted(() => {
   window.removeEventListener("scroll", handleScroll);
   window.removeEventListener("resize", checkIsMobile);
-  document.removeEventListener("keydown", handleEscapeKey);
-  document.removeEventListener("keydown", handleFocusTrap);
+  document.removeEventListener("keydown", handleKeyboard);
   document.body.style.overflow = "";
 });
 </script>
@@ -329,25 +260,13 @@ onUnmounted(() => {
 
   &:focus {
     top: 0;
-    outline: 0.25rem solid $white;
+    outline: 0.1875rem solid $white;
     outline-offset: 0.25rem;
-  }
-
-  &:focus-visible {
-    top: 0;
   }
 }
 
 .sr-only {
-  position: absolute;
-  width: 1px;
-  height: 1px;
-  padding: 0;
-  margin: -1px;
-  overflow: hidden;
-  clip: rect(0, 0, 0, 0);
-  white-space: nowrap;
-  border-width: 0;
+  @include visually-hidden;
 }
 
 .header {
@@ -371,20 +290,24 @@ onUnmounted(() => {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  max-width: 1280px;
+  max-width: 1360px;
   width: 100%;
   margin: 0 auto;
-  padding: 1.25rem 1rem;
+  padding: 1rem;
+
+  @include respond-to(md) {
+    padding: 1.25rem 1.5rem;
+  }
 
   @include respond-to(lg) {
-    padding: 1.25rem 0;
+    padding: 1.25rem 2rem;
   }
 
   &__brand {
     @include link-base;
     display: flex;
     align-items: center;
-    z-index: 1001;
+    z-index: 1002;
 
     img {
       height: 2rem;
@@ -408,12 +331,12 @@ onUnmounted(() => {
     flex-direction: column;
     justify-content: center;
     align-items: center;
-    width: 2.5rem;
-    height: 2.5rem;
+    width: 2.75rem;
+    height: 2.75rem;
     padding: 0;
     background: transparent;
     border: none;
-    z-index: 1001;
+    z-index: 1002;
 
     @include respond-to(lg) {
       display: none;
@@ -422,6 +345,11 @@ onUnmounted(() => {
     &:focus-visible {
       outline: 0.125rem solid $color-primary;
       outline-offset: 0.25rem;
+      border-radius: 0.25rem;
+    }
+
+    &:hover {
+      background: rgba($color-primary, 0.05);
       border-radius: 0.25rem;
     }
   }
@@ -481,8 +409,9 @@ onUnmounted(() => {
       left: 0;
       width: 100%;
       height: 100vh;
-      background: rgba(0, 0, 0, 0.5);
-      z-index: 999;
+      background: rgba(0, 0, 0, 0.6);
+      z-index: 998;
+      backdrop-filter: blur(2px);
     }
 
     @include respond-to(lg) {
@@ -490,26 +419,26 @@ onUnmounted(() => {
     }
   }
 
-  &__menu {
-    display: none;
-    list-style: none;
+  &__container {
+    display: flex;
     align-items: center;
-    gap: 1.25rem;
-    padding: 0;
-    margin: 0;
+    gap: 0.75rem;
 
     @include respond-to-max(lg) {
       position: fixed;
       top: 0;
-      left: 0;
-      width: 100%;
+      right: 0;
+      width: min(100%, 25rem);
       height: 100vh;
       flex-direction: column;
-      justify-content: center;
+      justify-content: space-between;
       background: $white;
-      gap: 1.5rem;
-      transform: translateX(-100%);
+      transform: translateX(100%);
       transition: transform 0.3s ease;
+      padding: 2rem;
+      box-shadow: -0.5rem 0 2rem rgba(0, 0, 0, 0.1);
+      z-index: 1001;
+      gap: 0;
 
       @media (prefers-reduced-motion: reduce) {
         transition: none;
@@ -521,35 +450,51 @@ onUnmounted(() => {
     }
 
     &--open {
-      display: flex;
-      transform: translateX(0);
+      @include respond-to-max(lg) {
+        transform: translateX(0);
+      }
+    }
+  }
+
+  &__menu {
+    display: flex;
+    list-style: none;
+    align-items: center;
+    gap: 0.25rem;
+    padding: 0;
+    margin: 0;
+
+    @include respond-to-max(lg) {
+      flex-direction: column;
+      justify-content: center;
+      width: 100%;
+      gap: 0.5rem;
+      flex: 1;
     }
   }
 
   &__menu-item {
-    padding: 0 0.525rem;
+    padding: 0;
+
+    @include respond-to(lg) {
+      padding: 0 0.25rem;
+    }
 
     @include respond-to-max(lg) {
-      padding: 0;
       width: 100%;
-      text-align: center;
     }
   }
 
   &__menu-link {
     @include link-base;
-    font-weight: 400;
-    font-size: 0.91875rem;
-    line-height: 1.44375rem;
-    letter-spacing: 0;
-    text-align: center;
+    font-weight: 500;
+    font-size: 0.9375rem;
+    line-height: 1.5;
     color: #353e5c;
     border-radius: 0.5rem;
     display: block;
-    transition:
-      color 0.2s ease,
-      background-color 0.2s ease;
-    position: relative;
+    padding: 0.75rem 1rem;
+    transition: all 0.2s ease;
 
     @media (prefers-reduced-motion: reduce) {
       transition: none;
@@ -557,11 +502,13 @@ onUnmounted(() => {
 
     @include respond-to-max(lg) {
       font-size: 1.125rem;
-      padding: 0.75rem 1.5rem;
+      padding: 1rem 1.5rem;
+      text-align: center;
     }
 
     &:hover {
       color: $color-primary;
+      background: rgba($color-primary, 0.05);
     }
 
     &:focus-visible {
@@ -572,42 +519,31 @@ onUnmounted(() => {
 
     &:active {
       color: $color-primary-darkened-10;
+      background: rgba($color-primary, 0.1);
     }
 
     &[aria-current="page"] {
       color: $color-primary;
       font-weight: 600;
+      background: rgba($color-primary, 0.08);
     }
   }
 
   &__actions {
-    display: none;
+    display: flex;
     gap: 0.75rem;
 
-    @include respond-to(lg) {
-      display: flex;
+    @include respond-to-max(lg) {
+      flex-direction: column;
+      width: 100%;
+      gap: 1rem;
+      padding-top: 2rem;
+      border-top: 1px solid rgba($color-primary, 0.1);
     }
 
-    @include respond-to-max(lg) {
-      position: fixed;
-      bottom: 2rem;
-      left: 1rem;
-      right: 1rem;
-      flex-direction: column;
-      gap: 1rem;
-      z-index: 1001;
-      opacity: 0;
-      pointer-events: none;
-      transition: opacity 0.3s ease;
-
-      @media (prefers-reduced-motion: reduce) {
-        transition: none;
-      }
-
-      &--visible {
+    &--visible {
+      @include respond-to-max(lg) {
         display: flex;
-        opacity: 1;
-        pointer-events: all;
       }
     }
   }
@@ -617,6 +553,7 @@ onUnmounted(() => {
       @include outline-button;
       text-decoration: none;
       white-space: nowrap;
+      font-size: 0.9375rem;
 
       @include respond-to-max(lg) {
         width: 100%;
@@ -628,6 +565,7 @@ onUnmounted(() => {
       @include gradient-button;
       text-decoration: none;
       white-space: nowrap;
+      font-size: 0.9375rem;
 
       @include respond-to-max(lg) {
         width: 100%;
