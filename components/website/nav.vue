@@ -1,645 +1,252 @@
 <template>
-  <a href="#main-content" class="skip-link" tabindex="0">
-    Saltar al contenido principal
-  </a>
-
-  <header class="header" :class="{ 'header--hidden': isHidden }" role="banner">
-    <nav class="nav" aria-label="Navegación principal">
-      <div>
-        <NuxtLink
-          class="nav__brand"
-          to="/"
-          aria-label="Vitalink - Ir a la página de inicio"
-        >
-          <img
-            src="@/src/assets/img-vitalink-logo.svg"
-            alt="Logotipo de Vitalink"
-          />
-        </NuxtLink>
-      </div>
-
+  <nav
+    class="navbar navbar-expand-lg navbar-light bg-white border-bottom navbar-custom"
+  >
+    <div class="container-fluid">
       <button
-        class="nav__toggle"
-        :aria-expanded="isMenuOpen"
-        aria-controls="nav-menu"
-        :aria-label="
-          isMenuOpen ? 'Cerrar menú de navegación' : 'Abrir menú de navegación'
-        "
-        @click="toggleMenu"
-        @keydown.enter="toggleMenu"
-        @keydown.space.prevent="toggleMenu"
-        @keydown.esc="closeMenu"
+        class="navbar-toggler"
+        type="button"
+        data-bs-toggle="collapse"
+        :data-bs-target="'#navbarTogglerDemo03'"
+        aria-controls="navbarTogglerDemo03"
+        aria-expanded="false"
+        aria-label="Toggle navigation"
       >
-        <span class="nav__toggle-icon" aria-hidden="true"></span>
-        <span class="sr-only">{{
-          isMenuOpen ? "Cerrar menú" : "Abrir menú"
-        }}</span>
+        <span class="navbar-toggler-icon"></span>
       </button>
 
-      <div
-        v-if="isMenuOpen"
-        class="nav__overlay"
-        @click="closeMenu"
-        aria-hidden="true"
-      ></div>
+      <NuxtLink class="navbar-brand" to="/">
+        <img src="@/src/assets/img-vitalink-logo.svg" alt="Vitalink" />
+      </NuxtLink>
 
-      <ul
-        id="nav-menu"
-        class="nav__menu"
-        :class="{ 'nav__menu--open': isMenuOpen }"
-      >
-        <li class="nav__menu-item">
-          <NuxtLink
-            to="#home"
-            class="nav__menu-link"
-            :aria-current="isCurrentSection('home') ? 'page' : undefined"
-            @click="closeMenu"
-            ref="firstMenuItem"
-          >
-            Home
-          </NuxtLink>
-        </li>
-        <li class="nav__menu-item">
-          <NuxtLink
-            to="#key_benefits"
-            class="nav__menu-link"
-            :aria-current="
-              isCurrentSection('key_benefits') ? 'page' : undefined
-            "
-            @click="closeMenu"
-          >
-            Beneficios clave
-          </NuxtLink>
-        </li>
-        <li class="nav__menu-item">
-          <NuxtLink
-            to="#how-does-it-work"
-            class="nav__menu-link"
-            :aria-current="
-              isCurrentSection('how-does-it-work') ? 'page' : undefined
-            "
-            @click="closeMenu"
-          >
-            ¿Cómo funciona?
-          </NuxtLink>
-        </li>
-        <li class="nav__menu-item">
-          <NuxtLink
-            to="#trust"
-            class="nav__menu-link"
-            :aria-current="isCurrentSection('trust') ? 'page' : undefined"
-            @click="closeMenu"
-          >
-            Confianza
-          </NuxtLink>
-        </li>
-        <li class="nav__menu-item">
-          <NuxtLink
-            to="#specialties"
-            class="nav__menu-link"
-            :aria-current="isCurrentSection('specialties') ? 'page' : undefined"
-            @click="closeMenu"
-          >
-            Especialidades
-          </NuxtLink>
-        </li>
-        <li class="nav__menu-item">
-          <NuxtLink
-            to="#faqs"
-            class="nav__menu-link"
-            :aria-current="isCurrentSection('faqs') ? 'page' : undefined"
-            @click="closeMenu"
-            ref="lastMenuItem"
-          >
-            Preguntas frecuentes
-          </NuxtLink>
-        </li>
-      </ul>
+      <div class="collapse navbar-collapse" id="navbarTogglerDemo03">
+        <ul class="navbar-nav mx-auto mb-2 mb-lg-0 nav-list">
+          <li class="nav-item">
+            <NuxtLink to="/" class="nav-link" active-class="active"
+              >Home</NuxtLink
+            >
+          </li>
+          <li class="nav-item">
+            <NuxtLink
+              to="/pacientes/registro"
+              class="nav-link"
+              active-class="active"
+              >¿Eres paciente?</NuxtLink
+            >
+          </li>
+          <li class="nav-item">
+            <NuxtLink
+              to="/medicos/registro"
+              class="nav-link"
+              active-class="active"
+              >¿Eres profesional médico?</NuxtLink
+            >
+          </li>
+          <li class="nav-item">
+            <NuxtLink
+              to="/socio-financiero/registro"
+              class="nav-link"
+              active-class="active"
+              >¿Eres aseguradora?</NuxtLink
+            >
+          </li>
+          <li class="nav-item">
+            <NuxtLink to="" class="nav-link" active-class="active"
+              >Nosotros</NuxtLink
+            >
+          </li>
+        </ul>
 
-      <div
-        class="nav__actions"
-        :class="{ 'nav__actions--visible': isMenuOpen }"
-      >
-        <template v-if="isAuthenticated">
-          <button
-            class="nav__button--primary"
-            @click="handleLogout"
-            aria-label="Cerrar sesión"
-          >
-            Cerrar Sesión
-          </button>
-        </template>
-        <template v-else>
+        <div
+          v-if="!authenticated"
+          class="auth-buttons d-flex align-items-center gap-3"
+        >
           <NuxtLink
-            to="/auth/login"
-            class="nav__button--outline"
-            @click="closeMenu"
+            to="/pacientes/login"
+            class="btn btn-outline-primary btn-custom-secondary"
           >
             Ingresar
           </NuxtLink>
           <NuxtLink
             to="/pacientes/registro"
-            class="nav__button--primary"
-            @click="closeMenu"
+            class="btn btn-primary btn-custom-primary"
           >
             Registrarse
           </NuxtLink>
-        </template>
-      </div>
-    </nav>
+        </div>
 
-    <div role="status" aria-live="polite" aria-atomic="true" class="sr-only">
-      {{ statusMessage }}
+        <div v-if="authenticated" class="logout-button">
+          <button @click="handleLogout" class="btn-custom-primary">
+            Cerrar sesión
+          </button>
+        </div>
+      </div>
     </div>
-  </header>
+  </nav>
 </template>
 
-<script setup lang="ts">
+<script lang="ts" setup>
 import { useAuth } from "@/composables/api";
 
-const { getToken } = useAuthToken();
+const { authenticated } = useAuthState();
 const { logout } = useAuth();
 const router = useRouter();
-const route = useRoute();
-
-const isHidden = ref(false);
-const isMenuOpen = ref(false);
-const isAuthenticated = ref(false);
-const isMobile = ref(false);
-const statusMessage = ref("");
-const currentSection = ref("");
-
-const firstMenuItem = ref<HTMLElement | null>(null);
-const lastMenuItem = ref<HTMLElement | null>(null);
-const previousActiveElement = ref<HTMLElement | null>(null);
-
-let lastScrollY = 0;
-let ticking = false;
-
-watch(
-  () => getToken(),
-  (newToken) => {
-    isAuthenticated.value = !!newToken;
-  },
-  { immediate: true },
-);
-
-watch(
-  () => route.hash,
-  (newHash) => {
-    currentSection.value = newHash.replace("#", "");
-  },
-  { immediate: true },
-);
-
-const isCurrentSection = (section: string) => {
-  return currentSection.value === section;
-};
-
-const toggleMenu = () => {
-  if (isMenuOpen.value) {
-    closeMenu();
-  } else {
-    openMenu();
-  }
-};
-
-const openMenu = () => {
-  isMenuOpen.value = true;
-  previousActiveElement.value = document.activeElement as HTMLElement;
-
-  document.body.style.overflow = "hidden";
-
-  statusMessage.value = "Menú de navegación abierto";
-
-  nextTick(() => {
-    if (firstMenuItem.value) {
-      (firstMenuItem.value as any).$el?.focus();
-    }
-  });
-
-  document.addEventListener("keydown", handleEscapeKey);
-
-  if (isMobile.value) {
-    document.addEventListener("keydown", handleFocusTrap);
-  }
-};
-
-const closeMenu = () => {
-  if (!isMenuOpen.value) return;
-
-  isMenuOpen.value = false;
-  document.body.style.overflow = "";
-
-  statusMessage.value = "Menú de navegación cerrado";
-
-  nextTick(() => {
-    if (previousActiveElement.value) {
-      previousActiveElement.value.focus();
-    }
-  });
-
-  document.removeEventListener("keydown", handleEscapeKey);
-  document.removeEventListener("keydown", handleFocusTrap);
-
-  setTimeout(() => {
-    statusMessage.value = "";
-  }, 1000);
-};
-
-const handleEscapeKey = (e: KeyboardEvent) => {
-  if (e.key === "Escape" || e.key === "Esc") {
-    closeMenu();
-  }
-};
-
-const handleFocusTrap = (e: KeyboardEvent) => {
-  if (e.key !== "Tab") return;
-
-  const firstElement = firstMenuItem.value;
-  const lastElement = lastMenuItem.value;
-
-  if (!firstElement || !lastElement) return;
-
-  if (e.shiftKey && document.activeElement === firstElement) {
-    e.preventDefault();
-    lastElement.focus();
-  } else if (!e.shiftKey && document.activeElement === lastElement) {
-    e.preventDefault();
-    firstElement.focus();
-  }
-};
 
 const handleLogout = () => {
   logout();
-  statusMessage.value = "Sesión cerrada correctamente";
-  if (route.path !== "/") router.push("/auth/login");
-  closeMenu();
+  router.push("/pacientes/login");
 };
-
-const handleScroll = () => {
-  if (!ticking) {
-    window.requestAnimationFrame(() => {
-      const currentScrollY = window.scrollY;
-
-      if (currentScrollY > lastScrollY && currentScrollY > 100) {
-        isHidden.value = true;
-        closeMenu();
-      } else if (currentScrollY < lastScrollY) {
-        isHidden.value = false;
-      }
-
-      lastScrollY = currentScrollY;
-      ticking = false;
-    });
-    ticking = true;
-  }
-};
-
-const checkIsMobile = () => {
-  isMobile.value = window.innerWidth < 992;
-};
-
-onMounted(() => {
-  lastScrollY = window.scrollY;
-  checkIsMobile();
-
-  window.addEventListener("scroll", handleScroll, { passive: true });
-  window.addEventListener("resize", checkIsMobile);
-});
-
-onUnmounted(() => {
-  window.removeEventListener("scroll", handleScroll);
-  window.removeEventListener("resize", checkIsMobile);
-  document.removeEventListener("keydown", handleEscapeKey);
-  document.removeEventListener("keydown", handleFocusTrap);
-  document.body.style.overflow = "";
-});
 </script>
 
 <style lang="scss" scoped>
-.skip-link {
-  position: fixed;
-  top: -100%;
-  left: 50%;
-  transform: translateX(-50%);
-  background: $color-primary;
-  color: $white;
-  padding: 1rem 2rem;
-  text-decoration: none;
-  z-index: 10001;
-  font-weight: 700;
-  font-size: 1.125rem;
-  border-radius: 0 0 0.5rem 0.5rem;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
-  transition: top 0.3s ease;
-  white-space: nowrap;
+.navbar-custom {
+  padding: 22.5px 60px;
+  background-color: #ffffff;
+  box-shadow: 0px 4px 20px rgba(0, 0, 0, 0.08);
 
-  &:focus,
-  &:focus-visible {
-    top: 0;
-    outline: 0.25rem solid $white;
-    outline-offset: 0.25rem;
-  }
-}
-
-.sr-only {
-  position: absolute;
-  width: 1px;
-  height: 1px;
-  padding: 0;
-  margin: -1px;
-  overflow: hidden;
-  clip: rect(0, 0, 0, 0);
-  white-space: nowrap;
-  border-width: 0;
-}
-
-.header {
-  position: sticky;
-  top: 0;
-  z-index: 1000;
-  background: $white;
-  box-shadow: 0 0.25rem 1.25rem 0 rgba(0, 0, 0, 0.03);
-  transition: transform 0.3s ease;
-
-  @media (prefers-reduced-motion: reduce) {
-    transition: none;
-  }
-
-  &--hidden {
-    transform: translateY(-100%);
-  }
-}
-
-.nav {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  max-width: 1280px;
-  width: 100%;
-  margin: 0 auto;
-  padding: 1.25rem 1rem;
-
-  @include respond-to(lg) {
-    padding: 1.25rem 0;
-  }
-
-  &__brand {
-    @include link-base;
+  .navbar-brand {
+    width: 135px;
+    height: 45px;
     display: flex;
     align-items: center;
-    z-index: 1001;
+    justify-content: center;
 
     img {
-      height: 2rem;
-      width: auto;
-
-      @include respond-to(md) {
-        height: 2.5rem;
-      }
-    }
-
-    &:focus-visible {
-      outline: 0.125rem solid $color-primary;
-      outline-offset: 0.25rem;
-      border-radius: 0.25rem;
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
     }
   }
 
-  &__toggle {
-    @include button-base;
+  .nav-list {
     display: flex;
-    flex-direction: column;
+    gap: 25px;
     justify-content: center;
-    align-items: center;
-    width: 2.5rem;
-    height: 2.5rem;
-    padding: 0;
-    background: transparent;
-    border: none;
-    z-index: 1001;
-    position: relative;
-
-    @include respond-to(lg) {
-      display: none;
-    }
-
-    &:focus-visible {
-      outline: 0.125rem solid $color-primary;
-      outline-offset: 0.25rem;
-      border-radius: 0.25rem;
-    }
   }
 
-  &__toggle-icon {
-    position: relative;
-    width: 1.5rem;
-    height: 0.125rem;
-    background-color: $color-foreground;
-    transition: all 0.3s ease;
-
-    @media (prefers-reduced-motion: reduce) {
-      transition: none;
-    }
-
-    &::before,
-    &::after {
-      content: "";
-      position: absolute;
-      width: 1.5rem;
-      height: 0.125rem;
-      background-color: $color-foreground;
-      transition: all 0.3s ease;
-
-      @media (prefers-reduced-motion: reduce) {
-        transition: none;
-      }
-    }
-
-    &::before {
-      top: -0.5rem;
-    }
-
-    &::after {
-      bottom: -0.5rem;
-    }
-  }
-
-  &__toggle[aria-expanded="true"] &__toggle-icon {
-    background-color: transparent;
-
-    &::before {
-      top: 0;
-      transform: rotate(45deg);
-    }
-
-    &::after {
-      bottom: 0;
-      transform: rotate(-45deg);
-    }
-  }
-
-  &__overlay {
-    @include respond-to-max(lg) {
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100vh;
-      background: rgba(0, 0, 0, 0.5);
-      z-index: 999;
-    }
-
-    @include respond-to(lg) {
-      display: none;
-    }
-  }
-
-  &__menu {
-    display: none;
-    list-style: none;
-    align-items: center;
-    gap: 1.25rem;
-    padding: 0;
-    margin: 0;
-
-    @include respond-to-max(lg) {
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100vh;
-      flex-direction: column;
-      justify-content: center;
-      background: $white;
-      gap: 1.5rem;
-      transform: translateX(-100%);
-      transition: transform 0.3s ease;
-
-      @media (prefers-reduced-motion: reduce) {
-        transition: none;
-      }
-    }
-
-    @include respond-to(lg) {
-      display: flex;
-    }
-
-    &--open {
-      display: flex;
-      transform: translateX(0);
-    }
-  }
-
-  &__menu-item {
-    padding: 0 0.525rem;
-
-    @include respond-to-max(lg) {
-      padding: 0;
-      width: 100%;
-      text-align: center;
-    }
-  }
-
-  &__menu-link {
-    @include link-base;
-    font-weight: 400;
-    font-size: 0.91875rem;
-    line-height: 1.44375rem;
+  .nav-link {
+    font-family: $font-family-main;
+    font-weight: 300;
+    font-size: 14.7px;
+    line-height: 23.1px;
     letter-spacing: 0;
-    text-align: center;
     color: #353e5c;
-    border-radius: 0.5rem;
+    padding: 8px 16px;
+    border-radius: $border-radius-md;
+    text-decoration: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: color 0.3s ease-in-out;
+
     display: block;
-    transition:
-      color 0.2s ease,
-      background-color 0.2s ease;
-    position: relative;
+    white-space: normal;
+    text-align: center;
+    padding: 8px 16px;
 
-    @media (prefers-reduced-motion: reduce) {
-      transition: none;
-    }
-
-    @include respond-to-max(lg) {
-      font-size: 1.125rem;
-      padding: 0.75rem 1.5rem;
+    @supports (text-wrap: balance) {
+      white-space: unset;
+      text-wrap: balance;
     }
 
     &:hover {
-      color: $color-primary;
+      color: darken($color: #353e5c, $amount: 12%);
+      background: rgba(226, 228, 250, 0.15);
     }
 
-    &:focus-visible {
-      outline: 0.125rem solid $color-primary;
-      outline-offset: 0.125rem;
-      color: $color-primary;
-    }
-
-    &:active {
-      color: $color-primary-darkened-10;
-    }
-
-    &[aria-current="page"] {
-      color: $color-primary;
-      font-weight: 600;
+    &.active {
+      background: rgba(226, 228, 250, 0.3);
     }
   }
 
-  &__actions {
-    display: none;
-    gap: 0.75rem;
+  .auth-buttons {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+  }
 
-    @include respond-to(lg) {
-      display: flex;
+  .logout-button {
+    display: flex;
+    align-items: center;
+  }
+
+  @media (min-width: 993px) and (max-width: 1340px) {
+    padding: 15px 30px;
+
+    .nav-link {
+      font-size: 13.5px;
     }
 
-    @include respond-to-max(lg) {
-      position: fixed;
-      bottom: 2rem;
-      left: 1rem;
-      right: 1rem;
+    .nav-list {
+      gap: 8px;
+    }
+  }
+
+  @media (max-width: 991px) {
+    padding: 15px 30px;
+
+    .nav-list {
       flex-direction: column;
-      gap: 1rem;
-      z-index: 1001;
-      opacity: 0;
-      pointer-events: none;
-      transition: opacity 0.3s ease;
+      align-items: center;
+      gap: 10px;
+      margin: 10px 0;
+    }
 
-      @media (prefers-reduced-motion: reduce) {
-        transition: none;
-      }
+    .auth-buttons {
+      flex-direction: column;
+      width: 100%;
+      gap: 10px;
+    }
 
-      &--visible {
-        display: flex;
-        opacity: 1;
-        pointer-events: all;
-      }
+    .btn-custom-secondary,
+    .btn-custom-primary {
+      width: 100%;
+      justify-content: center;
     }
   }
 
-  &__button {
-    &--outline {
-      @include outline-button;
-      text-decoration: none;
-      white-space: nowrap;
-
-      @include respond-to-max(lg) {
-        width: 100%;
-        justify-content: center;
-      }
+  @media (max-width: 768px) {
+    .navbar-brand {
+      width: 90px;
+      height: auto;
     }
 
-    &--primary {
-      @include gradient-button;
-      text-decoration: none;
-      white-space: nowrap;
+    .nav-link {
+      font-size: 14px;
+      padding: 6px 12px;
+    }
 
-      @include respond-to-max(lg) {
-        width: 100%;
-        justify-content: center;
-      }
+    .btn-custom-secondary,
+    .btn-custom-primary {
+      font-size: 13px;
+      padding: 8px 12px;
     }
   }
+
+  @media (max-width: 576px) {
+    padding: 12px 20px;
+
+    .nav-link {
+      font-size: 13px;
+    }
+
+    .btn-custom-secondary,
+    .btn-custom-primary {
+      font-size: 12px;
+      padding: 6px 10px;
+    }
+  }
+}
+
+.btn-custom-secondary {
+  @include outline-button;
+  padding: 10px 16px;
+  font-size: 14px;
+}
+
+.btn-custom-primary {
+  @include primary-button;
+  padding: 10px 16px;
+  font-size: 14px;
 }
 </style>

@@ -74,7 +74,7 @@
         class="file-upload__delete"
         type="button"
       >
-        Eliminar archivo
+        Eliminar documento
       </button>
 
       <!-- Mensaje de error -->
@@ -123,14 +123,14 @@ watch(
   () => props.isLoading,
   (newValue) => {
     isLoading.value = newValue || false;
-  }
+  },
 );
 
 watch(
   () => props.uploadedFile,
   (newFile) => {
     uploadedFile.value = newFile || null;
-  }
+  },
 );
 
 const validTypes: Record<string, string[]> = {
