@@ -365,13 +365,13 @@ const dynamicTreatment = reactive<Record<string, string>>({});
 
 const preoperativeAssessment = computed(() => {
   return assessments.value.find(
-    (assessment) => assessment.code === "PREOPERATIVE_ASSESSMENT"
+    (assessment) => assessment.code === "PREOPERATIVE_ASSESSMENT",
   );
 });
 
 const postopTreatmentAssessments = computed(() => {
   return assessments.value.filter(
-    (assessment) => assessment.code === "POSTOP_TREATMENT"
+    (assessment) => assessment.code === "POSTOP_TREATMENT",
   );
 });
 
@@ -395,7 +395,7 @@ const handleFinish = async () => {
   try {
     isLoading.value = true;
     const specialtyId = await handleFetchSpecialtyBySupplier(
-      selectedSupplier.value.id
+      selectedSupplier.value.id,
     );
 
     const formData = {
@@ -460,7 +460,7 @@ const selectProcedure = (procedure: IUdc) => {
 };
 
 const handleFetchSpecialtyBySupplier = async (
-  supplierId: number
+  supplierId: number,
 ): Promise<number> => {
   try {
     const api = fetchSpecialtyBySupplier(supplierId);

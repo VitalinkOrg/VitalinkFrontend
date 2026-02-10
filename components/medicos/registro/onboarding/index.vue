@@ -1,35 +1,38 @@
 <template>
   <MedicosRegistroOnboardingModalBienvenidaOnboarding
     ref="welcomeModalRef"
-    @openProviderFormModal="openProviderFormModal"
+    @openProviderFormModal="handleOpenAddDoctorModal"
   />
-  <MedicosRegistroOnboardingModalFormularioProveedor
-    ref="providerFormModalRef"
-    @openWelcomeModal="openWelcomeModal"
-    @openSuccessModal="openSuccessModal"
-    @closeWelcomeModal="closeWelcomeModal"
+
+  <MedicosModalesAgregarMedicoRelacionado
+    ref="addDoctorModalRef"
+    @doctor-added="handleDoctorAdded"
+    @doctor-added-onboarding="handleDoctorAddedOnboarding"
   />
+
   <MedicosRegistroOnboardingModalFelicidadesCompletado ref="successModalRef" />
 </template>
 
 <script lang="ts" setup>
 const welcomeModalRef = ref();
-const providerFormModalRef = ref();
+const addDoctorModalRef = ref();
 const successModalRef = ref();
 
-const openSuccessModal = () => {
-  successModalRef.value?.handleOpenModal();
+const handleOpenAddDoctorModal = () => {
+  nextTick(() => {
+    addDoctorModalRef.value?.openModal();
+  });
 };
 
-const openProviderFormModal = () => {
-  providerFormModalRef.value?.handleOpenModal();
+const handleDoctorAdded = () => {
+  console.log("✅ Médico agregado exitosamente");
 };
 
-const openWelcomeModal = () => {
-  welcomeModalRef.value?.handleOpenModal();
-};
+const handleDoctorAddedOnboarding = () => {
+  console.log("🎉 Onboarding completado - mostrando modal de felicidades");
 
-const closeWelcomeModal = () => {
-  welcomeModalRef.value?.handleCloseModal();
+  nextTick(() => {
+    successModalRef.value?.handleOpenModal();
+  });
 };
 </script>

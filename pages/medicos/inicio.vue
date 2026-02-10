@@ -62,7 +62,7 @@ const loadDashboardData = async () => {
       {
         headers: { Authorization: token.value ?? "" },
         params: { customer_id: user_info.value?.id },
-      }
+      },
     );
 
     const appointmentsList = response.data || [];
@@ -119,7 +119,7 @@ const loadDashboardData = async () => {
         "CONCRETED_APPOINTMENT",
         "VALUED_VALORATION_APPOINTMENT",
         "CANCEL_APPOINTMENT",
-      ].includes(apt.appointment_status?.code)
+      ].includes(apt.appointment_status?.code),
     );
 
     useRefreshToken();
@@ -284,7 +284,7 @@ const selectTimeFilter = (option: (typeof timeFilterOptions)[0]) => {
 const getSelectedLabel = computed(() => {
   return (
     timeFilterOptions.find(
-      (option) => option.value === selectedTimeFilter.value
+      (option) => option.value === selectedTimeFilter.value,
     )?.label || "Últimos 30 días"
   );
 });
@@ -313,7 +313,7 @@ ChartJS.register(
   BarElement,
   CategoryScale,
   LinearScale,
-  Colors
+  Colors,
 );
 
 const overlappingSegmentsPlugin = {
@@ -351,7 +351,7 @@ const overlappingSegmentsPlugin = {
 
           const hoveredElements = chart.getActiveElements();
           const isHovered = hoveredElements.some(
-            (el: any) => el.datasetIndex === datasetIndex && el.index === index
+            (el: any) => el.datasetIndex === datasetIndex && el.index === index,
           );
 
           if (isHovered && dataset.hoverBackgroundColor) {
@@ -482,7 +482,7 @@ const singleValueOptions = ref<ChartOptions<"doughnut">>({
           const value = context.parsed;
           const total = context.dataset.data.reduce(
             (a: number, b: number) => a + b,
-            0
+            0,
           );
           const percentage = Math.round((value / total) * 100);
           return `${label}: ${value} (${percentage}%)`;
@@ -809,8 +809,6 @@ onMounted(() => {
       </div>
     </div>
   </NuxtLayout>
-
-  <MedicosRegistroOnboarding />
 </template>
 
 <style scoped lang="scss">

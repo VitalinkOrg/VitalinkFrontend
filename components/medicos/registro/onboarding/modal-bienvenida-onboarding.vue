@@ -90,6 +90,7 @@ onMounted(() => {
   const onboardingFlag = localStorage.getItem("onboarding");
 
   if (onboardingFlag === "true") {
+    console.log("🟢 Onboarding flag found. Opening welcome modal.");
     handleOpenModal();
   }
 });
