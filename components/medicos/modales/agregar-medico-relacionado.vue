@@ -515,6 +515,7 @@ interface Props {
 
 interface Emits {
   (e: "doctor-added"): void;
+  (e: "doctor-added-onboarding"): void;
   (e: "doctor-updated"): void;
 }
 
@@ -1111,6 +1112,12 @@ const fetchCurrentSupplier = async (): Promise<string | null> => {
     return legalRep ? String(legalRep) : null;
   }
 
+  const userInfo = getUserInfo();
+  if (userInfo?.id) {
+    return String(userInfo.id);
+  }
+
+  console.error("❌ No legal representative found");
   return null;
 };
 
@@ -1332,6 +1339,8 @@ const handleSubmit = async () => {
       throw new Error("No se encontró token de autenticación");
     }
 
+    const isOnboarding = localStorage.getItem("onboarding") === "true";
+
     if (isEditMode.value && props.supplierId) {
       await handleUpdateSupplier(props.supplierId, formData.value, token);
       await delay(1000);
@@ -1403,10 +1412,19 @@ const handleSubmit = async () => {
         await handleSavePacksForNewSupplier(supplierId, token);
       }
 
-      emit("doctor-added");
+      if (isOnboarding) {
+        localStorage.removeItem("onboarding");
+        closeModal();
+        emit("doctor-added-onboarding");
+      } else {
+        emit("doctor-added");
+        currentStep.value = 3;
+      }
     }
 
-    currentStep.value = 3;
+    if (!isOnboarding && isEditMode.value) {
+      currentStep.value = 3;
+    }
   } catch (error) {
     const errorObj = error as any;
     if (

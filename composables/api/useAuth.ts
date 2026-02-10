@@ -12,7 +12,12 @@ export interface IRegister {
   country_iso_code: string;
   province: string;
   profile_picture_url: string;
-  code_contract: string;
+  code_contract?: string;
+  id_type?: string;
+  city_name?: string;
+  address?: string;
+  postal_code?: string;
+  birth_date?: string;
 }
 
 export interface ILogin {
@@ -82,7 +87,7 @@ export const useAuth = () => {
 
   const fetchUserInfo = (
     userId: string,
-    token?: string
+    token?: string,
   ): UsableAPI<ApiResponse<UserInformation>> => {
     const authToken = token || getToken();
     if (!authToken) {
@@ -135,7 +140,7 @@ export const useAuth = () => {
   };
 
   const forgotPassword = (
-    body: IForgotPassword
+    body: IForgotPassword,
   ): UsableAPI<ApiResponse<IForgotPasswordResponse>> => {
     const url = `${config.public.API_BASE_URL}/forgot_password`;
 
@@ -149,7 +154,7 @@ export const useAuth = () => {
   };
 
   const verifyForgotPasswordToken = (
-    token: string
+    token: string,
   ): UsableAPI<ApiResponse<IVerifyTokenResponse>> => {
     const url = `${config.public.API_BASE_URL}/verify_forgot_password/${token}`;
 
@@ -163,7 +168,7 @@ export const useAuth = () => {
 
   const resetPassword = (
     token: string,
-    body: IResetPassword
+    body: IResetPassword,
   ): UsableAPI<ApiResponse<IResetPasswordResponse>> => {
     const url = `${config.public.API_BASE_URL}/reset_password/${token}`;
 

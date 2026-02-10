@@ -169,6 +169,7 @@
       <template #trigger="{ open }"> </template>
     </MedicosModalesAgregarMedicoRelacionado>
   </NuxtLayout>
+  <MedicosRegistroOnboarding />
 </template>
 
 <script lang="ts" setup>
@@ -290,7 +291,7 @@ const loadRelatedDoctors = async (): Promise<void> => {
         } catch (e) {
           console.warn(
             `⚠️ Error cargando especialidades para ${supplier.name}`,
-            e
+            e,
           );
         }
 
@@ -307,8 +308,9 @@ const loadRelatedDoctors = async (): Promise<void> => {
           codeCardIdFile: supplier.code_card_id_file || "",
           codeMedicalLicenseFile: supplier.code_medical_license_file || "",
           createdAt: supplier.created_date,
+          valoracionCost: 0,
         };
-      })
+      }),
     );
 
     relatedDoctors.value = doctors;
@@ -328,7 +330,7 @@ const filteredDoctors = computed(() => {
     (d) =>
       d.fullName.toLowerCase().includes(q) ||
       d.medicalCode.toLowerCase().includes(q) ||
-      d.documentNumber.toLowerCase().includes(q)
+      d.documentNumber.toLowerCase().includes(q),
   );
 });
 
