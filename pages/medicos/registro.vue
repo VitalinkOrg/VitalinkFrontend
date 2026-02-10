@@ -26,9 +26,10 @@ const { uploadDocument } = useDocuments();
 const { register, login, fetchUserInfo } = useAuth();
 const { convertCedulaForBackend } = useFormat();
 const { setAuthenticated, setRole } = useAuthState();
-const { setToken, setRefreshToken } = useAuthToken();
-const { setUserInfo } = useUserInfo();
+const { setToken, setRefreshToken, getToken } = useAuthToken();
+const { setUserInfo, getUserInfo } = useUserInfo();
 const router = useRouter();
+const config = useRuntimeConfig();
 
 const legalRepresentativeId = ref<string>("");
 const isLoadingSubmit = ref<boolean>(false);
@@ -52,54 +53,101 @@ const updateSupplierFormData = (newData: ISupplierFormData) => {
 const delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
 const handleSubmit = async (): Promise<void> => {
-  isLoadingSubmit.value = true;
+  try {
+    isLoadingSubmit.value = true;
 
-  console.log("📤 Iniciando registro con datos:", supplierFormData.value);
-
-  return;
-
-  /*try {
     if (!supplierFormData.value.contratcFile) {
       throw new Error("Archivo de contrato requerido");
     }
 
+    let representativeId = "";
+    let isExistingUser = false;
+
+    try {
+      representativeId = await handleRegisterLegalRepresentative("");
+    } catch (error: any) {
+      if (
+        error.message.includes("Data Base Error") ||
+        error.message.includes("already exists") ||
+        error.message.includes("duplicate")
+      ) {
+        console.warn(
+          "Usuario ya existe, iniciando sesión con credenciales existentes",
+        );
+        isExistingUser = true;
+
+        const accessToken = await handleLogin();
+        if (!accessToken) {
+          throw new Error(
+            "No se pudo iniciar sesión con las credenciales proporcionadas",
+          );
+        }
+
+        const userInfo = getUserInfo();
+        representativeId = userInfo?.id || "";
+
+        if (!representativeId) {
+          throw new Error("No se pudo obtener el ID del usuario");
+        }
+      } else {
+        throw error;
+      }
+    }
+
+    legalRepresentativeId.value = representativeId;
+    await delay(500);
+
+    if (!isExistingUser) {
+      const accessToken = await handleLogin();
+
+      if (!accessToken) {
+        throw new Error("No se pudo obtener el token de autenticación");
+      }
+      await delay(500);
+    }
+
     const codeContract = await handleUploadFile(
       supplierFormData.value.contratcFile,
-      "PRIVATE_CONTRACT"
+      "PRIVATE_CONTRACT",
     );
 
     if (!codeContract) {
       throw new Error("Error subiendo contrato");
     }
 
-    await delay(1000);
+    await delay(500);
 
-    const representativeId =
-      await handleRegisterLegalRepresentative(codeContract);
-    legalRepresentativeId.value = representativeId;
+    await updateUserContract(representativeId, codeContract);
 
-    await delay(1000);
+    localStorage.setItem("onboarding", "true");
 
-    const accessToken = await handleLogin();
-    if (!accessToken) {
-      throw new Error("No se pudo obtener el token de autenticación");
-    }
-
-    localStorage.setItem("onboarding", "pending");
-
-    router.push("/medicos/servicios");
+    await router.push("/medicos/mis-medicos");
   } catch (error) {
     console.error("Error en el registro:", error);
 
-    alert(error instanceof Error ? error.message : "Error en el registro");
+    let errorMessage = "Error en el registro. Por favor intenta nuevamente.";
+
+    if (error instanceof Error) {
+      if (error.message.includes("Data Base Error")) {
+        errorMessage =
+          "Este usuario ya está registrado. Por favor usa datos diferentes o intenta iniciar sesión.";
+      } else if (error.message.includes("duplicate")) {
+        errorMessage =
+          "El correo electrónico o número de documento ya están registrados.";
+      } else {
+        errorMessage = error.message;
+      }
+    }
+
+    alert(errorMessage);
   } finally {
     isLoadingSubmit.value = false;
-  }*/
+  }
 };
 
 const handleUploadFile = async (
   file: File,
-  actionType: string
+  actionType: string,
 ): Promise<string> => {
   const fields = {
     title: file.name,
@@ -129,18 +177,12 @@ const handleUploadFile = async (
 };
 
 const handleRegisterLegalRepresentative = async (
-  codeContract: string
+  codeContract: string,
 ): Promise<string> => {
   const backendDocumentNumber = convertCedulaForBackend(
     supplierFormData.value.documentNumber,
-    supplierFormData.value.documentType
+    supplierFormData.value.documentType,
   );
-
-  console.log("📤 Registrando Representante Legal:", {
-    original: supplierFormData.value.documentNumber,
-    converted: backendDocumentNumber,
-    type: supplierFormData.value.documentType,
-  });
 
   const body = {
     card_id: backendDocumentNumber,
@@ -158,16 +200,19 @@ const handleRegisterLegalRepresentative = async (
     postal_code: "",
     birth_date: "",
     profile_picture_url: "",
-    code_contract: codeContract,
+    code_contract: codeContract || "",
   };
 
   const api = register(body);
   await api.request();
 
   if (api.error.value) {
-    throw new Error(
-      `Error registrando representante legal: ${api.error.value}`
-    );
+    const errorMsg =
+      typeof api.error.value === "object"
+        ? api.error.value.info || "Error en el registro"
+        : api.error.value;
+
+    throw new Error(`Error registrando representante legal: ${errorMsg}`);
   }
 
   const representativeId = api.response.value?.data?.id;
@@ -216,6 +261,39 @@ const handleGetUserInfo = async (accessToken: string) => {
 
   if (response?.data) {
     setUserInfo(response.data);
+  }
+};
+
+const updateUserContract = async (
+  userId: string,
+  codeContract: string,
+): Promise<void> => {
+  const token = getToken();
+
+  if (!token) {
+    throw new Error("No se pudo obtener el token de autenticación");
+  }
+
+  const url = `${config.public.API_BASE_URL}/user/edit?id=${userId}`;
+
+  try {
+    const response = await $fetch(url, {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: token,
+      },
+      body: JSON.stringify({
+        code_contract: codeContract,
+      }),
+    });
+
+    if (!response) {
+      throw new Error("Error actualizando el contrato del usuario");
+    }
+  } catch (error) {
+    console.error("Error actualizando contrato:", error);
+    throw new Error("Error al vincular el contrato con el usuario");
   }
 };
 </script>
