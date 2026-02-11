@@ -1,4 +1,3 @@
-// components\medicos\modales\precios-packs.vue
 <template>
   <div class="packs-config">
     <p class="packs-config__subtitle">Configura tus packs:</p>
@@ -61,34 +60,34 @@
 
       <div class="packs-config__field">
         <label class="packs-config__label">Procedimiento</label>
-        <input
-          class="packs-config__input"
-          type="text"
-          :value="getProcedureName(pack.procedimiento)"
-          @input="updateProcedure(pack, $event)"
-          :list="`procedures-list-${packIndex}`"
-          placeholder="Escriba o seleccione un procedimiento"
+        <UiDropdownBase
+          v-model="pack.procedimiento"
+          :items="procedimientosForDropdown"
+          placeholder="Seleccione un procedimiento"
+          searchable
+          clearable
         />
-        <datalist :id="`procedures-list-${packIndex}`">
-          <option
-            v-for="procedure in procedures"
-            :key="procedure.code"
-            :value="procedure.name"
-          >
-            {{ procedure.name }}
-          </option>
-        </datalist>
       </div>
 
       <div class="packs-config__field">
         <label class="packs-config__label">Producto</label>
-        <UiDropdownBase
-          v-model="pack.producto"
-          :items="productos"
-          placeholder="Seleccione un producto"
-          searchable
-          clearable
+        <input
+          class="packs-config__input"
+          type="text"
+          :value="getProductName(pack.producto)"
+          @input="updateProduct(pack, $event)"
+          :list="`products-list-${packIndex}`"
+          placeholder="Escriba o seleccione un producto"
         />
+        <datalist :id="`products-list-${packIndex}`">
+          <option
+            v-for="product in products"
+            :key="product.code"
+            :value="product.name"
+          >
+            {{ product.name }}
+          </option>
+        </datalist>
       </div>
 
       <div class="packs-config__field">
@@ -124,7 +123,10 @@
       </div>
 
       <div class="packs-config__field">
-        <label class="packs-config__label">Precio del pack</label>
+        <label class="packs-config__label"
+          >Precio del pack
+          <span class="packs-config__optional">(opcional)</span></label
+        >
         <div class="packs-config__price-input-wrapper">
           <span class="packs-config__currency-symbol">₡</span>
           <input
@@ -133,6 +135,7 @@
             step="1000"
             v-model.number="pack.precio"
             class="packs-config__price-input packs-config__price-input--with-symbol"
+            placeholder="0"
           />
         </div>
       </div>
@@ -180,7 +183,7 @@ const emit = defineEmits<{
 
 const { fetchUdc } = useUdc();
 
-const productos = ref<Array<{ value: string; label: string }>>([]);
+const products = ref<IUdc[]>([]);
 const services = ref<IUdc[]>([]);
 const procedures = ref<IUdc[]>([]);
 const selectedService = ref<string>("");
@@ -190,6 +193,13 @@ const specialtiesForDropdown = computed(() =>
   props.availableSpecialties.map((s) => ({
     value: s.code,
     label: s.name,
+  })),
+);
+
+const procedimientosForDropdown = computed(() =>
+  procedures.value.map((p) => ({
+    value: p.code,
+    label: p.name,
   })),
 );
 
@@ -224,8 +234,7 @@ const isPackComplete = (pack: Pack): boolean => {
     pack.especialidad &&
     pack.procedimiento &&
     pack.producto &&
-    pack.servicios.length > 0 &&
-    pack.precio > 0
+    pack.servicios.length > 0
   );
 };
 
@@ -266,22 +275,22 @@ const removeService = (pack: Pack, i: number) => {
 const getServiceName = (code: string) =>
   services.value.find((s) => s.code === code)?.name || code;
 
-const getProcedureName = (code: string) => {
+const getProductName = (code: string) => {
   if (!code) return "";
-  const procedure = procedures.value.find((p) => p.code === code);
-  return procedure?.name || code;
+  const product = products.value.find((p) => p.code === code);
+  return product?.name || code;
 };
 
-const updateProcedure = (pack: Pack, event: Event) => {
+const updateProduct = (pack: Pack, event: Event) => {
   const input = event.target as HTMLInputElement;
   const name = input.value;
 
-  const procedure = procedures.value.find((p) => p.name === name);
+  const product = products.value.find((p) => p.name === name);
 
-  if (procedure) {
-    pack.procedimiento = procedure.code;
+  if (product) {
+    pack.producto = product.code;
   } else {
-    pack.procedimiento = name;
+    pack.producto = name;
   }
 };
 
@@ -304,12 +313,7 @@ onMounted(async () => {
     proceduresApi.request(),
   ]);
 
-  productos.value =
-    productsApi.response.value?.data?.map((p: any) => ({
-      value: p.code,
-      label: p.name,
-    })) ?? [];
-
+  products.value = productsApi.response.value?.data ?? [];
   services.value = servicesApi.response.value?.data ?? [];
   procedures.value = proceduresApi.response.value?.data ?? [];
 });
@@ -432,6 +436,11 @@ onMounted(async () => {
     font-weight: 600;
     font-size: 0.875rem;
     color: #344054;
+  }
+
+  &__optional {
+    font-weight: 400;
+    color: #98a2b3;
   }
 
   &__input,

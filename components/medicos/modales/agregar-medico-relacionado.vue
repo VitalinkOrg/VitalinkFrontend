@@ -661,8 +661,7 @@ const isStep2Complete = computed(() => {
           pack.especialidad &&
           pack.procedimiento &&
           pack.producto &&
-          pack.servicios.length > 0 &&
-          pack.precio > 0,
+          pack.servicios.length,
       )
     );
   }
@@ -680,8 +679,7 @@ const isStep2Complete = computed(() => {
       pack.especialidad &&
       pack.procedimiento &&
       pack.producto &&
-      pack.servicios.length > 0 &&
-      pack.precio > 0,
+      pack.servicios.length > 0,
   );
 });
 
