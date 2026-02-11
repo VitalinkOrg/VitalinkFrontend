@@ -15,7 +15,7 @@
 
       <NuxtLink
         class="header-container__brand"
-        href="/pacientes/inicio"
+        :href="getHome()"
         aria-label="Inicio - Vitalink"
       >
         <img src="@/src/assets/img-vitalink-logo.svg" alt="Logo de Vitalink" />
@@ -24,76 +24,28 @@
       <div class="header-container__nav">
         <div class="collapse navbar-collapse" id="navbarTogglerDemo03">
           <ul class="navbar-nav mx-auto mb-2 mb-lg-0">
-            <li class="header-container__nav-item">
+            <li
+              v-for="item in navItems"
+              :key="item.href"
+              class="header-container__nav-item"
+            >
               <NuxtLink
-                href="/pacientes/inicio"
+                :href="item.href"
                 class="header-container__nav-link"
                 active-class="header-container__nav-link--active"
-                >Home</NuxtLink
               >
-            </li>
-            <li class="header-container__nav-item">
-              <NuxtLink
-                href="/pacientes/citas"
-                class="header-container__nav-link"
-                active-class="header-container__nav-link--active"
-                >Mis Citas</NuxtLink
-              >
+                {{ item.label }}
+              </NuxtLink>
             </li>
           </ul>
         </div>
 
         <ul class="header-container__actions">
-          <li class="header-container__search nav-item">
-            <NuxtLink href="/buscar" class="nav-link" aria-label="Buscar">
-              <svg
-                width="24"
-                height="24"
-                viewBox="0 0 25 25"
-                fill="none"
-                xmlns="http://www.w3.org/2000/svg"
-                aria-hidden="true"
-                focusable="false"
-              >
-                <path
-                  d="M17.4268 17.5401L20.9 20.9001M19.78 11.9401C19.78 16.27 16.2699 19.7801 11.94 19.7801C7.61006 19.7801 4.09998 16.27 4.09998 11.9401C4.09998 7.61019 7.61006 4.1001 11.94 4.1001C16.2699 4.1001 19.78 7.61019 19.78 11.9401Z"
-                  stroke="#353E5C"
-                  stroke-width="1.5"
-                  stroke-linecap="round"
-                />
-              </svg>
-            </NuxtLink>
-          </li>
-
-          <li class="header-container__notifications nav-item">
-            <button class="nav-link" aria-label="Notificaciones" type="button">
-              <svg
-                width="24"
-                height="24"
-                viewBox="0 0 25 25"
-                fill="none"
-                xmlns="http://www.w3.org/2000/svg"
-                aria-hidden="true"
-                focusable="false"
-              >
-                <path
-                  d="M14.23 21.5C14.0542 21.8031 13.8018 22.0547 13.4982 22.2295C13.1946 22.4044 12.8504 22.4965 12.5 22.4965C12.1496 22.4965 11.8054 22.4044 11.5018 22.2295C11.1982 22.0547 10.9458 21.8031 10.77 21.5M18.5 8.5C18.5 6.9087 17.8679 5.38258 16.7426 4.25736C15.6174 3.13214 14.0913 2.5 12.5 2.5C10.9087 2.5 9.38258 3.13214 8.25736 4.25736C7.13214 5.38258 6.5 6.9087 6.5 8.5C6.5 15.5 3.5 17.5 3.5 17.5H21.5C21.5 17.5 18.5 15.5 18.5 8.5Z"
-                  stroke="#353E5C"
-                  stroke-width="1.5"
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                />
-              </svg>
-            </button>
-          </li>
           <UiInputDropdownMenu
-            v-if="userProfilePicture"
             :src="userProfilePicture"
-            :hide-default-items="['perfil', 'configuracion', 'resenas']"
-            :custom-urls="{
-              cuenta: '/pacientes/cuenta',
-              ayuda: '/pacientes/ayuda',
-            }"
+            :with-avatar="!!userProfilePicture"
+            :hide-default-items="hiddenDropdownItems"
+            :custom-urls="customDropdownUrls"
           />
         </ul>
       </div>
@@ -102,11 +54,84 @@
 </template>
 
 <script lang="ts" setup>
+import { useAuth } from "~/composables/api";
+import { useRoleRoutes } from "~/composables/useRoleRoutes";
+
 const { getUserInfo } = useUserInfo();
+const { getToken } = useAuthToken();
+const { getRole } = useAuthState();
+const { logout } = useAuth();
+const { getHome, getLogin } = useRoleRoutes();
 
 const userInfo = getUserInfo();
-
 const userProfilePicture = computed(() => userInfo?.profile_picture_url || "");
+
+const NAV_CONFIG: Record<string, { label: string; href: string }[]> = {
+  CUSTOMER: [
+    { label: "Home", href: "/pacientes/inicio" },
+    { label: "Mis Citas", href: "/pacientes/citas" },
+  ],
+  FINANCE_ENTITY: [{ label: "Home", href: "/socio-financiero/inicio" }],
+  LEGAL_REPRESENTATIVE: [
+    { label: "Home", href: "/medicos/inicio" },
+    { label: "Mis Citas", href: "/medicos/citas" },
+  ],
+};
+
+const DROPDOWN_CONFIG: Record<
+  string,
+  { hide: string[]; urls: Record<string, string> }
+> = {
+  CUSTOMER: {
+    hide: ["perfil", "configuracion", "resenas"],
+    urls: { cuenta: "/pacientes/cuenta", ayuda: "/pacientes/ayuda" },
+  },
+  FINANCE_ENTITY: {
+    hide: ["cuenta", "perfil", "resenas"],
+    urls: {
+      configuracion: "/socio-financiero/cuenta",
+      ayuda: "/socio-financiero/ayuda",
+    },
+  },
+  LEGAL_REPRESENTATIVE: {
+    hide: ["ayuda"],
+    urls: { cuenta: "/medicos/cuenta", ayuda: "/medicos/ayuda" },
+  },
+};
+
+const currentRole = computed(() => getRole() || "CUSTOMER");
+const navItems = computed(
+  () => NAV_CONFIG[currentRole.value] || NAV_CONFIG.CUSTOMER,
+);
+const hiddenDropdownItems = computed(
+  () => DROPDOWN_CONFIG[currentRole.value]?.hide || [],
+);
+const customDropdownUrls = computed(
+  () => DROPDOWN_CONFIG[currentRole.value]?.urls || {},
+);
+
+onMounted(() => {
+  checkSession();
+});
+
+function isTokenExpired(token: string): boolean {
+  try {
+    const payload = JSON.parse(atob(token.split(".")[1]));
+    return payload.exp * 1000 < Date.now();
+  } catch {
+    return true;
+  }
+}
+
+function checkSession() {
+  const token = getToken();
+
+  if (!token || isTokenExpired(token)) {
+    const loginPath = getLogin();
+    logout();
+    navigateTo(loginPath);
+  }
+}
 </script>
 
 <style lang="scss" scoped>
