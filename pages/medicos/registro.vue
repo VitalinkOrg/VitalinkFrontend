@@ -19,8 +19,10 @@
 
 <script lang="ts" setup>
 import { useAuth, useDocuments } from "@/composables/api";
+import type { ApiErrorResponse } from "@/composables/api/useApi";
 import { useFormat } from "@/composables/useFormat";
 import type { ISupplierFormData } from "@/types";
+import { getUserIdFromToken } from "@/utils/jwt";
 
 const { uploadDocument } = useDocuments();
 const { register, login, fetchUserInfo } = useAuth();
@@ -28,6 +30,7 @@ const { convertCedulaForBackend } = useFormat();
 const { setAuthenticated, setRole } = useAuthState();
 const { setToken, setRefreshToken, getToken } = useAuthToken();
 const { setUserInfo, getUserInfo } = useUserInfo();
+const { success, error: showError, warning } = useToast();
 const router = useRouter();
 const config = useRuntimeConfig();
 
@@ -57,38 +60,28 @@ const handleSubmit = async (): Promise<void> => {
     isLoadingSubmit.value = true;
 
     if (!supplierFormData.value.contratcFile) {
-      throw new Error("Archivo de contrato requerido");
+      showError("Archivo de contrato requerido");
+      return;
     }
 
     let representativeId = "";
-    let isExistingUser = false;
 
     try {
       representativeId = await handleRegisterLegalRepresentative("");
     } catch (error: any) {
+      const parsedError = error as ApiErrorResponse;
+
       if (
-        error.message.includes("Data Base Error") ||
-        error.message.includes("already exists") ||
-        error.message.includes("duplicate")
+        parsedError.httpCode === 409 ||
+        parsedError.isDuplicateEntry ||
+        parsedError.message?.toLowerCase().includes("ya existe") ||
+        parsedError.info?.includes("Duplicate Entry") ||
+        parsedError.raw?.includes("Duplicate Entry")
       ) {
-        console.warn(
-          "Usuario ya existe, iniciando sesión con credenciales existentes",
+        showError(
+          "Este usuario ya está registrado. Por favor inicia sesión desde la página de inicio de sesión.",
         );
-        isExistingUser = true;
-
-        const accessToken = await handleLogin();
-        if (!accessToken) {
-          throw new Error(
-            "No se pudo iniciar sesión con las credenciales proporcionadas",
-          );
-        }
-
-        const userInfo = getUserInfo();
-        representativeId = userInfo?.id || "";
-
-        if (!representativeId) {
-          throw new Error("No se pudo obtener el ID del usuario");
-        }
+        return;
       } else {
         throw error;
       }
@@ -97,14 +90,12 @@ const handleSubmit = async (): Promise<void> => {
     legalRepresentativeId.value = representativeId;
     await delay(500);
 
-    if (!isExistingUser) {
-      const accessToken = await handleLogin();
-
-      if (!accessToken) {
-        throw new Error("No se pudo obtener el token de autenticación");
-      }
-      await delay(500);
+    const loginResult = await handleLogin();
+    if (!loginResult) {
+      showError("No se pudo obtener el token de autenticación");
+      return;
     }
+    await delay(500);
 
     const codeContract = await handleUploadFile(
       supplierFormData.value.contratcFile,
@@ -112,34 +103,47 @@ const handleSubmit = async (): Promise<void> => {
     );
 
     if (!codeContract) {
-      throw new Error("Error subiendo contrato");
+      showError("Error al subir el contrato");
+      return;
     }
 
     await delay(500);
-
     await updateUserContract(representativeId, codeContract);
 
     localStorage.setItem("onboarding", "true");
+    success("¡Registro completado exitosamente!");
 
     await router.push("/medicos/mis-medicos");
   } catch (error) {
     console.error("Error en el registro:", error);
 
-    let errorMessage = "Error en el registro. Por favor intenta nuevamente.";
+    const parsedError = error as ApiErrorResponse;
+    let errorMessage = "Error en el registro. Intenta nuevamente.";
 
-    if (error instanceof Error) {
-      if (error.message.includes("Data Base Error")) {
-        errorMessage =
-          "Este usuario ya está registrado. Por favor usa datos diferentes o intenta iniciar sesión.";
-      } else if (error.message.includes("duplicate")) {
-        errorMessage =
-          "El correo electrónico o número de documento ya están registrados.";
-      } else {
-        errorMessage = error.message;
-      }
+    if (
+      parsedError.httpCode === 409 ||
+      parsedError.isDuplicateEntry ||
+      parsedError.message?.toLowerCase().includes("ya existe")
+    ) {
+      errorMessage = "Este usuario ya está registrado. Intenta iniciar sesión.";
+    } else if (parsedError.isNetworkError) {
+      errorMessage =
+        "Error de conexión. Verifica tu internet e intenta nuevamente.";
+    } else if (parsedError.httpCode === 400) {
+      errorMessage =
+        parsedError.info || "Datos inválidos. Verifica la información.";
+    } else if (parsedError.httpCode === 401 || parsedError.httpCode === 403) {
+      errorMessage = "No autorizado. Verifica tus credenciales.";
+    } else if (parsedError.message && parsedError.message !== "Error") {
+      errorMessage = parsedError.message;
+    } else if (
+      parsedError.info &&
+      !parsedError.info.includes("Data Base Error")
+    ) {
+      errorMessage = parsedError.info;
     }
 
-    alert(errorMessage);
+    showError(errorMessage);
   } finally {
     isLoadingSubmit.value = false;
   }
@@ -164,13 +168,24 @@ const handleUploadFile = async (
   await api.request();
 
   if (api.error.value) {
-    throw new Error(`Error subiendo documento: ${api.error.value}`);
+    const errorMsg =
+      api.error.value.info ||
+      api.error.value.message ||
+      "Error subiendo documento";
+    throw {
+      message: errorMsg,
+      httpCode: api.error.value.httpCode || 500,
+      info: api.error.value.info,
+    } as ApiErrorResponse;
   }
 
   const code = api.response.value?.data?.code;
 
   if (!code) {
-    throw new Error("No se pudo obtener el código del documento");
+    throw {
+      message: "No se pudo obtener el código del documento",
+      httpCode: 500,
+    } as ApiErrorResponse;
   }
 
   return code;
@@ -207,24 +222,24 @@ const handleRegisterLegalRepresentative = async (
   await api.request();
 
   if (api.error.value) {
-    const errorMsg =
-      typeof api.error.value === "object"
-        ? api.error.value.info || "Error en el registro"
-        : api.error.value;
-
-    throw new Error(`Error registrando representante legal: ${errorMsg}`);
+    throw api.error.value;
   }
 
   const representativeId = api.response.value?.data?.id;
 
   if (!representativeId) {
-    throw new Error("No se pudo obtener el ID del representante legal");
+    throw {
+      message: "No se pudo obtener el ID del representante legal",
+      httpCode: 500,
+    } as ApiErrorResponse;
   }
 
   return representativeId;
 };
 
-const handleLogin = async (): Promise<string | undefined> => {
+const handleLogin = async (): Promise<
+  { accessToken: string; userId: string } | undefined
+> => {
   const payload = {
     email: supplierFormData.value.email,
     username: "",
@@ -235,26 +250,39 @@ const handleLogin = async (): Promise<string | undefined> => {
   await api.request();
 
   const response = api.response.value;
-  const error = api.error.value;
+  const errorResponse = api.error.value;
 
   if (response?.data) {
+    const accessToken = response.data.access_token;
+
     setAuthenticated(true);
-    setToken(response.data.access_token);
+    setToken(accessToken);
     setRefreshToken(response.data.refresh_token);
     setRole("LEGAL_REPRESENTATIVE");
 
-    await handleGetUserInfo(response.data.access_token);
+    const userId = getUserIdFromToken(accessToken);
 
-    return response.data.access_token;
+    if (!userId) {
+      throw {
+        message: "No se pudo obtener el ID del usuario del token",
+        httpCode: 500,
+      } as ApiErrorResponse;
+    }
+
+    legalRepresentativeId.value = userId;
+
+    await handleGetUserInfo(userId, accessToken);
+
+    return { accessToken, userId };
   }
 
-  if (error) {
-    throw new Error(error.info || "Error en el inicio de sesión");
+  if (errorResponse) {
+    throw errorResponse;
   }
 };
 
-const handleGetUserInfo = async (accessToken: string) => {
-  const api = fetchUserInfo(legalRepresentativeId.value, accessToken);
+const handleGetUserInfo = async (userId: string, accessToken: string) => {
+  const api = fetchUserInfo(userId, accessToken);
   await api.request();
 
   const response = api.response.value;
@@ -271,7 +299,10 @@ const updateUserContract = async (
   const token = getToken();
 
   if (!token) {
-    throw new Error("No se pudo obtener el token de autenticación");
+    throw {
+      message: "No se pudo obtener el token de autenticación",
+      httpCode: 401,
+    } as ApiErrorResponse;
   }
 
   const url = `${config.public.API_BASE_URL}/user/edit?id=${userId}`;
@@ -289,11 +320,17 @@ const updateUserContract = async (
     });
 
     if (!response) {
-      throw new Error("Error actualizando el contrato del usuario");
+      throw {
+        message: "Error actualizando el contrato del usuario",
+        httpCode: 500,
+      } as ApiErrorResponse;
     }
   } catch (error) {
     console.error("Error actualizando contrato:", error);
-    throw new Error("Error al vincular el contrato con el usuario");
+    throw {
+      message: "Error al vincular el contrato con el usuario",
+      httpCode: 500,
+    } as ApiErrorResponse;
   }
 };
 </script>

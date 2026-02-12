@@ -16,6 +16,7 @@
       <div class="login-card">
         <div class="login-card__body">
           <slot />
+          <UiNotificationToast />
         </div>
       </div>
     </section>

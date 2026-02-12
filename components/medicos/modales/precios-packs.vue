@@ -451,7 +451,6 @@ onMounted(async () => {
 
   &__price-input-wrapper {
     position: relative;
-    max-width: 280px;
   }
 
   &__currency-symbol {

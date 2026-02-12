@@ -16,6 +16,8 @@ export interface ParsedError {
   info?: string;
   statusId?: number;
   raw?: string;
+  isDuplicateEntry?: boolean;
+  isNetworkError?: boolean;
 }
 
 export function useErrorHandler() {
@@ -29,12 +31,30 @@ export function useErrorHandler() {
         try {
           const errorData: ApiErrorResponse = JSON.parse(jsonMatch[1]);
 
+          const isDuplicateEntry =
+            errorData.data?.message?.includes("Duplicate Entry") ||
+            errorData.info?.includes("Duplicate Entry") ||
+            errorMessage.includes("Duplicate Entry");
+
+          const isDbError = errorData.info?.includes("Data Base Error");
+
+          let friendlyMessage = errorData.status.message;
+          let effectiveHttpCode = errorData.status.http_code;
+
+          if (isDuplicateEntry) {
+            friendlyMessage = "El usuario ya existe";
+            effectiveHttpCode = 409;
+          } else if (isDbError) {
+            friendlyMessage = "Error procesando la solicitud";
+          }
+
           return {
-            message: errorData.status.message,
-            httpCode: errorData.status.http_code,
+            message: friendlyMessage,
+            httpCode: effectiveHttpCode,
             info: errorData.info,
             statusId: errorData.status.id,
             raw: errorMessage,
+            isDuplicateEntry,
           };
         } catch (e) {
           console.error("Failed to parse error JSON:", e);
@@ -42,15 +62,24 @@ export function useErrorHandler() {
       }
 
       const httpCodeMatch = errorMessage.match(/HTTP (\d+)/);
+
+      const isNetworkError =
+        errorMessage.includes("Failed to fetch") ||
+        errorMessage.includes("Network request failed") ||
+        errorMessage.includes("NetworkError");
+
       return {
-        message: errorMessage,
+        message: isNetworkError
+          ? "Error de conexión. Verifica tu internet."
+          : errorMessage,
         httpCode: httpCodeMatch ? parseInt(httpCodeMatch[1]) : 500,
         raw: errorMessage,
+        isNetworkError,
       };
     }
 
     return {
-      message: "An unknown error occurred",
+      message: "Error desconocido",
       httpCode: 500,
       raw: String(error),
     };
