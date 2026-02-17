@@ -197,7 +197,7 @@ interface SharedData {
 const modalData = computed(() => getSharedData<SharedData>("agregarHospital"));
 const isModalOpen = computed(() => isOpen.agregarHospital);
 const isEditMode = computed(
-  () => modalData.value?.mode === "edit" && !!modalData.value?.hospitalId
+  () => modalData.value?.mode === "edit" && !!modalData.value?.hospitalId,
 );
 
 const isLoading = ref<boolean>(false);
@@ -320,7 +320,7 @@ const loadHospitals = async () => {
 
     if (response.value?.data && Array.isArray(response.value.data)) {
       allHospitals.value = response.value.data.filter(
-        (supplier: Supplier) => supplier.is_hospital
+        (supplier: Supplier) => supplier.is_hospital,
       );
     } else {
       allHospitals.value = [];
@@ -335,7 +335,7 @@ const loadHospitals = async () => {
 
 const handleHospitalSelect = (item: DropdownItem) => {
   const hospital = allHospitals.value.find(
-    (h) => (h.id || h.name) === item.value
+    (h) => (h.id || h.name) === item.value,
   );
 
   if (hospital) {
@@ -421,7 +421,7 @@ const handleSubmit = async () => {
 
       const { response, error, request } = updateHospital(
         modalData.value.hospitalId,
-        updateData
+        updateData,
       );
 
       await request();

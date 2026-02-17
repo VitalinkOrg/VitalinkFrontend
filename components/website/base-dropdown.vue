@@ -1,7 +1,5 @@
-// components\website\base-dropdown.vue
 <template>
   <div class="dropdown" ref="dropdownRef">
-    <!-- Activador -->
     <button
       class="dropdown__toggle"
       type="button"
@@ -15,7 +13,6 @@
       <AtomsIconsChevronDown size="20" />
     </button>
 
-    <!-- Menú -->
     <ul v-if="isOpen" class="dropdown__menu" role="menu" ref="menuRef">
       <slot name="menu" />
     </ul>
