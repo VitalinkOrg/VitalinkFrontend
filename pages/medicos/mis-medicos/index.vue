@@ -1,173 +1,336 @@
 <template>
   <NuxtLayout name="medicos-dashboard">
-    <div class="doctors__header">
+    <div class="panel__header">
       <UiHeaderBreadcrumb title="Mis médicos" />
     </div>
 
-    <div class="doctors__controls">
-      <UiSearchInput
-        v-model="searchQuery"
-        placeholder="Buscar médico por nombre, código o documento"
-      />
+    <div class="panel__tabs">
+      <button
+        class="panel__tab"
+        :class="{ 'panel__tab--active': activeTab === 'doctors' }"
+        @click="activeTab = 'doctors'"
+      >
+        Médicos
+      </button>
+      <button
+        class="panel__tab"
+        :class="{ 'panel__tab--active': activeTab === 'hospitals' }"
+        @click="activeTab = 'hospitals'"
+      >
+        Hospitales
+      </button>
+    </div>
 
-      <MedicosModalesAgregarMedicoRelacionado @doctor-added="handleDoctorAdded">
-        <template #trigger="{ open }">
-          <button class="doctors__button--primary" @click="open">
-            <AtomsIconsPlusIcon size="20" />
-            Añadir médico
+    <template v-if="activeTab === 'doctors'">
+      <div class="doctors__controls">
+        <UiSearchInput
+          v-model="searchQuery"
+          placeholder="Buscar médico por nombre, código o documento"
+        />
+
+        <MedicosModalesAgregarMedicoRelacionado
+          @doctor-added="handleDoctorAdded"
+        >
+          <template #trigger="{ open }">
+            <button class="panel__button--primary" @click="open">
+              <AtomsIconsPlusIcon size="20" />
+              Añadir médico
+            </button>
+          </template>
+        </MedicosModalesAgregarMedicoRelacionado>
+      </div>
+
+      <WebsitePerfilDoctorPantallaCarga v-if="isLoading" />
+
+      <div v-else-if="errorMessage" class="panel__error">
+        <AtomsIconsAlertCircleIcon size="24" />
+        <p>{{ errorMessage }}</p>
+      </div>
+
+      <UiAppointmentTableBase
+        v-else
+        :items="filteredDoctors"
+        :columns="columns"
+        title="Lista de médicos relacionados"
+        aria-label="Tabla de médicos relacionados"
+        :items-per-page="10"
+        default-sort-column="fullName"
+        default-sort-direction="asc"
+        empty-state-title="No hay médicos registrados"
+        empty-state-description="Agrega médicos relacionados para gestionar tus servicios."
+        empty-state-action="Agregar primer médico"
+        @empty-action="() => {}"
+      >
+        <template #cell-fullName="{ value }">
+          <strong class="doctors__table-name">{{ value }}</strong>
+        </template>
+
+        <template #cell-medicalCode="{ value }">
+          <span class="doctors__code">{{ value }}</span>
+        </template>
+
+        <template #cell-documentNumber="{ item }">
+          <div class="doctors__document">
+            <span class="doctors__document-type">{{ item.documentType }}</span>
+            <span class="doctors__document-number">{{
+              item.documentNumber
+            }}</span>
+          </div>
+        </template>
+
+        <template #cell-medicalType="{ value }">
+          <span class="doctors__type-badge">{{ value }}</span>
+        </template>
+
+        <template #cell-specialties="{ item }">
+          <div class="doctors__specialties">
+            <span
+              v-for="spec in item.specialties"
+              :key="spec.code"
+              class="doctors__specialty-badge"
+            >
+              {{ spec.name }}
+            </span>
+          </div>
+        </template>
+
+        <template #cell-actions="{ item }">
+          <div class="doctors__actions">
+            <button
+              class="doctors__action-button doctors__action-button--edit"
+              :class="{
+                'doctors__action-button--loading': loadingDoctorId === item.id,
+              }"
+              :disabled="loadingDoctorId === item.id"
+              @click="handleEditDoctor(item)"
+              :title="
+                loadingDoctorId === item.id ? 'Cargando...' : 'Editar médico'
+              "
+            >
+              <div
+                v-if="loadingDoctorId === item.id"
+                class="doctors__spinner"
+              ></div>
+              <AtomsIconsEditPencilIcon v-else size="18" />
+            </button>
+
+            <button
+              class="doctors__action-button doctors__action-button--delete"
+              @click="confirmDeleteDoctor(item)"
+              title="Eliminar médico"
+            >
+              <AtomsIconsTrashIcon size="18" />
+            </button>
+          </div>
+        </template>
+
+        <template #empty-state>
+          <div class="doctors__empty-state">
+            <AtomsIconsUserIcon size="48" class="doctors__empty-icon" />
+            <h3 class="doctors__empty-title">No hay médicos registrados</h3>
+            <p class="doctors__empty-text">
+              Agrega médicos relacionados para gestionar tus servicios.
+            </p>
+
+            <MedicosModalesAgregarMedicoRelacionado
+              @doctor-added="handleDoctorAdded"
+            >
+              <template #trigger="{ open }">
+                <button class="doctors__empty-button" @click="open">
+                  <AtomsIconsPlusIcon size="20" />
+                  Agregar primer médico
+                </button>
+              </template>
+            </MedicosModalesAgregarMedicoRelacionado>
+          </div>
+        </template>
+      </UiAppointmentTableBase>
+
+      <!-- Delete doctor modal -->
+      <AtomsModalBase
+        :is-open="showDeleteModal"
+        size="small"
+        @close="cancelDelete"
+      >
+        <template #title>Confirmar eliminación</template>
+
+        <div class="doctors__delete-modal-content">
+          <p>
+            ¿Estás seguro de que deseas eliminar al médico
+            <strong>{{ doctorToDelete?.fullName }}</strong
+            >?
+          </p>
+          <p class="doctors__delete-modal-warning">
+            Esta acción no se puede deshacer.
+          </p>
+        </div>
+
+        <template #footer>
+          <button class="doctors__modal-button--cancel" @click="cancelDelete">
+            Cancelar
+          </button>
+          <button
+            class="doctors__modal-button--delete"
+            :disabled="isDeleting"
+            @click="handleDeleteDoctor"
+          >
+            {{ isDeleting ? "Eliminando..." : "Eliminar" }}
           </button>
         </template>
+      </AtomsModalBase>
+
+      <!-- Edit doctor modal -->
+      <MedicosModalesAgregarMedicoRelacionado
+        ref="editModalRef"
+        :edit-mode="isEditModalOpen"
+        :doctor-data="doctorToEdit || undefined"
+        :existing-packs="editDoctorPacks"
+        :supplier-id="doctorToEdit?.id"
+        @doctor-updated="handleDoctorUpdated"
+      >
+        <template #trigger="{ open }"> </template>
       </MedicosModalesAgregarMedicoRelacionado>
-    </div>
+    </template>
 
-    <WebsitePerfilDoctorPantallaCarga v-if="isLoading" />
-
-    <div v-else-if="errorMessage" class="doctors__error">
-      <AtomsIconsAlertCircleIcon size="24" />
-      <p>{{ errorMessage }}</p>
-    </div>
-
-    <UiAppointmentTableBase
-      v-else
-      :items="filteredDoctors"
-      :columns="columns"
-      title="Lista de médicos relacionados"
-      aria-label="Tabla de médicos relacionados"
-      :items-per-page="10"
-      default-sort-column="fullName"
-      default-sort-direction="asc"
-      empty-state-title="No hay médicos registrados"
-      empty-state-description="Agrega médicos relacionados para gestionar tus servicios."
-      empty-state-action="Agregar primer médico"
-      @empty-action="() => {}"
-    >
-      <template #cell-fullName="{ value }">
-        <strong class="doctors__table-name">{{ value }}</strong>
-      </template>
-
-      <template #cell-medicalCode="{ value }">
-        <span class="doctors__code">{{ value }}</span>
-      </template>
-
-      <template #cell-documentNumber="{ item }">
-        <div class="doctors__document">
-          <span class="doctors__document-type">{{ item.documentType }}</span>
-          <span class="doctors__document-number">{{
-            item.documentNumber
-          }}</span>
-        </div>
-      </template>
-
-      <template #cell-medicalType="{ value }">
-        <span class="doctors__type-badge">{{ value }}</span>
-      </template>
-
-      <template #cell-specialties="{ item }">
-        <div class="doctors__specialties">
-          <span
-            v-for="spec in item.specialties"
-            :key="spec.code"
-            class="doctors__specialty-badge"
-          >
-            {{ spec.name }}
-          </span>
-        </div>
-      </template>
-
-      <template #cell-actions="{ item }">
-        <div class="doctors__actions">
+    <!-- ===================== HOSPITALS TAB ===================== -->
+    <template v-if="activeTab === 'hospitals'">
+      <div class="hospitals__controls">
+        <UiSearchInput
+          placeholder="Buscar"
+          aria-label="Buscar en hospitales"
+          @update:model-value="handleHospitalSearch"
+        />
+        <div class="hospitals__controls-right">
+          <div class="dropdown">
+            <button
+              class="panel__button--outline"
+              type="button"
+              data-bs-toggle="dropdown"
+              aria-expanded="false"
+            >
+              Ordenar por
+              <AtomsIconsChevronDown size="20" />
+            </button>
+            <ul class="dropdown-menu">
+              <li>
+                <button class="dropdown-item" @click="handleSortChange('name')">
+                  Por nombre
+                </button>
+              </li>
+              <li>
+                <button
+                  class="dropdown-item"
+                  @click="handleSortChange('recent')"
+                >
+                  Más recientes
+                </button>
+              </li>
+            </ul>
+          </div>
           <button
-            class="doctors__action-button doctors__action-button--edit"
-            :class="{
-              'doctors__action-button--loading': loadingDoctorId === item.id,
-            }"
-            :disabled="loadingDoctorId === item.id"
-            @click="handleEditDoctor(item)"
-            :title="
-              loadingDoctorId === item.id ? 'Cargando...' : 'Editar médico'
-            "
+            class="panel__button--primary"
+            @click="handleAddOrEditHospital()"
           >
-            <div
-              v-if="loadingDoctorId === item.id"
-              class="doctors__spinner"
-            ></div>
-            <AtomsIconsEditPencilIcon v-else size="18" />
-          </button>
-
-          <button
-            class="doctors__action-button doctors__action-button--delete"
-            @click="confirmDeleteDoctor(item)"
-            title="Eliminar médico"
-          >
-            <AtomsIconsTrashIcon size="18" />
+            <AtomsIconsPlusIcon size="20" />
+            Agregar
           </button>
         </div>
-      </template>
+      </div>
 
-      <template #empty-state>
-        <div class="doctors__empty-state">
-          <AtomsIconsUserIcon size="48" class="doctors__empty-icon" />
-          <h3 class="doctors__empty-title">No hay médicos registrados</h3>
-          <p class="doctors__empty-text">
-            Agrega médicos relacionados para gestionar tus servicios.
-          </p>
+      <p class="hospitals__subtext">
+        Listado de hospitales donde tendrás disponibilidad para atender a sus
+        pacientes
+      </p>
 
-          <MedicosModalesAgregarMedicoRelacionado
-            @doctor-added="handleDoctorAdded"
-          >
-            <template #trigger="{ open }">
-              <button class="doctors__empty-button" @click="open">
-                <AtomsIconsPlusIcon size="20" />
-                Agregar primer médico
-              </button>
-            </template>
-          </MedicosModalesAgregarMedicoRelacionado>
-        </div>
-      </template>
-    </UiAppointmentTableBase>
+      <div v-if="isLoadingHospitals" class="hospitals__loading">
+        <p>Cargando hospitales...</p>
+      </div>
 
-    <AtomsModalBase
-      :is-open="showDeleteModal"
-      size="small"
-      @close="cancelDelete"
-    >
-      <template #title>Confirmar eliminación</template>
+      <div
+        v-else-if="sortedHospitals.length === 0 && !hospitalSearchQuery"
+        class="hospitals__empty"
+      >
+        <p>No tienes hospitales registrados</p>
+        <button
+          class="panel__button--primary"
+          @click="handleAddOrEditHospital()"
+        >
+          <AtomsIconsPlusIcon size="20" />
+          Agregar primer hospital
+        </button>
+      </div>
 
-      <div class="doctors__delete-modal-content">
+      <div
+        v-else-if="sortedHospitals.length === 0 && hospitalSearchQuery"
+        class="hospitals__empty"
+      >
         <p>
-          ¿Estás seguro de que deseas eliminar al médico
-          <strong>{{ doctorToDelete?.fullName }}</strong
-          >?
-        </p>
-        <p class="doctors__delete-modal-warning">
-          Esta acción no se puede deshacer.
+          No se encontraron hospitales que coincidan con "{{
+            hospitalSearchQuery
+          }}"
         </p>
       </div>
 
-      <template #footer>
-        <button class="doctors__modal-button--cancel" @click="cancelDelete">
-          Cancelar
-        </button>
-        <button
-          class="doctors__modal-button--delete"
-          :disabled="isDeleting"
-          @click="handleDeleteDoctor"
+      <section v-else class="hospitals__main">
+        <div
+          v-for="hospital in sortedHospitals"
+          :key="hospital.id"
+          class="hospitals__card"
         >
-          {{ isDeleting ? "Eliminando..." : "Eliminar" }}
-        </button>
-      </template>
-    </AtomsModalBase>
+          <div>
+            <h2 class="hospitals__card-title">{{ hospital.name }}</h2>
+            <ul class="hospitals__card-info">
+              <li class="hospitals__card-info--item">
+                {{
+                  [
+                    hospital.address,
+                    hospital.street_number,
+                    hospital.city_name,
+                    hospital.province,
+                  ]
+                    .filter(Boolean)
+                    .join(", ")
+                }}
+              </li>
+              <li
+                v-if="hospital.floor || hospital.door_number"
+                class="hospitals__card-info--item"
+              >
+                <span v-if="hospital.floor">Piso {{ hospital.floor }}</span>
+                <span v-if="hospital.floor && hospital.door_number"> - </span>
+                <span v-if="hospital.door_number"
+                  >Puerta {{ hospital.door_number }}</span
+                >
+              </li>
+            </ul>
+          </div>
+          <div class="hospitals__card-actions">
+            <button
+              class="panel__button--outline"
+              aria-label="Editar hospital"
+              @click="handleAddOrEditHospital(hospital)"
+            >
+              <AtomsIconsPenLineIcon size="20" />
+            </button>
+            <button
+              class="panel__button--outline"
+              aria-label="Eliminar hospital"
+              @click="handleDeleteHospital(hospital)"
+            >
+              <AtomsIconsTrashIcon size="20" />
+            </button>
+          </div>
+        </div>
+      </section>
 
-    <MedicosModalesAgregarMedicoRelacionado
-      ref="editModalRef"
-      :edit-mode="isEditModalOpen"
-      :doctor-data="doctorToEdit || undefined"
-      :existing-packs="editDoctorPacks"
-      :supplier-id="doctorToEdit?.id"
-      @doctor-updated="handleDoctorUpdated"
-    >
-      <template #trigger="{ open }"> </template>
-    </MedicosModalesAgregarMedicoRelacionado>
+      <MedicosModalesEliminarHospital
+        @hospital-deleted="handleHospitalModalClosed"
+      />
+      <MedicosModalesAgregarHospital
+        @hospital-created="handleHospitalModalClosed"
+        @hospital-updated="handleHospitalModalClosed"
+      />
+    </template>
   </NuxtLayout>
   <MedicosRegistroOnboarding />
 </template>
@@ -175,6 +338,8 @@
 <script lang="ts" setup>
 import type { TableColumn } from "@/components/ui/appointment-table-base.vue";
 import { usePackage, useSupplier } from "@/composables/api";
+import type { CreateHospital } from "@/composables/api/useSupplier";
+import { useDebounceFn } from "@/composables/useDebounce";
 import type { IRelatedMedicalFormData, Supplier } from "@/types";
 import { jwtDecode } from "jwt-decode";
 
@@ -190,6 +355,8 @@ interface Doctor extends IRelatedMedicalFormData {
   id: number;
   createdAt?: string;
 }
+
+const activeTab = ref<"doctors" | "hospitals">("doctors");
 
 const { getToken } = useAuthToken();
 const { fetchAllSuppliers, fetchSpecialtyBySupplier, deleteSupplier } =
@@ -216,31 +383,11 @@ const loadingDoctorId = ref<number | null>(null);
 const editModalRef = ref<any>(null);
 
 const columns: TableColumn[] = [
-  {
-    key: "fullName",
-    label: "Nombre completo",
-    sortable: true,
-  },
-  {
-    key: "medicalCode",
-    label: "Código médico",
-    sortable: true,
-  },
-  {
-    key: "documentNumber",
-    label: "Documento",
-    sortable: true,
-  },
-  {
-    key: "medicalType",
-    label: "Tipo",
-    sortable: true,
-  },
-  {
-    key: "specialties",
-    label: "Especialidades",
-    sortable: false,
-  },
+  { key: "fullName", label: "Nombre completo", sortable: true },
+  { key: "medicalCode", label: "Código médico", sortable: true },
+  { key: "documentNumber", label: "Documento", sortable: true },
+  { key: "medicalType", label: "Tipo", sortable: true },
+  { key: "specialties", label: "Especialidades", sortable: false },
   {
     key: "actions",
     label: "Acciones",
@@ -321,9 +468,7 @@ const loadRelatedDoctors = async (): Promise<void> => {
 };
 
 const filteredDoctors = computed(() => {
-  if (!searchQuery.value) {
-    return relatedDoctors.value;
-  }
+  if (!searchQuery.value) return relatedDoctors.value;
 
   const q = searchQuery.value.toLowerCase();
   return relatedDoctors.value.filter(
@@ -337,7 +482,6 @@ const filteredDoctors = computed(() => {
 const handleEditDoctor = async (doctor: Doctor) => {
   try {
     loadingDoctorId.value = doctor.id;
-    console.log("✏️ Editando médico:", doctor);
 
     doctorToEdit.value = {
       ...doctor,
@@ -357,14 +501,11 @@ const handleEditDoctor = async (doctor: Doctor) => {
     await packagesApi.request();
     const packages = packagesApi.response.value?.data || [];
 
-    console.log("📦 Packs recibidos del API:", packages);
-
     editDoctorPacks.value = packages.map((pkg: any) => {
       let precio = 0;
 
       if (pkg.product?.value1) {
         precio = parseFloat(pkg.product.value1);
-
         if (pkg.discount && pkg.discount > 0) {
           const discountAmount = (precio * pkg.discount) / 100;
           precio = precio - discountAmount;
@@ -380,20 +521,17 @@ const handleEditDoctor = async (doctor: Doctor) => {
         procedimiento: pkg.procedure?.code || "",
         producto: pkg.product?.code || "",
         servicios: pkg.services_offer?.ASSESSMENT_DETAILS || [],
-        precio: precio,
+        precio,
         precioValoracion: 25000,
         disponibilidad: [],
       };
     });
-
-    console.log("📦 Packs mapeados:", editDoctorPacks.value);
 
     isEditModalOpen.value = true;
 
     await nextTick();
 
     if (editModalRef.value?.openModal) {
-      console.log("🔓 Abriendo modal de edición");
       editModalRef.value.openModal();
     }
   } catch (error) {
@@ -409,8 +547,6 @@ const handleDoctorAdded = async () => {
 };
 
 const handleDoctorUpdated = async () => {
-  console.log("✅ Doctor actualizado, limpiando estado");
-
   if (editModalRef.value?.closeModal) {
     editModalRef.value.closeModal();
   }
@@ -453,17 +589,207 @@ const handleDeleteDoctor = async () => {
   }
 };
 
+const { openModal } = useMedicalModalManager();
+
+const isLoadingHospitals = ref(true);
+const hospitals = ref<Supplier[]>([]);
+const hospitalSearchQuery = ref("");
+const sortOrder = ref("name");
+
+const loadHospitals = async () => {
+  isLoadingHospitals.value = true;
+  try {
+    const { response, error, request } = fetchAllSuppliers();
+    await request();
+
+    if (error.value) {
+      console.error("Error al cargar hospitales:", error.value);
+      return;
+    }
+
+    if (response.value?.data) {
+      hospitals.value = response.value.data.filter(
+        (supplier: Supplier) => supplier.is_hospital,
+      );
+    }
+  } catch (err) {
+    console.error("Error al cargar hospitales:", err);
+  } finally {
+    isLoadingHospitals.value = false;
+  }
+};
+
+const filteredHospitals = computed(() => {
+  if (!hospitalSearchQuery.value) return hospitals.value;
+
+  const query = hospitalSearchQuery.value.toLowerCase();
+  return hospitals.value.filter(
+    (hospital) =>
+      hospital.name.toLowerCase().includes(query) ||
+      hospital.city_name?.toLowerCase().includes(query) ||
+      hospital.address?.toLowerCase().includes(query),
+  );
+});
+
+const sortedHospitals = computed(() => {
+  const sorted = [...filteredHospitals.value];
+
+  switch (sortOrder.value) {
+    case "name":
+      return sorted.sort((a, b) => a.name.localeCompare(b.name));
+    case "recent":
+      return sorted.sort(
+        (a, b) =>
+          new Date(b.created_date || 0).getTime() -
+          new Date(a.created_date || 0).getTime(),
+      );
+    default:
+      return sorted;
+  }
+});
+
+const mapSupplierToHospitalData = (
+  supplier: Supplier,
+): Partial<CreateHospital> => {
+  const rep = supplier.legal_representative as any;
+  const legalRepresentativeString =
+    typeof supplier.legal_representative === "string"
+      ? supplier.legal_representative
+      : (rep?.name ?? rep?.full_name ?? "");
+
+  return {
+    name: supplier.name,
+    email: supplier.email,
+    phone_number: supplier.phone_number,
+    country_iso_code: supplier.country_iso_code,
+    province: supplier.province,
+    city_name: supplier.city_name,
+    address: supplier.address || "",
+    street_number: supplier.street_number || "",
+    postal_code: supplier.postal_code || "",
+    floor: supplier.floor || "",
+    door_number: supplier.door_number || "",
+    id_type: "JURIDICAL_DNI",
+    card_id: supplier.card_id,
+    legal_representative: legalRepresentativeString,
+    is_hospital: true,
+    description: supplier.description || "",
+  };
+};
+
+const handleAddOrEditHospital = (hospital: Supplier | null = null) => {
+  if (hospital) {
+    openModal("agregarHospital", {
+      mode: "edit",
+      hospitalId: hospital.id.toString(),
+      hospitalData: mapSupplierToHospitalData(hospital),
+    });
+  } else {
+    openModal("agregarHospital", { mode: "create" });
+  }
+};
+
+const handleDeleteHospital = (hospital: Supplier) => {
+  openModal("eliminarHospital", {
+    hospitalId: hospital.id.toString(),
+    hospitalName: hospital.name,
+  });
+};
+
+const handleHospitalSearch = useDebounceFn((value: string) => {
+  hospitalSearchQuery.value = value;
+}, 300);
+
+const handleSortChange = (value: string) => {
+  sortOrder.value = value;
+};
+
+const handleHospitalModalClosed = () => {
+  loadHospitals();
+};
+
 onMounted(async () => {
   isLoading.value = true;
   const id = await fetchSupplierId();
   if (id) await loadRelatedDoctors();
   isLoading.value = false;
+
+  loadHospitals();
+
+  window.addEventListener("hospital-updated", handleHospitalModalClosed);
+  window.addEventListener("hospital-created", handleHospitalModalClosed);
+  window.addEventListener("hospital-deleted", handleHospitalModalClosed);
+});
+
+onUnmounted(() => {
+  window.removeEventListener("hospital-updated", handleHospitalModalClosed);
+  window.removeEventListener("hospital-created", handleHospitalModalClosed);
+  window.removeEventListener("hospital-deleted", handleHospitalModalClosed);
 });
 </script>
 
 <style lang="scss" scoped>
-.doctors__header {
+.panel__header {
   margin-bottom: $spacing-lg;
+}
+
+.panel__tabs {
+  display: flex;
+  gap: 0;
+  border-bottom: 2px solid #e4e7ec;
+  margin-bottom: 1.25rem;
+}
+
+.panel__tab {
+  padding: 0.625rem 1.25rem;
+  font-weight: 600;
+  font-size: 14px;
+  color: #667085;
+  background: none;
+  border: none;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -2px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+
+  &:hover {
+    color: $color-primary;
+  }
+
+  &--active {
+    color: $color-primary;
+    border-bottom-color: $color-primary;
+  }
+}
+
+.panel__button--primary {
+  @include primary-button;
+  white-space: nowrap;
+
+  @include respond-to-max(md) {
+    width: 100%;
+  }
+}
+
+.panel__button--outline {
+  @include outline-button;
+  white-space: nowrap;
+}
+
+.panel__error {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background-color: #fee2e2;
+  color: $color-error;
+  padding: $spacing-md;
+  border-radius: $border-radius-md;
+  border: 1px solid #fecaca;
+
+  p {
+    margin: 0;
+    font-weight: 500;
+  }
 }
 
 .doctors__controls {
@@ -476,15 +802,6 @@ onMounted(async () => {
   @include respond-to-max(md) {
     flex-direction: column;
     align-items: stretch;
-  }
-}
-
-.doctors__button--primary {
-  @include primary-button;
-  white-space: nowrap;
-
-  @include respond-to-max(md) {
-    width: 100%;
   }
 }
 
@@ -592,22 +909,6 @@ onMounted(async () => {
   animation: spin 0.6s linear infinite;
 }
 
-.doctors__error {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  background-color: #fee2e2;
-  color: $color-error;
-  padding: $spacing-md;
-  border-radius: $border-radius-md;
-  border: 1px solid #fecaca;
-
-  p {
-    margin: 0;
-    font-weight: 500;
-  }
-}
-
 .doctors__empty-state {
   text-align: center;
   padding: 40px 20px;
@@ -667,6 +968,119 @@ onMounted(async () => {
   }
 }
 
+.hospitals__controls {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 0.5rem;
+
+  @include respond-to-max(md) {
+    flex-direction: column;
+    align-items: stretch;
+  }
+}
+
+.hospitals__controls-right {
+  display: flex;
+  gap: 0.75rem;
+  align-items: center;
+  flex-shrink: 0;
+}
+
+.hospitals__subtext {
+  font-weight: 400;
+  font-size: 14px;
+  line-height: 140%;
+  color: #6d758f;
+  margin-bottom: 1rem;
+}
+
+.hospitals__main {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  margin-bottom: 1rem;
+
+  @include respond-to(md) {
+    gap: 1.5rem;
+    margin-bottom: 1.5rem;
+  }
+}
+
+.hospitals__loading,
+.hospitals__empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 3rem 1rem;
+  text-align: center;
+  gap: 1rem;
+
+  p {
+    color: #6d758f;
+    font-size: 1rem;
+  }
+}
+
+.hospitals__card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: $white;
+  border: 1px solid #f1f3f7;
+  padding: 10px 14px;
+  border-radius: 15px;
+  transition: box-shadow 0.2s;
+
+  &:hover {
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  }
+}
+
+.hospitals__card-title {
+  font-weight: 600;
+  font-size: 14px;
+  line-height: 24px;
+  padding: 0;
+  margin: 0;
+  color: #19213d;
+}
+
+.hospitals__card-info {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+
+  &--item {
+    font-weight: 500;
+    font-size: 14px;
+    line-height: 24px;
+    color: #6d758f;
+  }
+}
+
+.hospitals__card-actions {
+  display: flex;
+  gap: 0.5rem;
+  flex-shrink: 0;
+}
+
+.dropdown-menu {
+  min-width: 160px;
+}
+
+.dropdown-item {
+  cursor: pointer;
+
+  &:active {
+    background-color: $primary-aqua;
+  }
+}
+
 @keyframes spin {
   to {
     transform: rotate(360deg);
@@ -674,7 +1088,7 @@ onMounted(async () => {
 }
 
 @include respond-to-max(sm) {
-  .doctors__header {
+  .panel__header {
     margin-bottom: 20px;
   }
 
