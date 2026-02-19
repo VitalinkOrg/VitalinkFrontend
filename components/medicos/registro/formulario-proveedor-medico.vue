@@ -269,7 +269,8 @@
                   class="icon icon-tabler icons-tabler-outline icon-tabler-info-circle tooltip-trigger"
                 />
                 <div class="tooltip-content">
-                  La contraseña debe tener al menos 8 caracteres
+                  La contraseña debe tener mínimo 8 caracteres e incluir:
+                  letras, números y símbolos (ejemplo: !@#$%^&*)
                 </div>
               </div>
             </label>
@@ -308,7 +309,7 @@
               "
               class="registro-form__error-message"
             >
-              La contraseña debe tener al menos 8 caracteres
+              {{ passwordErrorMessage }}
             </small>
           </div>
 
@@ -433,7 +434,28 @@ const isPhoneValid = computed(() => {
 });
 
 const isPasswordValid = computed(() => {
-  return props.supplierFormData.password.length >= 8;
+  if (!props.supplierFormData.password) return false;
+
+  const password = props.supplierFormData.password;
+
+  const hasMinLength = password.length >= 8;
+  const hasLetter = /[a-zA-Z]/.test(password);
+  const hasNumber = /\d/.test(password);
+  const hasSymbol = /[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(password);
+
+  return hasMinLength && hasLetter && hasNumber && hasSymbol;
+});
+
+const passwordErrorMessage = computed(() => {
+  if (!props.supplierFormData.password) return "";
+
+  const password = props.supplierFormData.password;
+
+  if (!isPasswordValid.value) {
+    return "La contraseña debe tener mínimo 8 caracteres e incluir: letras, números y símbolos (!@#$%^&*-_+=[]{}|:;<>,.?/)";
+  }
+
+  return "";
 });
 
 const emailMismatch = computed(() => {
