@@ -71,18 +71,6 @@ export interface IPaciente {
   id: number;
 }
 
-export interface ICita {
-  id: string;
-  medico: IMedico;
-  fecha: string;
-  hora: string;
-  procedimiento: string; //servicio
-  lugar: IDireccion;
-  estado: ECitaEstado;
-  paciente?: string;
-  vaucher?: IVaucher[id];
-}
-
 export interface IMedico {
   id: string;
   nombre: string;
@@ -269,7 +257,6 @@ export interface IRelatedMedicalFormData {
   validLicenseFile: File | null;
   medicalType: string;
   specialties: MedicalSpecialty[];
-  valoracionCost: number;
   useSameDataAsSupplier?: boolean;
 }
 
