@@ -51,7 +51,6 @@ const handleGetHistory = async () => {
   const response = api.response.value;
 
   if (response?.data) {
-    console.log({ history });
     history.value = response.data;
   }
 };

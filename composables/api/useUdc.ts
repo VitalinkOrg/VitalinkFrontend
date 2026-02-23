@@ -9,6 +9,7 @@ type UdcType =
   | "MEDICAL_TYPE"
   | "REVIEW"
   | "ASSESSMENT_DETAIL"
+  | "ODONTOLOGHY_MEDICAL"
   | "ASSESSMENT";
 
 export function useUdc() {
@@ -18,7 +19,7 @@ export function useUdc() {
   const fetchUdc = (
     type: UdcType,
     params?: Record<string, string>,
-    options?: { authRequired?: boolean }
+    options?: { authRequired?: boolean },
   ): UsableAPI<ApiResponse<IUdc[]>> => {
     const { authRequired = true } = options || {};
 

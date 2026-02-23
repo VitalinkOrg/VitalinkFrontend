@@ -91,6 +91,18 @@
               {{ formatCurrency(18000, { decimalPlaces: 0 }) }}
             </td>
           </tr>
+          <tr class="reservation-confirmation__table-row">
+            <td
+              class="reservation-confirmation__table-cell reservation-confirmation__table-cell--label"
+            >
+              Precio descuento Vitalink
+            </td>
+            <td
+              class="reservation-confirmation__table-cell reservation-confirmation__table-cell--value"
+            >
+              /* Agregar precio descuento vitalink */
+            </td>
+          </tr>
         </tbody>
       </table>
     </div>
@@ -125,7 +137,7 @@ const getSelectedServiceName = computed(() => {
       return "N/A";
     }
     const service = props.services.find(
-      (service) => service.medical_specialty?.id === props.selectedSpecialtyId
+      (service) => service.medical_specialty?.id === props.selectedSpecialtyId,
     );
     return service?.medical_specialty?.name || "N/A";
   } catch (error) {
@@ -140,10 +152,10 @@ const getSelectedProcedureName = computed(() => {
       return "N/A";
     }
     const allProcedures = props.services.flatMap(
-      (service) => service.procedures || []
+      (service) => service.procedures || [],
     );
     const procedure = allProcedures.find(
-      (procedure) => procedure.procedure?.id === props.selectedProcedureId
+      (procedure) => procedure.procedure?.id === props.selectedProcedureId,
     );
     return procedure?.procedure?.name || "N/A";
   } catch (error) {

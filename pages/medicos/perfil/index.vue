@@ -20,6 +20,7 @@ const address = ref("");
 const postalCode = ref("");
 const cityName = ref("");
 const countryIsoCode = ref("");
+const isJuridical = ref(false);
 
 const countryDropdownRef = ref<HTMLElement>();
 const countrySearchRef = ref<HTMLInputElement>();
@@ -110,7 +111,7 @@ const filteredCountries = computed(() => {
     return countries;
   }
   return countries.filter((country) =>
-    country.name.toLowerCase().includes(countrySearchText.value.toLowerCase())
+    country.name.toLowerCase().includes(countrySearchText.value.toLowerCase()),
   );
 });
 
@@ -143,9 +144,16 @@ const handleCountrySearchInput = () => {
 const initializeForm = () => {
   const userInfo = getUserInfo();
 
-  const nameParts = userInfo.name?.split(" ") || [];
-  firstName.value = nameParts[0] || "";
-  lastName.value = nameParts.slice(1).join(" ") || "";
+  isJuridical.value = userInfo.id_type?.code === "JURIDICAL_DNI";
+
+  if (isJuridical.value) {
+    firstName.value = userInfo.name || "";
+    lastName.value = "";
+  } else {
+    const nameParts = userInfo.name?.split(" ") || [];
+    firstName.value = nameParts[0] || "";
+    lastName.value = nameParts.slice(1).join(" ") || "";
+  }
 
   phoneNumber.value = userInfo.phone_number || "";
   phoneCountryCode.value = userInfo.country_iso_code || "CRC";
@@ -190,7 +198,9 @@ onClickOutside(countryDropdownRef, () => {
 const handleUpdateHospital = async () => {
   try {
     const payload = {
-      name: `${firstName.value} ${lastName.value}`.trim(),
+      name: isJuridical.value
+        ? firstName.value.trim()
+        : `${firstName.value} ${lastName.value}`.trim(),
       phone_number: phoneNumber.value,
       postal_code: postalCode.value,
       city_name: cityName.value,
@@ -214,32 +224,55 @@ const handleUpdateHospital = async () => {
     <h4 class="profile-form__title">Datos Personales</h4>
     <form class="profile-form" @submit.prevent="handleUpdateHospital">
       <div class="profile-form__row profile-form__row--columns-2">
-        <div class="profile-form__field">
-          <label for="nombre" class="profile-form__label">Nombre (s)</label>
+        <!-- Campo único para razón social -->
+        <div
+          v-if="isJuridical"
+          class="profile-form__field profile-form__field--full-width"
+        >
+          <label for="razon-social" class="profile-form__label">
+            Razón Social
+          </label>
           <input
             type="text"
             class="profile-form__input"
-            placeholder="Escribe tu nombre"
+            placeholder="Nombre de la razón social"
             v-model="firstName"
-            name="nombre"
-            id="nombre"
+            name="razon-social"
+            id="razon-social"
           />
         </div>
+
+        <template v-else>
+          <div class="profile-form__field">
+            <label for="nombre" class="profile-form__label">Nombre (s)</label>
+            <input
+              type="text"
+              class="profile-form__input"
+              placeholder="Escribe tu nombre"
+              v-model="firstName"
+              name="nombre"
+              id="nombre"
+            />
+          </div>
+          <div class="profile-form__field">
+            <label for="apellido" class="profile-form__label">
+              Apellido (s)
+            </label>
+            <input
+              type="text"
+              class="profile-form__input"
+              placeholder="Escribe tu apellido"
+              v-model="lastName"
+              id="apellido"
+              name="apellido"
+            />
+          </div>
+        </template>
+
         <div class="profile-form__field">
-          <label for="apellido" class="profile-form__label">Apellido (s)</label>
-          <input
-            type="text"
-            class="profile-form__input"
-            placeholder="Escribe tu apellido"
-            v-model="lastName"
-            id="apellido"
-            name="apellido"
-          />
-        </div>
-        <div class="profile-form__field">
-          <label class="profile-form__label" for="telefono"
-            >Número de teléfono</label
-          >
+          <label class="profile-form__label" for="telefono">
+            Número de teléfono
+          </label>
           <div class="profile-form__phone-group">
             <UiDropdownBase
               v-model="phoneCountryCode"
@@ -254,7 +287,7 @@ const handleUpdateHospital = async () => {
               type="tel"
               :value="formattedPhone"
               @input="handlePhoneInput"
-              placeholder="+1(555) 000-0000"
+              :placeholder="`+${currentPhoneCode} 0000-0000`"
               id="telefono"
               name="telefono"
               class="profile-form__input profile-form__phone-input"
@@ -479,6 +512,10 @@ const handleUpdateHospital = async () => {
 
     @include respond-to-max(sm) {
       margin-bottom: 0.5rem;
+    }
+
+    &--full-width {
+      grid-column: 1 / -1;
     }
   }
 
