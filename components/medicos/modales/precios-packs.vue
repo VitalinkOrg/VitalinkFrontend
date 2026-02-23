@@ -139,6 +139,62 @@
           />
         </div>
       </div>
+
+      <div class="packs-config__field">
+        <label class="packs-config__label">Costo de cita de valoración</label>
+        <div class="packs-config__price-input-wrapper">
+          <span class="packs-config__currency-symbol">₡</span>
+          <input
+            type="number"
+            min="0"
+            step="1000"
+            v-model.number="pack.precioValoracion"
+            class="packs-config__price-input packs-config__price-input--with-symbol"
+            :class="{
+              'packs-config__input--error':
+                !pack.precioValoracion || pack.precioValoracion <= 0,
+            }"
+            placeholder="18000"
+          />
+        </div>
+        <small
+          v-if="!pack.precioValoracion || pack.precioValoracion <= 0"
+          class="packs-config__error-message"
+        >
+          El costo de valoración es requerido
+        </small>
+      </div>
+
+      <div class="packs-config__field">
+        <label class="packs-config__checkbox-wrapper">
+          <input
+            type="checkbox"
+            v-model="pack.aplicarDescuentoVitalink"
+            class="packs-config__checkbox"
+          />
+          <span class="packs-config__checkbox-label">
+            Aplicar precio descuento Vitalink
+          </span>
+        </label>
+
+        <div
+          v-if="pack.aplicarDescuentoVitalink"
+          class="packs-config__discount-field"
+        >
+          <label class="packs-config__label">Precio descuento</label>
+          <div class="packs-config__price-input-wrapper">
+            <span class="packs-config__currency-symbol">₡</span>
+            <input
+              type="number"
+              min="0"
+              step="1000"
+              v-model.number="pack.discount"
+              class="packs-config__price-input packs-config__price-input--with-symbol"
+              placeholder="0"
+            />
+          </div>
+        </div>
+      </div>
     </div>
   </div>
 </template>
@@ -153,6 +209,9 @@ interface Pack {
   producto: string;
   servicios: string[];
   precio: number;
+  precioValoracion: number;
+  aplicarDescuentoVitalink: boolean;
+  discount: number;
   disponibilidad: DayAvailability[];
 }
 
@@ -189,6 +248,8 @@ const procedures = ref<IUdc[]>([]);
 const selectedService = ref<string>("");
 const activePackIndex = ref<number>(0);
 
+const DEFAULT_VALORACION_COST = 18000;
+
 const specialtiesForDropdown = computed(() =>
   props.availableSpecialties.map((s) => ({
     value: s.code,
@@ -210,19 +271,20 @@ const availableServices = computed(() =>
   })),
 );
 
+const createEmptyPack = (): Pack => ({
+  especialidad: "",
+  procedimiento: "",
+  producto: "",
+  servicios: [],
+  precio: 0,
+  precioValoracion: DEFAULT_VALORACION_COST,
+  aplicarDescuentoVitalink: false,
+  discount: 0,
+  disponibilidad: [],
+});
+
 const internalPacks = ref<Pack[]>(
-  props.modelValue.length
-    ? [...props.modelValue]
-    : [
-        {
-          especialidad: "",
-          procedimiento: "",
-          producto: "",
-          servicios: [],
-          precio: 0,
-          disponibilidad: [],
-        },
-      ],
+  props.modelValue.length ? [...props.modelValue] : [createEmptyPack()],
 );
 
 watch(internalPacks, (val) => emit("update:modelValue", val), { deep: true });
@@ -234,7 +296,8 @@ const isPackComplete = (pack: Pack): boolean => {
     pack.especialidad &&
     pack.procedimiento &&
     pack.producto &&
-    pack.servicios.length > 0
+    pack.servicios.length > 0 &&
+    pack.precioValoracion > 0
   );
 };
 
@@ -243,14 +306,7 @@ const setActivePack = (index: number) => {
 };
 
 const addPack = () => {
-  internalPacks.value.push({
-    especialidad: "",
-    procedimiento: "",
-    producto: "",
-    servicios: [],
-    precio: 0,
-    disponibilidad: [],
-  });
+  internalPacks.value.push(createEmptyPack());
   activePackIndex.value = internalPacks.value.length - 1;
 };
 
@@ -449,6 +505,24 @@ onMounted(async () => {
     width: 100%;
   }
 
+  &__input--error {
+    border-color: #dc2626 !important;
+    background-color: #fef2f2 !important;
+
+    &:focus {
+      border-color: #dc2626 !important;
+      box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.1) !important;
+    }
+  }
+
+  &__error-message {
+    display: block;
+    color: #dc2626;
+    font-size: 0.875rem;
+    margin-top: 0.25rem;
+    line-height: 1.25;
+  }
+
   &__price-input-wrapper {
     position: relative;
   }
@@ -464,6 +538,33 @@ onMounted(async () => {
 
   &__price-input--with-symbol {
     padding-left: 2.25rem;
+  }
+
+  &__checkbox-wrapper {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    cursor: pointer;
+  }
+
+  &__checkbox {
+    width: 1rem;
+    height: 1rem;
+    accent-color: $color-primary;
+    cursor: pointer;
+  }
+
+  &__checkbox-label {
+    font-weight: 500;
+    font-size: 0.875rem;
+    color: #344054;
+  }
+
+  &__discount-field {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    margin-top: 0.5rem;
   }
 
   &__services-selector {

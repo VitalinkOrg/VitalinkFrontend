@@ -302,37 +302,6 @@
                   Has alcanzado el máximo de 3 especialidades
                 </small>
               </div>
-
-              <div class="doctor-form__group">
-                <label for="valoracionCost" class="doctor-form__label">
-                  Costo de cita de valoración
-                </label>
-                <div class="doctor-form__price-input-wrapper">
-                  <span class="doctor-form__currency-symbol">₡</span>
-                  <input
-                    v-model.number="formData.valoracionCost"
-                    @blur="touched.valoracionCost = true"
-                    type="number"
-                    min="0"
-                    step="1000"
-                    class="doctor-form__input doctor-form__input--with-symbol"
-                    :class="{
-                      'input-error':
-                        touched.valoracionCost && !formData.valoracionCost,
-                    }"
-                    placeholder="Ingrese el costo de valoración"
-                    :disabled="isLoadingSubmit"
-                    id="valoracionCost"
-                    required
-                  />
-                </div>
-                <small
-                  v-if="touched.valoracionCost && !formData.valoracionCost"
-                  class="doctor-form__error-message"
-                >
-                  El costo de valoración es requerido
-                </small>
-              </div>
             </form>
 
             <div v-if="errorMessage" class="doctor-form__error">
@@ -503,6 +472,9 @@ interface Pack {
   producto: string;
   servicios: string[];
   precio: number;
+  precioValoracion: number;
+  aplicarDescuentoVitalink: boolean;
+  discount: number;
   disponibilidad: DayAvailability[];
 }
 
@@ -587,7 +559,6 @@ const formData = ref<IRelatedMedicalFormData>({
   validLicenseFile: null,
   medicalType: "",
   specialties: [],
-  valoracionCost: 0,
 });
 
 const originalFormData = ref<IRelatedMedicalFormData | null>(null);
@@ -601,7 +572,6 @@ const touched = reactive({
   validLicenseFile: false,
   medicalType: false,
   specialties: false,
-  valoracionCost: false,
 });
 
 const packs = ref<Pack[]>([]);
@@ -638,8 +608,7 @@ const isStep1Complete = computed(() => {
     formData.value.fullName.trim() !== "" &&
     formData.value.medicalCode.trim() !== "" &&
     formData.value.medicalType.trim() !== "" &&
-    formData.value.specialties.length > 0 &&
-    formData.value.valoracionCost > 0;
+    formData.value.specialties.length > 0;
 
   if (isEditMode.value) {
     return baseValidation;
@@ -653,33 +622,24 @@ const isStep1Complete = computed(() => {
 });
 
 const isStep2Complete = computed(() => {
-  if (!isEditMode.value) {
-    return (
-      packs.value.length > 0 &&
-      packs.value.every(
-        (pack) =>
-          pack.especialidad &&
-          pack.procedimiento &&
-          pack.producto &&
-          pack.servicios.length,
-      )
-    );
-  }
+  const packsToValidate = isEditMode.value
+    ? packs.value.filter((_, index) => index >= originalPacks.value.length)
+    : packs.value;
 
-  const newPacks = packs.value.filter(
-    (pack, index) => index >= originalPacks.value.length,
-  );
-
-  if (newPacks.length === 0) {
+  if (isEditMode.value && packsToValidate.length === 0) {
     return true;
   }
 
-  return newPacks.every(
-    (pack) =>
-      pack.especialidad &&
-      pack.procedimiento &&
-      pack.producto &&
-      pack.servicios.length > 0,
+  return (
+    packsToValidate.length > 0 &&
+    packsToValidate.every(
+      (pack) =>
+        pack.especialidad &&
+        pack.procedimiento &&
+        pack.producto &&
+        pack.servicios.length > 0 &&
+        pack.precioValoracion > 0,
+    )
   );
 });
 
@@ -822,7 +782,6 @@ const loadDoctorData = () => {
     validLicenseFile: null,
     medicalType: props.doctorData.medicalType || "",
     specialties: props.doctorData.specialties || [],
-    valoracionCost: props.doctorData.valoracionCost || 0,
   };
 
   formData.value = { ...data };
@@ -896,7 +855,6 @@ const resetForm = () => {
     validLicenseFile: null,
     medicalType: "",
     specialties: [],
-    valoracionCost: 0,
   };
   originalFormData.value = null;
   packs.value = [];
@@ -1160,7 +1118,8 @@ const handleSavePacks = async (supplierId: number) => {
           specialty_id: specialtyId,
           procedure_code: pack.procedimiento,
           product_code: pack.producto,
-          discount: 0,
+          discount: pack.aplicarDescuentoVitalink ? Number(pack.discount) : 0,
+          valoracion_cost: pack.precioValoracion,
           services_offer: {
             ASSESSMENT_DETAILS: pack.servicios,
           },
@@ -1183,7 +1142,7 @@ const handleSavePacks = async (supplierId: number) => {
       }
     }
   } catch (error) {
-    console.error("❌ Error en handleSavePacks:", error);
+    console.error("❌ Error:", error);
     throw error;
   }
 };
@@ -1473,7 +1432,8 @@ const handleSavePacksForNewSupplier = async (
           specialty_id: specialtyId,
           procedure_code: pack.procedimiento,
           product_code: pack.producto,
-          discount: 0,
+          discount: pack.aplicarDescuentoVitalink ? Number(pack.discount) : 0,
+          valoracion_cost: pack.precioValoracion,
           services_offer: {
             ASSESSMENT_DETAILS: pack.servicios,
           },
@@ -1496,7 +1456,7 @@ const handleSavePacksForNewSupplier = async (
       }
     }
   } catch (error) {
-    console.error("❌ Error en handleSavePacksForNewSupplier:", error);
+    console.error("❌ Error:", error);
     throw error;
   }
 };
@@ -1537,10 +1497,24 @@ const loadSpecialties = async () => {
   try {
     isLoadingSpecialties.value = true;
     const api = fetchUdc("MEDICAL_SPECIALTY", {}, { authRequired: false });
+    const apiOdontology = fetchUdc(
+      "ODONTOLOGHY_MEDICAL",
+      {},
+      { authRequired: false },
+    );
+
     await api.request();
+    await apiOdontology.request();
+
     const response = api.response.value;
+    const apiOdontologyResponse = apiOdontology.response.value;
+
     if (response && response.data) {
       specialties.value = response.data;
+    }
+
+    if (apiOdontologyResponse && apiOdontologyResponse.data) {
+      specialties.value = [...specialties.value, ...apiOdontologyResponse.data];
     }
   } catch (error) {
     console.error("Error loading specialties:", error);

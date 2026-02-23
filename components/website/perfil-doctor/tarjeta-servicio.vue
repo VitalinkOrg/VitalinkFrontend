@@ -1,5 +1,5 @@
 <script lang="ts" setup>
-import type { Customer, Package, Service, Supplier } from "~/types";
+import type { Customer, Package, Service, Supplier } from "@/types";
 
 interface SupplierReview {
   first_name: string;
@@ -43,10 +43,6 @@ const currentSupplier = computed<Supplier | Partial<Supplier> | null>(() => {
   return props.supplier || null;
 });
 
-const isAssessmentPackage = computed<boolean>(() => {
-  return props.pkg?.product?.name === "Cita de Valoración";
-});
-
 const packageName = computed<string>(() => {
   return props.pkg?.product?.name || "Paquete sin nombre";
 });
@@ -74,6 +70,30 @@ const originalPrice = computed<string>(() => {
 
 const hasDiscount = computed<boolean>(() => {
   return Boolean(props.pkg?.discount && props.pkg.discount > 0);
+});
+
+const valoracionCost = computed<number>(() => {
+  return (props.pkg as any)?.valoracion_cost ?? 0;
+});
+
+const discountPrice = computed<number>(() => {
+  return (props.pkg as any)?.discount_price ?? 0;
+});
+
+const hasVitalinkDiscount = computed<boolean>(() => {
+  return discountPrice.value > 0;
+});
+
+const formattedValoracionCost = computed<string>(() => {
+  return formatCurrency(valoracionCost.value);
+});
+
+const formattedDiscountPrice = computed<string>(() => {
+  return formatCurrency(discountPrice.value);
+});
+
+const effectiveValoracionPrice = computed<number>(() => {
+  return hasVitalinkDiscount.value ? discountPrice.value : valoracionCost.value;
 });
 
 const supplierName = computed<string>(() => {
@@ -105,34 +125,10 @@ const averageRating = computed<string>(() => {
 
   const total = props.supplierReviews.reduce(
     (sum, review) => sum + (review.score || 0),
-    0
+    0,
   );
   const average = total / props.supplierReviews.length;
   return average.toFixed(1);
-});
-
-const nextAvailabilityDate = computed<string>(() => {
-  const date = currentSupplier.value?.date_availability;
-  if (!date) return "No disponible";
-
-  try {
-    return formatDate(date);
-  } catch (error) {
-    console.error("Error formatting availability date:", error);
-    return date;
-  }
-});
-
-const nextAvailabilityTime = computed<string>(() => {
-  const time = currentSupplier.value?.hour_availability;
-  if (!time) return "No disponible";
-
-  try {
-    return formatTime(time);
-  } catch (error) {
-    console.error("Error formatting availability time:", error);
-    return time;
-  }
 });
 
 const servicesList = computed<string[]>(() => {
@@ -192,136 +188,144 @@ const closeModal = (): void => {
 </script>
 
 <template>
-  <div class="service-card" :class="{ 'service-card--king': isKingPackage }">
-    <div class="service-card__wrapper">
-      <div v-if="isAssessmentPackage" class="service-card__legend">
-        Primero vamos a valorarte
-      </div>
-
-      <div class="service-card__header">
-        <span v-if="isKingPackage">
-          <img
-            src="@/src/assets/crown.svg"
-            alt="Recomendado"
-            class="img-fluid"
-          />
-        </span>
-        {{ packageName }}
-      </div>
-
-      <div class="service-card__body">
-        <h5 class="service-card__price">
-          {{ packagePrice }}
-        </h5>
-
-        <p class="service-card__monthly-payment">
-          Cuotas mensuales desde ₡{{ getMonthlyPayment(pkg) }}
-        </p>
-
-        <p v-if="isAssessmentPackage" class="service-card__payment-disclaimer">
-          Podes pagar el día de tu cita
-        </p>
-
-        <p v-if="hasDiscount" class="service-card__discount">
-          Precio original
-          <span>{{ originalPrice }}</span>
-        </p>
-
-        <small class="service-card__disclaimer">
-          Los precios pueden variar según el diagnóstico del médico.
-        </small>
-
-        <p class="service-card__rating-wrapper">
-          <span class="service-card__rating">
-            <img src="@/src/assets/star.svg" alt="Rating" class="img-fluid" />
-            {{ averageRating }}
+  <div class="service-card-wrapper">
+    <div class="service-card" :class="{ 'service-card--king': isKingPackage }">
+      <div class="service-card__inner">
+        <div class="service-card__header">
+          <span v-if="isKingPackage">
+            <img
+              src="@/src/assets/crown.svg"
+              alt="Recomendado"
+              class="img-fluid"
+            />
           </span>
-          <span class="service-card__reviews">
-            ({{ reviewsCount }} {{ reviewsCount === 1 ? "Reseña" : "Reseñas" }})
-          </span>
-        </p>
-
-        <div v-if="isAssessmentPackage" class="service-card__availability">
-          <p class="service-card__availability-title">
-            Próxima Disponibilidad:
-          </p>
-          <p class="service-card__availability-info">
-            <span class="service-card__availability-date">
-              <span class="service-card__availability-icon">
-                <AtomsIconsCalendarIcon size="20" />
-              </span>
-              {{ nextAvailabilityDate }}
-            </span>
-            <span class="service-card__availability-time">
-              <span class="service-card__availability-icon">
-                <AtomsIconsClockIcon size="20" />
-              </span>
-              {{ nextAvailabilityTime }}
-            </span>
-          </p>
+          {{ packageName }}
         </div>
 
-        <div
-          v-if="!isAssessmentPackage && hasServices"
-          class="service-card__services-wrapper"
-        >
-          <p class="service-card__services-title">Servicios:</p>
-          <ul class="service-card__services">
-            <li
-              v-for="service in servicesList"
-              :key="service"
-              class="service-card__services-item"
+        <div class="service-card__body">
+          <h5 class="service-card__price">
+            {{ packagePrice }}
+          </h5>
+
+          <p class="service-card__monthly-payment">
+            Cuotas mensuales desde ₡{{ getMonthlyPayment(pkg) }}
+          </p>
+
+          <p v-if="hasDiscount" class="service-card__discount">
+            Precio original
+            <span>{{ originalPrice }}</span>
+          </p>
+
+          <small class="service-card__disclaimer">
+            Los precios pueden variar según el diagnóstico del médico.
+          </small>
+
+          <p class="service-card__rating-wrapper">
+            <span class="service-card__rating">
+              <img src="@/src/assets/star.svg" alt="Rating" class="img-fluid" />
+              {{ averageRating }}
+            </span>
+            <span class="service-card__reviews">
+              ({{ reviewsCount }}
+              {{ reviewsCount === 1 ? "Reseña" : "Reseñas" }})
+            </span>
+          </p>
+
+          <div v-if="hasServices" class="service-card__services-wrapper">
+            <p class="service-card__services-title">Servicios:</p>
+            <ul class="service-card__services">
+              <li
+                v-for="service in servicesList"
+                :key="service"
+                class="service-card__services-item"
+              >
+                <div class="service-card__services-icon-wrapper">
+                  <AtomsIconsCheckIcon class="service-card__services-icon" />
+                </div>
+                <p class="service-card__services-text">
+                  {{ getServiceLabel(service) }}
+                </p>
+              </li>
+            </ul>
+          </div>
+
+          <div v-else class="service-card__no-services">
+            <p>No hay servicios especificados para este paquete.</p>
+          </div>
+
+          <div class="service-card__footer-section">
+            <div class="service-card__valoracion-divider"></div>
+
+            <div class="service-card__valoracion-row">
+              <span class="service-card__valoracion-label">
+                Cita de valoración
+              </span>
+              <span
+                class="service-card__valoracion-price"
+                :class="{
+                  'service-card__valoracion-price--strikethrough':
+                    hasVitalinkDiscount,
+                }"
+              >
+                {{ formattedValoracionCost }}
+              </span>
+            </div>
+
+            <div
+              class="service-card__valoracion-row service-card__valoracion-row--discount"
             >
-              <div class="service-card__services-icon-wrapper">
-                <AtomsIconsCheckIcon class="service-card__services-icon" />
-              </div>
-              <p class="service-card__services-text">
-                {{ getServiceLabel(service) }}
-              </p>
-            </li>
-          </ul>
-        </div>
+              <span class="service-card__valoracion-discount-label">
+                Precio Vitalink
+              </span>
+              <span
+                class="service-card__valoracion-discount-price"
+                :class="{
+                  'service-card__valoracion-discount-price--inactive':
+                    !hasVitalinkDiscount,
+                }"
+              >
+                {{ hasVitalinkDiscount ? formattedDiscountPrice : "—" }}
+              </span>
+            </div>
 
-        <div
-          v-else-if="!isAssessmentPackage && !hasServices"
-          class="service-card__no-services"
-        >
-          <p>No hay servicios especificados para este paquete.</p>
+            <div class="service-card__cta">
+              <WebsiteReservarCitaValoracion
+                :selected-day="selectedDay"
+                :selected-hour="selectedHour"
+                :current-step="1"
+                :supplier-id="supplierId"
+                :supplier-name="supplierName"
+                :customer-id="customerInfo.id ?? ''"
+                :customer-name="customerInfo.name"
+                :customer-phone="customerInfo.phone"
+                :selected-package="pkg"
+                :services="supplierServices"
+                :selected-procedure-id="selectedProcedureId || 0"
+                :valoracion-price="effectiveValoracionPrice"
+              />
+            </div>
+          </div>
         </div>
-
-        <WebsiteReservarCitaValoracion
-          v-if="isAssessmentPackage"
-          :selected-day="selectedDay"
-          :selected-hour="selectedHour"
-          :current-step="1"
-          :supplier-id="supplierId"
-          :supplier-name="supplierName"
-          :customer-id="customerInfo.id ?? ''"
-          :customer-name="customerInfo.name"
-          :customer-phone="customerInfo.phone"
-          :selected-package="pkg"
-          :services="supplierServices"
-          :selected-procedure-id="selectedProcedureId || 0"
-        />
       </div>
     </div>
-  </div>
 
-  <WebsiteReservarModal
-    v-if="currentSupplier"
-    :selected-procedure-id="selectedProcedureId || 0"
-    :selected-specialty-id="selectedSpecialtyId || 0"
-    :user-info="customer"
-    :supplier-info="currentSupplier"
-    :doctor-info="currentSupplier"
-    :selected-day="selectedDay || ''"
-    :selected-hour="selectedHour || ''"
-    :selected-package="pkg"
-    :is-open="isOpenModal"
-    :current-step="currentModalStep"
-    :offers="offers"
-    @close="closeModal"
-  />
+    <WebsiteReservarModal
+      v-if="currentSupplier"
+      :selected-procedure-id="selectedProcedureId || 0"
+      :selected-specialty-id="selectedSpecialtyId || 0"
+      :user-info="customer"
+      :supplier-info="currentSupplier"
+      :doctor-info="currentSupplier"
+      :selected-day="selectedDay || ''"
+      :selected-hour="selectedHour || ''"
+      :selected-package="pkg"
+      :is-open="isOpenModal"
+      :current-step="currentModalStep"
+      :offers="offers"
+      :valoracion-price="effectiveValoracionPrice"
+      @close="closeModal"
+    />
+  </div>
 </template>
 
 <style scoped>
@@ -341,27 +345,30 @@ const closeModal = (): void => {
 </style>
 
 <style lang="scss" scoped>
+.service-card-wrapper {
+  display: flex;
+  flex-direction: column;
+  min-width: 256px;
+  max-width: 300px;
+  flex-shrink: 0;
+}
+
 .service-card {
   width: 100%;
-  height: 100%;
-  max-height: 510px;
+  flex: 1;
   border-radius: 20px;
   padding-bottom: 15px;
-  border-width: 1px;
   background-color: #ffffff;
   border: 1px solid #f1f3f7;
   box-shadow: 0px 2px 8px 0px #00000014;
   overflow: hidden;
-  min-height: 441px;
-  min-width: 256px;
-  max-width: 300px;
+  display: flex;
+  flex-direction: column;
 
-  &__wrapper {
-    height: 100%;
+  &__inner {
     display: flex;
-    background-color: #fff;
     flex-direction: column;
-    justify-content: space-between;
+    flex: 1;
   }
 
   &__header {
@@ -396,11 +403,10 @@ const closeModal = (): void => {
 
   &__body {
     padding: 0px 20px;
-    flex-grow: 1;
+    flex: 1;
     display: flex;
     flex-direction: column;
     gap: 8px;
-    height: 100%;
   }
 
   &__price {
@@ -431,69 +437,12 @@ const closeModal = (): void => {
     }
   }
 
-  &__legend {
-    font-weight: 500;
-    font-size: 12px;
-    line-height: 16px;
-    color: #0cadbb;
-    text-align: center;
-    padding: 8px 20px;
-    background-color: #f0feff;
-    border-bottom: 1px solid #e7f7f8;
-  }
-
   &__disclaimer {
     font-weight: 500;
     font-size: 12px;
     line-height: 16px;
     color: #6d758f;
     padding-bottom: 4px;
-  }
-
-  &__payment-disclaimer {
-    font-weight: 500;
-    font-size: 12px;
-    line-height: 16px;
-    color: #6d758f;
-    font-style: italic;
-    margin-bottom: 8px;
-  }
-
-  &__availability {
-    &-title {
-      font-weight: 500;
-      font-size: 13px;
-      line-height: 24px;
-      color: #6d758f;
-      margin-bottom: 5px;
-    }
-
-    &-info {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      flex-wrap: wrap;
-    }
-
-    &-date,
-    &-time {
-      display: flex;
-      align-items: center;
-      gap: 4px;
-      font-weight: 500;
-      font-size: 14px;
-      line-height: 24px;
-      color: #353e5c;
-    }
-
-    &-icon {
-      display: flex;
-      align-items: center;
-      svg {
-        width: 15px;
-        height: 15px;
-      }
-    }
   }
 
   &__rating-wrapper {
@@ -518,6 +467,18 @@ const closeModal = (): void => {
     font-size: 14px;
     font-weight: 300;
     color: #6d758f;
+  }
+
+  &__services-wrapper {
+    flex: 1;
+  }
+
+  &__services-title {
+    font-weight: 600;
+    font-size: 13px;
+    line-height: 16px;
+    color: #344054;
+    margin: 0 0 8px 0;
   }
 
   &__services {
@@ -560,26 +521,88 @@ const closeModal = (): void => {
     color: #353e5c;
   }
 
-  &__assessment-appointment-button {
-    @include outline-button;
-    width: 100%;
-    font-weight: 600;
-    font-size: 14px;
-    &--primary {
-      @include primary-button;
+  &__footer-section {
+    margin-top: auto;
+    padding-top: 8px;
+  }
+
+  &__valoracion-divider {
+    height: 1px;
+    background-color: #e4e7ec;
+    margin-bottom: 12px;
+  }
+
+  &__valoracion-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 6px;
+
+    &--discount {
+      margin-bottom: 0;
     }
   }
-}
 
-.service-card {
+  &__valoracion-label {
+    font-weight: 500;
+    font-size: 13px;
+    line-height: 16px;
+    color: #6d758f;
+  }
+
+  &__valoracion-price {
+    font-weight: 600;
+    font-size: 14px;
+    line-height: 20px;
+    color: #19213d;
+
+    &--strikethrough {
+      text-decoration: line-through;
+      color: #98a2b3;
+      font-weight: 500;
+      font-size: 13px;
+    }
+  }
+
+  &__valoracion-discount-label {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    font-weight: 600;
+    font-size: 13px;
+    line-height: 16px;
+    color: #0cadbb;
+  }
+
+  &__valoracion-discount-icon {
+    width: 14px;
+    height: 14px;
+    object-fit: contain;
+  }
+
+  &__valoracion-discount-price {
+    font-weight: 700;
+    font-size: 15px;
+    line-height: 20px;
+    color: #0cadbb;
+
+    &--inactive {
+      font-weight: 500;
+      font-size: 13px;
+      color: #98a2b3;
+    }
+  }
+
+  &__cta {
+    margin-top: 12px;
+    padding-bottom: 4px;
+  }
+
   &--king {
     border: 2px solid #3541b4;
 
     .service-card__header {
       color: #3541b4;
-    }
-    .service-card__assessment-appointment-button {
-      @include primary-button;
     }
   }
 }
