@@ -19,6 +19,8 @@ const emit = defineEmits<Emits>();
 
 const { formatPhone } = useFormat();
 
+const imageError = ref(false);
+
 const handleOpenModal = (): void => {
   emit("openModal");
 };
@@ -100,7 +102,6 @@ const patientsNumber = computed<string>(() => {
 });
 
 const averageRating = computed<number>(() => {
-  // TODO: Calculate from reviews when available
   return 5.0;
 });
 
@@ -129,17 +130,28 @@ const hasStatistics = computed<boolean>(() => {
     currentSupplier.value?.patients_number
   );
 });
+
+watch(
+  () => currentSupplier.value?.profile_picture_url,
+  () => {
+    imageError.value = false;
+  },
+);
 </script>
 
 <template>
   <div class="sidebar-column">
     <div class="profile-card">
       <div class="profile-card-body">
-        <img
-          :src="currentSupplier?.profile_picture_url ?? ''"
-          :alt="`Foto de ${supplierName}`"
-          class="profile-card-body__image"
-        />
+        <div class="profile-card-body__image-container">
+          <img
+            v-if="currentSupplier?.profile_picture_url && !imageError"
+            :src="currentSupplier.profile_picture_url"
+            :alt="`Foto de ${supplierName}`"
+            class="profile-card-body__image"
+            @error="imageError = true"
+          />
+        </div>
 
         <div class="profile-card-body__info-wrapper">
           <div v-if="reviewsCount > 0" class="profile-card-body__rating-info">
@@ -322,12 +334,12 @@ const hasStatistics = computed<boolean>(() => {
     width: 100%;
 
     .profile-card-body {
-      &__image {
+      &__image-container {
         width: 370px;
         height: 248px;
         border-radius: 26px;
-        object-fit: cover;
-        object-position: 0% 25%;
+        background-color: #f1f3f7;
+        overflow: hidden;
 
         @include respond-to-max(xl) {
           width: 100%;
@@ -348,6 +360,13 @@ const hasStatistics = computed<boolean>(() => {
           height: 200px;
           border-radius: 16px;
         }
+      }
+
+      &__image {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        object-position: 0% 25%;
       }
 
       &__info-wrapper {
@@ -419,7 +438,6 @@ const hasStatistics = computed<boolean>(() => {
 
       &__doctor-name {
         font-weight: 600;
-        font-style: Semi Bold;
         font-size: 24px;
         line-height: 25.21px;
         color: $color-foreground;

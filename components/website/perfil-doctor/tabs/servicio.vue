@@ -6,7 +6,7 @@ import type {
   Package,
   Procedures,
   Supplier,
-} from "~/types";
+} from "@/types";
 
 interface Props {
   supplier?: Supplier | Partial<Supplier> | null;
@@ -42,7 +42,6 @@ const props = withDefaults(defineProps<Props>(), {
   assessmentDetails: () => [],
 });
 
-const { createAssessmentPackage } = useAssessmentPackage();
 const { formatCurrency } = useFormat();
 
 const currentSupplier = computed<Supplier | Partial<Supplier> | null>(() => {
@@ -65,7 +64,7 @@ const availableSpecialties = computed<MedicalSpecialty[]>(() => {
   return supplierServices.value
     .map((service) => service.medical_specialty)
     .filter(
-      (specialty): specialty is MedicalSpecialty => specialty !== undefined
+      (specialty): specialty is MedicalSpecialty => specialty !== undefined,
     );
 });
 
@@ -77,7 +76,7 @@ const currentFilteredProcedures = computed<Procedures[]>(() => {
   if (!props.selectedSpecialty || !hasServices.value) return [];
 
   const specialty = supplierServices.value.find(
-    (s) => s.medical_specialty?.code === props.selectedSpecialty
+    (s) => s.medical_specialty?.code === props.selectedSpecialty,
   );
 
   return Array.isArray(specialty?.procedures) ? specialty.procedures : [];
@@ -85,7 +84,9 @@ const currentFilteredProcedures = computed<Procedures[]>(() => {
 
 const currentFilteredPackages = computed<Package[]>(() => {
   if (props.filteredPackages && props.filteredPackages.length > 0) {
-    return props.filteredPackages;
+    return props.filteredPackages.filter(
+      (pkg) => pkg.product?.code !== "ASSESSMENT_APPOINTMENT",
+    );
   }
 
   let packages: Package[] = [];
@@ -97,23 +98,19 @@ const currentFilteredPackages = computed<Package[]>(() => {
     }
   } else {
     const procedure = currentFilteredProcedures.value.find(
-      (p) => p.procedure?.code === props.selectedProcedure
+      (p) => p.procedure?.code === props.selectedProcedure,
     );
     packages = Array.isArray(procedure?.packages) ? procedure.packages : [];
   }
 
-  try {
-    const assessmentPackage = createCitaValoracionPackage();
-    return [assessmentPackage, ...packages];
-  } catch (error) {
-    console.error("Error creating assessment package:", error);
-    return packages;
-  }
+  return packages.filter(
+    (pkg) => pkg.product?.code !== "ASSESSMENT_APPOINTMENT",
+  );
 });
 
 const handleSelectSpecialty = (
   specialtyCode: string,
-  specialtyId: number
+  specialtyId: number,
 ): void => {
   if (props.selectSpecialty) {
     props.selectSpecialty(specialtyCode, specialtyId);
@@ -122,28 +119,11 @@ const handleSelectSpecialty = (
 
 const handleSelectProcedure = (
   procedureCode: string,
-  procedureId: number
+  procedureId: number,
 ): void => {
   if (props.selectProcedure) {
     props.selectProcedure(procedureCode, procedureId);
   }
-};
-
-const createCitaValoracionPackage = (): Package => {
-  let referencePrice = 18000;
-
-  if (props.selectedProcedure) {
-    const selectedProcedureData = currentFilteredProcedures.value.find(
-      (p) => p.procedure?.code === props.selectedProcedure
-    );
-
-    const firstPackage = selectedProcedureData?.packages?.[0];
-    if (firstPackage?.reference_price) {
-      referencePrice = firstPackage.reference_price;
-    }
-  }
-
-  return createAssessmentPackage(referencePrice, 0);
 };
 
 const supplierReviews = (): {
@@ -185,7 +165,7 @@ const formatPackagePrice = (pkg: Package): string => {
 const selectedSpecialityId = computed(() => {
   return props.supplier
     ? props.supplier.services?.find(
-        (s) => s.medical_specialty?.code === props.selectedSpecialty
+        (s) => s.medical_specialty?.code === props.selectedSpecialty,
       )?.medical_specialty?.id || 0
     : 0;
 });
@@ -193,7 +173,7 @@ const selectedSpecialityId = computed(() => {
 const selectedProcedureId = computed(() => {
   return props.selectedProcedure
     ? currentFilteredProcedures.value.find(
-        (p) => p.procedure?.code === props.selectedProcedure
+        (p) => p.procedure?.code === props.selectedProcedure,
       )?.procedure?.id || 0
     : 0;
 });
@@ -201,7 +181,7 @@ const selectedProcedureId = computed(() => {
 const selectedProcedureName = computed(() => {
   return props.selectedProcedure
     ? currentFilteredProcedures.value.find(
-        (p) => p.procedure?.code === props.selectedProcedure
+        (p) => p.procedure?.code === props.selectedProcedure,
       )?.procedure?.name || ""
     : "";
 });
@@ -246,7 +226,7 @@ const selectedProcedureName = computed(() => {
           @click="
             handleSelectProcedure(
               procedure.procedure?.code || '',
-              procedure.procedure?.id || 0
+              procedure.procedure?.id || 0,
             )
           "
           class="service-tab__procedure-badge"
@@ -265,7 +245,7 @@ const selectedProcedureName = computed(() => {
       >
         <WebsitePerfilDoctorTarjetaServicio
           v-for="pkg in currentFilteredPackages"
-          :key="pkg.id || Math.random()"
+          :key="pkg.id"
           :pkg="pkg"
           :supplier="currentSupplier"
           :supplier-reviews="supplierReviews()"
@@ -368,13 +348,14 @@ const selectedProcedureName = computed(() => {
     width: 100%;
     align-items: stretch;
     padding: 10px 0px;
-    overflow: auto;
+    overflow-x: auto;
     margin-top: 20px;
     -webkit-overflow-scrolling: touch;
 
     @include respond-to-max(sm) {
       flex-direction: column;
       gap: $spacing-md;
+      align-items: stretch;
     }
 
     &::-webkit-scrollbar {

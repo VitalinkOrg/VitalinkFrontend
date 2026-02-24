@@ -1,4 +1,3 @@
-// components\medicos\modales\pack-preview.vue
 <template>
   <div class="pack-preview">
     <h3 class="pack-preview__title">Previsualización del Pack</h3>
@@ -40,6 +39,14 @@
           <p class="service-card__discount">
             Costo de valoración
             <span>{{ formattedValoracionPrice }}</span>
+          </p>
+
+          <p
+            v-if="pack.aplicarDescuentoVitalink && pack.discount"
+            class="service-card__discount-vitalink"
+          >
+            Precio descuento Vitalink
+            <span>{{ formattedDiscountPrice }}</span>
           </p>
 
           <small class="service-card__disclaimer">
@@ -122,6 +129,9 @@ interface Pack {
   producto: string;
   servicios: string[];
   precio: number;
+  precioValoracion: number;
+  aplicarDescuentoVitalink: boolean;
+  discount: number;
   disponibilidad: DayAvailability[];
 }
 
@@ -143,8 +153,6 @@ const props = withDefaults(defineProps<Props>(), {
 const { formatCurrency } = useFormat();
 const { fetchUdc } = useUdc();
 
-const VALORACION_COST = 25000;
-
 const procedures = ref<IUdc[]>([]);
 
 const weekDays = [
@@ -163,7 +171,13 @@ const formattedPrice = computed(() => {
 });
 
 const formattedValoracionPrice = computed(() => {
-  return `${formatCurrency(VALORACION_COST)}`;
+  if (!props.pack.precioValoracion) return "₡0.00";
+  return `${formatCurrency(props.pack.precioValoracion)}`;
+});
+
+const formattedDiscountPrice = computed(() => {
+  if (!props.pack.discount) return "₡0.00";
+  return `${formatCurrency(props.pack.discount)}`;
 });
 
 const monthlyPayment = computed(() => {
@@ -175,7 +189,7 @@ const monthlyPayment = computed(() => {
 const procedureLabel = computed(() => {
   if (!props.pack.procedimiento) return "";
   const procedure = procedures.value.find(
-    (p) => p.code === props.pack.procedimiento
+    (p) => p.code === props.pack.procedimiento,
   );
   return procedure?.name || props.pack.procedimiento;
 });
@@ -183,7 +197,7 @@ const procedureLabel = computed(() => {
 const specialtyLabel = computed(() => {
   if (!props.pack.especialidad) return "";
   const specialty = props.specialties.find(
-    (s) => s.value === props.pack.especialidad
+    (s) => s.value === props.pack.especialidad,
   );
   return specialty?.label || props.pack.especialidad;
 });
@@ -218,7 +232,7 @@ onMounted(async () => {
   const proceduresApi = fetchUdc(
     "MEDICAL_PROCEDURE",
     {},
-    { authRequired: false }
+    { authRequired: false },
   );
   await proceduresApi.request();
   procedures.value = proceduresApi.response.value?.data ?? [];
@@ -349,6 +363,21 @@ onMounted(async () => {
     span {
       display: block;
       margin-top: 2px;
+    }
+  }
+
+  &__discount-vitalink {
+    font-weight: 500;
+    font-size: 12px;
+    line-height: 16px;
+    color: #0cadbb;
+    padding-bottom: 4px;
+
+    span {
+      display: block;
+      margin-top: 2px;
+      font-weight: 600;
+      text-decoration: line-through;
     }
   }
 

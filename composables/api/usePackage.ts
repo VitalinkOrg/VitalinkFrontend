@@ -6,6 +6,8 @@ interface PackageCreationRequest {
   procedure_code: string;
   product_code: string;
   discount: number;
+  valoracion_cost: number;
+  discount_price: number | null;
   services_offer: {
     ASSESSMENT_DETAILS: string[];
   };
@@ -34,7 +36,7 @@ export const usePackage = () => {
   };
 
   const fetchPackagesBySupplierId = (
-    supplierId: number
+    supplierId: number,
   ): UsableAPI<ApiResponse<Package[]>> => {
     const token = getToken();
     if (!token) throw new Error("No authentication token found");
@@ -51,7 +53,7 @@ export const usePackage = () => {
   };
 
   const createPackage = (
-    packageData: Partial<PackageCreationRequest>
+    packageData: Partial<PackageCreationRequest>,
   ): UsableAPI<ApiResponse<Package>> => {
     const token = getToken();
     if (!token) throw new Error("No authentication token found");
@@ -69,7 +71,7 @@ export const usePackage = () => {
   };
 
   const fetchPackageById = (
-    packageId: number
+    packageId: number,
   ): UsableAPI<ApiResponse<Package>> => {
     const token = getToken();
     if (!token) throw new Error("No authentication token found");
@@ -87,7 +89,7 @@ export const usePackage = () => {
 
   const updatePackage = (
     packageId: number,
-    packageData: Partial<PackageCreationRequest>
+    packageData: Partial<PackageCreationRequest>,
   ): UsableAPI<ApiResponse<Package>> => {
     const token = getToken();
     if (!token) throw new Error("No authentication token found");

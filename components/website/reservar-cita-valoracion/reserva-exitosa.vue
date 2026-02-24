@@ -79,7 +79,17 @@
               Costo del servicio:
             </td>
             <td class="successful-reservation__table--value">
-              {{ formatCurrency(18000, { decimalPlaces: 0 }) }}
+              {{ formattedValoracionCost }}
+            </td>
+          </tr>
+          <tr>
+            <td class="successful-reservation__table--label">
+              Precio descuento Vitalink
+            </td>
+            <td
+              class="successful-reservation__table--value successful-reservation__table--discount"
+            >
+              {{ hasVitalinkDiscount ? formattedDiscountPrice : "—" }}
             </td>
           </tr>
         </tbody>
@@ -108,7 +118,7 @@
 
 <script lang="ts" setup>
 import { useFormat } from "~/composables/useFormat";
-import type { Service } from "~/types";
+import type { Package, Service } from "~/types";
 
 const route = useRoute();
 const router = useRouter();
@@ -125,6 +135,7 @@ interface Props {
   customerPhone?: string;
   selectedProcedureId?: number;
   services?: Service[];
+  selectedPackage?: Package;
 }
 
 interface Emits {
@@ -134,6 +145,28 @@ interface Emits {
 
 const props = defineProps<Props>();
 const emit = defineEmits<Emits>();
+
+console.log(props.selectedPackage);
+
+const valoracionCost = computed<number>(() => {
+  return (props.selectedPackage as any)?.valoracion_cost ?? 0;
+});
+
+const discountPrice = computed<number>(() => {
+  return (props.selectedPackage as any)?.discount_price ?? 0;
+});
+
+const hasVitalinkDiscount = computed<boolean>(() => {
+  return discountPrice.value > 0;
+});
+
+const formattedValoracionCost = computed<string>(() => {
+  return formatCurrency(valoracionCost.value, { decimalPlaces: 0 });
+});
+
+const formattedDiscountPrice = computed<string>(() => {
+  return formatCurrency(discountPrice.value, { decimalPlaces: 0 });
+});
 
 const handleCloseModal = () => {
   emit("close-modal");
@@ -153,10 +186,10 @@ const getSelectedProcedureName = computed(() => {
       return "N/A";
     }
     const allProcedures = props.services.flatMap(
-      (service) => service.procedures || []
+      (service) => service.procedures || [],
     );
     const procedure = allProcedures.find(
-      (procedure) => procedure.procedure?.id === props.selectedProcedureId
+      (procedure) => procedure.procedure?.id === props.selectedProcedureId,
     );
     return procedure?.procedure?.name || "N/A";
   } catch (error) {
@@ -214,6 +247,11 @@ const getSelectedProcedureName = computed(() => {
       letter-spacing: 0;
       color: $color-foreground;
       padding: 6px 0px;
+    }
+
+    &--discount {
+      font-weight: 700;
+      color: #0cadbb;
     }
   }
 

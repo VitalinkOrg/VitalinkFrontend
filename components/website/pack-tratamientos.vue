@@ -93,21 +93,6 @@
             No hay paquetes disponibles para este procedimiento
           </div>
         </template>
-
-        <div v-if="!hasServices" class="modal-tab__packages">
-          <WebsitePerfilDoctorTarjetaServicio
-            :key="`assessment-${assessmentPackage.id}`"
-            :pkg="assessmentPackage"
-            :supplier="supplier"
-            :supplierReviews="doctorReviews"
-            :getPackagePrice="getPackagePrice"
-            :getAssessmentLabel="getAssessmentLabel"
-            :selectedSpecialtyId="0"
-            :selectedProcedureId="0"
-            :customer="userInfo"
-            :procedureName="''"
-          />
-        </div>
       </template>
     </div>
   </AtomsModalBase>
@@ -135,7 +120,7 @@ const props = defineProps<{
 const emit = defineEmits(["close-modal"]);
 
 const modalTitleId = ref(
-  `modal-title-${Math.random().toString(36).substring(2, 11)}`
+  `modal-title-${Math.random().toString(36).substring(2, 11)}`,
 );
 const isLoading = ref(false);
 const supplier = ref<Supplier | null>(null);
@@ -151,7 +136,7 @@ const hasServices = computed(() => {
 });
 
 const specialties = computed(
-  () => supplier.value?.services?.map((s) => s.medical_specialty) || []
+  () => supplier.value?.services?.map((s) => s.medical_specialty) || [],
 );
 
 const currentProcedures = computed(() => {
@@ -159,7 +144,7 @@ const currentProcedures = computed(() => {
 
   const service = selectedSpecialty.value
     ? supplier.value?.services?.find(
-        (s) => s.medical_specialty.code === selectedSpecialty.value?.code
+        (s) => s.medical_specialty.code === selectedSpecialty.value?.code,
       )
     : supplier.value?.services?.[0];
 
@@ -167,47 +152,16 @@ const currentProcedures = computed(() => {
 });
 
 const currentPackages = computed(() => {
-  if (!hasServices.value) return [assessmentPackage.value];
-  if (currentProcedures.value.length === 0) return [assessmentPackage.value];
+  if (!hasServices.value) return [];
+  if (currentProcedures.value.length === 0) return [];
 
   const procedure = selectedProcedure.value || currentProcedures.value[0];
   const packages = procedure?.packages || [];
 
-  return [assessmentPackage.value, ...packages];
+  return packages.filter(
+    (pkg) => pkg.product?.code !== "ASSESSMENT_APPOINTMENT",
+  );
 });
-
-const assessmentPackage = computed<Package>(() => ({
-  id: selectedProcedure.value?.packages?.[0]?.id || 0,
-  product: {
-    id: 9999,
-    code: "ASSESSMENT_APPOINTMENT",
-    name: "Cita de Valoración",
-    type: "MEDICAL_PRODUCT",
-    description: "Cita de valoración médica inicial",
-    father_code: null,
-    value1: "18000",
-    value2: null,
-    created_date: new Date().toISOString(),
-    updated_date: null,
-    is_deleted: 0,
-  },
-  reference_price: 18000,
-  discount: 0,
-  discounted_price: 18000,
-  services_offer: {
-    ASSESSMENT_DETAILS: [
-      "MEDICAL_CONSULTATION",
-      "CLINICAL_EVALUATION",
-      "INITIAL_DIAGNOSIS",
-    ],
-  },
-  is_king: 0,
-  observations: "",
-  postoperative_assessments: null,
-  is_deleted: 0,
-  created_date: new Date().toISOString(),
-  updated_date: null,
-}));
 
 const doctorReviews = computed(
   () =>
@@ -219,14 +173,14 @@ const doctorReviews = computed(
       message: review.comment,
       pacient_type: "Paciente",
       score: review.stars_average,
-    })) || []
+    })) || [],
 );
 
 const selectSpecialty = (specialty: MedicalSpecialty) => {
   selectedSpecialty.value = specialty;
 
   const service = supplier.value?.services?.find(
-    (s) => s.medical_specialty.code === specialty.code
+    (s) => s.medical_specialty.code === specialty.code,
   );
   selectedProcedure.value = service?.procedures?.[0] || null;
 };
@@ -243,7 +197,7 @@ const getPackagePrice = (pkg: Package) => {
 
 const getAssessmentLabel = (assessmentCode: string) => {
   const detail = assessmentDetails.value?.find(
-    (item) => item.code === assessmentCode
+    (item) => item.code === assessmentCode,
   );
   return detail?.name || assessmentCode;
 };
@@ -254,7 +208,7 @@ const initializeSelection = () => {
   const matchedService = supplier.value?.services?.find(
     (s) =>
       s.medical_specialty.code === props.specialtyCode &&
-      s.procedures.some((p) => p.procedure.code === props.procedureCode)
+      s.procedures.some((p) => p.procedure.code === props.procedureCode),
   );
 
   const service = matchedService || supplier.value?.services?.[0];
@@ -273,7 +227,6 @@ const loadData = async () => {
   isLoading.value = true;
 
   try {
-    console.log({ supplierId: props.supplierId });
     const supplierApi = fetchSupplier(props.supplierId);
     await supplierApi.request();
 
@@ -304,7 +257,7 @@ watch(
     } else if (isOpen && supplier.value) {
       initializeSelection();
     }
-  }
+  },
 );
 
 onMounted(() => {
