@@ -111,11 +111,8 @@
 </template>
 
 <script lang="ts" setup>
-import type { ModalName } from "~/types";
-import type { Appointment } from "~/types/appointment";
-
 interface Props {
-  appointment: Appointment;
+  appointment: IAppointment;
   step?: string;
   showStatus?: boolean;
 }
@@ -178,7 +175,7 @@ const openAppointmentDetails = () => {
 const remainingAmount = computed(() => {
   const procedurePrice = Number(props.appointment.price_procedure) || 0;
   const approvedCredit = Number(
-    props.appointment.appointment_credit?.approved_amount || 0
+    props.appointment.appointment_credit?.approved_amount || 0,
   );
   return procedurePrice - approvedCredit;
 });
@@ -226,7 +223,7 @@ const buttonConfig = computed((): ButtonConfig | null => {
   if (props.showStatus) {
     return {
       type: "status",
-      text: appointment_status.value1,
+      text: appointment_status.value1 || "",
       class: getStatusClass(appointmentCode),
       action: openAppointmentDetails,
     };
@@ -305,7 +302,7 @@ const buttonConfig = computed((): ButtonConfig | null => {
 
   return {
     type: "status",
-    text: appointment_status.value1,
+    text: appointment_status.value1 || "",
     class: getStatusClass(appointmentCode),
     action: openAppointmentDetails,
   };

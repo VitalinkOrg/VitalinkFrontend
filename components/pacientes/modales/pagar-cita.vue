@@ -108,11 +108,8 @@
 </template>
 
 <script setup lang="ts">
-import type { ModalName } from "~/types";
-import type { Appointment } from "~/types/appointment";
-
 interface Props {
-  appointment: Appointment;
+  appointment: IAppointment;
   isOpen: boolean;
 }
 
@@ -209,7 +206,7 @@ const getCreditAmount = () => {
   return props.appointment.appointment_credit?.approved_amount || 0;
 };
 
-const balanceToPay = (appointment: Appointment) => {
+const balanceToPay = (appointment: IAppointment) => {
   if (appointment.appointment_type.code === "VALORATION_APPOINTMENT") {
     return appointment.price_valoration_appointment;
   }

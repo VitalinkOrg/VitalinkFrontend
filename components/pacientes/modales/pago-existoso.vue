@@ -39,7 +39,9 @@
               Fecha de la cita:
             </td>
             <td class="payment-successes-modal__table--value">
-              <time :datetime="appointment.application_date">
+              <time
+                :datetime="new Date(appointment.application_date).toISOString()"
+              >
                 {{
                   new Date(appointment.application_date).toLocaleDateString()
                 }}
@@ -117,13 +119,11 @@
 
 <script lang="ts" setup>
 import { useFormat } from "~/composables/useFormat";
-import type { ModalName } from "~/types";
-import type { Appointment } from "~/types/appointment";
 
 const { formatCurrency } = useFormat();
 
 interface Props {
-  appointment: Appointment;
+  appointment: IAppointment;
   isOpen: boolean;
 }
 

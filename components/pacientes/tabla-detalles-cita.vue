@@ -54,15 +54,14 @@
 </template>
 
 <script lang="ts" setup>
-import { useAppointment } from "@/composables/api";
-import type { Appointment } from "@/types/appointment";
+import { useDocuments } from "@/composables/api";
 import type { TablaBaseRow } from "../medicos/tabla-detalles-cita.vue";
 
 const { formatCurrency, formatPhone, formatDate, formatTime } = useFormat();
-const { fetchDocumentByCode } = useAppointment();
+const { getDocumentByCode } = useDocuments();
 
 interface Props {
-  appointment: Appointment;
+  appointment: IAppointment;
 }
 
 const props = defineProps<Props>();
@@ -131,9 +130,11 @@ const tableRows = computed((): TablaBaseRow[] => {
       {
         key: "appointment-time",
         header: "Hora de la cita:",
-        value: formatTime(props.appointment.appointment_hour, "hs"),
+        value: props.appointment.appointment_hour
+          ? formatTime(props.appointment.appointment_hour, "hs")
+          : "-",
         isEndRow: true,
-      }
+      },
     );
   }
 
@@ -148,7 +149,7 @@ const tableRows = computed((): TablaBaseRow[] => {
     header: "Teléfono de Contacto:",
     value: formatPhone(
       props.appointment.phone_number_external_user ??
-        props.appointment.customer.phone_number
+        props.appointment.customer.phone_number,
     ),
   });
 
@@ -264,7 +265,7 @@ const tableRows = computed((): TablaBaseRow[] => {
         props.appointment.appointment_credit?.approved_amount || 0,
         {
           decimalPlaces: 0,
-        }
+        },
       ),
     });
 
@@ -318,7 +319,7 @@ const PAID_STATUS_CLASSES = {
   NOT_PAID: "appointment-table__payment-status--not-paid",
 };
 
-const setPaymentStatusClass = (appointment: Appointment) => {
+const setPaymentStatusClass = (appointment: IAppointment) => {
   const paymentStatusCode = appointment.payment_status.code;
   const appointmentStatusCode = appointment.appointment_status.code;
 
@@ -346,7 +347,7 @@ const setPaymentStatusClass = (appointment: Appointment) => {
   return PAID_STATUS_CLASSES.NOT_PAID;
 };
 
-const setPaymentValueName = (appointment: Appointment) => {
+const setPaymentValueName = (appointment: IAppointment) => {
   const paymentStatusCode = appointment.payment_status.code;
   const appointmentStatusCode = appointment.appointment_status.code;
 
@@ -379,15 +380,13 @@ const downloadProforma = async () => {
     if (!props.appointment.proforma_file_code)
       throw new Error("No proforma file code");
 
-    const api = fetchDocumentByCode(props.appointment.proforma_file_code);
-    await api.request();
+    const { data, error } = await getDocumentByCode(
+      props.appointment.proforma_file_code,
+    );
 
-    const response = api.response.value;
-    const error = api.error.value;
-
-    if (response?.data?.url) {
+    if (data?.url) {
       const link = document.createElement("a");
-      link.href = response.data.url;
+      link.href = data.url;
       link.target = "_blank";
       link.rel = "noopener noreferrer";
       document.body.appendChild(link);
@@ -395,7 +394,7 @@ const downloadProforma = async () => {
       document.body.removeChild(link);
     }
 
-    if (error) throw new Error(error.raw);
+    if (error) throw new Error(error.info);
   } catch (error) {
     console.error("Error descargando archivo:", error);
   } finally {
