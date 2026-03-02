@@ -114,7 +114,7 @@ import AtomsIconsSettingsIcon from "@/components/atoms/icons/settings-icon.vue";
 import AtomsIconsStarIcon from "@/components/atoms/icons/star-icon.vue";
 import AtomsIconsUserAddIcon from "@/components/atoms/icons/user-add-icon.vue";
 import AtomsIconsUserIcon from "@/components/atoms/icons/user-icon.vue";
-import { useAuth } from "~/composables/api";
+import { useAuth } from "@/composables/api";
 
 const { logout } = useAuth();
 const { getUserInfo } = useUserInfo();

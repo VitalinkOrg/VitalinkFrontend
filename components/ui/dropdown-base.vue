@@ -64,7 +64,7 @@ const filteredItems = computed(() => {
     return props.items;
   }
   return props.items.filter((item) =>
-    item.label.toLowerCase().includes(searchText.value.toLowerCase())
+    item.label.toLowerCase().includes(searchText.value.toLowerCase()),
   );
 });
 
@@ -157,12 +157,12 @@ const handleResize = () => {
 };
 
 watch(
-  () => props.modelValue,
+  () => props.items,
   () => {
-    if (props.searchable) {
-      searchText.value = selectedItem.value?.label || "";
+    if (props.searchable && props.modelValue !== undefined && !isOpen.value) {
+      searchText.value = selectedItem.value?.label || searchText.value;
     }
-  }
+  },
 );
 
 watch(isOpen, (newValue) => {
@@ -187,10 +187,10 @@ onBeforeUnmount(() => {
 });
 
 onClickOutside(dropdownRef, (event) => {
-  // Check if click is not on the menu
-  if (menuRef.value && !menuRef.value.contains(event.target as Node)) {
-    closeDropdown();
-  }
+  const target = event.target as Node;
+  // Si el clic fue dentro del menú teleportado, no cerrar
+  if (menuRef.value?.contains(target)) return;
+  closeDropdown();
 });
 </script>
 
