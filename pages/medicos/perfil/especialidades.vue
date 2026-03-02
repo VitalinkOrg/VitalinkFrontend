@@ -1,370 +1,483 @@
 <script setup lang="ts">
-import { usePackage } from "@/composables/api";
-import { useSpecialties } from "@/composables/api/useSpecialties";
-import type { Supplier } from "~/types/test-index";
+import { useUdc } from "@/composables/api";
+import { useSpecialtyBySupplier } from "~/composables/api/useSpecialtyBySupplier";
 
-const user_info = useCookie<Partial<Supplier>>("user_info");
+const { getUserInfo } = useUserInfo();
+const { show: showToast } = useToast();
 
-const { addSpecialtyToSupplier, deleteSpecialtyFromSupplier } =
-  useSpecialties();
-const { createPackage, deletePackage } = usePackage();
+const userProfile = getUserInfo();
 
-const newSpecialty = ref("");
-const showSpecialtyInput = ref(false);
+const {
+  createSpecialtyBySupplier,
+  deleteSpecialtyBySupplier,
+  getAllSpecialtyBySupplier,
+} = useSpecialtyBySupplier();
 
-const newService = ref("");
-const showServiceInput = ref(false);
+const { createUdc, deleteUdc, getAllUdcs } = useUdc();
 
-const showNotification = (message: string, type: "success" | "error") => {
-  console.log(`[${type.toUpperCase()}]: ${message}`);
+interface IdentifiableItem {
+  id: number;
+  name: string;
+}
+
+const specialties = ref<IdentifiableItem[]>([]);
+const procedures = ref<IdentifiableItem[]>([]);
+
+const pendingSpecialtyName = ref("");
+const pendingProcedureName = ref("");
+
+const isSpecialtyFormVisible = ref(false);
+const isProcedureFormVisible = ref(false);
+
+const isSpecialtySubmitting = ref(false);
+const isProcedureSubmitting = ref(false);
+
+const isLoadingSpecialties = ref(false);
+const isLoadingProcedures = ref(false);
+
+const specialtyInputRef = ref<HTMLInputElement | null>(null);
+const procedureInputRef = ref<HTMLInputElement | null>(null);
+
+const supplierId = computed(() => userProfile.value?.id);
+
+const toNormalizedCode = (value: string): string =>
+  value.trim().toUpperCase().replace(/\s+/g, "_");
+
+const notify = (message: string, type: "success" | "error") => {
+  showToast(message, type);
 };
 
-const addSpecialtyHandler = () => {
-  showSpecialtyInput.value = true;
-};
+const fetchSpecialties = async () => {
+  if (!supplierId.value) return;
 
-const saveSpecialty = async () => {
-  if (!newSpecialty.value.trim()) {
-    showNotification("Por favor ingrese una especialidad", "error");
-    return;
-  }
-
-  if (!user_info.value?.id) {
-    showNotification("ID de proveedor no encontrado", "error");
-    return;
-  }
+  isLoadingSpecialties.value = true;
 
   try {
-    const specialtyCode = newSpecialty.value
-      .trim()
-      .toUpperCase()
-      .replace(/\s+/g, "_");
+    const { data, error } = await getAllSpecialtyBySupplier();
 
-    const api = addSpecialtyToSupplier({
-      supplier_id: user_info.value.id,
-      medical_specialty_code: specialtyCode,
+    if (error) {
+      notify(error.info || "Error al cargar especialidades", "error");
+      return;
+    }
+
+    if (data) {
+      specialties.value = data.map((entry) => ({
+        id: entry.id,
+        name:
+          entry.medical_specialty?.name ||
+          entry.medical_specialty?.code ||
+          "Sin nombre",
+      }));
+    }
+  } catch {
+    notify("Error inesperado al cargar especialidades", "error");
+  } finally {
+    isLoadingSpecialties.value = false;
+  }
+};
+
+const fetchProcedures = async () => {
+  if (!supplierId.value) return;
+
+  isLoadingProcedures.value = true;
+
+  try {
+    const { data, error } = await getAllUdcs({ type: "MEDICAL_PROCEDURE" });
+
+    if (error) {
+      notify(error.info || "Error al cargar procedimientos", "error");
+      return;
+    }
+
+    if (data) {
+      procedures.value = data.map((entry) => ({
+        id: entry.id,
+        name: entry.name || entry.code || "Sin nombre",
+      }));
+    }
+  } catch {
+    notify("Error inesperado al cargar procedimientos", "error");
+  } finally {
+    isLoadingProcedures.value = false;
+  }
+};
+
+const revealSpecialtyForm = () => {
+  isSpecialtyFormVisible.value = true;
+  nextTick(() => specialtyInputRef.value?.focus());
+};
+
+const revealProcedureForm = () => {
+  isProcedureFormVisible.value = true;
+  nextTick(() => procedureInputRef.value?.focus());
+};
+
+const dismissSpecialtyForm = () => {
+  pendingSpecialtyName.value = "";
+  isSpecialtyFormVisible.value = false;
+};
+
+const dismissProcedureForm = () => {
+  pendingProcedureName.value = "";
+  isProcedureFormVisible.value = false;
+};
+
+const submitSpecialty = async () => {
+  const trimmedName = pendingSpecialtyName.value.trim();
+
+  if (!trimmedName) {
+    notify("Por favor ingrese una especialidad", "error");
+    return;
+  }
+
+  if (!supplierId.value) {
+    notify("ID de proveedor no encontrado", "error");
+    return;
+  }
+
+  isSpecialtySubmitting.value = true;
+
+  try {
+    const { data, error } = await createSpecialtyBySupplier({
+      supplier_id: supplierId.value,
+      medical_specialty_code: toNormalizedCode(trimmedName),
     });
 
-    await api.request();
-
-    if (api.error.value) {
-      showNotification(
-        api.error.value.message || "Error al agregar especialidad",
-        "error",
-      );
+    if (error) {
+      notify(error.info || "Error al agregar especialidad", "error");
       return;
     }
 
-    if (api.response.value?.success) {
-      if (!user_info.value.services_names) {
-        user_info.value.services_names = [];
-      }
-      user_info.value.services_names.push(newSpecialty.value.trim());
-
-      showNotification("Especialidad agregada exitosamente", "success");
-      newSpecialty.value = "";
-      showSpecialtyInput.value = false;
-    } else {
-      showNotification(
-        api.response.value?.message || "Error al agregar especialidad",
-        "error",
-      );
+    if (data) {
+      specialties.value.push({
+        id: data.id,
+        name: data.medical_specialty?.name || trimmedName,
+      });
+      notify("Especialidad agregada exitosamente", "success");
+      dismissSpecialtyForm();
     }
-  } catch (error: any) {
-    showNotification(
-      error?.message || "Error inesperado al agregar especialidad",
-      "error",
-    );
+  } catch {
+    notify("Error inesperado al agregar especialidad", "error");
+  } finally {
+    isSpecialtySubmitting.value = false;
   }
 };
 
-const cancelSpecialty = () => {
-  newSpecialty.value = "";
-  showSpecialtyInput.value = false;
-};
-
-const removeSpecialty = async (index: number) => {
-  if (!user_info.value?.services_names) return;
-
-  const specialtyName = user_info.value.services_names[index];
-
-  if (!confirm(`¿Está seguro de eliminar "${specialtyName}"?`)) {
-    return;
-  }
+const confirmAndRemoveSpecialty = async (specialty: IdentifiableItem) => {
+  if (!confirm(`¿Está seguro de eliminar "${specialty.name}"?`)) return;
 
   try {
-    const specialtyBySupplierId = index + 1;
+    const { data, error } = await deleteSpecialtyBySupplier(specialty.id);
 
-    const api = deleteSpecialtyFromSupplier(specialtyBySupplierId);
-
-    await api.request();
-
-    if (api.error.value) {
-      showNotification(
-        api.error.value.message || "Error al eliminar especialidad",
-        "error",
-      );
+    if (error) {
+      notify(error.info || "Error al eliminar especialidad", "error");
       return;
     }
 
-    if (api.response.value?.success) {
-      user_info.value.services_names.splice(index, 1);
-      showNotification("Especialidad eliminada exitosamente", "success");
-    } else {
-      showNotification(
-        api.response.value?.message || "Error al eliminar especialidad",
-        "error",
+    if (data !== undefined) {
+      specialties.value = specialties.value.filter(
+        (item) => item.id !== specialty.id,
       );
+      notify("Especialidad eliminada exitosamente", "success");
     }
-  } catch (error: any) {
-    showNotification(
-      error?.message || "Error inesperado al eliminar especialidad",
-      "error",
-    );
+  } catch {
+    notify("Error inesperado al eliminar especialidad", "error");
   }
 };
 
-const addServiceHandler = () => {
-  showServiceInput.value = true;
-};
+const submitProcedure = async () => {
+  const trimmedName = pendingProcedureName.value.trim();
 
-const saveService = async () => {
-  if (!newService.value.trim()) {
-    showNotification("Por favor ingrese un servicio", "error");
+  if (!trimmedName) {
+    notify("Por favor ingrese un servicio", "error");
     return;
   }
 
-  if (!user_info.value?.id) {
-    showNotification("ID de proveedor no encontrado", "error");
+  if (!supplierId.value) {
+    notify("ID de proveedor no encontrado", "error");
     return;
   }
+
+  isProcedureSubmitting.value = true;
 
   try {
-    const procedureCode = newService.value
-      .trim()
-      .toUpperCase()
-      .replace(/\s+/g, "_");
-
-    const api = createPackage({
-      specialty_id: 1,
-      procedure_code: procedureCode,
-      product_code: procedureCode,
-      discount: 0,
-      services_offer: {
-        ASSESSMENT_DETAILS: [],
-      },
-      is_king: 0,
-      observations: newService.value.trim(),
-      postoperative_assessments: 0,
+    const { data, error } = await createUdc({
+      supplier_id: supplierId.value,
+      father_code: "",
+      name: trimmedName,
+      type: "MEDICAL_PROCEDURE",
+      description: "",
+      value1: "0",
+      value2: "0",
+      code: toNormalizedCode(trimmedName),
     });
 
-    await api.request();
-
-    if (api.error.value) {
-      showNotification(
-        api.error.value.message || "Error al agregar servicio",
-        "error",
-      );
+    if (error) {
+      notify(error.info || "Error al agregar servicio", "error");
       return;
     }
 
-    if (api.response.value?.success) {
-      if (!user_info.value.services_names) {
-        user_info.value.services_names = [];
-      }
-      user_info.value.services_names.push(newService.value.trim());
-
-      showNotification("Servicio agregado exitosamente", "success");
-      newService.value = "";
-      showServiceInput.value = false;
-    } else {
-      showNotification(
-        api.response.value?.message || "Error al agregar servicio",
-        "error",
-      );
+    if (data) {
+      procedures.value.push({
+        id: data.id,
+        name: data.name || trimmedName,
+      });
+      notify("Servicio agregado exitosamente", "success");
+      dismissProcedureForm();
     }
-  } catch (error: any) {
-    showNotification(
-      error?.message || "Error inesperado al agregar servicio",
-      "error",
-    );
+  } catch {
+    notify("Error inesperado al agregar servicio", "error");
+  } finally {
+    isProcedureSubmitting.value = false;
   }
 };
 
-const cancelService = () => {
-  newService.value = "";
-  showServiceInput.value = false;
-};
-
-const removeService = async (index: number) => {
-  if (!user_info.value?.services_names) return;
-
-  const serviceName = user_info.value.services_names[index];
-
-  if (!confirm(`¿Está seguro de eliminar "${serviceName}"?`)) {
-    return;
-  }
+const confirmAndRemoveProcedure = async (procedure: IdentifiableItem) => {
+  if (!confirm(`¿Está seguro de eliminar "${procedure.name}"?`)) return;
 
   try {
-    const packageId = index + 1;
+    const { data, error } = await deleteUdc(procedure.id);
 
-    const api = deletePackage(packageId);
-
-    await api.request();
-
-    if (api.error.value) {
-      showNotification(
-        api.error.value.message || "Error al eliminar servicio",
-        "error",
-      );
+    if (error) {
+      notify(error.info || "Error al eliminar servicio", "error");
       return;
     }
 
-    if (api.response.value?.success) {
-      user_info.value.services_names.splice(index, 1);
-      showNotification("Servicio eliminado exitosamente", "success");
-    } else {
-      showNotification(
-        api.response.value?.message || "Error al eliminar servicio",
-        "error",
+    if (data !== undefined) {
+      procedures.value = procedures.value.filter(
+        (item) => item.id !== procedure.id,
       );
+      notify("Servicio eliminado exitosamente", "success");
     }
-  } catch (error: any) {
-    showNotification(
-      error?.message || "Error inesperado al eliminar servicio",
-      "error",
-    );
+  } catch {
+    notify("Error inesperado al eliminar servicio", "error");
   }
 };
+
+onMounted(async () => {
+  await Promise.all([fetchSpecialties(), fetchProcedures()]);
+});
 </script>
 
 <template>
   <NuxtLayout name="medicos-dashboard-perfil">
-    <div v-if="!user_info" class="specialties-services__loading">
+    <div
+      v-if="!userProfile"
+      class="profile-catalog__loading"
+      role="status"
+      aria-live="polite"
+    >
       Cargando información del usuario...
     </div>
-    <div v-else class="specialties-services">
-      <section class="specialties-services__section">
-        <h2 class="specialties-services__title">Especialidades Médicas</h2>
-        <p class="specialties-services__description">
-          Escribe las Especialidades médicas que ofrecerás en la plataforma.
+
+    <div v-else class="profile-catalog" role="main">
+      <section
+        class="profile-catalog__section"
+        aria-labelledby="specialties-heading"
+      >
+        <h2 id="specialties-heading" class="profile-catalog__heading">
+          Especialidades Médicas
+        </h2>
+        <p class="profile-catalog__subtitle">
+          Escribe las especialidades médicas que ofrecerás en la plataforma.
         </p>
 
-        <ul class="specialties-services__list">
+        <div
+          v-if="isLoadingSpecialties"
+          class="profile-catalog__loader"
+          role="status"
+          aria-live="polite"
+        >
+          Cargando especialidades...
+        </div>
+
+        <ul
+          v-else-if="specialties.length"
+          class="profile-catalog__list"
+          aria-label="Lista de especialidades médicas"
+        >
           <li
-            v-for="(specialty, index) in user_info.services_names"
-            :key="'spec-' + index"
-            class="specialties-services__item"
+            v-for="specialty in specialties"
+            :key="`specialty-${specialty.id}`"
+            class="profile-catalog__list-item"
           >
             <button
-              class="specialties-services__item-button"
-              @click="removeSpecialty(index)"
+              type="button"
+              class="profile-catalog__chip"
+              :aria-label="`Eliminar especialidad: ${specialty.name}`"
+              @click="confirmAndRemoveSpecialty(specialty)"
             >
-              <span class="specialties-services__item-text">{{
-                specialty
-              }}</span>
-              <span class="specialties-services__item-icon">
+              <span class="profile-catalog__chip-label">
+                {{ specialty.name }}
+              </span>
+              <span class="profile-catalog__chip-dismiss" aria-hidden="true">
                 <AtomsIconsXIcon />
               </span>
             </button>
           </li>
         </ul>
 
+        <p v-else class="profile-catalog__empty-message" role="status">
+          No hay especialidades registradas.
+        </p>
+
         <div
-          v-if="showSpecialtyInput"
-          class="specialties-services__input-container"
+          v-if="isSpecialtyFormVisible"
+          class="profile-catalog__inline-form"
+          role="group"
+          aria-label="Formulario para agregar especialidad"
         >
+          <label
+            for="new-specialty-input"
+            class="profile-catalog__visually-hidden"
+          >
+            Nueva especialidad
+          </label>
           <input
-            v-model="newSpecialty"
+            id="new-specialty-input"
+            ref="specialtyInputRef"
+            v-model="pendingSpecialtyName"
             type="text"
             placeholder="Escriba la especialidad"
-            class="specialties-services__input"
-            @keyup.enter="saveSpecialty"
+            class="profile-catalog__input"
+            :disabled="isSpecialtySubmitting"
+            @keyup.enter="submitSpecialty"
+            @keyup.escape="dismissSpecialtyForm"
           />
-          <div class="specialties-services__actions">
+          <div class="profile-catalog__inline-form-actions">
             <button
-              class="specialties-services__action-button specialties-services__action-button--cancel"
-              @click="cancelSpecialty"
+              type="button"
+              class="profile-catalog__button profile-catalog__button--secondary"
+              :disabled="isSpecialtySubmitting"
+              @click="dismissSpecialtyForm"
             >
               Cancelar
             </button>
             <button
-              class="specialties-services__action-button specialties-services__action-button--save"
-              @click="saveSpecialty"
+              type="button"
+              class="profile-catalog__button profile-catalog__button--outline"
+              :disabled="isSpecialtySubmitting"
+              @click="submitSpecialty"
             >
-              Guardar
+              {{ isSpecialtySubmitting ? "Guardando..." : "Guardar" }}
             </button>
           </div>
         </div>
 
         <button
-          v-if="!showSpecialtyInput"
-          class="specialties-services__add-button"
-          @click="addSpecialtyHandler"
+          v-else
+          type="button"
+          class="profile-catalog__button profile-catalog__button--add"
+          @click="revealSpecialtyForm"
         >
-          <AtomsIconsPlusIcon /> Agregar
+          <AtomsIconsPlusIcon aria-hidden="true" />
+          Agregar
         </button>
       </section>
 
-      <hr class="specialties-services__divider" />
+      <hr class="profile-catalog__divider" aria-hidden="true" />
 
-      <section class="specialties-services__section">
-        <h2 class="specialties-services__title">Servicios / Procedimientos</h2>
-        <p class="specialties-services__description">
+      <section
+        class="profile-catalog__section"
+        aria-labelledby="procedures-heading"
+      >
+        <h2 id="procedures-heading" class="profile-catalog__heading">
+          Servicios / Procedimientos
+        </h2>
+        <p class="profile-catalog__subtitle">
           Agrega los servicios médicos que ofrecerás en la plataforma.
         </p>
 
-        <ul class="specialties-services__list">
+        <div
+          v-if="isLoadingProcedures"
+          class="profile-catalog__loader"
+          role="status"
+          aria-live="polite"
+        >
+          Cargando procedimientos...
+        </div>
+
+        <ul
+          v-else-if="procedures.length"
+          class="profile-catalog__list"
+          aria-label="Lista de servicios y procedimientos"
+        >
           <li
-            v-for="(service, index) in user_info.services_names"
-            :key="'serv-' + index"
-            class="specialties-services__item"
+            v-for="procedure in procedures"
+            :key="`procedure-${procedure.id}`"
+            class="profile-catalog__list-item"
           >
             <button
-              class="specialties-services__item-button"
-              @click="removeService(index)"
+              type="button"
+              class="profile-catalog__chip"
+              :aria-label="`Eliminar servicio: ${procedure.name}`"
+              @click="confirmAndRemoveProcedure(procedure)"
             >
-              <span class="specialties-services__item-text">{{ service }}</span>
-              <span class="specialties-services__item-icon">
+              <span class="profile-catalog__chip-label">
+                {{ procedure.name }}
+              </span>
+              <span class="profile-catalog__chip-dismiss" aria-hidden="true">
                 <AtomsIconsXIcon />
               </span>
             </button>
           </li>
         </ul>
 
+        <p v-else class="profile-catalog__empty-message" role="status">
+          No hay servicios registrados.
+        </p>
+
         <div
-          v-if="showServiceInput"
-          class="specialties-services__input-container"
+          v-if="isProcedureFormVisible"
+          class="profile-catalog__inline-form"
+          role="group"
+          aria-label="Formulario para agregar servicio"
         >
+          <label
+            for="new-procedure-input"
+            class="profile-catalog__visually-hidden"
+          >
+            Nuevo servicio o procedimiento
+          </label>
           <input
-            v-model="newService"
+            id="new-procedure-input"
+            ref="procedureInputRef"
+            v-model="pendingProcedureName"
             type="text"
             placeholder="Escriba el servicio/procedimiento"
-            class="specialties-services__input"
-            @keyup.enter="saveService"
+            class="profile-catalog__input"
+            :disabled="isProcedureSubmitting"
+            @keyup.enter="submitProcedure"
+            @keyup.escape="dismissProcedureForm"
           />
-          <div class="specialties-services__actions">
+          <div class="profile-catalog__inline-form-actions">
             <button
-              class="specialties-services__action-button specialties-services__action-button--cancel"
-              @click="cancelService"
+              type="button"
+              class="profile-catalog__button profile-catalog__button--secondary"
+              :disabled="isProcedureSubmitting"
+              @click="dismissProcedureForm"
             >
               Cancelar
             </button>
             <button
-              class="specialties-services__action-button specialties-services__action-button--save"
-              @click="saveService"
+              type="button"
+              class="profile-catalog__button profile-catalog__button--outline"
+              :disabled="isProcedureSubmitting"
+              @click="submitProcedure"
             >
-              Guardar
+              {{ isProcedureSubmitting ? "Guardando..." : "Guardar" }}
             </button>
           </div>
         </div>
 
         <button
-          v-if="!showServiceInput"
-          class="specialties-services__add-button"
-          @click="addServiceHandler"
+          v-else
+          type="button"
+          class="profile-catalog__button profile-catalog__button--add"
+          @click="revealProcedureForm"
         >
-          <AtomsIconsPlusIcon /> Agregar
+          <AtomsIconsPlusIcon aria-hidden="true" />
+          Agregar
         </button>
       </section>
     </div>
@@ -372,14 +485,15 @@ const removeService = async (index: number) => {
 </template>
 
 <style lang="scss" scoped>
-.specialties-services {
-  &__loading {
+.profile-catalog {
+  &__loading,
+  &__loader {
     display: flex;
     justify-content: center;
     align-items: center;
-    min-height: 200px;
+    min-height: 120px;
     font-family: $font-family-main;
-    font-size: 16px;
+    font-size: 14px;
     color: $color-text-secondary;
   }
 
@@ -387,39 +501,45 @@ const removeService = async (index: number) => {
     margin-bottom: 2rem;
   }
 
-  &__title {
-    margin: 0;
+  &__heading {
+    margin: 0 0 8px;
     font-family: $font-family-main;
     font-size: 16px;
     font-weight: 600;
     color: $color-foreground;
-    margin-bottom: 8px;
   }
 
-  &__description {
-    margin: 0;
+  &__subtitle {
+    margin: 0 0 1rem;
     font-family: $font-family-main;
     font-size: 14px;
     font-weight: 300;
     color: $color-text-muted;
-    margin-bottom: 1rem;
+  }
+
+  &__empty-message {
+    margin: 0 0 1rem;
+    font-family: $font-family-main;
+    font-size: 14px;
+    color: $color-text-secondary;
+    font-style: italic;
   }
 
   &__list {
     list-style: none;
     padding: 0;
-    margin: 0;
+    margin: 0 0 0.5rem;
   }
 
-  &__item {
-    margin-bottom: 1rem;
+  &__list-item {
+    margin-bottom: 0.75rem;
 
     &:last-child {
       margin-bottom: 0;
     }
   }
 
-  &__item-button {
+  &__chip {
     @include button-base;
     width: 100%;
     padding: 12px 16px;
@@ -442,26 +562,39 @@ const removeService = async (index: number) => {
     &:active {
       background-color: #f2f4f7;
     }
+
+    &:focus-visible {
+      outline: 2px solid $color-primary;
+      outline-offset: 2px;
+    }
   }
 
-  &__item-text {
+  &__chip-label {
     flex: 1;
     font-size: 14px;
   }
 
-  &__item-icon {
-    font-weight: 600;
+  &__chip-dismiss {
     display: flex;
     align-items: center;
     justify-content: center;
     margin-left: 8px;
+    font-weight: 600;
   }
 
-  &__input-container {
-    background-color: rgba($color-primary, 0.1);
+  &__inline-form {
+    background-color: rgba($color-primary, 0.08);
     border-radius: 16px;
     padding: 1rem;
     margin-bottom: 1rem;
+  }
+
+  &__inline-form-actions {
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    gap: 8px;
+    margin-top: 0.5rem;
   }
 
   &__input {
@@ -470,50 +603,47 @@ const removeService = async (index: number) => {
     margin-bottom: 0.5rem;
   }
 
-  &__actions {
-    display: flex;
-    justify-content: flex-end;
-    align-items: center;
-    gap: 8px;
-    margin-top: 0.5rem;
-  }
-
-  &__action-button {
-    &--cancel {
+  &__button {
+    &--secondary {
       @include secondary-button;
       padding: 8px 16px;
       font-size: 14px;
       font-weight: 400;
     }
 
-    &--save {
+    &--outline {
       @include outline-button;
       padding: 8px 16px;
       font-size: 14px;
       font-weight: 400;
     }
-  }
 
-  &__add-button {
-    @include button-base;
-    background-color: $color-info;
-    border-color: $color-info;
-    color: $white;
-    font-weight: 400;
-    padding: 10px 16px;
-    margin: 1.5rem 0;
+    &--add {
+      @include button-base;
+      background-color: $color-info;
+      border-color: $color-info;
+      color: $white;
+      font-weight: 400;
+      padding: 10px 16px;
+      margin: 1.5rem 0;
 
-    &:hover {
-      background-color: darken($color-info, 5%);
-      border-color: darken($color-info, 5%);
-    }
+      &:hover {
+        background-color: darken($color-info, 5%);
+        border-color: darken($color-info, 5%);
+      }
 
-    &:active {
-      background-color: darken($color-info, 10%);
-    }
+      &:active {
+        background-color: darken($color-info, 10%);
+      }
 
-    svg {
-      margin-right: 4px;
+      &:focus-visible {
+        outline: 2px solid $color-info;
+        outline-offset: 2px;
+      }
+
+      svg {
+        margin-right: 4px;
+      }
     }
   }
 
@@ -521,6 +651,10 @@ const removeService = async (index: number) => {
     border: none;
     border-top: 1px solid #e5e7eb;
     margin: 2rem 0;
+  }
+
+  &__visually-hidden {
+    @include visually-hidden;
   }
 }
 </style>
