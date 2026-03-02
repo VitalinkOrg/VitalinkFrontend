@@ -366,7 +366,7 @@ function openConfirmationModal() {
     step.value = 1;
     open.value = true;
   } else {
-    router.push("/pacientes/login");
+    router.push("/auth/login");
   }
 }
 
@@ -374,7 +374,7 @@ const { data: insurances } = await useFetch(
   config.public.API_BASE_URL + "/insurances/get_insurances",
   {
     transform: (_insurances) => _insurances.data,
-  }
+  },
 );
 /*
 const { data: appointments } = await useFetch(
@@ -406,7 +406,7 @@ const requestVoucher = async () => {
         others,
         description,
       },
-    }
+    },
   );
   if (data.value) {
     step.value = 2;

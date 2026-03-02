@@ -118,7 +118,6 @@
 
 <script lang="ts" setup>
 import { useFormat } from "~/composables/useFormat";
-import type { Package, Service } from "~/types";
 
 const route = useRoute();
 const router = useRouter();
@@ -134,8 +133,8 @@ interface Props {
   customerName: string;
   customerPhone?: string;
   selectedProcedureId?: number;
-  services?: Service[];
-  selectedPackage?: Package;
+  services?: ISupplierService[];
+  selectedPackage?: IPackage;
 }
 
 interface Emits {

@@ -18,7 +18,7 @@
 </template>
 
 <script setup lang="ts">
-import type { ModalContent } from "@/types";
+import type { ModalContent } from "~/types/test-index";
 
 interface Props {
   icon: string;

@@ -33,23 +33,16 @@
 
     <main class="schedule-appointment-modal__content">
       <WebsiteStepper
-        v-if="internalCurrentStep !== 0 && internalCurrentStep !== 4"
+        v-if="internalCurrentStep !== 0 && internalCurrentStep !== 3"
         :steps="steps"
         :currentStep="internalCurrentStep"
       />
-      <WebsiteReservarCitaValoracionSeleccionarFechaHora
-        v-if="internalCurrentStep === 1"
-        :selected-day="localSelectedDay"
-        :selected-hour="localSelectedHour"
-        :supplier-id="props.supplierId"
-        @set-selected-day="setSelectedDate"
-        @set-selected-hour="setSelectedHour"
-      />
 
       <WebsiteReservarCitaValoracionFormularioReserva
-        v-if="internalCurrentStep === 2"
+        v-if="internalCurrentStep === 1"
         :loading="isLoading"
         :phone-number="phoneNumber"
+        :selected-package="selectedPackage"
         :alternative-phone-number="alternativePhoneNumber"
         @set-alternative-phone-number="setAlternativePhoneNumber"
         @is-for-external-user="setIsForExternalUser"
@@ -57,9 +50,9 @@
       />
 
       <WebsiteReservarCitaValoracionConfirmacionReserva
-        v-if="internalCurrentStep === 3"
-        :selected-day="localSelectedDay ?? selectedDay"
-        :selected-hour="localSelectedHour ?? selectedHour"
+        v-if="internalCurrentStep === 2"
+        :selected-day="localSelectedDay"
+        :selected-hour="localSelectedHour"
         :supplier-id="supplierId"
         :customer-id="customerId ?? ''"
         :customer-name="customerName ?? ''"
@@ -87,11 +80,7 @@
           @click="nextStep"
           type="button"
           aria-label="Continuar al siguiente paso"
-          :disabled="
-            isLoading ||
-            (internalCurrentStep === 1 &&
-              (!localSelectedDay || !localSelectedHour))
-          "
+          :disabled="isLoading"
         >
           <span
             v-if="isLoading"
@@ -105,8 +94,8 @@
 
   <WebsiteReservarCitaValoracionReservaExitosa
     :is-open="isOpenSuccessModal"
-    :selected-day="localSelectedDay ?? selectedDay"
-    :selected-hour="localSelectedHour ?? selectedHour"
+    :selected-day="localSelectedDay"
+    :selected-hour="localSelectedHour"
     :supplier-id="supplierId"
     :supplier-name="supplierName"
     :customer-name="customerName"
@@ -124,14 +113,11 @@
 </template>
 
 <script lang="ts" setup>
-import { useAppointment } from "~/composables/api";
-import type { Package, Service } from "~/types";
+import { useAppointment } from "@/composables/api";
 
 const { createAppointment } = useAppointment();
 
 interface Props {
-  selectedDay: string | null;
-  selectedHour: string | null;
   currentStep: number;
   supplierId: number;
   supplierName: string;
@@ -140,8 +126,8 @@ interface Props {
   customerPhone: string;
   serviceCost?: number;
   selectedProcedureId?: number;
-  selectedPackage?: Package;
-  services?: Service[];
+  selectedPackage: IPackage;
+  services?: ISupplierService[];
 }
 
 const props = defineProps<Props>();
@@ -157,9 +143,9 @@ const isForExternalUser = ref<"me" | "someoneElse">("me");
 const userDescription = ref<string>("");
 
 const internalCurrentStep = ref<number>(props.currentStep);
-const steps = ["1", "2", "3"];
-const localSelectedDay = ref<string | null>(props.selectedDay || null);
-const localSelectedHour = ref<string | null>(props.selectedHour || null);
+const steps = ["1", "2"];
+const localSelectedDay = ref<null>(null);
+const localSelectedHour = ref<null>(null);
 
 const modalRef = ref();
 const phoneNumber = computed(() => props.customerPhone ?? "");
@@ -219,14 +205,6 @@ const prevStep = (): void => {
   }
 };
 
-const setSelectedDate = (date: string): void => {
-  localSelectedDay.value = date;
-};
-
-const setSelectedHour = (hour: string): void => {
-  localSelectedHour.value = hour;
-};
-
 const setAlternativePhoneNumber = (phone: string): void => {
   alternativePhoneNumber.value = phone;
 };
@@ -241,10 +219,10 @@ const handleConfirmReservation = async () => {
     return;
   }
 
-  const payload = {
+  const payload: ICreateAppointmentRequest = {
     customer_id: props.customerId,
-    appointment_date: (localSelectedDay.value ?? props.selectedDay) || "",
-    appointment_hour: (localSelectedHour.value ?? props.selectedHour) || "",
+    appointment_date: localSelectedDay.value,
+    appointment_hour: localSelectedHour.value,
     supplier_id: props.supplierId,
     package_id: props.selectedPackage.id,
     user_description: userDescription.value,
@@ -256,15 +234,14 @@ const handleConfirmReservation = async () => {
 
   try {
     isLoading.value = true;
-    const api = createAppointment(payload);
-    await api.request();
+    const { data, error } = await createAppointment(payload);
 
-    if (api.response.value?.data) {
+    if (data) {
       openSuccessModal();
     }
 
-    if (api.error.value) {
-      throw new Error(api.error.value.info);
+    if (error) {
+      throw new Error(error.info);
     }
   } catch (err: any) {
     console.error("Error al confirmar la reservación:", err);

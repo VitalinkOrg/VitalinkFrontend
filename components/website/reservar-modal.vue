@@ -23,11 +23,9 @@
             :steps="steps"
             :currentStep="internalCurrentStep"
           />
-          <!-- Step 1: Display Plans -->
           <div v-if="internalCurrentStep === 0">
             <div class="container">
               <div class="row">
-                <!-- Option 1 -->
                 <div class="col-4">
                   <div class="custom-card">
                     <div class="card-header text-center">OPCIÓN 1</div>
@@ -387,7 +385,6 @@
                   disponibles
                 </div>
 
-                <!-- Reservation Button -->
                 <div class="row mt-4">
                   <div class="col-12 d-flex justify-content-between">
                     <button
@@ -650,14 +647,12 @@
 </template>
 
 <script lang="ts" setup>
-import type { ApiResponse, Customer, Package, Supplier } from "~/types";
-
 interface Props {
-  selectedPackage: Package;
+  selectedPackage: IPackage;
   selectedProcedureId: number;
   selectedSpecialtyId: number;
-  userInfo: Customer | null;
-  doctorInfo: Supplier | Partial<Supplier> | null;
+  userInfo: ICustomer | null;
+  doctorInfo: ISupplierDetail | Partial<ISupplierDetail> | null;
   selectedDay: string;
   selectedHour: string;
   isOpen: boolean;
@@ -785,7 +780,7 @@ const getSelectedServiceName = computed<string>(() => {
       return "N/A";
     }
     const service = props.doctorInfo.services.find(
-      (service) => service.medical_specialty?.id === props.selectedSpecialtyId
+      (service) => service.medical_specialty?.id === props.selectedSpecialtyId,
     );
     return service?.medical_specialty?.name || "N/A";
   } catch (error) {
@@ -800,10 +795,10 @@ const getSelectedProcedureName = computed<string>(() => {
       return "N/A";
     }
     const allProcedures = props.doctorInfo.services.flatMap(
-      (service) => service.procedures || []
+      (service) => service.procedures || [],
     );
     const procedure = allProcedures.find(
-      (procedure) => procedure.procedure?.id === props.selectedProcedureId
+      (procedure) => procedure.procedure?.id === props.selectedProcedureId,
     );
     return procedure?.procedure?.name || "N/A";
   } catch (error) {
@@ -910,7 +905,7 @@ const confirmReservation = async (): Promise<void> => {
   if (!props.doctorInfo?.id) {
     console.error("Doctor ID is missing");
     alert(
-      "Error: Información del doctor no disponible. Por favor, intente nuevamente."
+      "Error: Información del doctor no disponible. Por favor, intente nuevamente.",
     );
     return;
   }
@@ -918,14 +913,14 @@ const confirmReservation = async (): Promise<void> => {
   if (!props.selectedPackage?.id) {
     console.error("Package ID is missing");
     alert(
-      "Error: Información del paquete no disponible. Por favor, intente nuevamente."
+      "Error: Información del paquete no disponible. Por favor, intente nuevamente.",
     );
     return;
   }
 
   if (!localSelectedDay.value || !localSelectedHour.value) {
     alert(
-      "Error: Fecha u hora no seleccionada. Por favor, complete la información."
+      "Error: Fecha u hora no seleccionada. Por favor, complete la información.",
     );
     return;
   }
@@ -954,13 +949,13 @@ const confirmReservation = async (): Promise<void> => {
   try {
     isLoading.value = true;
 
-    const data = await $fetch<ApiResponse>(
+    const data = await $fetch<IApiResponse>(
       config.public.API_BASE_URL + "/appointment/add",
       {
         method: "POST",
         body: payload,
         headers: { Authorization: token.value ?? "" },
-      }
+      },
     );
 
     if (data) {
@@ -985,7 +980,7 @@ watch(
   (newVal) => {
     internalCurrentStep.value = newVal;
   },
-  { immediate: true }
+  { immediate: true },
 );
 
 watch(
@@ -996,7 +991,7 @@ watch(
         resetModalData();
       }, 300);
     }
-  }
+  },
 );
 </script>
 

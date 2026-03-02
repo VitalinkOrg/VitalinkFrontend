@@ -1,18 +1,8 @@
 <script lang="ts" setup>
 import { useUdc } from "@/composables/api";
-import type {
-  AssessmentDetail,
-  Customer,
-  MedicalSpecialty,
-  Package,
-  Procedures,
-  ReviewDetail,
-  Service,
-  Supplier,
-} from "@/types";
 
 interface Props {
-  supplier?: Supplier | Partial<Supplier> | null;
+  supplier?: ISupplierDetail | Partial<ISupplierDetail> | null;
   searchSpecialtyCode?: string | null;
   searchProcedureCode?: string | null;
 }
@@ -29,10 +19,10 @@ interface AppointmentForm {
 const props = defineProps<Props>();
 
 const { createAssessmentPackage } = useAssessmentPackage();
-const { fetchUdc } = useUdc();
+const { getAllUdcs } = useUdc();
 
 const panel = ref<boolean>(false);
-const user = useCookie<Customer>("user_info");
+const user = useCookie<ICustomer>("user_info");
 const tab = ref<number>(1);
 const appointment = reactive<AppointmentForm>({
   specialty: null,
@@ -46,18 +36,23 @@ const result = ref<any>(null);
 const open = ref<boolean>(false);
 const selectedSpecialty = ref<string | null>(null);
 const selectedSpecialtyId = ref<number | null>(null);
-const selectedPackage = ref<Package | null>(null);
+const selectedPackage = ref<IPackage | null>(null);
 const selectedProcedure = ref<string | null>(null);
 const selectedProcedureId = ref<number | null>(null);
-const reviewDetails = ref<ReviewDetail[]>([]);
-const assessmentDetails = ref<AssessmentDetail[]>([]);
+const reviewDetails = ref<any[]>([]);
+const assessmentDetails = ref<IUdc[]>([]);
 const isLoadingData = ref<boolean>(false);
 
-const currentSupplier = computed<Supplier | Partial<Supplier> | null>(() => {
+const logger = useLogger("PerfilDoctorTab");
+const toast = useToast();
+
+const currentSupplier = computed<
+  ISupplierDetail | Partial<ISupplierDetail> | null
+>(() => {
   return props.supplier || null;
 });
 
-const supplierServices = computed<Service[]>(() => {
+const supplierServices = computed<ISupplierService[]>(() => {
   const services = currentSupplier.value?.services;
   return Array.isArray(services) ? services : [];
 });
@@ -70,7 +65,7 @@ const selectedSpecialtyName = computed<string>(() => {
   if (!selectedSpecialty.value || !hasServices.value) return "";
 
   const service = supplierServices.value.find(
-    (s) => s.medical_specialty?.code === selectedSpecialty.value
+    (s) => s.medical_specialty?.code === selectedSpecialty.value,
   );
   return service?.medical_specialty?.name || selectedSpecialty.value;
 });
@@ -82,7 +77,7 @@ const selectedProcedureName = computed<string>(() => {
     if (!service.procedures || !Array.isArray(service.procedures)) continue;
 
     const procedure = service.procedures.find(
-      (p) => p.procedure?.code === selectedProcedure.value
+      (p) => p.procedure?.code === selectedProcedure.value,
     );
     if (procedure?.procedure?.name) {
       return procedure.procedure.name;
@@ -95,15 +90,13 @@ const isSearchMode = computed<boolean>(() => {
   return Boolean(props.searchSpecialtyCode || props.searchProcedureCode);
 });
 
-const specialties = computed<MedicalSpecialty[]>(() => {
+const specialties = computed<IUdc[]>(() => {
   return supplierServices.value
     .map((service) => service.medical_specialty)
-    .filter(
-      (specialty): specialty is MedicalSpecialty => specialty !== undefined
-    );
+    .filter((specialty): specialty is IUdc => specialty !== undefined);
 });
 
-const filteredProcedures = computed<Procedures[]>(() => {
+const filteredProcedures = computed<IProcedures[]>(() => {
   if (!selectedSpecialty.value && hasServices.value) {
     const firstService = supplierServices.value[0];
     if (firstService?.medical_specialty?.code) {
@@ -116,14 +109,14 @@ const filteredProcedures = computed<Procedures[]>(() => {
   }
 
   const specialty = supplierServices.value.find(
-    (s) => s.medical_specialty?.code === selectedSpecialty.value
+    (s) => s.medical_specialty?.code === selectedSpecialty.value,
   );
 
   return Array.isArray(specialty?.procedures) ? specialty.procedures : [];
 });
 
-const filteredPackages = computed<Package[]>(() => {
-  let packages: Package[] = [];
+const filteredPackages = computed<IPackage[]>(() => {
+  let packages: IPackage[] = [];
 
   if (!selectedProcedure.value && filteredProcedures.value.length > 0) {
     const firstProcedure = filteredProcedures.value[0];
@@ -137,21 +130,12 @@ const filteredPackages = computed<Package[]>(() => {
     }
   } else {
     const procedure = filteredProcedures.value.find(
-      (p) => p.procedure?.code === selectedProcedure.value
+      (p) => p.procedure?.code === selectedProcedure.value,
     );
     packages = Array.isArray(procedure?.packages) ? procedure.packages : [];
   }
 
-  try {
-    const packageId = packages.length > 0 ? packages[0].id : 0;
-
-    const assessmentPackage = createAssessmentPackage(18000, 0, packageId);
-
-    return [assessmentPackage, ...packages];
-  } catch (error) {
-    console.error("Error creating assessment package:", error);
-    return packages;
-  }
+  return packages;
 });
 
 const getAssessmentLabel = (assessmentCode: string): string => {
@@ -160,7 +144,7 @@ const getAssessmentLabel = (assessmentCode: string): string => {
   }
 
   const detail = assessmentDetails.value.find(
-    (item) => item?.code === assessmentCode
+    (item) => item?.code === assessmentCode,
   );
   return detail?.name || assessmentCode;
 };
@@ -190,7 +174,7 @@ const selectSpecialty = (specialtyCode: string, specialtyId: number): void => {
   appointment.specialty = specialtyCode;
 
   const specialty = supplierServices.value.find(
-    (s) => s.medical_specialty?.code === specialtyCode
+    (s) => s.medical_specialty?.code === specialtyCode,
   );
 
   if (
@@ -207,7 +191,7 @@ const selectSpecialty = (specialtyCode: string, specialtyId: number): void => {
   }
 };
 
-const selectPackage = (selectedPkg: Package): void => {
+const selectPackage = (selectedPkg: IPackage): void => {
   if (!selectedPkg) {
     console.warn("Invalid package selection");
     return;
@@ -217,11 +201,11 @@ const selectPackage = (selectedPkg: Package): void => {
   tab.value = 2;
 };
 
-const selectPackageAutomatically = (packages: Package[]): void => {
+const selectPackageAutomatically = (packages: IPackage[]): void => {
   if (!Array.isArray(packages) || packages.length === 0) return;
 
   const nonAssessmentPackage = packages.find(
-    (pkg) => pkg.product?.name !== "Cita de Valoración"
+    (pkg) => pkg.product?.name !== "Cita de Valoración",
   );
 
   selectedPackage.value = nonAssessmentPackage || packages[0];
@@ -276,33 +260,34 @@ const initializeDefaults = (): void => {
   });
 };
 
-const loadAssessmentDetails = async (): Promise<void> => {
-  const api = fetchUdc("ASSESSMENT_DETAIL");
-  await api.request();
-
-  const response = api.response.value;
-  const error = api.error.value;
-
-  if (response?.data) {
-    assessmentDetails.value = response.data;
+const executeGetAssessmentDetails = async (): Promise<void> => {
+  const { data, error } = await getAllUdcs({ type: "ASSESSMENT_DETAIL" });
+  if (error && !data) {
+    logger.error("Failed to fetch assessment details", { info: error.info });
+    toast.error(error.info);
+    return;
   }
 
-  if (error) {
-    console.error("Assessment details loading error:", error.info);
-  }
+  assessmentDetails.value = data ?? [];
 };
 
-const loadApiData = async (): Promise<void> => {
-  const api = fetchUdc("REVIEW");
-  await api.request();
+const executeGetReviews = async (): Promise<void> => {
+  try {
+    const { data, error } = await getAllUdcs({ type: "REVIEW" });
 
-  const response = api.response.value;
+    if (error && !data) {
+      logger.error("Failed to fetch suppliers", { info: error.info });
+      toast.error(error.info);
+      return;
+    }
 
-  if (response?.data) {
-    reviewDetails.value = response.data;
+    reviewDetails.value = data ?? [];
+  } catch (err) {
+    logger.error("Unexpected error in executeGetSupplierById", { error: err });
+    toast.error("Error inesperado al cargar el proveedor");
   }
 
-  await loadAssessmentDetails();
+  await executeGetAssessmentDetails();
 };
 
 watch(
@@ -317,11 +302,11 @@ watch(
       });
     }
   },
-  { immediate: true }
+  { immediate: true },
 );
 
 onMounted(() => {
-  loadApiData();
+  executeGetReviews();
 });
 
 watch(
@@ -330,7 +315,7 @@ watch(
     if (!hasServices.value || !isSearchMode.value) return;
 
     const validSpecialty = supplierServices.value.find(
-      (s) => s.medical_specialty?.code === newSpecialtyCode
+      (s) => s.medical_specialty?.code === newSpecialtyCode,
     );
 
     if (validSpecialty && newSpecialtyCode) {
@@ -340,7 +325,7 @@ watch(
 
       if (newProcedureCode && Array.isArray(validSpecialty.procedures)) {
         const validProcedure = validSpecialty.procedures.find(
-          (p) => p.procedure?.code === newProcedureCode
+          (p) => p.procedure?.code === newProcedureCode,
         );
 
         if (validProcedure && validProcedure.procedure) {
@@ -373,7 +358,7 @@ watch(
       initializeDefaults();
     }
   },
-  { immediate: true }
+  { immediate: true },
 );
 </script>
 
@@ -395,7 +380,7 @@ watch(
         @click="tab = 2"
         :disabled="!selectedPackage"
       >
-        Disponibilidad
+        Hospitales
       </button>
     </li>
     <li class="tab-item">
@@ -450,15 +435,9 @@ watch(
       <p>Este proveedor no tiene servicios disponibles.</p>
     </div>
 
-    <WebsitePerfilDoctorTabsDisponibilidad
+    <WebsitePerfilDoctorTabsHospitales
       v-if="tab === 2 && selectedPackage"
-      :supplier="currentSupplier"
-      :selected-specialty="selectedSpecialtyName"
-      :selected-procedure-id="selectedProcedureId"
-      :selected-procedure-name="selectedProcedureName"
-      :selected-package="selectedPackage"
-      :customer="user"
-      :reserve-appointment="reserveAppointment"
+      :locations="currentSupplier?.locations ?? []"
     />
 
     <div v-else-if="tab === 2 && !selectedPackage" class="empty-state">

@@ -1,16 +1,13 @@
 <script lang="ts" setup>
 import { useUdc } from "@/composables/api";
+import { useLogger } from "@/composables/useLogger";
+import { useToast } from "@/composables/useToast";
 import type { DropdownItem } from "../ui/dropdown-base.vue";
 
-interface Specialty {
-  code: string;
-  name: string;
-}
-
-interface Procedure {
-  code: string;
-  name: string;
-}
+const SEARCH_HISTORY_KEY = "medical_search_history";
+const MAX_HISTORY_ITEMS = 10;
+const RETRY_DELAY_MS = 1000;
+const MAX_RETRIES = 2;
 
 interface SearchHistory {
   specialtyCode: string;
@@ -21,7 +18,7 @@ interface SearchHistory {
 }
 
 interface Props {
-  specialties?: Specialty[];
+  specialties?: IUdc[];
   loading?: boolean;
 }
 
@@ -36,177 +33,230 @@ const emit = defineEmits<{
 
 const route = useRoute();
 const router = useRouter();
-const { fetchUdc } = useUdc();
 const { getToken } = useAuthToken();
-
-const SEARCH_HISTORY_KEY = "medical_search_history";
-const MAX_HISTORY_ITEMS = 10;
+const { getAllUdcs } = useUdc();
+const logger = useLogger("SearchBar");
+const toast = useToast();
 
 const selectedSpecialty = ref<string | number | undefined>(undefined);
 const selectedProcedure = ref<string | number | undefined>(undefined);
-const procedures = ref<Procedure[]>([]);
+const procedures = ref<IUdc[]>([]);
 const loadingProcedures = ref(false);
-const errorLoadingProcedures = ref(false);
+const proceduresError = ref<string | null>(null);
+const retryCount = ref(0);
 
 const isAuthenticated = computed(() => !!getToken());
 
-const specialtyItems = computed<DropdownItem[]>(() => {
-  return props.specialties.map((specialty) => ({
+const specialtyItems = computed<DropdownItem[]>(() =>
+  props.specialties.map((specialty) => ({
     value: specialty.code,
     label: specialty.name,
-  }));
-});
+  })),
+);
 
-const procedureItems = computed<DropdownItem[]>(() => {
-  return procedures.value.map((procedure) => ({
+const procedureItems = computed<DropdownItem[]>(() =>
+  procedures.value.map((procedure) => ({
     value: procedure.code,
     label: procedure.name,
-  }));
+  })),
+);
+
+const isProcedureDisabled = computed(
+  () =>
+    !isAuthenticated.value ||
+    !selectedSpecialty.value ||
+    loadingProcedures.value ||
+    !!proceduresError.value,
+);
+
+const hasValidSelection = computed(
+  () => !!selectedSpecialty.value || !!selectedProcedure.value,
+);
+
+const procedureStatusMessage = computed(() => {
+  if (proceduresError.value) return proceduresError.value;
+  if (loadingProcedures.value) return "Cargando procedimientos…";
+  return null;
 });
 
-const getSearchHistory = (): SearchHistory[] => {
+function buildSearchQuery(
+  specialtyValue?: string | number,
+  procedureValue?: string | number,
+): Record<string, string> {
+  const query: Record<string, string> = {};
+  if (specialtyValue) query.specialty_code = String(specialtyValue);
+  if (procedureValue) query.procedure_code = String(procedureValue);
+  return query;
+}
+
+function isQueryEqual(
+  a: Record<string, string>,
+  b: Record<string, string>,
+): boolean {
+  const keysA = Object.keys(a);
+  const keysB = Object.keys(b);
+  if (keysA.length !== keysB.length) return false;
+  return keysA.every((key) => a[key] === b[key]);
+}
+
+function findItemByCode<T extends { code: string }>(
+  items: T[],
+  code?: string | number,
+): T | undefined {
+  if (!code) return undefined;
+  return items.find((item) => item.code === String(code));
+}
+
+function getSearchHistory(): SearchHistory[] {
   try {
-    const history = localStorage.getItem(SEARCH_HISTORY_KEY);
-    return history ? JSON.parse(history) : [];
-  } catch (error) {
-    console.error("Error reading search history:", error);
+    const raw = localStorage.getItem(SEARCH_HISTORY_KEY);
+    return raw ? (JSON.parse(raw) as SearchHistory[]) : [];
+  } catch (err) {
+    logger.warn("Failed to read search history", { error: String(err) });
     return [];
   }
-};
+}
 
-const saveSearchToHistory = (search: Omit<SearchHistory, "timestamp">) => {
+function saveSearchToHistory(entry: Omit<SearchHistory, "timestamp">): void {
   try {
     const history = getSearchHistory();
 
     const isDuplicate = history.some(
       (item) =>
-        item.specialtyCode === search.specialtyCode &&
-        item.procedureCode === search.procedureCode
+        item.specialtyCode === entry.specialtyCode &&
+        item.procedureCode === entry.procedureCode,
     );
+    if (isDuplicate) return;
 
-    if (!isDuplicate) {
-      const newSearch: SearchHistory = {
-        ...search,
-        timestamp: Date.now(),
-      };
+    const updated: SearchHistory[] = [
+      { ...entry, timestamp: Date.now() },
+      ...history,
+    ].slice(0, MAX_HISTORY_ITEMS);
 
-      history.unshift(newSearch);
-
-      const trimmedHistory = history.slice(0, MAX_HISTORY_ITEMS);
-
-      localStorage.setItem(SEARCH_HISTORY_KEY, JSON.stringify(trimmedHistory));
-    }
-  } catch (error) {
-    console.error("Error saving search history:", error);
+    localStorage.setItem(SEARCH_HISTORY_KEY, JSON.stringify(updated));
+  } catch (err) {
+    logger.warn("Failed to save search history", { error: String(err) });
   }
-};
+}
 
-const clearSearchHistory = () => {
+function clearSearchHistory(): void {
   try {
     localStorage.removeItem(SEARCH_HISTORY_KEY);
-  } catch (error) {
-    console.error("Error clearing search history:", error);
+  } catch (err) {
+    logger.warn("Failed to clear search history", { error: String(err) });
   }
-};
+}
 
-const loadProcedures = async (
+async function fetchProcedures(
   specialtyCode: string,
-  keepSelectedProcedure = false
-) => {
+  preserveSelection = false,
+): Promise<void> {
   loadingProcedures.value = true;
-  errorLoadingProcedures.value = false;
+  proceduresError.value = null;
 
-  if (!keepSelectedProcedure) {
+  if (!preserveSelection) {
     selectedProcedure.value = undefined;
   }
 
   try {
-    const api = fetchUdc("MEDICAL_PROCEDURE", {
+    const { data, error } = await getAllUdcs({
+      type: "MEDICAL_PROCEDURE",
       father_code: specialtyCode,
     });
-    await api.request();
 
-    const response = api.response.value;
-
-    if (response?.data) {
-      procedures.value = response.data.map((item: any) => ({
-        code: item.code,
-        name: item.name,
-      }));
+    if (error && !data) {
+      logger.error("Failed to fetch appointments", { info: error.info });
+      toast.error(error.info);
+      throw new Error(error.info || "Error al cargar los procedimientos");
     }
+
+    procedures.value = (data ?? []).map((item) => ({
+      ...item,
+      code: item.code,
+      name: item.name,
+    }));
+
+    retryCount.value = 0;
   } catch (err) {
-    console.error("Error loading procedures:", err);
-    errorLoadingProcedures.value = true;
+    const message =
+      err instanceof Error ? err.message : "Error al cargar procedimientos";
+    logger.error("fetchProcedures failed", {
+      specialtyCode,
+      error: message,
+    });
+    proceduresError.value = "Error al cargar procedimientos. Intente de nuevo.";
     procedures.value = [];
   } finally {
     loadingProcedures.value = false;
   }
-};
+}
 
-const handleSpecialtySelect = (item: DropdownItem) => {
-  selectedProcedure.value = undefined;
-  procedures.value = [];
-  if (item.value) {
-    loadProcedures(item.value.toString());
+async function handleRetryFetchProcedures(): Promise<void> {
+  if (!selectedSpecialty.value || retryCount.value >= MAX_RETRIES) {
+    if (retryCount.value >= MAX_RETRIES) {
+      toast.error(
+        "No se pudieron cargar los procedimientos. Intente más tarde.",
+      );
+    }
+    return;
   }
-};
 
-const handleSpecialtyClear = () => {
+  retryCount.value++;
+  await new Promise((resolve) => setTimeout(resolve, RETRY_DELAY_MS));
+  await fetchProcedures(String(selectedSpecialty.value), true);
+}
+
+function handleSpecialtySelect(item: DropdownItem): void {
   selectedProcedure.value = undefined;
   procedures.value = [];
-};
+  proceduresError.value = null;
+  retryCount.value = 0;
 
-const searchResults = () => {
-  const newQuery: Record<string, string> = {
-    ...(selectedProcedure.value && {
-      procedure_code: selectedProcedure.value.toString(),
-    }),
-    ...(selectedSpecialty.value && {
-      specialty_code: selectedSpecialty.value.toString(),
-    }),
-  };
+  if (item.value) {
+    fetchProcedures(String(item.value));
+  }
+}
 
-  if (Object.keys(newQuery).length === 0) {
+function handleSpecialtyClear(): void {
+  selectedProcedure.value = undefined;
+  procedures.value = [];
+  proceduresError.value = null;
+  retryCount.value = 0;
+}
+
+function handleSubmitSearch(): void {
+  const query = buildSearchQuery(
+    selectedSpecialty.value,
+    selectedProcedure.value,
+  );
+
+  if (Object.keys(query).length === 0) {
     router.push({ path: "/buscar" });
     return;
   }
 
-  if (selectedSpecialty.value) {
-    const specialty = props.specialties.find(
-      (s) => s.code === selectedSpecialty.value
-    );
-    const procedure = procedures.value.find(
-      (p) => p.code === selectedProcedure.value
-    );
-
-    if (specialty) {
-      saveSearchToHistory({
-        specialtyCode: specialty.code,
-        specialtyName: specialty.name,
-        procedureCode: procedure?.code,
-        procedureName: procedure?.name,
-      });
-    }
-  }
-
-  const currentQuery = route.query;
-  const isSameQuery = JSON.stringify(currentQuery) === JSON.stringify(newQuery);
-
-  if (!isSameQuery) {
-    router.push({
-      path: "/buscar",
-      query: newQuery,
+  const specialty = findItemByCode(props.specialties, selectedSpecialty.value);
+  if (specialty) {
+    const procedure = findItemByCode(procedures.value, selectedProcedure.value);
+    saveSearchToHistory({
+      specialtyCode: specialty.code,
+      specialtyName: specialty.name,
+      procedureCode: procedure?.code,
+      procedureName: procedure?.name,
     });
-  } else {
-    emit("search", newQuery);
   }
-};
 
-const initializeFiltersFromQuery = async () => {
-  const query = route.query;
+  const currentQuery = { ...(route.query as Record<string, string>) };
+  if (isQueryEqual(currentQuery, query)) {
+    emit("search", query);
+  } else {
+    router.push({ path: "/buscar", query });
+  }
+}
 
-  const specialtyCode = query.specialty_code as string;
-  const procedureCode = query.procedure_code as string;
+async function syncFiltersFromQuery(): Promise<void> {
+  const specialtyCode = route.query.specialty_code as string | undefined;
+  const procedureCode = route.query.procedure_code as string | undefined;
 
   if (!specialtyCode) {
     selectedSpecialty.value = undefined;
@@ -215,162 +265,212 @@ const initializeFiltersFromQuery = async () => {
     return;
   }
 
-  if (selectedSpecialty.value !== specialtyCode) {
+  const needsRefresh =
+    selectedSpecialty.value !== specialtyCode || procedures.value.length === 0;
+
+  if (needsRefresh) {
     selectedSpecialty.value = specialtyCode;
-    await loadProcedures(specialtyCode, true);
-  } else if (specialtyCode && procedures.value.length === 0) {
-    await loadProcedures(specialtyCode, true);
+    await fetchProcedures(specialtyCode, true);
   }
 
   if (procedureCode) {
-    const procedureExists = procedures.value.find(
-      (p) => p.code === procedureCode
-    );
-    if (procedureExists) {
-      selectedProcedure.value = procedureCode;
-    } else {
-      selectedProcedure.value = undefined;
-    }
+    const exists = findItemByCode(procedures.value, procedureCode);
+    selectedProcedure.value = exists ? procedureCode : undefined;
   } else {
     selectedProcedure.value = undefined;
   }
-};
+}
 
 watch(
   () => route.query,
   async (newQuery, oldQuery) => {
-    const queryChanged =
+    const changed =
       newQuery.specialty_code !== oldQuery?.specialty_code ||
       newQuery.procedure_code !== oldQuery?.procedure_code;
-
-    if (queryChanged) {
-      await initializeFiltersFromQuery();
-    }
-  }
+    if (changed) await syncFiltersFromQuery();
+  },
 );
 
 onMounted(async () => {
-  await initializeFiltersFromQuery();
+  await syncFiltersFromQuery();
 });
 
-defineExpose({
-  getSearchHistory,
-  clearSearchHistory,
-});
+defineExpose({ getSearchHistory, clearSearchHistory });
 </script>
 
 <template>
-  <div class="search-form">
-    <div class="search-form__card">
-      <div class="search-form__body">
-        <form class="search-form__form" @submit.prevent="searchResults">
-          <div class="search-form__group">
-            <label for="especialidad" class="search-form__label">
-              Especialidades
+  <div
+    class="search-bar"
+    role="search"
+    aria-label="Buscar especialidades y procedimientos médicos"
+  >
+    <div class="search-bar__card">
+      <form
+        class="search-bar__form"
+        novalidate
+        @submit.prevent="handleSubmitSearch"
+      >
+        <div class="search-bar__field">
+          <label
+            id="specialty-label"
+            for="specialty-dropdown"
+            class="search-bar__label"
+          >
+            Especialidades
+          </label>
+          <UiDropdownBase
+            id="specialty-dropdown"
+            :key="`specialty-${selectedSpecialty}`"
+            v-model="selectedSpecialty"
+            :items="specialtyItems"
+            placeholder="Ej. Oftalmología"
+            :disabled="loading || !isAuthenticated"
+            :loading="loading"
+            searchable
+            clearable
+            no-results-text="No se encontraron especialidades"
+            size="lg"
+            aria-labelledby="specialty-label"
+            @select="handleSpecialtySelect"
+            @clear="handleSpecialtyClear"
+          />
+        </div>
+
+        <div class="search-bar__field">
+          <div class="search-bar__label-row">
+            <label
+              id="procedure-label"
+              for="procedure-dropdown"
+              class="search-bar__label"
+            >
+              Procedimiento
             </label>
-            <UiDropdownBase
-              :key="`specialty-${selectedSpecialty}`"
-              v-model="selectedSpecialty"
-              :items="specialtyItems"
-              placeholder="Ej. Oftalmología"
-              :disabled="loading || !isAuthenticated"
-              :loading="loading"
-              searchable
-              clearable
-              no-results-text="No se encontraron especialidades"
-              @select="handleSpecialtySelect"
-              @clear="handleSpecialtyClear"
-              size="lg"
+            <AtomsIconsRefreshCcwIcon
+              v-if="loadingProcedures"
+              class="search-bar__spinner"
+              aria-hidden="true"
             />
           </div>
 
-          <div class="search-form__group">
-            <div class="search-form__label-container">
-              <label for="procedimiento" class="search-form__label">
-                Procedimiento
-              </label>
-              <AtomsIconsRefreshCcwIcon
-                v-if="loadingProcedures"
-                class="search-form__loading-icon"
-              />
-            </div>
-            <UiDropdownBase
-              v-model="selectedProcedure"
-              :items="procedureItems"
-              placeholder="Ej. Cirugía de cataratas"
-              :disabled="
-                !isAuthenticated ||
-                !selectedSpecialty ||
-                loadingProcedures ||
-                errorLoadingProcedures
-              "
-              :loading="loadingProcedures"
-              :error="errorLoadingProcedures"
-              searchable
-              clearable
-              no-results-text="No se encontraron procedimientos"
-              size="lg"
-            >
-              <template #icon>
-                <AtomsIconsSearchIcon size="20" />
-              </template>
-            </UiDropdownBase>
-            <div
-              v-if="errorLoadingProcedures"
-              class="search-form__status-message search-form__status-message--error"
-            >
-              <span>Error al cargar procedimientos</span>
-            </div>
-          </div>
+          <UiDropdownBase
+            id="procedure-dropdown"
+            v-model="selectedProcedure"
+            :items="procedureItems"
+            placeholder="Ej. Cirugía de cataratas"
+            :disabled="isProcedureDisabled"
+            :loading="loadingProcedures"
+            :error="!!proceduresError"
+            searchable
+            clearable
+            no-results-text="No se encontraron procedimientos"
+            size="lg"
+            aria-labelledby="procedure-label"
+            :aria-describedby="
+              procedureStatusMessage ? 'procedure-status' : undefined
+            "
+          >
+            <template #icon>
+              <AtomsIconsSearchIcon size="20" aria-hidden="true" />
+            </template>
+          </UiDropdownBase>
 
-          <div class="search-form__button-group">
-            <button type="submit" class="search-form__submit-button">
-              <AtomsIconsSearchIcon size="20" class="text-light" />
+          <div
+            v-if="procedureStatusMessage"
+            id="procedure-status"
+            class="search-bar__status"
+            :class="{
+              'search-bar__status--error': !!proceduresError,
+              'search-bar__status--loading':
+                loadingProcedures && !proceduresError,
+            }"
+            :role="proceduresError ? 'alert' : 'status'"
+            :aria-live="proceduresError ? 'assertive' : 'polite'"
+          >
+            <span>{{ procedureStatusMessage }}</span>
+            <button
+              v-if="proceduresError"
+              type="button"
+              class="search-bar__retry-button"
+              :disabled="retryCount >= MAX_RETRIES"
+              :aria-label="
+                retryCount >= MAX_RETRIES
+                  ? 'Reintentos agotados'
+                  : 'Reintentar carga de procedimientos'
+              "
+              @click="handleRetryFetchProcedures"
+            >
+              {{ retryCount >= MAX_RETRIES ? "Sin reintentos" : "Reintentar" }}
             </button>
           </div>
-        </form>
-      </div>
+        </div>
+
+        <div class="search-bar__actions">
+          <button
+            type="submit"
+            class="search-bar__submit"
+            :aria-label="
+              hasValidSelection
+                ? 'Buscar resultados médicos'
+                : 'Ir a la página de búsqueda'
+            "
+          >
+            <AtomsIconsSearchIcon
+              size="20"
+              class="search-bar__submit-icon"
+              aria-hidden="true"
+            />
+          </button>
+        </div>
+      </form>
     </div>
   </div>
 </template>
 
 <style lang="scss" scoped>
-.search-form {
+$search-bar-bg: $white;
+$search-bar-radius: 0.9375rem;
+$search-bar-shadow: 0 0.25rem 1.675rem 0 rgba(0, 0, 0, 0.09);
+$search-bar-gap: 1.25rem;
+
+$label-color: #344054;
+$status-error-color: #dc3545;
+$status-loading-color: $color-text-muted;
+
+$submit-bg: $primary-aqua;
+$submit-bg-hover: darken($primary-aqua, 10%);
+$submit-size: 3.5rem;
+$submit-radius: 0.5rem;
+
+.search-bar {
   width: 100%;
   max-width: 48.5rem;
-  gap: 1.25rem;
-  border-radius: 0.9375rem;
-  padding: 1.25rem;
   margin: 0 auto;
-  background: $white;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  box-shadow: 0 0.25rem 1.675rem 0 #00000017;
+  padding: $search-bar-gap;
+  background: $search-bar-bg;
+  border-radius: $search-bar-radius;
+  box-shadow: $search-bar-shadow;
 
   @media (max-width: $breakpoint-md) {
     padding: 1rem;
-    gap: 1rem;
+  }
+
+  &__card {
+    width: 100%;
   }
 
   &__form {
     display: grid;
     grid-template-columns: 1fr 1fr auto;
-    gap: 1.25rem;
+    gap: $search-bar-gap;
     width: 100%;
     align-items: flex-end;
 
     @media (max-width: $breakpoint-md) {
       grid-template-columns: 1fr;
-      grid-template-rows: auto auto auto;
     }
   }
 
-  &__body {
-    display: contents;
-  }
-
-  &__group {
+  &__field {
     position: relative;
     display: flex;
     flex-direction: column;
@@ -378,7 +478,7 @@ defineExpose({
     min-width: 0;
   }
 
-  &__label-container {
+  &__label-row {
     display: flex;
     align-items: center;
     gap: 0.5rem;
@@ -388,321 +488,110 @@ defineExpose({
     font-weight: 500;
     font-size: 0.875rem;
     line-height: 1.25rem;
-    color: #344054;
+    color: $label-color;
   }
 
-  &__loading-icon {
+  &__spinner {
     width: 1rem;
     height: 1rem;
     color: $primary-aqua;
-    animation: spin 1s linear infinite;
+    animation: search-bar-spin 1s linear infinite;
+
+    @media (prefers-reduced-motion: reduce) {
+      animation: none;
+      opacity: 0.7;
+    }
   }
 
-  &__dropdown {
-    position: relative;
-    width: 100%;
-    min-width: 20.25rem;
-  }
-
-  &__button-group {
+  &__status {
     display: flex;
-    align-self: end;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.75rem;
+    line-height: 1rem;
+    margin-top: 0.25rem;
   }
 
-  &__submit-button {
-    width: 3.5rem;
-    height: 3.5rem;
-    gap: 0.5rem;
-    opacity: 1;
-    border-radius: 0.5rem;
-    padding: 1rem;
-    border: 1px solid $primary-aqua;
-    box-shadow: 0 0.0625rem 0.125rem 0 #1018280d;
-    background: $primary-aqua;
+  &__status--error {
+    color: $status-error-color;
+  }
+
+  &__status--loading {
+    color: $status-loading-color;
+  }
+
+  &__retry-button {
+    all: unset;
     cursor: pointer;
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: $primary-aqua;
+    text-decoration: underline;
+    text-underline-offset: 2px;
+
+    &:hover {
+      color: $submit-bg-hover;
+    }
+
+    &:focus-visible {
+      outline: 2px solid $primary-aqua;
+      outline-offset: 2px;
+      border-radius: 2px;
+    }
+
+    &:disabled {
+      color: $color-text-muted;
+      cursor: not-allowed;
+      text-decoration: none;
+    }
+  }
+
+  &__actions {
+    display: flex;
+    align-self: flex-end;
+  }
+
+  &__submit {
+    width: $submit-size;
+    height: $submit-size;
     display: flex;
     align-items: center;
     justify-content: center;
-    transition: all 0.2s ease;
+    padding: 0;
+    border: 1px solid $submit-bg;
+    border-radius: $submit-radius;
+    background: $submit-bg;
+    cursor: pointer;
     flex-shrink: 0;
+    transition:
+      background-color 0.2s ease,
+      border-color 0.2s ease;
 
     &:hover {
-      background-color: darken($primary-aqua, 10%);
-      border-color: darken($primary-aqua, 10%);
+      background-color: $submit-bg-hover;
+      border-color: $submit-bg-hover;
+    }
+
+    &:focus-visible {
+      outline: none;
+      box-shadow: 0 0 0 3px rgba($primary-aqua, 0.4);
     }
 
     @media (max-width: $breakpoint-md) {
-      align-self: flex-end;
       width: 100%;
-      justify-content: center;
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      transition: none;
     }
   }
 
-  &__status-message {
-    position: absolute;
-    bottom: -1.25rem;
-    left: 0;
-    font-size: 0.75rem;
-
-    &--error {
-      color: #dc3545;
-    }
+  &__submit-icon {
+    color: $white;
   }
 }
 
-.dropdown {
-  &__toggle-container {
-    position: relative;
-    width: 100%;
-  }
-
-  &__toggle {
-    width: 100%;
-    min-height: 3.5rem;
-    padding: 1rem;
-    background: $white;
-    border: 1px solid #d0d5dd;
-    border-radius: 0.5rem;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    cursor: pointer;
-    transition: all 0.2s ease;
-    position: relative;
-    text-align: left;
-
-    &:hover {
-      border-color: $primary-aqua;
-    }
-
-    &:focus {
-      outline: none;
-      border-color: $primary-aqua;
-      box-shadow: 0 0 0 0.1875rem rgba(12, 173, 187, 0.1);
-    }
-
-    &--active {
-      border-color: $primary-aqua;
-      box-shadow: 0 0 0 0.1875rem rgba(12, 173, 187, 0.1);
-    }
-
-    &--disabled {
-      background-color: #f9fafb;
-      border-color: #d0d5dd;
-      color: #98a2b3;
-      cursor: not-allowed;
-
-      &:hover {
-        border-color: #d0d5dd;
-      }
-    }
-
-    &--error {
-      border-color: #dc3545;
-    }
-
-    &--with-icon {
-      padding-left: 2.8125rem;
-      padding-right: 3.125rem;
-    }
-
-    &--clickable {
-      border: 1px solid #d0d5dd;
-      cursor: pointer;
-    }
-  }
-
-  &__icon {
-    position: absolute;
-    left: 0.75rem;
-    top: 50%;
-    transform: translateY(-50%);
-    color: $color-text-muted;
-    pointer-events: none;
-    z-index: 1;
-  }
-
-  &__clear-button {
-    position: absolute;
-    right: 1rem;
-    top: 50%;
-    transform: translateY(-50%);
-    width: 1.5rem;
-    height: 1.5rem;
-    border: none;
-    background: transparent;
-    color: $color-text-muted;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    border-radius: 0.25rem;
-    transition: all 0.2s ease;
-
-    &:hover {
-      background-color: #f3f4f6;
-      color: #374151;
-    }
-
-    &:disabled {
-      opacity: 0.5;
-      cursor: not-allowed;
-    }
-  }
-
-  &__search-input {
-    flex: 1;
-    border: none;
-    outline: none;
-    background: transparent;
-    color: $color-foreground;
-    width: 100%;
-    font-family: $font-family-main;
-    font-weight: 400;
-    font-size: 1rem;
-    line-height: 1.5rem;
-    letter-spacing: 0;
-
-    &::placeholder {
-      color: $color-text-muted;
-    }
-
-    &:disabled {
-      color: #98a2b3;
-      cursor: not-allowed;
-    }
-  }
-
-  &__text {
-    flex: 1;
-    font-size: 1rem;
-    line-height: 1.5rem;
-    color: $color-text-muted;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-  }
-
-  &__arrow {
-    width: 1.25rem;
-    height: 1.25rem;
-    color: $color-text-muted;
-    transition: transform 0.2s ease;
-    flex-shrink: 0;
-
-    &--rotated {
-      transform: rotate(180deg);
-    }
-  }
-
-  &__menu {
-    position: absolute;
-    top: 100%;
-    left: 0;
-    right: 0;
-    z-index: 1000;
-    background: $white;
-    border: 1px solid #d0d5dd;
-    border-radius: 0.5rem;
-    box-shadow:
-      0 0.25rem 0.375rem -0.0625rem rgba(0, 0, 0, 0.1),
-      0 0.125rem 0.25rem -0.0625rem rgba(0, 0, 0, 0.06);
-    max-height: 12.5rem;
-    overflow-y: auto;
-    margin-top: 0.25rem;
-    opacity: 0;
-    visibility: hidden;
-    transform: translateY(-0.625rem);
-    transition: all 0.2s ease;
-
-    &--show {
-      opacity: 1;
-      visibility: visible;
-      transform: translateY(0);
-    }
-
-    &::-webkit-scrollbar {
-      width: 0.375rem;
-    }
-
-    &::-webkit-scrollbar-track {
-      background: #f1f5f9;
-    }
-
-    &::-webkit-scrollbar-thumb {
-      background: #cbd5e1;
-      border-radius: 0.1875rem;
-
-      &:hover {
-        background: #94a3b8;
-      }
-    }
-  }
-
-  &__no-results {
-    padding: 0.75rem 1rem;
-    font-size: 0.875rem;
-    color: #6b7280;
-    font-style: italic;
-    text-align: center;
-  }
-
-  &__item {
-    width: 100%;
-    padding: 0.75rem 1rem;
-    text-align: left;
-    border: none;
-    background: transparent;
-    cursor: pointer;
-    font-size: 1rem;
-    line-height: 1.5rem;
-    color: $color-foreground;
-    transition: all 0.15s ease;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 0.5rem;
-
-    &:hover {
-      background-color: #f9fafb;
-    }
-
-    &:focus {
-      outline: none;
-      background-color: #f3f4f6;
-    }
-
-    &--active {
-      background-color: #f9fafb;
-      color: $color-foreground;
-    }
-
-    &:first-child {
-      border-top-left-radius: 0.4375rem;
-      border-top-right-radius: 0.4375rem;
-    }
-
-    &:last-child {
-      border-bottom-left-radius: 0.4375rem;
-      border-bottom-right-radius: 0.4375rem;
-    }
-  }
-
-  &__item-text {
-    flex: 1;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    text-align: left;
-  }
-
-  &__item-icon {
-    color: #7f56d9;
-    flex-shrink: 0;
-  }
-}
-
-@keyframes spin {
+@keyframes search-bar-spin {
   from {
     transform: rotate(0deg);
   }

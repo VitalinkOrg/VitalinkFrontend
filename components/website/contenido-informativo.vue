@@ -42,7 +42,7 @@
 </template>
 
 <script setup lang="ts">
-import type { Specialty } from "@/types";
+import type { Specialty } from "~/types/test-index";
 
 const headerBadge = ref("Especialidades");
 const headerTitle = ref("Contenido informativo");
@@ -149,7 +149,7 @@ const activeSpecialty = ref<string>(specialties.value[0]?.id || "");
 
 const activeCards = computed(() => {
   const specialty = specialties.value.find(
-    (s) => s.id === activeSpecialty.value
+    (s) => s.id === activeSpecialty.value,
   );
   return specialty?.cards || [];
 });
