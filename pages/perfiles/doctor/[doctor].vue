@@ -1,28 +1,24 @@
 <script lang="ts" setup>
-import { useSupplier } from "~/composables/api";
-import type { Supplier } from "~/types";
-
-interface SupplierResponse {
-  success: boolean;
-  data?: Supplier;
-  message?: string;
-}
+import { useSupplier } from "@/composables/api";
 
 definePageMeta({
   middleware: ["auth-pacientes"],
 });
 
 const route = useRoute();
-const { fetchSupplier } = useSupplier();
+const { getSupplierById } = useSupplier();
 
 const supplierId = route.params.doctor as string | undefined;
 const searchSpecialtyCode = route.query.specialty_code as string | undefined;
 const searchProcedureCode = route.query.procedure_code as string | undefined;
 
 const isModalOpen = ref<boolean>(false);
-const supplierData = ref<Supplier | null>(null);
+const supplierData = ref<ISupplierDetail | null>(null);
 const isLoading = ref<boolean>(false);
 const error = ref<string | null>(null);
+
+const logger = useLogger("PerfilDoctor");
+const toast = useToast();
 
 const openModal = (): void => {
   isModalOpen.value = true;
@@ -32,32 +28,31 @@ const closeModal = (): void => {
   isModalOpen.value = false;
 };
 
-const fetchSupplierData = async (): Promise<void> => {
+const executeGetSupplierById = async (): Promise<void> => {
   if (!supplierId) {
-    error.value = "ID del proveedor no encontrado";
+    toast.error("ID del proveedor no encontrado");
     return;
   }
 
-  const api = fetchSupplier(supplierId);
-  await api.request();
+  try {
+    const { data, error } = await getSupplierById(Number(supplierId));
 
-  const response = api.response.value;
-  const apiError = api.error.value;
+    if (error && !data) {
+      logger.error("Failed to fetch suppliers", { info: error.info });
+      toast.error(error.info);
+      return;
+    }
 
-  if (apiError) {
-    error.value = apiError.info;
-    return;
-  }
-
-  if (response?.data) {
-    supplierData.value = response.data;
-    error.value = null;
-  } else {
-    error.value = "No se encontraron datos del proveedor";
+    supplierData.value = data ?? null;
+  } catch (err) {
+    logger.error("Unexpected error in executeGetSupplierById", { error: err });
+    toast.error("Error inesperado al cargar el proveedor");
   }
 };
 
-const currentSupplier = computed<Supplier | Partial<Supplier> | null>(() => {
+const currentSupplier = computed<
+  ISupplierDetail | Partial<ISupplierDetail> | null
+>(() => {
   return supplierData.value || null;
 });
 
@@ -67,15 +62,11 @@ const hasSupplierData = computed<boolean>(() => {
   );
 });
 
-const supplierName = computed<string>(() => {
-  return currentSupplier.value?.name || "Proveedor médico";
-});
-
-await fetchSupplierData();
+await executeGetSupplierById();
 </script>
 
 <template>
-  <NuxtLayout name="web">
+  <NuxtLayout name="pacientes-dashboard">
     <main class="main-content">
       <div class="main-container">
         <div class="navigation-container">
@@ -168,7 +159,7 @@ await fetchSupplierData();
             <h3 class="error-title">Error al cargar el perfil</h3>
             <p class="error-message">{{ error }}</p>
             <button
-              @click="fetchSupplierData"
+              @click="executeGetSupplierById"
               class="retry-button"
               :disabled="isLoading"
             >
@@ -211,14 +202,13 @@ await fetchSupplierData();
             <p class="empty-message">
               No se pudieron cargar los datos del proveedor médico.
             </p>
-            <button @click="fetchSupplierData" class="retry-button">
+            <button @click="executeGetSupplierById" class="retry-button">
               Reintentar
             </button>
           </div>
         </div>
       </div>
 
-      <!-- Image Carousel -->
       <WebsitePerfilDoctorCarruselFotosAdicionales
         :is-open="isModalOpen"
         @close="closeModal"
@@ -471,5 +461,9 @@ await fetchSupplierData();
       }
     }
   }
+}
+
+.retry-button {
+  @include primary-button;
 }
 </style>

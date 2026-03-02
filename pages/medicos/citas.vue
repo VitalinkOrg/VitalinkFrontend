@@ -1,356 +1,64 @@
 <script lang="ts" setup>
-import { useAppointment } from "@/composables/api";
-import type { Appointment } from "@/types";
-import { jsPDF } from "jspdf";
-import "jspdf-autotable";
-import { computed, ref, type Ref } from "vue";
-
-const { fetchAllAppointments } = useAppointment();
-
 definePageMeta({
   middleware: ["auth-doctors-hospitals"],
 });
 
-const { formatDate } = useFormat();
+const {
+  isLoading,
+  hasError,
+  searchQuery,
+  activeSortCriterion,
+  visibleStatusBadges,
+  filteredAppointments,
+  appointmentCount,
+  hasAppointments,
+  sortOptions,
+  statusFilters,
+  fetchAppointments,
+  isStatusActive,
+  toggleStatusFilter,
+  removeStatusFilter,
+  applySortCriterion,
+} = useAppointmentsPage();
 
-const tableKey = computed(() => sortOption.value);
+const { generateReport } = useAppointmentReport();
 
-const searchQuery: Ref<string> = ref("");
-const sortOption: Ref<string> = ref("newest");
-const selectedStatuses: Ref<Set<string>> = ref(new Set(["Todos"]));
-const appointments: Ref<Appointment[]> = ref([]);
+const tableKey = computed(() => activeSortCriterion.value);
 
-const getAppointments = async () => {
-  const api = fetchAllAppointments();
-  await api.request();
-
-  const response = api.response.value;
-
-  if (response && response.data) {
-    appointments.value = response.data;
-  }
-};
-
-const statusMapping: Record<string, string> = {
-  Pendiente: "Pendiente",
-  Completada: "Completada",
-  Cancelada: "Cancelada",
-  Todos: "Todos",
-};
-
-const statusCodeToCategory = (code: string): string => {
-  const completedCodes = [
-    "CONCRETED_APPOINTMENT",
-    "VALUED_VALORATION_APPOINTMENT",
-  ];
-  const pendingCodes = [
-    "PENDING_VALORATION_APPOINTMENT",
-    "PENDING_PROCEDURE",
-    "CONFIRM_PROCEDURE",
-    "CONFIRM_VALIDATION_APPOINTMENT",
-    "VALUATION_PENDING_VALORATION_APPOINTMENT",
-    "WAITING_PROCEDURE",
-  ];
-  const cancelledCodes = ["CANCEL_APPOINTMENT"];
-
-  if (completedCodes.includes(code)) return "Completada";
-  if (cancelledCodes.includes(code)) return "Cancelada";
-  if (pendingCodes.includes(code)) return "Pendiente";
-
-  return "Pendiente";
-};
-
-const loading: Ref<boolean> = ref(false);
-
-const isStatusSelected = (status: string): boolean => {
-  return selectedStatuses.value.has(status);
-};
-
-const toggleStatus = (status: string): void => {
-  const newSelectedStatuses = new Set(selectedStatuses.value);
-
-  if (status === "Todos") {
-    newSelectedStatuses.clear();
-    newSelectedStatuses.add("Todos");
-  } else {
-    newSelectedStatuses.delete("Todos");
-
-    if (newSelectedStatuses.has(status)) {
-      newSelectedStatuses.delete(status);
-    } else {
-      newSelectedStatuses.add(status);
-    }
-
-    if (newSelectedStatuses.size === 0) {
-      newSelectedStatuses.add("Todos");
-    }
-  }
-
-  selectedStatuses.value = newSelectedStatuses;
-};
-
-const removeStatusBadge = (status: string): void => {
-  const newSelectedStatuses = new Set(selectedStatuses.value);
-  newSelectedStatuses.delete(status);
-
-  if (newSelectedStatuses.size === 0) {
-    newSelectedStatuses.add("Todos");
-  }
-
-  selectedStatuses.value = newSelectedStatuses;
-};
-
-const selectedStatusBadges = computed((): string[] => {
-  if (selectedStatuses.value.has("Todos")) {
-    return ["Todos"];
-  }
-  return Array.from(selectedStatuses.value);
-});
-
-const filteredAndSortedAppointments = computed((): Appointment[] => {
-  let result = [...appointments.value];
-
-  // Búsqueda
-  if (searchQuery.value.trim()) {
-    const query = searchQuery.value.toLowerCase();
-    result = result.filter((appointment) => {
-      const customerName = appointment.customer?.name?.toLowerCase() || "";
-      const serviceName =
-        appointment.package?.product?.name?.toLowerCase() || "";
-      const appointmentType =
-        appointment.appointment_type?.name?.toLowerCase() || "";
-      const status =
-        appointment.appointment_status?.value1?.toLowerCase() || "";
-
-      return (
-        customerName.includes(query) ||
-        serviceName.includes(query) ||
-        appointmentType.includes(query) ||
-        status.includes(query)
-      );
-    });
-  }
-
-  // Filtro por estado
-  if (!selectedStatuses.value.has("Todos")) {
-    result = result.filter((appointment) => {
-      const category = statusCodeToCategory(
-        appointment.appointment_status.code,
-      );
-      return selectedStatuses.value.has(category);
-    });
-  }
-
-  // Ordenamiento
-  return result.sort((a, b) => {
-    switch (sortOption.value) {
-      case "newest": {
-        const dateA = new Date(
-          `${a.appointment_date}T${a.appointment_hour}`,
-        ).getTime();
-        const dateB = new Date(
-          `${b.appointment_date}T${b.appointment_hour}`,
-        ).getTime();
-        return dateB - dateA;
-      }
-      case "oldest": {
-        const dateA = new Date(
-          `${a.appointment_date}T${a.appointment_hour}`,
-        ).getTime();
-        const dateB = new Date(
-          `${b.appointment_date}T${b.appointment_hour}`,
-        ).getTime();
-        return dateA - dateB;
-      }
-      case "type":
-        return (a.appointment_type?.name || "").localeCompare(
-          b.appointment_type?.name || "",
-          "es",
-        );
-
-      case "status":
-        return (a.appointment_status?.value1 || "").localeCompare(
-          b.appointment_status?.value1 || "",
-          "es",
-        );
-
-      default:
-        return 0;
-    }
-  });
-});
-
-const downloadAllAppointments = (): void => {
-  const doc = new jsPDF();
-  const pageWidth = doc.internal.pageSize.getWidth();
-  const margin = 15;
-  let yPosition = 20;
-
-  const reportTitle = "Reporte de Citas";
-
-  doc.setFontSize(18);
-  doc.setFont("helvetica", "bold");
-  doc.text(reportTitle, pageWidth / 2, yPosition, {
-    align: "center",
-  });
-  yPosition += 10;
-
-  doc.setFontSize(10);
-  doc.setFont("helvetica", "normal");
-  doc.text(
-    `Generado el: ${formatDate(new Date().toISOString())}`,
-    pageWidth / 2,
-    yPosition,
-    { align: "center" },
-  );
-  yPosition += 15;
-
-  doc.setFontSize(12);
-  doc.setFont("helvetica", "bold");
-  const headers = ["Paciente", "Fecha", "Hora", "Servicio", "Tipo", "Estado"];
-  const columnWidths = [40, 30, 25, 45, 25, 25];
-  let xPosition = margin;
-
-  headers.forEach((header, i) => {
-    doc.text(header, xPosition, yPosition);
-    xPosition += columnWidths[i];
-  });
-  yPosition += 8;
-
-  doc.line(margin, yPosition, pageWidth - margin, yPosition);
-  yPosition += 10;
-
-  doc.setFontSize(10);
-  doc.setFont("helvetica", "normal");
-
-  filteredAndSortedAppointments.value.forEach((appointment, index) => {
-    if (yPosition > 270) {
-      doc.addPage();
-      yPosition = 20;
-    }
-
-    const patientName = appointment.customer?.name || "N/A";
-    const appointmentDate = appointment.appointment_date || "N/A";
-    const timeFrom = appointment.appointment_hour || "";
-    const serviceName = appointment.package?.product?.name || "N/A";
-    const appointmentType = appointment.appointment_type?.name || "N/A";
-    const status = appointment.appointment_status?.value1 || "N/A";
-
-    const row = [
-      patientName,
-      appointmentDate,
-      timeFrom,
-      serviceName,
-      appointmentType,
-      status,
-    ];
-
-    xPosition = margin;
-    row.forEach((cell, i) => {
-      doc.text(String(cell), xPosition, yPosition);
-      xPosition += columnWidths[i];
-    });
-
-    yPosition += 8;
-
-    if (index < filteredAndSortedAppointments.value.length - 1) {
-      doc.setDrawColor(220, 220, 220);
-      doc.line(margin, yPosition - 2, pageWidth - margin, yPosition - 2);
-      doc.setDrawColor(0, 0, 0);
-      yPosition += 4;
-    }
-  });
-
-  doc.setFontSize(8);
-  doc.setTextColor(100);
-  doc.text(
-    `Total citas: ${filteredAndSortedAppointments.value.length}`,
-    margin,
-    280,
-  );
-  doc.text("Sistema de Gestión Médica - Vitalink", pageWidth / 2, 280, {
-    align: "center",
-  });
-
-  const fileName = `Reporte_Citas_${new Date().toISOString().slice(0, 10)}.pdf`;
-
-  doc.save(fileName);
-};
-
-interface SortOption {
-  label: string;
-  value: string;
+function handleDownloadReport(): void {
+  generateReport(filteredAppointments.value);
 }
 
-const sortOptions: SortOption[] = [
-  { label: "Fecha (más reciente)", value: "newest" },
-  { label: "Fecha (más antigua)", value: "oldest" },
-  { label: "Tipo de reserva", value: "type" },
-  { label: "Estado", value: "status" },
-];
+async function handleRefresh(): Promise<void> {
+  await fetchAppointments();
+}
 
-const setSort = (value: string): void => {
-  sortOption.value = value;
-};
+provide("refreshAppointments", handleRefresh);
 
-onMounted(async () => {
-  loading.value = true;
-  await getAppointments();
-  loading.value = false;
-});
-
-const refreshAppointments = async (): Promise<void> => {
-  loading.value = true;
-  await getAppointments();
-  loading.value = false;
-};
-
-provide("refreshAppointments", refreshAppointments);
+onMounted(fetchAppointments);
 </script>
 
 <template>
   <NuxtLayout name="medicos-dashboard">
-    <header class="appointment-tracking__header">
-      <nav class="breadcrumb-nav" aria-label="Navegación de migas de pan">
-        <ol class="breadcrumb-nav__list">
-          <li class="breadcrumb-nav__item">
-            <NuxtLink
-              href="/medicos/inicio"
-              class="breadcrumb-nav__link breadcrumb-nav__link--muted"
-            >
+    <header class="page-header">
+      <nav class="breadcrumb" aria-label="Navegación de migas de pan">
+        <ol class="breadcrumb__list">
+          <li class="breadcrumb__item">
+            <NuxtLink to="/medicos/inicio" class="breadcrumb__link">
               Inicio
             </NuxtLink>
           </li>
-          <li
-            class="breadcrumb-nav__item breadcrumb-nav__item--active"
-            aria-current="page"
-          >
-            <span class="breadcrumb-nav__text">Citas</span>
+          <li class="breadcrumb__item" aria-current="page">
+            <span class="breadcrumb__current">Citas</span>
           </li>
         </ol>
       </nav>
 
-      <h1 class="appointment-tracking__title">Seguimiento de Citas</h1>
+      <h1 class="page-header__title">Seguimiento de Citas</h1>
     </header>
 
-    <main class="appointment-tracking__main">
-      <nav class="appointments-tabs" aria-label="Filtros de citas médicas">
-        <ul class="appointments-tabs__list" role="tablist">
-          <li class="appointments-tabs__item" role="presentation">
-            <button
-              class="appointments-tabs__button appointments-tabs__button--active"
-              role="tab"
-            >
-              Todas las citas
-            </button>
-          </li>
-        </ul>
-      </nav>
-
-      <section
-        class="appointments-toolbar"
-        aria-label="Herramientas de filtrado y búsqueda"
-      >
+    <main class="page-body">
+      <section class="toolbar" aria-label="Herramientas de filtrado y búsqueda">
         <UiSearchInput
           v-model="searchQuery"
           placeholder="Buscar"
@@ -358,42 +66,39 @@ provide("refreshAppointments", refreshAppointments);
           max-width="320px"
         />
 
-        <div class="appointments-toolbar__actions">
+        <div class="toolbar__actions">
           <button
             type="button"
-            class="button button--outline"
-            @click="downloadAllAppointments"
-            :disabled="!filteredAndSortedAppointments.length"
-            :aria-label="`Descargar reporte de ${filteredAndSortedAppointments.length} citas`"
+            class="toolbar__download-btn"
+            :disabled="!hasAppointments"
+            :aria-label="`Descargar reporte de ${appointmentCount} citas`"
+            @click="handleDownloadReport"
           >
             <AtomsIconsDownloadIcon
               size="20"
               aria-hidden="true"
               focusable="false"
             />
-            <span class="button__text">Descargar</span>
+            <span class="toolbar__download-label">Descargar</span>
           </button>
 
           <WebsiteBaseDropdown>
             <template #button>
-              <span class="dropdown-button__text">Ordenar por</span>
-              <span
-                class="dropdown-button__icon icon-chevron-down"
-                aria-hidden="true"
-              />
+              <span class="toolbar__dropdown-text">Ordenar por</span>
+              <span class="icon-chevron-down" aria-hidden="true" />
             </template>
             <template #menu>
               <li
                 v-for="option in sortOptions"
                 :key="option.value"
-                class="appointments-toolbar__dropdown-item"
+                class="toolbar__menu-item"
               >
                 <button
                   type="button"
                   role="menuitem"
-                  class="dropdown__item"
-                  @click="setSort(option.value)"
-                  :aria-pressed="sortOption === option.value"
+                  class="toolbar__menu-action"
+                  :aria-pressed="activeSortCriterion === option.value"
+                  @click="applySortCriterion(option.value)"
                 >
                   {{ option.label }}
                 </button>
@@ -403,10 +108,10 @@ provide("refreshAppointments", refreshAppointments);
 
           <WebsiteBaseDropdown>
             <template #button>
-              <span class="dropdown-button__text">Estado de solicitud:</span>
-              <div class="badges-container" aria-live="polite">
+              <span class="toolbar__dropdown-text">Estado de solicitud:</span>
+              <div class="badge-group" aria-live="polite">
                 <span
-                  v-for="status in selectedStatusBadges"
+                  v-for="status in visibleStatusBadges"
                   :key="status"
                   class="badge"
                   :aria-label="`Filtro activo: ${status}`"
@@ -415,9 +120,9 @@ provide("refreshAppointments", refreshAppointments);
                   <button
                     v-if="status !== 'Todos'"
                     type="button"
-                    class="badge__remove"
-                    @click.stop="removeStatusBadge(status)"
+                    class="badge__dismiss"
                     :aria-label="`Remover filtro ${status}`"
+                    @click.stop="removeStatusFilter(status)"
                   >
                     <AtomsIconsXIcon size="14" aria-hidden="true" />
                   </button>
@@ -426,30 +131,30 @@ provide("refreshAppointments", refreshAppointments);
             </template>
             <template #menu>
               <li
-                v-for="status in Object.keys(statusMapping)"
+                v-for="status in statusFilters"
                 :key="status"
-                class="appointments-toolbar__dropdown-item"
+                class="toolbar__menu-item"
                 role="none"
               >
-                <label class="appointments-toolbar__checkbox-label">
+                <label class="toolbar__checkbox">
                   <input
                     type="checkbox"
-                    class="appointments-toolbar__checkbox"
-                    :checked="isStatusSelected(status)"
-                    @change="toggleStatus(status)"
-                    :aria-label="`${isStatusSelected(status) ? 'Deseleccionar' : 'Seleccionar'} filtro ${status}`"
+                    class="toolbar__checkbox-input"
+                    :checked="isStatusActive(status)"
+                    :aria-label="`${isStatusActive(status) ? 'Deseleccionar' : 'Seleccionar'} filtro ${status}`"
+                    @change="toggleStatusFilter(status)"
                   />
                   <span
-                    class="appointments-toolbar__checkbox-custom"
+                    class="toolbar__checkbox-indicator"
                     aria-hidden="true"
-                  ></span>
+                  />
                 </label>
                 <button
                   type="button"
                   role="menuitem"
-                  class="dropdown__item"
-                  @click="toggleStatus(status)"
-                  :aria-pressed="isStatusSelected(status)"
+                  class="toolbar__menu-action"
+                  :aria-pressed="isStatusActive(status)"
+                  @click="toggleStatusFilter(status)"
                 >
                   {{ status }}
                 </button>
@@ -459,18 +164,41 @@ provide("refreshAppointments", refreshAppointments);
         </div>
       </section>
 
-      <section class="appointments-content" aria-label="Lista de citas médicas">
-        <div class="card">
-          <div v-if="loading" class="loading-state" aria-live="polite">
-            <span class="visually-hidden">Cargando citas...</span>
+      <section class="appointment-list" aria-label="Lista de citas médicas">
+        <div class="appointment-list__card">
+          <div
+            v-if="isLoading"
+            class="appointment-list__placeholder"
+            role="status"
+            aria-live="polite"
+          >
+            <span class="sr-only">Cargando citas…</span>
           </div>
 
           <div
-            v-else-if="!filteredAndSortedAppointments.length"
-            class="empty-state"
+            v-else-if="hasError"
+            class="appointment-list__error"
+            role="alert"
+            aria-live="assertive"
+          >
+            <p class="appointment-list__error-text">
+              No se pudieron cargar las citas.
+            </p>
+            <button
+              type="button"
+              class="appointment-list__retry-btn"
+              @click="fetchAppointments"
+            >
+              Reintentar
+            </button>
+          </div>
+
+          <div
+            v-else-if="!hasAppointments"
+            class="appointment-list__empty"
             role="status"
           >
-            <p class="empty-state__message">
+            <p class="appointment-list__empty-text">
               No se encontraron citas que coincidan con los filtros aplicados.
             </p>
           </div>
@@ -478,8 +206,8 @@ provide("refreshAppointments", refreshAppointments);
           <MedicosCitasTable
             v-else
             :key="tableKey"
-            :appointments="filteredAndSortedAppointments"
-            :useDropdown="true"
+            :appointments="filteredAppointments"
+            :use-dropdown="true"
           />
         </div>
       </section>
@@ -488,16 +216,18 @@ provide("refreshAppointments", refreshAppointments);
 </template>
 
 <style lang="scss" scoped>
-.appointment-tracking {
-  &__header {
-    display: flex;
-    flex-direction: column;
-    gap: 6px;
-    margin-bottom: 1.5rem;
+.sr-only {
+  @include visually-hidden;
+}
 
-    @include respond-to(md) {
-      margin-bottom: 2rem;
-    }
+.page-header {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: 1.5rem;
+
+  @include respond-to(md) {
+    margin-bottom: 2rem;
   }
 
   &__title {
@@ -506,24 +236,13 @@ provide("refreshAppointments", refreshAppointments);
     font-size: 20px;
     line-height: 20px;
     letter-spacing: 0;
-  }
-
-  &__main {
-    display: flex;
-    flex-direction: column;
-    gap: 1rem;
-
-    @include respond-to(md) {
-      gap: 1.5rem;
-      margin-bottom: 3rem;
-    }
+    margin: 0;
   }
 }
 
-.breadcrumb-nav {
+.breadcrumb {
   display: flex;
   align-items: center;
-  --breadcrumb-divider: "/";
 
   &__list {
     display: flex;
@@ -534,7 +253,7 @@ provide("refreshAppointments", refreshAppointments);
     gap: 0.25rem;
 
     li + li::before {
-      content: var(--breadcrumb-divider);
+      content: "/";
       padding: 0 0.5rem;
       color: #6c757d;
 
@@ -550,24 +269,15 @@ provide("refreshAppointments", refreshAppointments);
     @include respond-to(sm) {
       font-size: 0.875rem;
     }
-
-    &--active .breadcrumb-nav__text {
-      color: #6c757d;
-    }
   }
 
   &__link {
     text-decoration: none;
-    color: inherit;
-
-    &--muted {
-      color: #6c757d;
-    }
+    color: #6c757d;
 
     &:hover,
     &:focus-visible {
       text-decoration: underline;
-      outline: 2px solid transparent;
     }
 
     &:focus-visible {
@@ -577,79 +287,23 @@ provide("refreshAppointments", refreshAppointments);
     }
   }
 
-  &__text {
-    color: inherit;
+  &__current {
+    color: #6c757d;
   }
 }
 
-.appointments-tabs {
-  margin-top: 1rem;
+.page-body {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
 
   @include respond-to(md) {
-    margin-top: 1.5rem;
-  }
-
-  &__list {
-    display: flex;
-    list-style: none;
-    padding: 0;
-    gap: 0.5rem;
-    border-bottom: 2px solid #e1e4ed;
-    overflow-x: auto;
-    -webkit-overflow-scrolling: touch;
-
-    @include respond-to(sm) {
-      gap: 0.75rem;
-    }
-
-    @include respond-to(md) {
-      gap: 1rem;
-      overflow-x: visible;
-    }
-  }
-
-  &__item {
-    flex-shrink: 0;
-  }
-
-  &__button {
-    width: 100%;
-    min-width: max-content;
-    padding: 0.625rem 0;
-    font-weight: 300;
-    font-size: 0.875rem;
-    color: #6d758f;
-    background: none;
-    border: none;
-    cursor: pointer;
-    border-bottom: 2px solid transparent;
-    transform: translateY(2px);
-    transition: all 0.2s ease;
-    white-space: nowrap;
-
-    @include respond-to(sm) {
-      font-size: 1rem;
-      padding: 0.75rem 0;
-    }
-
-    &:focus-visible {
-      outline: 2px solid $color-primary;
-      outline-offset: 2px;
-    }
-
-    &--active {
-      font-weight: 600;
-      color: #3541b4;
-      border-bottom-color: #3541b4;
-    }
-
-    &:hover:not(&--active) {
-      color: #3541b4;
-    }
+    gap: 1.5rem;
+    margin-bottom: 3rem;
   }
 }
 
-.appointments-toolbar {
+.toolbar {
   display: flex;
   flex-direction: column;
   gap: 1rem;
@@ -665,17 +319,6 @@ provide("refreshAppointments", refreshAppointments);
     margin-bottom: 1.5rem;
   }
 
-  &__search {
-    display: flex;
-    align-items: center;
-    flex: 1;
-    min-width: 0;
-
-    @include respond-to(sm) {
-      max-width: 20rem;
-    }
-  }
-
   &__actions {
     display: flex;
     align-items: center;
@@ -688,7 +331,40 @@ provide("refreshAppointments", refreshAppointments);
     }
   }
 
-  &__dropdown-item {
+  &__download-btn {
+    @include outline-button;
+    font-weight: 400;
+    font-size: 0.75rem;
+    line-height: 1.25;
+    color: #344054;
+    padding: 0.5rem 0.75rem;
+    gap: 0.375rem;
+
+    @include respond-to(sm) {
+      font-size: 0.875rem;
+      padding: 0.625rem 1rem;
+      gap: 0.5rem;
+    }
+
+    &:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
+  }
+
+  &__download-label {
+    @include respond-to-max(sm) {
+      @include visually-hidden;
+    }
+  }
+
+  &__dropdown-text {
+    @include respond-to-max(sm) {
+      font-size: 0.875rem;
+    }
+  }
+
+  &__menu-item {
     display: flex;
     gap: 0.75rem;
     padding: 0.625rem 1rem;
@@ -699,7 +375,40 @@ provide("refreshAppointments", refreshAppointments);
     }
   }
 
-  &__checkbox-label {
+  &__menu-action {
+    width: 100%;
+    text-align: left;
+    padding: 0.5rem 0;
+    background: none;
+    border: none;
+    color: inherit;
+    cursor: pointer;
+    font-size: 0.875rem;
+    font-family: $font-family-main;
+    transition: color 0.2s ease;
+
+    @include respond-to-max(sm) {
+      font-size: 0.8125rem;
+      padding: 0.625rem 0;
+    }
+
+    &:hover,
+    &:focus-visible {
+      color: $color-primary;
+    }
+
+    &:focus-visible {
+      outline: 2px solid $color-primary;
+      outline-offset: 2px;
+    }
+
+    &[aria-pressed="true"] {
+      font-weight: 600;
+      color: $color-primary;
+    }
+  }
+
+  &__checkbox {
     position: relative;
     display: flex;
     align-items: center;
@@ -707,18 +416,18 @@ provide("refreshAppointments", refreshAppointments);
     cursor: pointer;
   }
 
-  &__checkbox {
+  &__checkbox-input {
     position: absolute;
     opacity: 0;
     width: 0;
     height: 0;
 
-    &:focus-visible + &-custom {
+    &:focus-visible + .toolbar__checkbox-indicator {
       outline: 2px solid $color-primary;
       outline-offset: 2px;
     }
 
-    &:checked + &-custom {
+    &:checked + .toolbar__checkbox-indicator {
       background-color: $color-primary;
       border-color: $color-primary;
 
@@ -728,7 +437,7 @@ provide("refreshAppointments", refreshAppointments);
     }
   }
 
-  &__checkbox-custom {
+  &__checkbox-indicator {
     width: 1.125rem;
     height: 1.125rem;
     border: 2px solid #dee2e6;
@@ -753,98 +462,7 @@ provide("refreshAppointments", refreshAppointments);
   }
 }
 
-.search-input {
-  position: relative;
-  display: flex;
-  align-items: center;
-  width: 100%;
-
-  &__icon {
-    position: absolute;
-    left: 0.75rem;
-    display: flex;
-    align-items: center;
-    color: #6c757d;
-    pointer-events: none;
-    z-index: 1;
-  }
-
-  &__field {
-    padding: 0.625rem 0.875rem 0.625rem 2.5rem;
-    font-weight: 300;
-    font-size: 0.875rem;
-    color: #6d758f;
-    border-radius: 8px;
-    border: 1px solid #f1f3f7;
-    box-shadow: 0 1px 2px #1018280d;
-    background-color: #fff;
-    width: 100%;
-    transition: all 0.2s ease;
-
-    @include respond-to(sm) {
-      font-size: 1rem;
-      padding: 0.75rem 1rem 0.75rem 2.5rem;
-    }
-
-    &:focus-visible {
-      outline: 2px solid $color-primary;
-      outline-offset: 2px;
-      border-color: $color-primary;
-      box-shadow: 0 0 0 3px rgba($color-primary, 0.2);
-    }
-
-    &::placeholder {
-      @include respond-to-max(sm) {
-        font-size: 0.875rem;
-      }
-    }
-  }
-}
-
-.button--outline {
-  @include outline-button;
-  font-weight: 400;
-  font-size: 0.75rem;
-  line-height: 1.25;
-  color: #344054;
-  padding: 0.5rem 0.75rem;
-  gap: 0.375rem;
-
-  @include respond-to(sm) {
-    font-size: 0.875rem;
-    padding: 0.625rem 1rem;
-    gap: 0.5rem;
-  }
-
-  &:disabled {
-    opacity: 0.6;
-    cursor: not-allowed;
-  }
-
-  &__text {
-    @include respond-to-max(sm) {
-      display: none;
-    }
-  }
-}
-
-.dropdown-button {
-  &__text {
-    @include respond-to-max(sm) {
-      font-size: 0.875rem;
-    }
-  }
-
-  &__icon {
-    margin-left: 0.25rem;
-
-    @include respond-to-max(sm) {
-      margin-left: 0.125rem;
-    }
-  }
-}
-
-.badges-container {
+.badge-group {
   display: flex;
   flex-wrap: wrap;
   gap: 0.25rem;
@@ -872,7 +490,7 @@ provide("refreshAppointments", refreshAppointments);
     padding: 0.125rem 0.375rem;
   }
 
-  &__remove {
+  &__dismiss {
     display: flex;
     align-items: center;
     justify-content: center;
@@ -898,122 +516,95 @@ provide("refreshAppointments", refreshAppointments);
   }
 }
 
-.appointments-content {
+.appointment-list {
   flex: 1;
   min-height: 20rem;
-}
 
-.card {
-  background: #fff;
-  border-radius: 8px;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-  overflow: hidden;
-}
+  &__card {
+    background: $white;
+    border-radius: $border-radius-md;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    overflow: hidden;
+  }
 
-.loading-state {
-  padding: 3rem 1rem;
-  text-align: center;
-  color: #6c757d;
-}
+  &__placeholder {
+    padding: 3rem 1rem;
+    text-align: center;
+    color: #6c757d;
+  }
 
-.empty-state {
-  padding: 3rem 1rem;
-  text-align: center;
+  &__error {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: $spacing-md;
+    padding: 3rem 1rem;
+    text-align: center;
+  }
 
-  &__message {
+  &__error-text {
+    color: #e17055;
+    font-weight: 500;
+    margin: 0;
+  }
+
+  &__retry-btn {
+    @include primary-button;
+    padding: 8px 20px;
+    font-size: 14px;
+  }
+
+  &__empty {
+    padding: 3rem 1rem;
+    text-align: center;
+  }
+
+  &__empty-text {
     color: #6c757d;
     font-size: 1rem;
     margin: 0;
   }
 }
 
-.visually-hidden {
-  @include visually-hidden;
-}
-
-.dropdown__item {
-  width: 100%;
-  text-align: left;
-  padding: 0.5rem 0;
-  background: none;
-  border: none;
-  color: inherit;
-  cursor: pointer;
-  font-size: 0.875rem;
-  transition: all 0.2s ease;
-
-  @include respond-to-max(sm) {
-    font-size: 0.8125rem;
-    padding: 0.625rem 0;
-  }
-
-  &:hover,
-  &:focus-visible {
-    color: $color-primary;
-  }
-
-  &:focus-visible {
-    outline: 2px solid $color-primary;
-    outline-offset: 2px;
-  }
-
-  &[aria-pressed="true"] {
-    font-weight: 600;
-    color: $color-primary;
-  }
-}
-
 @include respond-to-max(sm) {
-  .appointments-toolbar {
-    &__search {
-      order: -1;
-      width: 100%;
-    }
-
+  .toolbar {
     &__actions {
       width: 100%;
       justify-content: space-between;
     }
   }
 
-  .card {
+  .appointment-list__card {
     border-radius: 0;
     box-shadow: none;
     border-top: 1px solid #e1e4ed;
     border-bottom: 1px solid #e1e4ed;
   }
 
-  .loading-state {
+  .appointment-list__placeholder {
     padding: 2rem 1rem;
   }
 
-  .empty-state {
+  .appointment-list__empty {
     padding: 2rem 1rem;
 
-    &__message {
+    .appointment-list__empty-text {
       font-size: 0.875rem;
     }
   }
 }
 
 @include respond-to-max(xs) {
-  .appointment-tracking {
-    &__header {
-      padding: 0 1rem;
-    }
-  }
-
-  .appointments-tabs {
-    margin: 0 -1rem 1rem;
+  .page-header {
     padding: 0 1rem;
   }
 
-  .appointments-toolbar {
+  .toolbar {
     padding: 0 1rem;
     margin: 0 -1rem 1rem;
   }
 
-  .appointments-content {
+  .appointment-list {
     margin: 0 -1rem;
   }
 }

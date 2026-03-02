@@ -218,7 +218,6 @@ const getUserInfo = async (userId: string, token: string) => {
     const error = api.error.value;
 
     if (error) {
-      console.error("Error fetching user info:", error);
       return;
     }
 

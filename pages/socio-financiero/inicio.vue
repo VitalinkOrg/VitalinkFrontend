@@ -15,7 +15,7 @@ import {
 } from "chart.js";
 import { ref } from "vue";
 import { Bar } from "vue-chartjs";
-import type { Credit } from "~/types";
+import type { Credit } from "~/types/test-index";
 
 definePageMeta({
   middleware: ["auth-insurances"],
@@ -53,7 +53,7 @@ ChartJS.register(
   BarElement,
   CategoryScale,
   LinearScale,
-  Colors
+  Colors,
 );
 
 const chartData: ChartData<"bar"> = {
@@ -76,7 +76,7 @@ const chartData: ChartData<"bar"> = {
       label: "Aprobados",
       data: Array.from(
         { length: 12 },
-        () => Math.floor(Math.random() * 50) + 20
+        () => Math.floor(Math.random() * 50) + 20,
       ),
       backgroundColor: "#D3F2DD",
       borderWidth: 1,
@@ -87,7 +87,7 @@ const chartData: ChartData<"bar"> = {
       label: "Pendientes",
       data: Array.from(
         { length: 12 },
-        () => Math.floor(Math.random() * 30) + 10
+        () => Math.floor(Math.random() * 30) + 10,
       ),
       backgroundColor: "#FAC6D0",
       stack: "Stack 1",

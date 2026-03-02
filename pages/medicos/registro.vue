@@ -1,15 +1,19 @@
 <template>
   <NuxtLayout name="medicos-autenticacion">
-    <section class="register">
+    <section class="registration" aria-labelledby="registration-heading">
       <HeaderRegistro />
 
-      <form @submit.prevent="handleSubmit" class="register__form">
-        <div class="register__step">
+      <form
+        @submit.prevent="submitRegistration"
+        class="registration__form"
+        novalidate
+      >
+        <div class="registration__step">
           <MedicosRegistroFormularioProveedorMedico
-            :supplierFormData="supplierFormData"
-            :is-loading="isLoadingSubmit"
-            @update:supplierFormData="updateSupplierFormData"
-            @submit="handleSubmit"
+            :form-data="representativeFormData"
+            :is-submitting="isSubmitting"
+            @update:form-data="representativeFormData = $event"
+            @submit="submitRegistration"
           />
         </div>
       </form>
@@ -19,195 +23,77 @@
 
 <script lang="ts" setup>
 import { useAuth, useDocuments } from "@/composables/api";
-import type { ApiErrorResponse } from "@/composables/api/useApi";
 import { useFormat } from "@/composables/useFormat";
-import type { ISupplierFormData } from "@/types";
+import { useLogger } from "@/composables/useLogger";
 import { getUserIdFromToken } from "@/utils/jwt";
 
-const { uploadDocument } = useDocuments();
-const { register, login, fetchUserInfo } = useAuth();
+const { register, login, getUserById } = useAuth();
+const { addDocument } = useDocuments();
 const { convertCedulaForBackend } = useFormat();
 const { setAuthenticated, setRole } = useAuthState();
 const { setToken, setRefreshToken, getToken } = useAuthToken();
-const { setUserInfo, getUserInfo } = useUserInfo();
-const { success, error: showError, warning } = useToast();
+const { setUserInfo } = useUserInfo();
+const toast = useToast();
 const router = useRouter();
-const config = useRuntimeConfig();
+const logger = useLogger("RegistroMedico");
 
-const legalRepresentativeId = ref<string>("");
-const isLoadingSubmit = ref<boolean>(false);
+const isSubmitting = ref(false);
 
-const supplierFormData = ref<ISupplierFormData>({
+const representativeFormData = ref<IRepresentativeFormData>({
   documentType: "",
   documentNumber: "",
   fullName: "",
-  contratcFile: null,
-  codeContract: "",
-  contratcId: 0,
+  contractFile: null,
   email: "",
   phone: "",
   password: "",
 });
 
-const updateSupplierFormData = (newData: ISupplierFormData) => {
-  supplierFormData.value = { ...newData };
-};
+const submitRegistration = async (): Promise<void> => {
+  if (isSubmitting.value) return;
 
-const delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+  const formData = representativeFormData.value;
 
-const handleSubmit = async (): Promise<void> => {
+  if (!formData.contractFile) {
+    toast.error("El archivo de contrato es requerido.");
+    return;
+  }
+
+  isSubmitting.value = true;
+
   try {
-    isLoadingSubmit.value = true;
-
-    if (!supplierFormData.value.contratcFile) {
-      showError("Archivo de contrato requerido");
-      return;
-    }
-
-    let representativeId = "";
-
-    try {
-      representativeId = await handleRegisterLegalRepresentative("");
-    } catch (error: any) {
-      const parsedError = error as ApiErrorResponse;
-
-      if (
-        parsedError.httpCode === 409 ||
-        parsedError.isDuplicateEntry ||
-        parsedError.message?.toLowerCase().includes("ya existe") ||
-        parsedError.info?.includes("Duplicate Entry") ||
-        parsedError.raw?.includes("Duplicate Entry")
-      ) {
-        showError(
-          "Este usuario ya está registrado. Por favor inicia sesión desde la página de inicio de sesión.",
-        );
-        return;
-      } else {
-        throw error;
-      }
-    }
-
-    legalRepresentativeId.value = representativeId;
-    await delay(500);
-
-    const loginResult = await handleLogin();
-    if (!loginResult) {
-      showError("No se pudo obtener el token de autenticación");
-      return;
-    }
-    await delay(500);
-
-    const codeContract = await handleUploadFile(
-      supplierFormData.value.contratcFile,
-      "PRIVATE_CONTRACT",
-    );
-
-    if (!codeContract) {
-      showError("Error al subir el contrato");
-      return;
-    }
-
-    await delay(500);
-    await updateUserContract(representativeId, codeContract);
+    const representativeId = await registerRepresentative();
+    const { accessToken, userId } = await authenticateRepresentative();
+    const contractCode = await uploadContract(formData.contractFile);
+    await linkContractToUser(userId, contractCode);
 
     localStorage.setItem("onboarding", "true");
-    success("¡Registro completado exitosamente!");
-
+    toast.success("¡Registro completado exitosamente!");
     await router.push("/medicos/mis-medicos");
   } catch (error) {
-    console.error("Error en el registro:", error);
-
-    const parsedError = error as ApiErrorResponse;
-    let errorMessage = "Error en el registro. Intenta nuevamente.";
-
-    if (
-      parsedError.httpCode === 409 ||
-      parsedError.isDuplicateEntry ||
-      parsedError.message?.toLowerCase().includes("ya existe")
-    ) {
-      errorMessage = "Este usuario ya está registrado. Intenta iniciar sesión.";
-    } else if (parsedError.isNetworkError) {
-      errorMessage =
-        "Error de conexión. Verifica tu internet e intenta nuevamente.";
-    } else if (parsedError.httpCode === 400) {
-      errorMessage =
-        parsedError.info || "Datos inválidos. Verifica la información.";
-    } else if (parsedError.httpCode === 401 || parsedError.httpCode === 403) {
-      errorMessage = "No autorizado. Verifica tus credenciales.";
-    } else if (parsedError.message && parsedError.message !== "Error") {
-      errorMessage = parsedError.message;
-    } else if (
-      parsedError.info &&
-      !parsedError.info.includes("Data Base Error")
-    ) {
-      errorMessage = parsedError.info;
-    }
-
-    showError(errorMessage);
+    handleRegistrationError(error);
   } finally {
-    isLoadingSubmit.value = false;
+    isSubmitting.value = false;
   }
 };
 
-const handleUploadFile = async (
-  file: File,
-  actionType: string,
-): Promise<string> => {
-  const fields = {
-    title: file.name,
-    type: "DOC",
-    description: "Private document uploaded during medical registration",
-    id_for_table: "6",
-    table: "",
-    action_type: actionType,
-    user_id: "",
-    is_public: 0,
-  };
+const registerRepresentative = async (): Promise<string> => {
+  const formData = representativeFormData.value;
 
-  const api = uploadDocument(file, fields);
-  await api.request();
-
-  if (api.error.value) {
-    const errorMsg =
-      api.error.value.info ||
-      api.error.value.message ||
-      "Error subiendo documento";
-    throw {
-      message: errorMsg,
-      httpCode: api.error.value.httpCode || 500,
-      info: api.error.value.info,
-    } as ApiErrorResponse;
-  }
-
-  const code = api.response.value?.data?.code;
-
-  if (!code) {
-    throw {
-      message: "No se pudo obtener el código del documento",
-      httpCode: 500,
-    } as ApiErrorResponse;
-  }
-
-  return code;
-};
-
-const handleRegisterLegalRepresentative = async (
-  codeContract: string,
-): Promise<string> => {
   const backendDocumentNumber = convertCedulaForBackend(
-    supplierFormData.value.documentNumber,
-    supplierFormData.value.documentType,
+    formData.documentNumber,
+    formData.documentType,
   );
 
-  const body = {
+  const { data, error } = await register({
     card_id: backendDocumentNumber,
-    id_type: supplierFormData.value.documentType,
-    name: supplierFormData.value.fullName,
-    email: supplierFormData.value.email,
-    password: supplierFormData.value.password,
+    id_type: formData.documentType,
+    name: formData.fullName,
+    email: formData.email,
+    password: formData.password,
     gender: "M",
     role_code: "LEGAL_REPRESENTATIVE",
-    phone_number: supplierFormData.value.phone,
+    phone_number: formData.phone,
     country_iso_code: "",
     province: "",
     city_name: "",
@@ -215,128 +101,189 @@ const handleRegisterLegalRepresentative = async (
     postal_code: "",
     birth_date: "",
     profile_picture_url: "",
-    code_contract: codeContract || "",
-  };
+  });
 
-  const api = register(body);
-  await api.request();
+  if (error) {
+    const isDuplicate =
+      error.status?.http_code === 409 ||
+      error.info?.toLowerCase().includes("duplicate entry") ||
+      error.info?.toLowerCase().includes("ya existe");
 
-  if (api.error.value) {
-    throw api.error.value;
+    if (isDuplicate) {
+      throw createRegistrationError(
+        "Este usuario ya está registrado. Por favor inicia sesión.",
+        409,
+      );
+    }
+
+    throw createRegistrationError(
+      error.info || "Error al registrar el representante legal.",
+      error.status?.http_code,
+    );
   }
 
-  const representativeId = api.response.value?.data?.id;
+  const representativeId = (data as any)?.id;
 
   if (!representativeId) {
-    throw {
-      message: "No se pudo obtener el ID del representante legal",
-      httpCode: 500,
-    } as ApiErrorResponse;
+    throw createRegistrationError(
+      "No se pudo obtener el ID del representante legal.",
+      500,
+    );
   }
 
+  logger.debug("Representative registered", { representativeId });
   return representativeId;
 };
 
-const handleLogin = async (): Promise<
-  { accessToken: string; userId: string } | undefined
-> => {
-  const payload = {
-    email: supplierFormData.value.email,
-    username: "",
-    password: supplierFormData.value.password,
-  };
+const authenticateRepresentative = async (): Promise<{
+  accessToken: string;
+  userId: string;
+}> => {
+  const formData = representativeFormData.value;
 
-  const api = login(payload);
-  await api.request();
+  const { data, error } = await login({
+    email: formData.email,
+    password: formData.password,
+  });
 
-  const response = api.response.value;
-  const errorResponse = api.error.value;
-
-  if (response?.data) {
-    const accessToken = response.data.access_token;
-
-    setAuthenticated(true);
-    setToken(accessToken);
-    setRefreshToken(response.data.refresh_token);
-    setRole("LEGAL_REPRESENTATIVE");
-
-    const userId = getUserIdFromToken(accessToken);
-
-    if (!userId) {
-      throw {
-        message: "No se pudo obtener el ID del usuario del token",
-        httpCode: 500,
-      } as ApiErrorResponse;
-    }
-
-    legalRepresentativeId.value = userId;
-
-    await handleGetUserInfo(userId, accessToken);
-
-    return { accessToken, userId };
+  if (error || !data) {
+    throw createRegistrationError(
+      "No se pudo iniciar sesión automáticamente.",
+      error?.status?.http_code,
+    );
   }
 
-  if (errorResponse) {
-    throw errorResponse;
+  const { access_token, refresh_token } = data;
+
+  setAuthenticated(true);
+  setToken(access_token);
+  setRefreshToken(refresh_token);
+  setRole("LEGAL_REPRESENTATIVE");
+
+  const userId = getUserIdFromToken(access_token);
+
+  if (!userId) {
+    throw createRegistrationError(
+      "No se pudo obtener el ID del usuario del token.",
+      500,
+    );
   }
+
+  await loadUserProfile(userId, access_token);
+
+  logger.debug("Representative authenticated", { userId });
+  return { accessToken: access_token, userId };
 };
 
-const handleGetUserInfo = async (userId: string, accessToken: string) => {
-  const api = fetchUserInfo(userId, accessToken);
-  await api.request();
-
-  const response = api.response.value;
-
-  if (response?.data) {
-    setUserInfo(response.data);
-  }
-};
-
-const updateUserContract = async (
+const loadUserProfile = async (
   userId: string,
-  codeContract: string,
+  accessToken: string,
 ): Promise<void> => {
+  const { data, error } = await getUserById(userId, accessToken);
+
+  if (data) {
+    setUserInfo(data);
+  } else if (error) {
+    logger.warn("Could not load user profile", { error: error.info });
+  }
+};
+
+const uploadContract = async (file: File): Promise<string> => {
+  const { data, error } = await addDocument({
+    file,
+    fields: {
+      title: file.name,
+      type: "DOC",
+      description: "Contrato cargado durante el registro médico",
+      id_for_table: "6",
+      table: "",
+      action_type: "PRIVATE_CONTRACT",
+      user_id: "",
+      is_public: 0,
+    },
+  });
+
+  if (error || !data) {
+    throw createRegistrationError(
+      error?.info || "Error al subir el contrato.",
+      error?.status?.http_code,
+    );
+  }
+
+  const contractCode = data.code;
+
+  if (!contractCode) {
+    throw createRegistrationError(
+      "No se pudo obtener el código del contrato.",
+      500,
+    );
+  }
+
+  logger.debug("Contract uploaded", { contractCode });
+  return contractCode;
+};
+
+const linkContractToUser = async (
+  userId: string,
+  contractCode: string,
+): Promise<void> => {
+  const config = useRuntimeConfig();
   const token = getToken();
 
   if (!token) {
-    throw {
-      message: "No se pudo obtener el token de autenticación",
-      httpCode: 401,
-    } as ApiErrorResponse;
+    throw createRegistrationError("Token de autenticación no disponible.", 401);
   }
-
-  const url = `${config.public.API_BASE_URL}/user/edit?id=${userId}`;
 
   try {
-    const response = await $fetch(url, {
+    await $fetch(`user/edit`, {
+      baseURL: `${config.public.API_BASE_URL}/`,
       method: "PUT",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: token,
-      },
-      body: JSON.stringify({
-        code_contract: codeContract,
-      }),
+      headers: { Authorization: token },
+      query: { id: userId },
+      body: { code_contract: contractCode },
     });
 
-    if (!response) {
-      throw {
-        message: "Error actualizando el contrato del usuario",
-        httpCode: 500,
-      } as ApiErrorResponse;
-    }
-  } catch (error) {
-    console.error("Error actualizando contrato:", error);
-    throw {
-      message: "Error al vincular el contrato con el usuario",
-      httpCode: 500,
-    } as ApiErrorResponse;
+    logger.debug("Contract linked to user", { userId, contractCode });
+  } catch {
+    throw createRegistrationError(
+      "Error al vincular el contrato con el usuario.",
+      500,
+    );
   }
+};
+
+interface RegistrationError {
+  message: string;
+  httpCode?: number;
+}
+
+const createRegistrationError = (
+  message: string,
+  httpCode?: number,
+): RegistrationError => ({
+  message,
+  httpCode,
+});
+
+const handleRegistrationError = (error: unknown): void => {
+  const registrationError = error as RegistrationError;
+  let errorMessage = "Error en el registro. Intenta nuevamente.";
+
+  if (registrationError?.message) {
+    errorMessage = registrationError.message;
+  }
+
+  logger.error("Registration failed", {
+    message: errorMessage,
+    httpCode: registrationError?.httpCode,
+  });
+
+  toast.error(errorMessage);
 };
 </script>
 
 <style lang="scss" scoped>
-.register {
+.registration {
   display: flex;
   flex-direction: column;
   height: 100%;
@@ -347,7 +294,6 @@ const updateUserContract = async (
     display: flex;
     flex-direction: column;
     width: 100%;
-    max-width: 100%;
   }
 
   &__step {

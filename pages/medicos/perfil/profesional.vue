@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { useDocuments, useSupplier } from "@/composables/api";
 import type { DocumentResponse } from "@/composables/api/useDocuments";
-import type { Supplier, UserInformation } from "@/types";
+import type { Supplier, UserInformation } from "~/types/test-index";
 
 definePageMeta({
   middleware: ["auth-doctors-hospitals"],
@@ -22,7 +22,7 @@ const currentUser = computed(() => userInfo.value as ExtendedUserInfo);
 
 const description = ref<string>(currentUser.value?.description || "");
 const medicalNumber = ref<string>(
-  currentUser.value?.num_medical_enrollment || ""
+  currentUser.value?.num_medical_enrollment || "",
 );
 
 const profilePicture = ref<File | null>(null);
@@ -69,7 +69,7 @@ const loadSupplierData = async () => {
   if (response.value?.data) {
     const supplier = response.value.data.find(
       (s) =>
-        String(s.legal_representative?.id) === String(currentUser.value?.id)
+        String(s.legal_representative?.id) === String(currentUser.value?.id),
     );
 
     if (supplier) {
@@ -124,12 +124,12 @@ const updateProfilePicture = async (): Promise<boolean> => {
       ({ response, request, error } = updateDocument(
         existingProfilePicture.value.id,
         profilePicture.value,
-        fields
+        fields,
       ));
     } else {
       ({ response, request, error } = uploadDocument(
         profilePicture.value,
-        fields
+        fields,
       ));
     }
 
@@ -170,7 +170,7 @@ const updateSupplierInfo = async (): Promise<boolean> => {
       {
         num_medical_enrollment: medicalNumber.value,
         description: description.value,
-      }
+      },
     );
 
     await request();

@@ -2,7 +2,7 @@
 import { jwtDecode } from "jwt-decode";
 import { onMounted, ref } from "vue";
 import { useSupplier } from "~/composables/api";
-import type { Service, Supplier } from "~/types";
+import type { Service, Supplier } from "~/types/test-index";
 
 definePageMeta({
   middleware: ["auth-doctors-hospitals"],

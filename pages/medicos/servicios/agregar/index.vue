@@ -1,6 +1,6 @@
 <script lang="ts" setup>
 import { useUdc } from "~/composables/api";
-import type { IUdc } from "~/types";
+import type { IUdc } from "~/types/test-index";
 
 definePageMeta({
   middleware: ["auth-doctors-hospitals"],

@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { usePackage } from "@/composables/api";
 import { useSpecialties } from "@/composables/api/useSpecialties";
-import type { Supplier } from "@/types";
+import type { Supplier } from "~/types/test-index";
 
 const user_info = useCookie<Partial<Supplier>>("user_info");
 
@@ -50,7 +50,7 @@ const saveSpecialty = async () => {
     if (api.error.value) {
       showNotification(
         api.error.value.message || "Error al agregar especialidad",
-        "error"
+        "error",
       );
       return;
     }
@@ -67,13 +67,13 @@ const saveSpecialty = async () => {
     } else {
       showNotification(
         api.response.value?.message || "Error al agregar especialidad",
-        "error"
+        "error",
       );
     }
   } catch (error: any) {
     showNotification(
       error?.message || "Error inesperado al agregar especialidad",
-      "error"
+      "error",
     );
   }
 };
@@ -102,7 +102,7 @@ const removeSpecialty = async (index: number) => {
     if (api.error.value) {
       showNotification(
         api.error.value.message || "Error al eliminar especialidad",
-        "error"
+        "error",
       );
       return;
     }
@@ -113,13 +113,13 @@ const removeSpecialty = async (index: number) => {
     } else {
       showNotification(
         api.response.value?.message || "Error al eliminar especialidad",
-        "error"
+        "error",
       );
     }
   } catch (error: any) {
     showNotification(
       error?.message || "Error inesperado al eliminar especialidad",
-      "error"
+      "error",
     );
   }
 };
@@ -163,7 +163,7 @@ const saveService = async () => {
     if (api.error.value) {
       showNotification(
         api.error.value.message || "Error al agregar servicio",
-        "error"
+        "error",
       );
       return;
     }
@@ -180,13 +180,13 @@ const saveService = async () => {
     } else {
       showNotification(
         api.response.value?.message || "Error al agregar servicio",
-        "error"
+        "error",
       );
     }
   } catch (error: any) {
     showNotification(
       error?.message || "Error inesperado al agregar servicio",
-      "error"
+      "error",
     );
   }
 };
@@ -215,7 +215,7 @@ const removeService = async (index: number) => {
     if (api.error.value) {
       showNotification(
         api.error.value.message || "Error al eliminar servicio",
-        "error"
+        "error",
       );
       return;
     }
@@ -226,13 +226,13 @@ const removeService = async (index: number) => {
     } else {
       showNotification(
         api.response.value?.message || "Error al eliminar servicio",
-        "error"
+        "error",
       );
     }
   } catch (error: any) {
     showNotification(
       error?.message || "Error inesperado al eliminar servicio",
-      "error"
+      "error",
     );
   }
 };
