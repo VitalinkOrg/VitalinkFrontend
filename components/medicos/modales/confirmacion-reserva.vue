@@ -2,91 +2,91 @@
   <AtomsModalBase
     :is-open="isModalOpen"
     size="extra-small"
-    class="confirm-reservation"
-    @close="handleCloseModal"
+    @close="handleClose"
+    aria-labelledby="confirm-modal-title"
   >
-    <div v-if="continueWithoutPayment" class="no-payment-recorded__content">
-      <h2 class="no-payment-recorded__title">
+    <div v-if="showPaymentWarning" class="payment-warning__content">
+      <h2 id="confirm-modal-title" class="payment-warning__title">
         ¿Continuar sin pago registrado?
       </h2>
-      <p class="no-payment-recorded__description">
+      <p class="payment-warning__description">
         El paciente podrá realizar el pago directamente contigo durante la
         consulta.
       </p>
 
-      <div class="no-payment-recorded__payment-warning">
-        <p class="no-payment-recorded__payment-warning--title">
-          Sin registro de pago
-        </p>
-        <p class="no-payment-recorded__payment-warning--text">
+      <div class="payment-warning__alert" role="alert">
+        <p class="payment-warning__alert-title">Sin registro de pago</p>
+        <p class="payment-warning__alert-text">
           No tenemos registro del pago del paciente. ¿Desea continuar con la
           valoración de todas formas?
         </p>
       </div>
     </div>
 
-    <template #footer v-if="continueWithoutPayment">
-      <div class="no-payment-recorded__actions">
+    <template v-if="showPaymentWarning" #footer>
+      <div class="payment-warning__actions">
         <button
-          :disabled="isLoading"
-          class="no-payment-recorded__button--outline"
-          @click="handleCloseModal"
+          :disabled="isProcessing"
+          class="payment-warning__action payment-warning__action--outline"
+          @click="handleClose"
         >
           No, cancelar
         </button>
         <button
-          :disabled="isLoading"
-          class="no-payment-recorded__button--primary"
-          @click="handleContinueWithoutPayment"
+          :disabled="isProcessing"
+          class="payment-warning__action payment-warning__action--primary"
+          @click="dismissPaymentWarning"
         >
           Sí, continuar
         </button>
       </div>
     </template>
 
-    <div v-if="!continueWithoutPayment" class="confirm-reservation__content">
-      <h2 class="confirm-reservation__title">
-        {{ modalTitle }}
+    <div v-if="!showPaymentWarning" class="confirm-modal__content">
+      <h2 id="confirm-modal-title" class="confirm-modal__title">
+        {{ title }}
       </h2>
 
-      <p class="confirm-reservation__description">
-        <span class="confirm-reservation__text">
-          {{ statusChangeText }}
-        </span>
-        <span
-          v-if="shouldShowNotificationText"
-          class="confirm-reservation__highlight"
-        >
+      <div class="confirm-modal__description">
+        <p class="confirm-modal__status-text">
+          {{ statusChangeDescription }}
+        </p>
+        <p v-if="isPendingValoration" class="confirm-modal__notification-text">
           Le enviaremos una notificación al paciente para que acuda a la cita de
           valoración en la fecha que has confirmado
-        </span>
-      </p>
+        </p>
+      </div>
 
-      <div v-if="shouldShowWarning" class="confirm-reservation__warning">
-        <div class="confirm-reservation__warning-icon">
+      <div
+        v-if="isPendingValoration"
+        class="confirm-modal__warning"
+        role="alert"
+      >
+        <div class="confirm-modal__warning-icon" aria-hidden="true">
           <AtomsIconsTriangleAlertIcon size="24" />
         </div>
-        <p class="confirm-reservation__warning-text">
+        <p class="confirm-modal__warning-text">
           Asegúrate de que la fecha y hora de la cita sean correctos.
         </p>
       </div>
     </div>
 
-    <template v-if="!continueWithoutPayment" #footer>
-      <div class="confirm-reservation__actions">
+    <template v-if="!showPaymentWarning" #footer>
+      <div class="confirm-modal__actions">
         <button
-          :disabled="isLoading"
-          class="confirm-reservation__button confirm-reservation__button--outline"
-          @click="handleCloseModal"
+          :disabled="isProcessing"
+          class="confirm-modal__action confirm-modal__action--outline"
+          @click="handleClose"
         >
           Cancelar
         </button>
         <button
-          :disabled="isLoading"
-          class="confirm-reservation__button confirm-reservation__button--primary"
-          @click="handleConfirmAction"
+          :disabled="isProcessing"
+          class="confirm-modal__action confirm-modal__action--primary"
+          :aria-busy="isProcessing"
+          @click="handleConfirm"
         >
-          {{ isLoading ? "Procesando..." : "Confirmar" }}
+          {{ isProcessing ? "Procesando..." : "Confirmar" }}
         </button>
       </div>
     </template>
@@ -95,196 +95,288 @@
 
 <script lang="ts" setup>
 import { useAppointment } from "@/composables/api";
-import type { Appointment, AppointmentStatusCode } from "@/types";
-import { computed, inject, ref } from "vue";
+import { useLogger } from "@/composables/useLogger";
+import { useMedicalModalManager } from "@/composables/useMedicalModalManager";
+
+interface ConfirmModalData {
+  appointment: IAppointment;
+  scheduledDate?: Date | null;
+  scheduledTime?: string;
+}
 
 const refreshAppointments = inject<() => Promise<void>>("refreshAppointments");
+
+const logger = useLogger("ConfirmacionReserva");
+const toast = useToast();
 
 const { isOpen, closeModal, getSharedData, openModal } =
   useMedicalModalManager();
 
-const modalData = computed(() =>
-  getSharedData<{ appointment: Appointment }>("confirmacionReserva")
-);
-
-const currentAppointment = computed(() => modalData.value?.appointment);
+const {
+  confirmProcedure,
+  setProcedureRealized,
+  confirmValorationAppointment,
+  updateAppointment,
+} = useAppointment();
 
 const isModalOpen = computed(() => isOpen.confirmacionReserva);
 
-const { confirmProcedure, setProcedureRealized, confirmValorationAppointment } =
-  useAppointment();
-
-const isLoading = ref<boolean>(false);
-const continueWithoutPayment = ref<boolean>(false);
-
-const appointmentStatus = computed(
-  () => currentAppointment.value?.appointment_status.code
+const modalData = computed(() =>
+  getSharedData<ConfirmModalData>("confirmacionReserva"),
 );
 
-const modalTitle = computed(() => {
-  const titleMap: Record<AppointmentStatusCode, string> = {
-    PENDING_VALORATION_APPOINTMENT: "¿Confirmar valoración?",
-    PENDING_PROCEDURE: "¿Confirmar procedimiento?",
-    WAITING_PROCEDURE: "¿Finalizar procedimiento?",
-    CONFIRM_PROCEDURE: "¿Finalizar procedimiento?",
-    CONCRETED_APPOINTMENT: "¿Finalizar procedimiento?",
-    CONFIRM_VALIDATION_APPOINTMENT: "¿Confirmar valoración?",
-    CANCEL_APPOINTMENT: "¿Confirmar reserva?",
-    VALUED_VALORATION_APPOINTMENT: "¿Confirmar reserva?",
-    VALUATION_PENDING_VALORATION_APPOINTMENT: "¿Confirmar reserva?",
-  };
+const appointment = computed(() => modalData.value?.appointment);
 
-  const status = appointmentStatus.value as AppointmentStatusCode | undefined;
-  return status
-    ? (titleMap[status] ?? "¿Confirmar reserva?")
-    : "¿Confirmar reserva?";
-});
+const scheduledDate = computed(() => modalData.value?.scheduledDate ?? null);
 
-const PAYMENT_WARNING_CONFIG: Record<string, string> = {
+const scheduledTime = computed(() => modalData.value?.scheduledTime ?? "");
+
+const statusCode = computed(
+  () => appointment.value?.appointment_status?.code ?? "",
+);
+
+const paymentCode = computed(
+  () => appointment.value?.payment_status?.code ?? "",
+);
+
+const isProcessing = ref(false);
+const showPaymentWarning = ref(false);
+const warningDismissed = ref(false);
+
+const isPendingValoration = computed(
+  () => statusCode.value === "PENDING_VALORATION_APPOINTMENT",
+);
+
+const UNPAID_STATUS_MAP: Record<string, string> = {
   CONFIRM_VALIDATION_APPOINTMENT:
     "PAYMENT_STATUS_NOT_PAID_VALORATION_APPOINTMENT",
   CONFIRM_PROCEDURE: "PAYMENT_STATUS_NOT_PAID_PROCEDURE",
 };
 
-const showPaymentWarningModal = computed(() => {
-  const status = currentAppointment.value?.appointment_status.code;
-  const paymentStatus = currentAppointment.value?.payment_status.code;
-  return status && paymentStatus
-    ? PAYMENT_WARNING_CONFIG[status] === paymentStatus
-    : false;
+const requiresPaymentWarning = computed(() => {
+  const expectedPaymentCode = UNPAID_STATUS_MAP[statusCode.value];
+  if (!expectedPaymentCode) return false;
+  return paymentCode.value === expectedPaymentCode;
 });
 
-continueWithoutPayment.value = showPaymentWarningModal.value;
+watch(
+  [isModalOpen, appointment],
+  ([open, apt]) => {
+    if (open && apt && !warningDismissed.value) {
+      showPaymentWarning.value = requiresPaymentWarning.value;
+    }
+  },
+  { immediate: true },
+);
 
-const handleContinueWithoutPayment = () => {
-  continueWithoutPayment.value = false;
+const dismissPaymentWarning = () => {
+  showPaymentWarning.value = false;
+  warningDismissed.value = true;
 };
 
-const statusChangeText = computed(() => {
-  const status = appointmentStatus.value;
+const TITLE_MAP: Record<string, string> = {
+  PENDING_VALORATION_APPOINTMENT: "¿Confirmar valoración?",
+  PENDING_PROCEDURE: "¿Confirmar procedimiento?",
+  WAITING_PROCEDURE: "¿Finalizar procedimiento?",
+  CONFIRM_PROCEDURE: "¿Finalizar procedimiento?",
+  CONCRETED_APPOINTMENT: "¿Finalizar procedimiento?",
+  CONFIRM_VALIDATION_APPOINTMENT: "¿Confirmar valoración?",
+};
+
+const title = computed(
+  () => TITLE_MAP[statusCode.value] ?? "¿Confirmar reserva?",
+);
+
+const statusChangeDescription = computed(() => {
+  const status = statusCode.value;
+
   const isValoration =
     status === "PENDING_VALORATION_APPOINTMENT" ||
     status === "CONFIRM_VALIDATION_APPOINTMENT";
 
-  const isProcedure = status
-    ? [
-        "WAITING_PROCEDURE",
-        "CONFIRM_PROCEDURE",
-        "CONCRETED_APPOINTMENT",
-      ].includes(status)
-    : false;
+  const isProcedureFinish = [
+    "WAITING_PROCEDURE",
+    "CONFIRM_PROCEDURE",
+    "CONCRETED_APPOINTMENT",
+  ].includes(status);
 
-  if (isValoration) {
+  if (isValoration || status === "PENDING_PROCEDURE") {
     return "Con estos cambios el estado de la solicitud de valoración pasará de: Pendiente a Confirmada";
-  } else if (isProcedure) {
+  }
+
+  if (isProcedureFinish) {
     return "Con estos cambios el estado de la solicitud de procedimiento pasará de: Pendiente a Concretada";
-  } else if (status === "PENDING_PROCEDURE") {
-    return "Con estos cambios el estado de la solicitud de valoración pasará de: Pendiente a Confirmada";
   }
 
   return "Con estos cambios el estado de la solicitud de reserva pasará de: Pendiente a Valorada";
 });
 
-const shouldShowNotificationText = computed(
-  () => appointmentStatus.value === "PENDING_VALORATION_APPOINTMENT"
-);
-
-const shouldShowWarning = computed(
-  () => appointmentStatus.value === "PENDING_VALORATION_APPOINTMENT"
-);
-
-const handleCloseModal = () => {
-  closeModal("confirmacionReserva");
+const ACTION_MAP: Record<string, string> = {
+  PENDING_VALORATION_APPOINTMENT: "confirmValoration",
+  PENDING_PROCEDURE: "confirmProcedure",
+  WAITING_PROCEDURE: "finishProcedure",
+  CONFIRM_PROCEDURE: "finishProcedure",
+  CONCRETED_APPOINTMENT: "finishProcedure",
+  CONFIRM_VALIDATION_APPOINTMENT: "uploadProforma",
+  VALUATION_PENDING_VALORATION_APPOINTMENT: "uploadProforma",
 };
 
-const handleConfirmAction = async () => {
-  const status = appointmentStatus.value;
+const handleConfirm = async () => {
+  const action = ACTION_MAP[statusCode.value] ?? "confirmValoration";
 
-  const actionMap: Record<AppointmentStatusCode, () => Promise<void>> = {
-    PENDING_VALORATION_APPOINTMENT: handleConfirmValorationAppointment,
-    PENDING_PROCEDURE: handleConfirmProcedure,
-    WAITING_PROCEDURE: handleFinishProcedure,
-    CONFIRM_PROCEDURE: handleFinishProcedure,
-    CONCRETED_APPOINTMENT: handleFinishProcedure,
-    CONFIRM_VALIDATION_APPOINTMENT: confirmValoration,
-    VALUATION_PENDING_VALORATION_APPOINTMENT: confirmValoration,
-    CANCEL_APPOINTMENT: handleConfirmValorationAppointment,
-    VALUED_VALORATION_APPOINTMENT: handleConfirmValorationAppointment,
+  const handlers: Record<string, () => Promise<void>> = {
+    confirmValoration: executeConfirmValoration,
+    confirmProcedure: executeConfirmProcedure,
+    finishProcedure: executeFinishProcedure,
+    uploadProforma: navigateToProforma,
   };
 
-  if (status && status in actionMap) {
-    await actionMap[status]();
-  } else {
-    await handleConfirmValorationAppointment();
-  }
+  await handlers[action]();
 };
 
-const handleConfirmValorationAppointment = async () => {
-  await executeApiCall("confirm_valoration_appointment");
+const formatDateForApi = (date: Date): string => {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
 };
 
-const handleConfirmProcedure = async () => {
-  await executeApiCall("confirm_procedure");
-};
+const executeConfirmValoration = async () => {
+  const apt = appointment.value;
+  if (!apt) return;
 
-const handleFinishProcedure = async () => {
-  await executeApiCall("set_procedure_realized");
-};
-
-const confirmValoration = async () => {
-  closeModal("detallesCita");
-  openModal("subirProforma", { appointment: currentAppointment });
-  handleCloseModal();
-};
-
-const executeApiCall = async (action: string) => {
-  if (!currentAppointment.value) return;
+  isProcessing.value = true;
 
   try {
-    isLoading.value = true;
+    if (
+      isPendingValoration.value &&
+      scheduledDate.value &&
+      scheduledTime.value
+    ) {
+      const { error: updateError } = await updateAppointment(apt.id, {
+        appointment_date: formatDateForApi(scheduledDate.value),
+        appointment_hour: scheduledTime.value,
+      });
 
-    let api;
-
-    switch (action) {
-      case "confirm_procedure":
-        api = confirmProcedure(currentAppointment.value.id);
-        break;
-      case "set_procedure_realized":
-        api = setProcedureRealized(currentAppointment.value.id);
-        break;
-      case "confirm_valoration_appointment":
-        api = confirmValorationAppointment(currentAppointment.value.id);
-        break;
-      default:
+      if (updateError) {
+        logger.error("Failed to update appointment schedule", {
+          appointmentId: apt.id,
+          error: updateError.info,
+        });
+        toast.error(
+          "No se pudo actualizar la fecha y hora de la cita. Intenta de nuevo.",
+        );
         return;
+      }
     }
 
-    if (!api) return;
-
-    await api.request();
-
-    const response = api.response.value;
-    const error = api.error.value;
-
-    if (response?.data) {
-      await refreshAppointments?.();
-      handleCloseModal();
-      closeModal("detallesCita");
-    }
+    const { error } = await confirmValorationAppointment(apt.id);
 
     if (error) {
-      console.error("Error en la operación:", error);
+      logger.error("Failed to confirm valoration", {
+        appointmentId: apt.id,
+        error: error.info,
+      });
+      toast.error(
+        "Hubo un problema al confirmar la cita. Vuelve a intentarlo más tarde.",
+      );
+      return;
     }
-  } catch (error) {
-    console.error(error);
+
+    await onSuccess();
+  } catch (err) {
+    logger.error("Unexpected error confirming valoration", {
+      error: err instanceof Error ? err.message : String(err),
+    });
+    toast.error("Ocurrió un error inesperado. Intenta de nuevo.");
   } finally {
-    isLoading.value = false;
+    isProcessing.value = false;
   }
+};
+
+const executeConfirmProcedure = async () => {
+  const apt = appointment.value;
+  if (!apt) return;
+
+  isProcessing.value = true;
+
+  try {
+    const { error } = await confirmProcedure(apt.id);
+
+    if (error) {
+      logger.error("Failed to confirm procedure", {
+        appointmentId: apt.id,
+        error: error.info,
+      });
+      toast.error(
+        "Hubo un problema al confirmar el procedimiento. Intenta de nuevo.",
+      );
+      return;
+    }
+
+    await onSuccess();
+  } catch (err) {
+    logger.error("Unexpected error confirming procedure", {
+      error: err instanceof Error ? err.message : String(err),
+    });
+    toast.error("Ocurrió un error inesperado. Intenta de nuevo.");
+  } finally {
+    isProcessing.value = false;
+  }
+};
+
+const executeFinishProcedure = async () => {
+  const apt = appointment.value;
+  if (!apt) return;
+
+  isProcessing.value = true;
+
+  try {
+    const { error } = await setProcedureRealized(apt.id);
+
+    if (error) {
+      logger.error("Failed to finish procedure", {
+        appointmentId: apt.id,
+        error: error.info,
+      });
+      toast.error(
+        "Hubo un problema al finalizar el procedimiento. Intenta de nuevo.",
+      );
+      return;
+    }
+
+    await onSuccess();
+  } catch (err) {
+    logger.error("Unexpected error finishing procedure", {
+      error: err instanceof Error ? err.message : String(err),
+    });
+    toast.error("Ocurrió un error inesperado. Intenta de nuevo.");
+  } finally {
+    isProcessing.value = false;
+  }
+};
+
+const navigateToProforma = async () => {
+  closeModal("detallesCita");
+  openModal("subirProforma", { appointment: appointment.value });
+  handleClose();
+};
+
+const onSuccess = async () => {
+  await refreshAppointments?.();
+  handleClose();
+  closeModal("detallesCita");
+};
+
+const handleClose = () => {
+  closeModal("confirmacionReserva");
+  showPaymentWarning.value = false;
+  warningDismissed.value = false;
 };
 </script>
 
 <style lang="scss" scoped>
-.confirm-reservation {
+.confirm-modal {
   &__content {
     padding: 1.5rem;
     display: flex;
@@ -302,24 +394,27 @@ const executeApiCall = async (action: string) => {
   }
 
   &__description {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+
+  &__status-text {
     @include label-base;
     font-weight: 600;
     font-size: 0.875rem;
     line-height: 1.5rem;
-    display: flex;
-    flex-direction: column;
-    gap: 0.5rem;
+    color: #353e5c;
     margin: 0;
   }
 
-  &__text {
-    font-weight: 600;
-    color: #353e5c;
-  }
-
-  &__highlight {
+  &__notification-text {
+    @include label-base;
     font-weight: 500;
+    font-size: 0.875rem;
+    line-height: 1.5rem;
     color: $color-text-secondary;
+    margin: 0;
   }
 
   &__warning {
@@ -357,10 +452,9 @@ const executeApiCall = async (action: string) => {
     display: flex;
     align-items: center;
     gap: 0.75rem;
-    border-top: 0.0625rem solid #e5e7eb;
   }
 
-  &__button {
+  &__action {
     &--outline {
       @include outline-button;
       flex: 1;
@@ -378,7 +472,7 @@ const executeApiCall = async (action: string) => {
   }
 }
 
-.no-payment-recorded {
+.payment-warning {
   &__content {
     padding: 0 1.5rem;
     display: flex;
@@ -392,6 +486,7 @@ const executeApiCall = async (action: string) => {
     font-size: 1.5rem;
     line-height: 1.5rem;
     color: $color-foreground;
+    margin: 0;
   }
 
   &__description {
@@ -400,31 +495,32 @@ const executeApiCall = async (action: string) => {
     font-size: 0.875rem;
     line-height: 1.5rem;
     color: $color-text-secondary;
+    margin: 0;
   }
 
-  &__payment-warning {
+  &__alert {
     width: 100%;
     padding: 0.75rem;
     border-radius: 0.75rem;
     background-color: $color-warning;
+  }
 
-    &--title {
-      @include label-base;
-      font-weight: 600;
-      font-size: 0.875rem;
-      line-height: 1.25rem;
-      color: #dc6803;
-      margin: 0 0 0.25rem 0;
-    }
+  &__alert-title {
+    @include label-base;
+    font-weight: 600;
+    font-size: 0.875rem;
+    line-height: 1.25rem;
+    color: #dc6803;
+    margin: 0 0 0.25rem 0;
+  }
 
-    &--text {
-      @include label-base;
-      font-weight: 500;
-      font-size: 0.8125rem;
-      line-height: 1.125rem;
-      color: #dc6803;
-      margin: 0;
-    }
+  &__alert-text {
+    @include label-base;
+    font-weight: 500;
+    font-size: 0.8125rem;
+    line-height: 1.125rem;
+    color: #dc6803;
+    margin: 0;
   }
 
   &__actions {
@@ -433,11 +529,12 @@ const executeApiCall = async (action: string) => {
     gap: 0.75rem;
   }
 
-  &__button {
+  &__action {
     &--outline {
       @include outline-button;
       width: 100%;
     }
+
     &--primary {
       @include primary-button;
       width: 100%;

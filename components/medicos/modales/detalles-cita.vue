@@ -2,165 +2,200 @@
   <AtomsModalBase
     :is-open="isModalOpen"
     size="medium"
-    @close="handleCloseModal"
+    @close="handleClose"
     header-class="header-border-bottom"
     footer-class="footer-border-top"
+    aria-labelledby="details-modal-title"
   >
     <template #title>
-      <h1 id="appointment-modal-title" class="appointment-details__title">
-        Detalles
-        {{
-          currentAppointment?.appointment_type?.code ===
-          "VALORATION_APPOINTMENT"
-            ? "de la Cita de valoración"
-            : currentAppointment?.appointment_status?.code ===
-                "WAITING_PROCEDURE"
-              ? "del procedimiento"
-              : "de la reserva"
-        }}
-      </h1>
+      <h2 id="details-modal-title" class="details-modal__title">
+        Detalles {{ modalTitleSuffix }}
+      </h2>
     </template>
 
-    <div class="appointment-details__body">
+    <div class="details-modal__body">
       <MedicosTablaDetallesCita
-        :rows="appointmentRowsWithData"
+        :rows="detailRows"
         aria-label="Detalles de la cita médica"
       >
+        <template #data-programar-cita>
+          <div
+            class="details-modal__scheduling"
+            role="group"
+            aria-labelledby="scheduling-heading"
+          >
+            <span id="scheduling-heading" class="visually-hidden">
+              Programar fecha y hora de la cita
+            </span>
+
+            <div class="details-modal__scheduling-fields">
+              <div class="details-modal__scheduling-field">
+                <label
+                  for="schedule-date"
+                  class="details-modal__scheduling-label"
+                >
+                  Fecha
+                </label>
+                <UiDatePicker
+                  id="schedule-date"
+                  v-model="scheduledDate"
+                  :min-date="new Date()"
+                  custom-class="details-modal__date-picker"
+                  @update:model-value="handleScheduledDateChange"
+                />
+              </div>
+
+              <div class="details-modal__scheduling-field">
+                <label
+                  for="schedule-time"
+                  class="details-modal__scheduling-label"
+                >
+                  Hora
+                </label>
+                <UiDropdownBase
+                  id="schedule-time"
+                  v-model="scheduledTime"
+                  :items="availableTimeSlots"
+                  :disabled="!scheduledDate"
+                  placeholder="Seleccionar hora"
+                  custom-class="details-modal__time-dropdown"
+                  @select="handleScheduledTimeSelect"
+                >
+                  <template #icon>
+                    <AtomsIconsClockIcon size="20" />
+                  </template>
+                </UiDropdownBase>
+              </div>
+            </div>
+          </div>
+        </template>
+
         <template #data-validacion-credito>
           <div
-            v-if="!creditAlreadyBeenUsed"
-            class="appointment-details__validate-qr-wrapper"
+            v-if="!isCreditAlreadyUsed"
+            class="credit-validation"
+            role="group"
+            aria-labelledby="credit-validation-heading"
           >
-            <div class="appointment-details__validate-qr-group">
-              <label for="validate-qr" class="visually-hidden"
-                >Validar QR</label
-              >
+            <span id="credit-validation-heading" class="visually-hidden">
+              Validación de código QR de crédito
+            </span>
+
+            <div class="credit-validation__input-group">
+              <label for="qr-code-input" class="visually-hidden">
+                Código QR
+              </label>
               <input
-                v-model="qrCodeInput"
+                id="qr-code-input"
+                v-model="qrCode"
                 type="text"
-                id="validate-qr"
-                class="appointment-details__input"
+                class="credit-validation__input"
                 placeholder="Escanear código QR"
-                :disabled="isLoading"
+                :disabled="isValidatingQr"
+                :aria-describedby="qrErrorMessage ? 'qr-error' : undefined"
               />
               <button
-                v-if="!qrValidated"
-                class="appointment-details__button appointment-details__button--nowrap appointment-details__button--primary"
-                :disabled="isLoading || !qrCodeInput.trim()"
-                @click="handleValidateQRCode"
+                v-if="!isQrValidated"
+                class="credit-validation__button"
+                :disabled="isValidatingQr || !qrCode.trim()"
+                :aria-busy="isValidatingQr"
+                @click="validateQrCode"
               >
-                {{ isLoading ? "Validando..." : "Validar QR" }}
+                {{ isValidatingQr ? "Validando..." : "Validar QR" }}
               </button>
               <button
-                v-if="qrValidated && !creditUsed"
-                class="appointment-details__button--nowrap appointment-details__button appointment-details__button--primary"
-                :disabled="isLoading"
-                @click="openConfirmarCodigo"
+                v-if="isQrValidated && !isCreditConfirmed"
+                class="credit-validation__button"
+                :disabled="isValidatingQr"
+                @click="openCreditConfirmation"
               >
                 Confirmar uso de código
               </button>
             </div>
 
-            <div v-if="errorMessage" class="appointment-details__error-message">
-              {{ errorMessage }}
-            </div>
+            <p
+              v-if="qrErrorMessage"
+              id="qr-error"
+              class="credit-validation__error"
+              role="alert"
+            >
+              {{ qrErrorMessage }}
+            </p>
 
-            <div v-if="qrValidated" class="appointment-details__cost-breakdown">
-              <h3 class="appointment-details__breakdown-title">
-                Desglose de Costos
-              </h3>
-              <div class="appointment-details__breakdown-item">
-                <span class="appointment-details__breakdown-label"
+            <div
+              v-if="isQrValidated"
+              class="cost-breakdown"
+              role="region"
+              aria-label="Desglose de costos"
+            >
+              <h3 class="cost-breakdown__title">Desglose de Costos</h3>
+              <div class="cost-breakdown__row">
+                <span class="cost-breakdown__label"
                   >Costo del procedimiento:</span
                 >
-                <span class="appointment-details__breakdown-value">
+                <span class="cost-breakdown__value">
                   {{ formatCurrency(procedureCost, { decimalPlaces: 0 }) }}
                 </span>
               </div>
-              <div class="appointment-details__breakdown-item">
-                <span class="appointment-details__breakdown-label"
-                  >Crédito pre-aprobado:</span
-                >
+              <div class="cost-breakdown__row">
+                <span class="cost-breakdown__label">Crédito pre-aprobado:</span>
                 <span
-                  class="appointment-details__breakdown-value appointment-details__breakdown-value--credit"
+                  class="cost-breakdown__value cost-breakdown__value--credit"
                 >
                   {{
-                    formatCurrency(
-                      currentAppointment?.appointment_credit?.approved_amount ??
-                        0,
-                      { decimalPlaces: 0 },
-                    )
+                    formatCurrency(approvedCreditAmount, { decimalPlaces: 0 })
                   }}
                 </span>
               </div>
-              <div class="appointment-details__breakdown-divider"></div>
-              <div
-                class="appointment-details__breakdown-item appointment-details__breakdown-item--total"
-              >
-                <span class="appointment-details__breakdown-label"
+              <hr class="cost-breakdown__divider" aria-hidden="true" />
+              <div class="cost-breakdown__row cost-breakdown__row--total">
+                <span class="cost-breakdown__label"
                   >Saldo pendiente a pagar:</span
                 >
                 <span
-                  class="appointment-details__breakdown-value appointment-details__breakdown-value--total"
+                  class="cost-breakdown__value cost-breakdown__value--total"
                 >
                   {{ formatCurrency(pendingBalance, { decimalPlaces: 0 }) }}
                 </span>
               </div>
-              <p
-                v-if="pendingBalance > 0"
-                class="appointment-details__breakdown-note"
-              >
+              <p v-if="pendingBalance > 0" class="cost-breakdown__note">
                 El paciente deberá pagar el saldo pendiente no cubierto por el
                 crédito.
               </p>
             </div>
           </div>
 
-          <div v-else class="appointment-details__cost-breakdown">
-            <h3 class="appointment-details__breakdown-title">
-              Desglose de Costos
-            </h3>
-            <div class="appointment-details__breakdown-item">
-              <span class="appointment-details__breakdown-label"
+          <div
+            v-else
+            class="cost-breakdown"
+            role="region"
+            aria-label="Desglose de costos"
+          >
+            <h3 class="cost-breakdown__title">Desglose de Costos</h3>
+            <div class="cost-breakdown__row">
+              <span class="cost-breakdown__label"
                 >Costo del procedimiento:</span
               >
-              <span class="appointment-details__breakdown-value">
+              <span class="cost-breakdown__value">
                 {{ formatCurrency(procedureCost, { decimalPlaces: 0 }) }}
               </span>
             </div>
-            <div class="appointment-details__breakdown-item">
-              <span class="appointment-details__breakdown-label"
-                >Crédito pre-aprobado:</span
-              >
-              <span
-                class="appointment-details__breakdown-value appointment-details__breakdown-value--credit"
-              >
-                {{
-                  formatCurrency(
-                    currentAppointment?.appointment_credit?.approved_amount ??
-                      0,
-                    { decimalPlaces: 0 },
-                  )
-                }}
+            <div class="cost-breakdown__row">
+              <span class="cost-breakdown__label">Crédito pre-aprobado:</span>
+              <span class="cost-breakdown__value cost-breakdown__value--credit">
+                {{ formatCurrency(approvedCreditAmount, { decimalPlaces: 0 }) }}
               </span>
             </div>
-            <div class="appointment-details__breakdown-divider"></div>
-            <div
-              class="appointment-details__breakdown-item appointment-details__breakdown-item--total"
-            >
-              <span class="appointment-details__breakdown-label"
+            <hr class="cost-breakdown__divider" aria-hidden="true" />
+            <div class="cost-breakdown__row cost-breakdown__row--total">
+              <span class="cost-breakdown__label"
                 >Saldo pendiente a pagar:</span
               >
-              <span
-                class="appointment-details__breakdown-value appointment-details__breakdown-value--total"
-              >
+              <span class="cost-breakdown__value cost-breakdown__value--total">
                 {{ formatCurrency(pendingBalance, { decimalPlaces: 0 }) }}
               </span>
             </div>
-            <p
-              v-if="pendingBalance > 0"
-              class="appointment-details__breakdown-note"
-            >
+            <p v-if="pendingBalance > 0" class="cost-breakdown__note">
               El paciente deberá pagar el saldo pendiente no cubierto por el
               crédito.
             </p>
@@ -169,122 +204,107 @@
 
         <template #data-costo>
           <div
-            v-if="shouldShowCostBreakdown"
-            class="appointment-details__cost-breakdown appointment-details__cost-breakdown--compact"
+            v-if="shouldShowPaidCostBreakdown"
+            class="cost-breakdown cost-breakdown--compact"
+            role="region"
+            aria-label="Desglose de costos"
           >
-            <div class="appointment-details__breakdown-item">
-              <span class="appointment-details__breakdown-label"
+            <div class="cost-breakdown__row">
+              <span class="cost-breakdown__label"
                 >Costo del procedimiento:</span
               >
-              <span class="appointment-details__breakdown-value">
+              <span class="cost-breakdown__value">
                 {{ formatCurrency(procedureCost, { decimalPlaces: 0 }) }}
               </span>
             </div>
-            <div class="appointment-details__breakdown-item">
-              <span class="appointment-details__breakdown-label"
-                >Crédito pre-aprobado:</span
-              >
-              <span
-                class="appointment-details__breakdown-value appointment-details__breakdown-value--credit"
-              >
+            <div class="cost-breakdown__row">
+              <span class="cost-breakdown__label">Crédito pre-aprobado:</span>
+              <span class="cost-breakdown__value cost-breakdown__value--credit">
                 {{ formatCurrency(0, { decimalPlaces: 0 }) }}
               </span>
             </div>
-            <div class="appointment-details__breakdown-divider"></div>
-            <div
-              class="appointment-details__breakdown-item appointment-details__breakdown-item--total"
-            >
-              <span class="appointment-details__breakdown-label"
+            <hr class="cost-breakdown__divider" aria-hidden="true" />
+            <div class="cost-breakdown__row cost-breakdown__row--total">
+              <span class="cost-breakdown__label"
                 >Saldo pagado por el paciente:</span
               >
-              <span
-                class="appointment-details__breakdown-value appointment-details__breakdown-value--total"
-              >
+              <span class="cost-breakdown__value cost-breakdown__value--total">
                 {{ formatCurrency(procedureCost, { decimalPlaces: 0 }) }}
               </span>
             </div>
           </div>
-          <span v-else>A confirmar en la cita</span>
+          <span v-else class="details-modal__cost-pending">
+            A confirmar en la cita
+          </span>
         </template>
 
         <template #data-estado-cita>
-          <span
-            :class="
-              getStatusClass(currentAppointment?.appointment_status?.code)
-            "
-          >
-            {{ currentAppointment?.appointment_status?.value1 }}
+          <span :class="statusBadgeClass">
+            {{ appointment?.appointment_status?.value1 }}
           </span>
         </template>
       </MedicosTablaDetallesCita>
 
       <div
-        v-if="shouldShowCoordinationReminder"
-        class="appointment-details__information-banner"
+        v-if="isPendingConfirmation"
+        class="details-modal__reminder"
+        role="note"
+        aria-labelledby="coordination-note"
       >
-        <div
-          class="appointment-details__info-alert"
-          role="note"
-          aria-labelledby="coordination-reminder"
-        >
+        <div class="details-modal__reminder-content">
           <AtomsIconsInfoIcon width="12" height="12" aria-hidden="true" />
-          <p id="coordination-reminder" class="appointment-details__info-text">
-            Asegúrate de coordinar con el paciente antes de confirmar con la
-            cita
+          <p id="coordination-note" class="details-modal__reminder-text">
+            Asegúrate de coordinar con el paciente antes de confirmar la cita
           </p>
         </div>
       </div>
     </div>
 
-    <template
-      #footer
-      v-if="
-        currentAppointment?.appointment_status?.code !== 'CANCEL_APPOINTMENT' &&
-        currentAppointment?.appointment_status?.code !== 'CONCRETED_APPOINTMENT'
-      "
-    >
+    <template #footer v-if="hasFooterActions">
       <div
-        v-if="
-          currentAppointment?.appointment_status.code ===
-            'PENDING_VALORATION_APPOINTMENT' ||
-          currentAppointment?.appointment_status.code === 'PENDING_PROCEDURE'
-        "
-        class="appointment-details__actions"
+        class="details-modal__actions"
+        role="group"
+        aria-label="Acciones de la cita"
       >
-        <button
-          class="appointment-details__button--outline appointment-details__button--full"
-          @click="openEditorFechaHora"
-        >
-          <AtomsIconsSquarePenIcon size="20" />
-          Editar Fecha y Hora
-        </button>
-        <button
-          class="appointment-details__button--primary appointment-details__button--full"
-          @click="openConfirmacionReserva"
-        >
-          Confirmar reserva
-        </button>
-      </div>
-      <div v-else class="appointment-details__actions">
-        <button
-          class="appointment-details__button--danger"
-          @click="openAnularCita"
-        >
-          Anular cita
-        </button>
-        <button
-          class="appointment-details__button--outline"
-          @click="openEditorFechaHora"
-        >
-          Reprogramar
-        </button>
-        <button
-          class="appointment-details__button--primary"
-          @click="openConfirmacionReserva"
-          :disabled="canMarkAsCompleted"
-        >
-          Marcar como concretado
-        </button>
+        <template v-if="isPendingConfirmation">
+          <button
+            v-if="appointment.appointment_status.code === 'PENDING_PROCEDURE'"
+            class="details-modal__action details-modal__action--outline details-modal__action--full"
+            @click="openReschedule"
+          >
+            <AtomsIconsSquarePenIcon size="20" />
+            Editar Fecha y Hora
+          </button>
+          <button
+            class="details-modal__action details-modal__action--primary details-modal__action--full"
+            :disabled="!canConfirmReservation"
+            @click="openReservationConfirmation"
+          >
+            Confirmar reserva
+          </button>
+        </template>
+
+        <template v-else>
+          <button
+            class="details-modal__action details-modal__action--danger"
+            @click="openCancellation"
+          >
+            Anular cita
+          </button>
+          <button
+            class="details-modal__action details-modal__action--outline"
+            @click="openReschedule"
+          >
+            Reprogramar
+          </button>
+          <button
+            class="details-modal__action details-modal__action--primary"
+            :disabled="isCompletionBlocked"
+            @click="openReservationConfirmation"
+          >
+            Marcar como concretado
+          </button>
+        </template>
       </div>
     </template>
   </AtomsModalBase>
@@ -292,298 +312,372 @@
 
 <script lang="ts" setup>
 import { useAppointmentCredit } from "@/composables/api";
+import { useFormat } from "@/composables/useFormat";
+import { useLogger } from "@/composables/useLogger";
 import { useMedicalModalManager } from "@/composables/useMedicalModalManager";
-import type { Appointment, AppointmentStatusCode } from "~/types";
 import type { TablaBaseRow } from "../tabla-detalles-cita.vue";
+
+interface DropdownItem {
+  value: string | number;
+  label: string;
+}
 
 const { isOpen, closeModal, getSharedData, openModal } =
   useMedicalModalManager();
-
-const refreshAppointments = inject<() => Promise<void>>("refreshAppointments");
-
-const { fetchAllAppointmentCreditByQrCode } = useAppointmentCredit();
+const { getAllAppointmentCreditByQrCode } = useAppointmentCredit();
+const { formatDate, formatTime, formatCurrency } = useFormat();
+const logger = useLogger("DetallesCita");
 
 const isModalOpen = computed(() => isOpen.detallesCita);
 
 const modalData = computed(() =>
-  getSharedData<{ appointment: Appointment }>("detallesCita"),
+  getSharedData<{ appointment: IAppointment }>("detallesCita"),
 );
-const currentAppointment = computed(() => modalData.value?.appointment);
 
-const isLoading = ref<boolean>(false);
-const qrCodeInput = ref<string>("");
-const qrValidated = ref<boolean>(false);
-const creditAmount = ref(0);
-const creditUsed = ref(false);
-const creditId = ref<number | null>(null);
-const errorMessage = ref<string>("");
+const appointment = computed(() => modalData.value?.appointment);
 
-const { formatDate, formatTime, formatCurrency } = useFormat();
+const qrCode = ref("");
+const isValidatingQr = ref(false);
+const isQrValidated = ref(false);
+const isCreditConfirmed = ref(false);
+const validatedCreditId = ref<number | null>(null);
+const validatedCreditAmount = ref(0);
+const qrErrorMessage = ref("");
 
-const procedureCost = computed(() => {
-  return parseFloat(currentAppointment.value?.price_procedure ?? "0");
+const scheduledDate = ref<Date | null>(null);
+const scheduledTime = ref<string>("");
+
+const availableTimeSlots: DropdownItem[] = [
+  { value: "08:00", label: "08:00" },
+  { value: "08:30", label: "08:30" },
+  { value: "09:00", label: "09:00" },
+  { value: "09:30", label: "09:30" },
+  { value: "10:00", label: "10:00" },
+  { value: "10:30", label: "10:30" },
+  { value: "11:00", label: "11:00" },
+  { value: "11:30", label: "11:30" },
+  { value: "12:00", label: "12:00" },
+  { value: "13:00", label: "13:00" },
+  { value: "13:30", label: "13:30" },
+  { value: "14:00", label: "14:00" },
+  { value: "14:30", label: "14:30" },
+  { value: "15:00", label: "15:00" },
+  { value: "15:30", label: "15:30" },
+  { value: "16:00", label: "16:00" },
+  { value: "16:30", label: "16:30" },
+  { value: "17:00", label: "17:00" },
+];
+
+const handleScheduledDateChange = (_date: Date | null) => {
+  scheduledTime.value = "";
+};
+
+const handleScheduledTimeSelect = (item: DropdownItem) => {
+  scheduledTime.value = String(item.value);
+};
+
+const statusCode = computed(
+  () => appointment.value?.appointment_status?.code ?? "",
+);
+
+const procedureCost = computed(() =>
+  parseFloat(appointment.value?.price_procedure ?? "0"),
+);
+
+const approvedCreditAmount = computed(() =>
+  Number(appointment.value?.appointment_credit?.approved_amount ?? 0),
+);
+
+const pendingBalance = computed(() =>
+  Math.max(0, procedureCost.value - approvedCreditAmount.value),
+);
+
+const isCreditAlreadyUsed = computed(
+  () => appointment.value?.appointment_credit?.already_been_used === 1,
+);
+
+const hasCredit = computed(() =>
+  Boolean(appointment.value?.appointment_credit),
+);
+
+const PENDING_STATUSES: string[] = [
+  "PENDING_VALORATION_APPOINTMENT",
+  "PENDING_PROCEDURE",
+];
+
+const PROCEDURE_STATUSES: string[] = ["CONFIRM_PROCEDURE", "WAITING_PROCEDURE"];
+
+const TERMINAL_STATUSES: string[] = [
+  "CANCEL_APPOINTMENT",
+  "CONCRETED_APPOINTMENT",
+];
+
+const isPendingConfirmation = computed(() =>
+  PENDING_STATUSES.includes(statusCode.value),
+);
+
+const isPendingValoration = computed(
+  () => statusCode.value === "PENDING_VALORATION_APPOINTMENT",
+);
+
+const isInProcedurePhase = computed(() =>
+  PROCEDURE_STATUSES.includes(statusCode.value),
+);
+
+const isTerminal = computed(() => TERMINAL_STATUSES.includes(statusCode.value));
+
+const hasScheduleCompleted = computed(
+  () => scheduledDate.value !== null && scheduledTime.value !== "",
+);
+
+const canConfirmReservation = computed(() => {
+  if (isPendingValoration.value) return hasScheduleCompleted.value;
+  return true;
 });
 
-const pendingBalance = computed(() => {
-  const appointment = currentAppointment.value;
+const isCompletionBlocked = computed(() => {
+  if (!hasCredit.value || !isInProcedurePhase.value) return false;
+  return !isCreditAlreadyUsed.value && !isCreditConfirmed.value;
+});
 
-  if (!appointment) return 0;
+const hasFooterActions = computed(() => !isTerminal.value);
 
-  const price = Number(appointment.price_procedure);
-  const approvedAmount = Number(
-    appointment.appointment_credit?.approved_amount,
+const modalTitleSuffix = computed(() => {
+  const typeCode = appointment.value?.appointment_type?.code;
+  if (typeCode === "VALORATION_APPOINTMENT") return "de la Cita de valoración";
+  if (statusCode.value === "WAITING_PROCEDURE") return "del procedimiento";
+  return "de la reserva";
+});
+
+const shouldShowCreditRow = computed(
+  () => hasCredit.value && isInProcedurePhase.value,
+);
+
+const shouldShowPaidCostBreakdown = computed(() => {
+  const apt = appointment.value;
+  if (!apt) return false;
+
+  const paymentCode = apt.payment_status?.code ?? "";
+  const hasPaid =
+    paymentCode === "PAYMENT_STATUS_PAID_VALORATION_APPOINTMENT" ||
+    paymentCode === "PAYMENT_STATUS_PAID_PROCEDURE";
+
+  const noCreditOrZero =
+    !apt.appointment_credit ||
+    Number(apt.appointment_credit.approved_amount ?? 0) === 0;
+
+  return (
+    procedureCost.value > 0 &&
+    isInProcedurePhase.value &&
+    hasPaid &&
+    noCreditOrZero
   );
-
-  return Math.max(0, price - approvedAmount);
 });
 
-const appointmentRowsWithData = computed((): TablaBaseRow[] => {
-  if (!currentAppointment.value) return [];
+const STATUS_BADGE_MAP: Record<string, string> = {
+  CANCEL_APPOINTMENT: "status-badge--cancelled",
+  PENDING_VALORATION_APPOINTMENT: "status-badge--warning",
+  PENDING_PROCEDURE: "status-badge--warning",
+  CONFIRM_PROCEDURE: "status-badge--primary",
+  CONCRETED_APPOINTMENT: "status-badge--primary",
+  VALUED_VALORATION_APPOINTMENT: "status-badge--success",
+  CONFIRM_VALIDATION_APPOINTMENT: "status-badge--success",
+  VALUATION_PENDING_VALORATION_APPOINTMENT: "status-badge--primary",
+  WAITING_PROCEDURE: "status-badge--warning",
+};
 
-  return [
+const statusBadgeClass = computed(
+  () => STATUS_BADGE_MAP[statusCode.value] ?? "",
+);
+
+const detailRows = computed((): TablaBaseRow[] => {
+  const apt = appointment.value;
+  if (!apt) return [];
+
+  const rows: TablaBaseRow[] = [
     {
       key: "paciente",
       header: "Paciente:",
-      value: currentAppointment.value.customer.name,
+      value: apt.customer.name,
     },
     {
       key: "tipo-servicio",
       header: "Tipo de servicio:",
-      value: currentAppointment.value.appointment_type.name,
+      value: apt.appointment_type.name,
     },
     {
       key: "fecha",
       header: "Fecha de la cita:",
-      value: formatDate(currentAppointment.value.appointment_date),
+      value: apt.appointment_date ? formatDate(apt.appointment_date) : "-",
     },
     {
       key: "hora",
       header: "Hora de la cita:",
-      value: formatTime(currentAppointment.value.appointment_hour, "hs"),
+      value: apt.appointment_hour
+        ? formatTime(apt.appointment_hour, "hs")
+        : "-",
       isEndRow: true,
     },
     {
       key: "procedimiento",
       header: "Procedimiento:",
-      value: currentAppointment.value.package?.procedure?.name,
+      value: apt.package?.procedure?.name,
     },
     {
       key: "motivo",
       header: "Motivo:",
-      value: currentAppointment.value.user_description,
+      value: apt.user_description,
     },
     {
       key: "costo",
       header: "Costo del servicio:",
-      value: shouldShowCostBreakdown.value
+      value: shouldShowPaidCostBreakdown.value
         ? undefined
         : "A confirmar en la cita",
     },
     {
       key: "fecha-solicitud",
       header: "Fecha de la solicitud:",
-      value: formatDate(currentAppointment.value.application_date, "short"),
+      value: formatDate(apt.application_date, "short"),
     },
     {
       key: "tipo-reserva",
       header: "Tipo de reserva:",
-      value: currentAppointment.value.reservation_type.value1,
+      value: apt.reservation_type.value1,
     },
     {
       key: "estado-cita",
       header: "Estado de la cita:",
-      value: currentAppointment.value.appointment_status.value1,
+      value: apt.appointment_status.value1,
     },
     {
       key: "cedula-usuario",
       header: "Cédula:",
-      value: currentAppointment.value.customer.card_id,
-    },
-    {
-      key: "validacion-credito",
-      header: "Validación de Crédito:",
-      show: shouldShowCreditRow.value,
+      value: apt.customer.card_id,
     },
   ];
-});
 
-const VALID_STATUS_CODES = ["CONFIRM_PROCEDURE", "WAITING_PROCEDURE"];
-
-const hasCredit = computed(() => {
-  return Boolean(currentAppointment.value?.appointment_credit);
-});
-
-const hasValidStatus = computed(() => {
-  const statusCode = currentAppointment.value?.appointment_status?.code ?? "";
-  return VALID_STATUS_CODES.includes(statusCode);
-});
-
-const shouldShowCreditRow = computed(() => {
-  return hasCredit.value && hasValidStatus.value;
-});
-
-const creditAlreadyBeenUsed = computed(() => {
-  return currentAppointment.value?.appointment_credit?.already_been_used === 1;
-});
-
-const shouldShowCoordinationReminder = computed(() => {
-  const status = currentAppointment.value?.appointment_status?.code;
-  return (
-    status === "PENDING_VALORATION_APPOINTMENT" ||
-    status === "PENDING_PROCEDURE"
-  );
-});
-
-const shouldShowCostBreakdown = computed(() => {
-  const appointment = currentAppointment.value;
-  if (!appointment) return false;
-
-  const status = appointment.appointment_status?.code;
-  const paymentStatus = appointment.payment_status?.code;
-  const hasProcedurePrice = Number(appointment.price_procedure ?? 0) > 0;
-
-  const hasPaid =
-    paymentStatus === "PAYMENT_STATUS_PAID_VALORATION_APPOINTMENT" ||
-    paymentStatus === "PAYMENT_STATUS_PAID_PROCEDURE";
-
-  const isInProcedureStatus =
-    status === "CONFIRM_PROCEDURE" || status === "WAITING_PROCEDURE";
-
-  const hasNoCredit = !appointment.appointment_credit;
-  const hasCreditZero =
-    Number(appointment.appointment_credit?.approved_amount ?? 0) === 0;
-
-  return (
-    hasProcedurePrice &&
-    isInProcedureStatus &&
-    hasPaid &&
-    (hasNoCredit || hasCreditZero)
-  );
-});
-
-const canMarkAsCompleted = computed(() => {
-  if (shouldShowCreditRow.value) {
-    return !creditAlreadyBeenUsed.value && !creditUsed.value;
+  if (isPendingValoration.value) {
+    rows.push({
+      key: "programar-cita",
+      header: "Programar cita:",
+      value: " ",
+    });
   }
 
-  return false;
+  if (shouldShowCreditRow.value) {
+    rows.push({
+      key: "validacion-credito",
+      header: "Validación de Crédito:",
+      value: " ",
+    });
+  }
+
+  return rows;
 });
 
-const handleCloseModal = () => {
-  closeModal("detallesCita");
-  resetLocalState();
-};
+const validateQrCode = async (): Promise<void> => {
+  const code = qrCode.value.trim();
+  qrErrorMessage.value = "";
 
-const resetLocalState = () => {
-  qrCodeInput.value = "";
-  qrValidated.value = false;
-  creditUsed.value = false;
-  errorMessage.value = "";
-  creditAmount.value = 0;
-  creditId.value = null;
-};
-
-const isPaidByCustomer = computed(() => {
-  const appointment = currentAppointment.value;
-  if (!appointment) return false;
-
-  const approvedAmount = Number(
-    appointment.appointment_credit?.approved_amount ?? 0,
-  );
-  const price = Number(appointment.price_procedure);
-
-  return approvedAmount < price;
-});
-
-const openEditorFechaHora = () => {
-  openModal("editorFechaHora", { appointment: currentAppointment.value });
-};
-
-const openConfirmacionReserva = () => {
-  openModal("confirmacionReserva", { appointment: currentAppointment.value });
-};
-
-const openAnularCita = () => {
-  openModal("anularCita", { appointment: currentAppointment.value });
-};
-
-const handleValidateQRCode = async () => {
-  errorMessage.value = "";
-
-  if (!qrCodeInput.value.trim()) {
-    errorMessage.value = "Por favor ingrese un código QR válido";
+  if (!code) {
+    qrErrorMessage.value = "Por favor ingrese un código QR válido.";
     return;
   }
 
+  isValidatingQr.value = true;
+
   try {
-    isLoading.value = true;
+    const { data, error } = await getAllAppointmentCreditByQrCode(code);
 
-    const api = fetchAllAppointmentCreditByQrCode(qrCodeInput.value.trim());
-    await api.request();
-
-    const response = api.response.value;
-
-    if (response?.data) {
-      const credits = response.data;
-
-      if (credits.length === 0) {
-        errorMessage.value = "No se encontró crédito asociado a este código QR";
-        return;
-      }
-
-      const credit = credits[0];
-
-      if (credit.already_been_used === 1) {
-        errorMessage.value = "El código ya fue usado";
-        return;
-      }
-
-      qrValidated.value = true;
-      creditAmount.value = parseFloat(credit.approved_amount);
-      creditId.value = credit.id;
+    if (error) {
+      qrErrorMessage.value = error.info || "Error al validar el código QR.";
+      logger.error("QR validation failed", { code, error: error.info });
+      return;
     }
 
-    if (api.error && api.error.value) {
-      throw new Error(api.error.value?.info);
+    if (!data || data.length === 0) {
+      qrErrorMessage.value =
+        "No se encontró crédito asociado a este código QR.";
+      return;
     }
-  } catch (err: any) {
-    errorMessage.value = "Error al validar el código QR";
-    console.error("Error validating QR code:", err);
+
+    const credit = data[0];
+
+    if (credit.already_been_used === 1) {
+      qrErrorMessage.value = "Este código QR ya fue utilizado.";
+      return;
+    }
+
+    isQrValidated.value = true;
+    validatedCreditAmount.value = parseFloat(credit.approved_amount);
+    validatedCreditId.value = credit.id;
+
+    logger.debug("QR validated successfully", { creditId: credit.id });
+  } catch (err) {
+    qrErrorMessage.value = "Error inesperado al validar el código QR.";
+    logger.error("QR validation threw unexpectedly", {
+      error: err instanceof Error ? err.message : String(err),
+    });
   } finally {
-    isLoading.value = false;
+    isValidatingQr.value = false;
   }
 };
 
-const openConfirmarCodigo = () => {
+const openReservationConfirmation = () => {
+  const payload: Record<string, unknown> = {
+    appointment: appointment.value,
+  };
+
+  if (isPendingValoration.value && hasScheduleCompleted.value) {
+    payload.scheduledDate = scheduledDate.value;
+    payload.scheduledTime = scheduledTime.value;
+  }
+
+  openModal("confirmacionReserva", payload);
+};
+
+const openCancellation = () => {
+  openModal("anularCita", { appointment: appointment.value });
+};
+
+const openEditorFechaHora = () => {
+  openModal("editorFechaHora", { appointment: appointment.value });
+};
+
+const openReschedule = () => {
+  openModal("editorFechaHora", { appointment: appointment.value });
+};
+
+const openCreditConfirmation = () => {
   openModal("confirmarCodigo", {
-    creditId: creditId.value,
-    creditAmount: creditAmount.value,
+    creditId: validatedCreditId.value,
+    creditAmount: validatedCreditAmount.value,
     onSuccess: () => {
-      creditUsed.value = true;
+      isCreditConfirmed.value = true;
     },
   });
 };
 
-const getStatusClass = (status?: AppointmentStatusCode) => {
-  if (!status) return "";
-  const statusClassMap: Record<string, string> = {
-    CANCEL_APPOINTMENT: "status-badge--cancelled",
-    PENDING_VALORATION_APPOINTMENT: "status-badge--warning",
-    PENDING_PROCEDURE: "status-badge--warning",
-    CONFIRM_PROCEDURE: "status-badge--primary",
-    CONCRETED_APPOINTMENT: "status-badge--primary",
-    VALUED_VALORATION_APPOINTMENT: "status-badge--success",
-    CONFIRM_VALIDATION_APPOINTMENT: "status-badge--success",
-    VALUATION_PENDING_VALORATION_APPOINTMENT: "status-badge--primary",
-    WAITING_PROCEDURE: "status-badge--warning",
-  };
-  return statusClassMap[status] || "";
+const resetState = () => {
+  qrCode.value = "";
+  isValidatingQr.value = false;
+  isQrValidated.value = false;
+  isCreditConfirmed.value = false;
+  validatedCreditId.value = null;
+  validatedCreditAmount.value = 0;
+  qrErrorMessage.value = "";
+  scheduledDate.value = null;
+  scheduledTime.value = "";
 };
 
-watch(isModalOpen, (newValue) => {
-  if (!newValue) {
-    resetLocalState();
-  }
+const handleClose = () => {
+  closeModal("detallesCita");
+  resetState();
+};
+
+watch(isModalOpen, (open) => {
+  if (!open) resetState();
 });
 </script>
 
@@ -592,7 +686,7 @@ watch(isModalOpen, (newValue) => {
   @include visually-hidden;
 }
 
-.appointment-details {
+.details-modal {
   &__title {
     font-family: $font-family-main;
     font-weight: 600;
@@ -606,38 +700,47 @@ watch(isModalOpen, (newValue) => {
     padding: 1.5rem;
   }
 
-  &__information-banner {
-    margin-top: $spacing-md;
-    display: flex;
+  &__cost-pending {
+    @include label-base;
+    font-weight: 400;
+    color: $color-text-secondary;
   }
 
-  &__validate-qr-wrapper {
+  &__scheduling {
     display: flex;
     flex-direction: column;
     gap: 0.75rem;
+    padding: 0.5rem 0;
   }
 
-  &__validate-qr-group {
+  &__scheduling-fields {
     display: flex;
-    gap: 0.75rem;
+    gap: 1rem;
+
+    @media (max-width: 30rem) {
+      flex-direction: column;
+    }
   }
 
-  &__input {
-    @include input-base;
-    padding: 10px 14px;
-    height: auto;
-    min-width: 5rem;
+  &__scheduling-field {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 0.375rem;
   }
 
-  &__error-message {
+  &__scheduling-label {
     @include label-base;
-    color: #dc2626;
-    font-size: 0.75rem;
     font-weight: 500;
-    margin: 0;
+    font-size: 0.8125rem;
+    color: $color-text-secondary;
   }
 
-  &__info-alert {
+  &__reminder {
+    margin-top: $spacing-md;
+  }
+
+  &__reminder-content {
     display: flex;
     align-items: center;
     padding: 0.5rem 0.75rem;
@@ -647,7 +750,7 @@ watch(isModalOpen, (newValue) => {
     gap: $spacing-xs;
   }
 
-  &__info-text {
+  &__reminder-text {
     @include label-base;
     margin: 0;
     font-weight: 500;
@@ -665,11 +768,7 @@ watch(isModalOpen, (newValue) => {
     width: 100%;
   }
 
-  &__button {
-    &--nowrap {
-      text-wrap: nowrap;
-    }
-
+  &__action {
     &--danger {
       @include outline-danger-button;
       border: none;
@@ -692,14 +791,55 @@ watch(isModalOpen, (newValue) => {
       width: 100%;
     }
   }
+}
 
-  &__cost-breakdown {
-    margin-top: 1rem;
-    padding: 1rem;
-    border-radius: 0.5rem;
+.credit-validation {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+
+  &__input-group {
+    display: flex;
+    gap: 0.75rem;
   }
 
-  &__breakdown-title {
+  &__input {
+    @include input-base;
+    padding: 10px 14px;
+    height: auto;
+    min-width: 5rem;
+    flex: 1;
+  }
+
+  &__button {
+    @include primary-button;
+    white-space: nowrap;
+
+    &:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
+  }
+
+  &__error {
+    @include label-base;
+    color: $color-danger;
+    font-size: 0.75rem;
+    font-weight: 500;
+    margin: 0;
+  }
+}
+
+.cost-breakdown {
+  margin-top: 1rem;
+  padding: 1rem;
+  border-radius: 0.5rem;
+
+  &--compact {
+    margin-top: 0;
+  }
+
+  &__title {
     @include label-base;
     font-weight: 600;
     font-size: 0.875rem;
@@ -708,7 +848,7 @@ watch(isModalOpen, (newValue) => {
     color: $color-foreground;
   }
 
-  &__breakdown-item {
+  &__row {
     display: flex;
     justify-content: space-between;
     align-items: center;
@@ -717,14 +857,14 @@ watch(isModalOpen, (newValue) => {
     &--total {
       padding-top: 0.75rem;
 
-      .appointment-details__breakdown-label {
+      .cost-breakdown__label {
         font-weight: 600;
         color: $color-foreground;
       }
     }
   }
 
-  &__breakdown-label {
+  &__label {
     @include label-base;
     font-weight: 500;
     font-size: 0.875rem;
@@ -732,7 +872,7 @@ watch(isModalOpen, (newValue) => {
     color: $color-text-secondary;
   }
 
-  &__breakdown-value {
+  &__value {
     @include label-base;
     font-weight: 500;
     font-size: 0.875rem;
@@ -752,12 +892,13 @@ watch(isModalOpen, (newValue) => {
     }
   }
 
-  &__breakdown-divider {
+  &__divider {
+    border: none;
     border-top: 1px solid #dee2e6;
     margin: 0.5rem 0;
   }
 
-  &__breakdown-note {
+  &__note {
     @include label-base;
     margin-top: 0.75rem;
     font-weight: 400;

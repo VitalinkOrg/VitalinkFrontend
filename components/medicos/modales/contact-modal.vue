@@ -54,8 +54,6 @@
 </template>
 
 <script lang="ts" setup>
-import type { Appointment } from "@/types";
-
 const { formatPhone } = useFormat();
 
 const isOpen = ref<boolean>(false);
@@ -63,11 +61,11 @@ const isOpen = ref<boolean>(false);
 const phoneNumber = computed(
   () =>
     props.appointment.phone_number_external_user ??
-    props.appointment.customer.phone_number
+    props.appointment.customer.phone_number,
 );
 
 interface Props {
-  appointment: Appointment;
+  appointment: IAppointment;
 }
 
 const props = defineProps<Props>();

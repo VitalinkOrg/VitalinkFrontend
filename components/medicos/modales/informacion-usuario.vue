@@ -1,10 +1,9 @@
 <script lang="ts" setup>
 import { useCountries } from "@/composables/useCountries";
 import defaultAvatar from "@/src/assets/picture.svg";
-import type { Appointment } from "@/types";
 
 interface Props {
-  appointment: Appointment;
+  appointment: IAppointment;
 }
 
 interface Country {
@@ -176,7 +175,7 @@ const countries: Country[] = [
 ];
 
 const selectedCountry = ref<Country>(
-  countries.find((c) => c.code === "CR") || countries[0]
+  countries.find((c) => c.code === "CR") || countries[0],
 );
 
 const displayPhoneNumber = computed(() => {
@@ -205,7 +204,7 @@ const filteredCountries = computed(() => {
     (country) =>
       country.name.toLowerCase().includes(searchTerm) ||
       country.code.toLowerCase().includes(searchTerm) ||
-      country.dialCode.includes(searchTerm)
+      country.dialCode.includes(searchTerm),
   );
 });
 

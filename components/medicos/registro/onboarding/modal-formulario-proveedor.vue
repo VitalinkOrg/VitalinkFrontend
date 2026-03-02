@@ -313,8 +313,8 @@
 
 <script lang="ts" setup>
 import { usePackage, useSupplier, useUdc } from "@/composables/api";
-import type { AssessmentDetail, IUdc, Supplier } from "@/types";
 import { onClickOutside } from "@vueuse/core";
+import { useSpecialtyBySupplier } from "~/composables/api/useSpecialtyBySupplier";
 
 interface Emits {
   (e: "openWelcomeModal"): void;
@@ -325,14 +325,15 @@ interface Emits {
 const emit = defineEmits<Emits>();
 
 const { createPackage } = usePackage();
-const { fetchUdc } = useUdc();
-const { fetchAllSuppliers, fetchSpecialtyBySupplier } = useSupplier();
+const { getAllUdcs } = useUdc();
+const { getAllMainSuppliers } = useSupplier();
+const { getSpecialtyBySupplierById } = useSpecialtyBySupplier();
 
 const isModalOpen = ref<boolean>(false);
 const activeDropdown = ref<string | null>(null);
 const isLoading = ref<boolean>(false);
 
-const selectedSupplier = ref<Supplier | null>(null);
+const selectedSupplier = ref<ISupplierMain | null>(null);
 const selectedProcedure = ref<IUdc | null>(null);
 const productName = ref<string>("");
 const PostoperativeAssessments = ref<number>(0);
@@ -341,9 +342,9 @@ const observations = ref<string>("");
 const supplierDropdown = ref<HTMLElement | null>(null);
 const procedureDropdown = ref<HTMLElement | null>(null);
 
-const suppliers = ref<Supplier[]>([]);
+const suppliers = ref<ISupplierMain[]>([]);
 const procedures = ref<IUdc[]>([]);
-const assessments = ref<AssessmentDetail[]>([]);
+const assessments = ref<IUdc[]>([]);
 
 const fixedServices = [
   { code: "SALA_OPERACIONES", name: "Sala de Operaciones" },
@@ -398,10 +399,11 @@ const handleFinish = async () => {
       selectedSupplier.value.id,
     );
 
-    const formData = {
+    const formData: IPackageCreationRequest = {
       specialty_id: specialtyId,
       procedure_code: selectedProcedure.value?.code || "",
       product_code: productName.value || "",
+      reference_price: 0,
       discount: 7,
       services_offer: {
         ASSESSMENT_DETAILS: [
@@ -418,10 +420,7 @@ const handleFinish = async () => {
       postoperative_assessments: PostoperativeAssessments.value,
     };
 
-    const api = createPackage(formData);
-    await api.request();
-
-    const data = api.response.value?.data;
+    const { data, error } = await createPackage(formData);
 
     if (data) {
       handleCloseModal();
@@ -449,7 +448,7 @@ const closeAllDropdowns = () => {
   activeDropdown.value = null;
 };
 
-const selectSupplier = (medico: Supplier) => {
+const selectSupplier = (medico: ISupplierMain) => {
   selectedSupplier.value = medico;
   closeAllDropdowns();
 };
@@ -463,13 +462,10 @@ const handleFetchSpecialtyBySupplier = async (
   supplierId: number,
 ): Promise<number> => {
   try {
-    const api = fetchSpecialtyBySupplier(supplierId);
-    await api.request();
-
-    const data = api.response.value?.data;
+    const { data, error } = await getSpecialtyBySupplierById(supplierId);
 
     if (data) {
-      return data[0].id;
+      return data.id;
     }
 
     return 0;
@@ -481,11 +477,10 @@ const handleFetchSpecialtyBySupplier = async (
 
 const loadAssessment = async () => {
   try {
-    const api = fetchUdc("ASSESSMENT");
-    await api.request();
+    const { data, error } = await getAllUdcs({ type: "ASSESSMENT" });
 
-    if (api.response.value?.data) {
-      assessments.value = api.response.value.data;
+    if (data) {
+      assessments.value = data;
       initializeDynamicStates();
     }
   } catch (error) {
@@ -495,10 +490,11 @@ const loadAssessment = async () => {
 
 const loadSuppliers = async () => {
   try {
-    const api = fetchAllSuppliers();
-    await api.request();
+    const { data, error } = await getAllMainSuppliers();
 
-    suppliers.value = api.response.value?.data || [];
+    if (data) {
+      suppliers.value = data;
+    }
   } catch (error) {
     console.error("Error loading suppliers:", error);
   }
@@ -506,10 +502,11 @@ const loadSuppliers = async () => {
 
 const loadProcedures = async () => {
   try {
-    const api = fetchUdc("MEDICAL_PROCEDURE");
-    await api.request();
+    const { data, error } = await getAllUdcs({ type: "MEDICAL_PROCEDURE" });
 
-    procedures.value = api.response.value?.data || [];
+    if (data) {
+      procedures.value = data;
+    }
   } catch (error) {
     console.error("Error loading procedures:", error);
   }

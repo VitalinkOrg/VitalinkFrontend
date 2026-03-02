@@ -39,7 +39,6 @@
 
 <script lang="ts" setup>
 import { useAppointment } from "@/composables/api";
-import type { Appointment } from "@/types";
 
 const { uploadProforma } = useAppointment();
 
@@ -47,7 +46,7 @@ const refreshAppointments = inject<() => Promise<void>>("refreshAppointments");
 
 const { isOpen, closeModal, getSharedData } = useMedicalModalManager();
 const modalData = computed(() =>
-  getSharedData<{ appointment: Appointment }>("confirmacionNoApto")
+  getSharedData<{ appointment: IAppointment }>("confirmacionNoApto"),
 );
 
 const currentAppointment = computed(() => modalData.value.appointment);
@@ -68,20 +67,19 @@ const handleConfirmNotSuitable = async () => {
   try {
     isLoading.value = true;
 
-    const api = uploadProforma(payload, currentAppointment.value.id);
-    await api.request();
+    const { data, error } = await uploadProforma(
+      currentAppointment.value.id,
+      payload,
+    );
 
-    const response = api.response.value;
-    const error = api.error.value;
-
-    if (response?.data) {
+    if (data) {
       await refreshAppointments?.();
       handleCloseModal();
       closeModal("subirProforma");
     }
 
     if (error) {
-      console.error(error.raw);
+      console.error(error.info);
     }
   } catch (error) {
     console.error(error);

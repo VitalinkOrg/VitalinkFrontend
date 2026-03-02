@@ -2,31 +2,27 @@
   <AtomsModalBase
     :is-open="isModalOpen"
     size="small"
-    class="success-confirmation"
     :close-on-backdrop="false"
-    @close="handleCloseModal"
+    @close="handleClose"
+    aria-labelledby="saved-modal-title"
   >
-    <div class="success-confirmation__content">
-      <h2 class="success-confirmation__content-title">Cambios guardados</h2>
-      <p class="success-confirmation__description">
+    <div class="saved-modal__content">
+      <h2 id="saved-modal-title" class="saved-modal__title">
+        Cambios guardados
+      </h2>
+      <p class="saved-modal__description">
         Acabas de reprogramar la cita de valoración para tu paciente.
       </p>
 
-      <div class="success-confirmation__table-wrapper">
+      <div class="saved-modal__summary" v-if="appointment">
         <MedicosTablaDetallesCita
-          v-if="appointmentRowsWithData"
-          :rows="appointmentRowsWithData"
+          :rows="summaryRows"
           :hidden-title="true"
-          :aria-label="`Detalles de la cita de ${currentAppointment.customer.name}`"
+          :aria-label="`Resumen de la cita de ${appointment.customer?.name}`"
         >
           <template #data-estado-cita>
-            <span
-              class="status-badge"
-              :class="
-                getStatusClass(currentAppointment.appointment_status.code)
-              "
-            >
-              {{ currentAppointment.appointment_status.value1 }}
+            <span :class="statusBadgeClass">
+              {{ appointment.appointment_status?.value1 }}
             </span>
           </template>
         </MedicosTablaDetallesCita>
@@ -34,18 +30,16 @@
     </div>
 
     <template #footer>
-      <div class="success-confirmation__actions">
+      <div class="saved-modal__actions">
         <button
-          :disabled="isLoading"
-          class="success-confirmation__button--outline"
-          @click="handleNavigateToHome"
+          class="saved-modal__action saved-modal__action--outline"
+          @click="navigateToHome"
         >
           Ir a inicio
         </button>
         <button
-          :disabled="isLoading"
-          class="success-confirmation__button--primary"
-          @click="handleNavigateToAppointments"
+          class="saved-modal__action saved-modal__action--primary"
+          @click="navigateToAppointments"
         >
           Ver en Citas
         </button>
@@ -55,79 +49,81 @@
 </template>
 
 <script lang="ts" setup>
-import { computed, ref } from "vue";
-import { useRouter } from "vue-router";
-import { useFormat } from "~/composables/useFormat";
-import type { Appointment, AppointmentStatusCode } from "~/types";
-import type { TablaBaseRow } from "../tabla-detalles-cita.vue";
+import type { TablaBaseRow } from "@/components/medicos/tabla-detalles-cita.vue";
+import { useFormat } from "@/composables/useFormat";
+import { useMedicalModalManager } from "@/composables/useMedicalModalManager";
 
-const { isOpen, closeModal } = useMedicalModalManager();
+const { isOpen, closeModal, getSharedData } = useMedicalModalManager();
 const { formatDate, formatTime } = useFormat();
 const router = useRouter();
 
+const isModalOpen = computed(() => isOpen.cambiosGuardados);
+
 const modalData = computed(() =>
-  useMedicalModalManager().getSharedData<{ appointment: Appointment }>(
-    "cambiosGuardados"
-  )
+  getSharedData<{ appointment: IAppointment }>("cambiosGuardados"),
 );
 
-const currentAppointment = computed(() => modalData.value.appointment);
+const appointment = computed(() => modalData.value?.appointment);
 
-const isModalOpen = computed(() => isOpen.cambiosGuardados);
-const isLoading = ref<boolean>(false);
+const statusCode = computed(
+  () => appointment.value?.appointment_status?.code ?? "",
+);
 
-const getStatusClass = (status: AppointmentStatusCode) => {
-  const statusClassMap = {
-    CANCEL_APPOINTMENT: "status-badge--cancelled",
-    PENDING_VALORATION_APPOINTMENT: "status-badge--warning",
-    PENDING_PROCEDURE: "status-badge--warning",
-    CONFIRM_PROCEDURE: "status-badge--primary",
-    CONCRETED_APPOINTMENT: "status-badge--primary",
-    VALUED_VALORATION_APPOINTMENT: "status-badge--success",
-    CONFIRM_VALIDATION_APPOINTMENT: "status-badge--success",
-    VALUATION_PENDING_VALORATION_APPOINTMENT: "status-badge--primary",
-    WAITING_PROCEDURE: "status-badge--warning",
-  };
-  return statusClassMap[status] || "";
+const STATUS_BADGE_MAP: Record<string, string> = {
+  CANCEL_APPOINTMENT: "status-badge--cancelled",
+  PENDING_VALORATION_APPOINTMENT: "status-badge--warning",
+  PENDING_PROCEDURE: "status-badge--warning",
+  CONFIRM_PROCEDURE: "status-badge--primary",
+  CONCRETED_APPOINTMENT: "status-badge--primary",
+  VALUED_VALORATION_APPOINTMENT: "status-badge--success",
+  CONFIRM_VALIDATION_APPOINTMENT: "status-badge--success",
+  VALUATION_PENDING_VALORATION_APPOINTMENT: "status-badge--primary",
+  WAITING_PROCEDURE: "status-badge--warning",
 };
 
-const appointmentRowsWithData = computed((): TablaBaseRow[] => {
-  if (!currentAppointment.value) return [];
+const statusBadgeClass = computed(
+  () => STATUS_BADGE_MAP[statusCode.value] ?? "",
+);
 
-  const appt = currentAppointment.value;
+const summaryRows = computed((): TablaBaseRow[] => {
+  const apt = appointment.value;
+  if (!apt) return [];
+
   return [
     {
       key: "tipo-servicio",
       header: "Tipo de servicio:",
-      value: appt.appointment_type.name,
+      value: apt.appointment_type?.name ?? "",
     },
     {
       key: "fecha",
       header: "Fecha de la cita:",
-      value: formatDate(appt.appointment_date),
-      class: "appointment-editor__details-row--editable",
+      value: apt.appointment_date ? formatDate(apt.appointment_date) : "-",
+      class: "saved-modal__row--highlight",
     },
     {
       key: "hora",
       header: "Hora de la cita:",
-      value: formatTime(appt.appointment_hour, "hs"),
-      class: "appointment-editor__details-row--editable",
+      value: apt.appointment_hour
+        ? formatTime(apt.appointment_hour, "hs")
+        : "-",
+      class: "saved-modal__row--highlight",
     },
     {
       key: "paciente",
       header: "Paciente:",
-      value: appt.customer.name,
+      value: apt.customer?.name ?? "",
       isEndRow: true,
     },
     {
       key: "procedimiento",
       header: "Procedimiento:",
-      value: appt.package?.procedure?.name ?? "",
+      value: apt.package?.procedure?.name ?? "",
     },
     {
       key: "motivo",
       header: "Motivo:",
-      value: appt.user_description ?? "",
+      value: apt.user_description ?? "",
     },
     {
       key: "costo-servicio",
@@ -137,72 +133,50 @@ const appointmentRowsWithData = computed((): TablaBaseRow[] => {
     {
       key: "fecha-solicitud",
       header: "Fecha de la solicitud:",
-      value: formatDate(appt.application_date, "short"),
+      value: formatDate(apt.application_date ?? "", "short"),
     },
     {
       key: "tipo-reserva",
       header: "Tipo de reserva:",
-      value: appt.reservation_type.value1,
+      value: apt.reservation_type?.value1 ?? "",
     },
     {
       key: "estado-cita",
       header: "Estado de la cita:",
-      value: appt.appointment_status.code,
+      value: apt.appointment_status?.value1 ?? "",
     },
   ];
 });
 
-const handleCloseModal = () => {
+const handleClose = () => {
   closeModal("cambiosGuardados");
 };
 
-const handleNavigateToHome = () => {
+const navigateToHome = () => {
+  handleClose();
   router.push("/medicos/inicio");
-  handleCloseModal();
 };
 
-const handleNavigateToAppointments = () => {
+const navigateToAppointments = () => {
+  handleClose();
   router.push("/medicos/citas");
-  handleCloseModal();
 };
 </script>
 
 <style lang="scss" scoped>
-.success-confirmation {
-  &__title-icon {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    width: 2.5rem;
-    height: 2.5rem;
-    border: 0.40625rem solid $color-cancel;
-    background-color: $color-danger;
-    border-radius: 50%;
-    padding: 0.375rem;
-
-    svg {
-      color: $white;
-    }
-  }
-
+.saved-modal {
   &__content {
     padding: 1.25rem 1.5rem 0 1.5rem;
   }
 
-  &__table-wrapper {
-    padding: 1.25rem;
-    background-color: #f8faff;
-    border-radius: 1.25rem;
-  }
-
-  &__content-title {
+  &__title {
     font-family: $font-family-montserrat-alt;
     font-weight: 700;
     font-size: 1.75rem;
-    line-height: 1.84375rem;
-    letter-spacing: 0;
+    line-height: 1.85rem;
     text-align: center;
     color: $color-primary;
+    margin: 0;
   }
 
   &__description {
@@ -210,9 +184,20 @@ const handleNavigateToAppointments = () => {
     font-weight: 500;
     font-size: 1.125rem;
     line-height: 1.625rem;
-    letter-spacing: 0;
     text-align: center;
     color: $color-text-secondary;
+    margin: 0.75rem 0 0 0;
+  }
+
+  &__summary {
+    margin-top: 1.25rem;
+    padding: 1.25rem;
+    background-color: #f8faff;
+    border-radius: 1.25rem;
+  }
+
+  &__row--highlight {
+    background-color: rgba($color-primary, 0.04);
   }
 
   &__actions {
@@ -221,7 +206,7 @@ const handleNavigateToAppointments = () => {
     gap: 0.75rem;
   }
 
-  &__button {
+  &__action {
     &--outline {
       @include outline-button;
       width: 100%;

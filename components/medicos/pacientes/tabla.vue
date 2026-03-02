@@ -1,9 +1,8 @@
 <script lang="ts" setup>
-import type { Customer } from "@/types";
 import { computed, ref } from "vue";
 
 interface Props {
-  patients?: Customer[];
+  patients?: ICustomer[];
   itemsPerPage?: number;
 }
 
@@ -24,12 +23,14 @@ const sortDirection = ref<"asc" | "desc">("asc");
 
 const totalItems = computed(() => props.patients?.length || 0);
 const totalPages = computed(() =>
-  Math.ceil(totalItems.value / props.itemsPerPage)
+  Math.ceil(totalItems.value / props.itemsPerPage),
 );
 
 const hasPatients = computed<boolean>(
   () =>
-    props.patients && Array.isArray(props.patients) && props.patients.length > 0
+    props.patients &&
+    Array.isArray(props.patients) &&
+    props.patients.length > 0,
 );
 
 const paginatedPatients = computed(() => {
@@ -38,9 +39,9 @@ const paginatedPatients = computed(() => {
   let sortedPatients = [...props.patients];
 
   if (sortColumn.value) {
-    sortedPatients.sort((a: Customer, b: Customer) => {
-      let aValue: any = a[sortColumn.value as keyof Customer];
-      let bValue: any = b[sortColumn.value as keyof Customer];
+    sortedPatients.sort((a: ICustomer, b: ICustomer) => {
+      let aValue: any = a[sortColumn.value as keyof ICustomer];
+      let bValue: any = b[sortColumn.value as keyof ICustomer];
 
       if (typeof aValue === "string") {
         aValue = aValue.toLowerCase();
@@ -60,17 +61,17 @@ const paginatedPatients = computed(() => {
   return sortedPatients.slice(start, end);
 });
 
-const showUserDetails = (patient: Customer) => {
+const showUserDetails = (patient: ICustomer) => {
   modalData.value = patient;
   openUserModal.value = true;
 };
 
-const showDateDetails = (patient: Customer) => {
+const showDateDetails = (patient: ICustomer) => {
   modalData.value = patient;
   openDateModal.value = true;
 };
 
-const showDateCancel = (patient: Customer) => {
+const showDateCancel = (patient: ICustomer) => {
   modalData.value = patient;
   openDateCancelModal.value = true;
 };
@@ -95,7 +96,7 @@ const toggleAllPatients = (): void => {
   if (allSelected.value) {
     selectedPatients.value.clear();
   } else {
-    paginatedPatients.value.forEach((patient: Customer) => {
+    paginatedPatients.value.forEach((patient: ICustomer) => {
       selectedPatients.value.add(Number(patient.id));
     });
   }
@@ -103,8 +104,8 @@ const toggleAllPatients = (): void => {
 };
 
 const updateAllSelectedState = (): void => {
-  const currentPageIds = paginatedPatients.value.map((patient: Customer) =>
-    Number(patient.id)
+  const currentPageIds = paginatedPatients.value.map((patient: ICustomer) =>
+    Number(patient.id),
   );
   allSelected.value =
     currentPageIds.length > 0 &&
@@ -296,7 +297,7 @@ const handlePageChange = (page: number) => {
               role="row"
               :class="{
                 'patients-table__row--selected': selectedPatients.has(
-                  Number(patient.id)
+                  Number(patient.id),
                 ),
               }"
             >

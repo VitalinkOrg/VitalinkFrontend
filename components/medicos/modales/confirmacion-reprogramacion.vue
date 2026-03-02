@@ -44,10 +44,9 @@
 
 <script lang="ts" setup>
 import { useAppointment } from "@/composables/api";
-import type { Appointment } from "@/types";
 
 interface Props {
-  appointment: Appointment;
+  appointment: IAppointment;
   appointmentDate: string;
   appointmentHour: string;
 }
@@ -58,10 +57,10 @@ const { isOpen, closeModal, getSharedData, openModal } =
 
 const modalData = computed(() =>
   getSharedData<{
-    appointment: Appointment;
+    appointment: IAppointment;
     appointmentDate: string;
     appointmentHour: string;
-  }>("confirmacionReprogramacion")
+  }>("confirmacionReprogramacion"),
 );
 
 const currentAppointment = computed(() => modalData.value?.appointment);
@@ -102,13 +101,12 @@ const handleSaveChanges = async () => {
   try {
     isLoading.value = true;
 
-    const api = updateAppointment(payload, currentAppointment.value.id);
-    await api.request();
+    const { data, error } = await updateAppointment(
+      currentAppointment.value.id,
+      payload,
+    );
 
-    const response = api.response.value;
-    const error = api.error.value;
-
-    if (response?.data) {
+    if (data) {
       if (
         currentAppointment.value?.appointment_status.code ===
         "CONFIRM_VALIDATION_APPOINTMENT"
@@ -151,13 +149,11 @@ const handleSaveChanges = async () => {
 const handleConfirmValorationAppointment = async () => {
   if (!currentAppointment.value) return;
 
-  const api = confirmValorationAppointment(currentAppointment.value.id);
-  await api.request();
+  const { data, error } = await confirmValorationAppointment(
+    currentAppointment.value.id,
+  );
 
-  const response = api.response.value;
-  const error = api.error.value;
-
-  if (response?.data) {
+  if (data) {
     await refreshAppointments?.();
     handleCloseModal();
   }
@@ -170,13 +166,11 @@ const handleConfirmValorationAppointment = async () => {
 const handleConfirmProcedure = async () => {
   try {
     if (!currentAppointment.value) throw new Error("No appointment found");
-    const api = confirmProcedure(currentAppointment.value?.id);
-    await api.request();
+    const { data, error } = await confirmProcedure(
+      currentAppointment.value?.id,
+    );
 
-    const response = api.response.value;
-    const error = api.error.value;
-
-    if (response?.data) {
+    if (data) {
       await refreshAppointments?.();
       handleCloseModal();
       savedChangesRef.value?.handleOpenModal();

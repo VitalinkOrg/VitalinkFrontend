@@ -45,19 +45,17 @@
 </template>
 
 <script lang="ts" setup>
-import type { Appointment } from "~/types";
-
 const { isOpen, closeModal, getSharedData, openModal } =
   useMedicalModalManager();
 
 const isModalOpen = computed(() => isOpen.advertenciaPago);
 
 interface SharedData {
-  appointment: Appointment;
+  appointment: IAppointment;
 }
 
 const modalData = computed(() =>
-  getSharedData<SharedData>("confirmValoration")
+  getSharedData<SharedData>("confirmValoration"),
 );
 
 const sharedData = computed(() => ({

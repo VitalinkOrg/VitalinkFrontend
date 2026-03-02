@@ -44,14 +44,13 @@
 
 <script lang="ts" setup>
 import { useAppointment } from "@/composables/api";
-import type { Appointment } from "@/types";
 
 const refreshAppointments = inject<() => Promise<void>>("refreshAppointments");
 
 const { isOpen, closeModal, getSharedData } = useMedicalModalManager();
 
 const modalData = computed(() =>
-  getSharedData<{ appointment: Appointment }>("anularCita")
+  getSharedData<{ appointment: IAppointment }>("anularCita"),
 );
 
 const currentAppointment = computed(() => modalData.value.appointment);
@@ -75,13 +74,12 @@ const handleCancelAppointment = async () => {
       appointment_status_code: "CANCEL_APPOINTMENT",
     };
 
-    const api = updateAppointment(payload, currentAppointment.value.id);
-    await api.request();
+    const { data, error } = await updateAppointment(
+      currentAppointment.value.id,
+      payload,
+    );
 
-    const response = api.response.value;
-    const error = api.error.value;
-
-    if (response?.data) {
+    if (data) {
       await refreshAppointments?.();
       handleCloseModal();
       closeModal("detallesCita");
