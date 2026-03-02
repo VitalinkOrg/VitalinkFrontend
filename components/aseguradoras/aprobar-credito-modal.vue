@@ -264,10 +264,8 @@
 </template>
 
 <script lang="ts" setup>
-import type { Credit } from "~/types";
-
 interface Props {
-  credit: Credit;
+  credit: IAppointmentCredit;
   step?: number;
 }
 
@@ -339,16 +337,16 @@ watch(
   () => props.step,
   (newVal: number) => {
     localStep.value = newVal;
-  }
+  },
 );
 
 watch(
   () => props.credit,
-  (newCredit: Credit | null) => {
+  (newCredit: IAppointmentCredit | null) => {
     if (newCredit) {
       approvedAmount.value = newCredit.requested_amount;
     }
-  }
+  },
 );
 
 watch(
@@ -369,7 +367,7 @@ watch(
     } else {
       amountError.value = "";
     }
-  }
+  },
 );
 
 const isApproveDisabled = computed<boolean>(() => {
@@ -467,7 +465,7 @@ const confirmAppointment = async (): Promise<void> => {
         method: "POST",
         headers: { Authorization: token.value || "" },
         body: formData,
-      }
+      },
     );
 
     if (!documentResponse.ok) {
@@ -500,13 +498,13 @@ const confirmAppointment = async (): Promise<void> => {
           credit_observations: description.value || "Solicitud Aprobada",
           pagare_file_code: documentCode,
         },
-      }
+      },
     );
 
     if (error.value) {
       console.error("Error approving credit:", error.value);
       throw new Error(
-        (error.value as any).data?.info || "Error al aprobar el crédito"
+        (error.value as any).data?.info || "Error al aprobar el crédito",
       );
     }
 
@@ -536,7 +534,7 @@ const cancelAppointment = async (): Promise<void> => {
       body: {
         credit_status_code: "REJECTED",
       },
-    }
+    },
   );
 
   if (data.value) {
