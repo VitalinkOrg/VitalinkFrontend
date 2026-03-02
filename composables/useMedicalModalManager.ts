@@ -1,5 +1,5 @@
-import type { Appointment } from "@/types";
 import { reactive, readonly, ref, type Ref } from "vue";
+import type { Appointment } from "~/types/test-index";
 
 const modalNames = [
   "anularCita",
@@ -43,8 +43,8 @@ const modalState = reactive<Record<ModalName, boolean>>(
       acc[name] = false;
       return acc;
     },
-    {} as Record<ModalName, boolean>
-  )
+    {} as Record<ModalName, boolean>,
+  ),
 );
 
 const sharedData = ref<Record<string, any>>({});

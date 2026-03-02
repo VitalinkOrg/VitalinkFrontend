@@ -1,5 +1,5 @@
-import type { Credit } from "@/types";
 import { reactive, readonly, ref, type Ref } from "vue";
+import type { Credit } from "~/types/test-index";
 
 const modalNames = [
   "approval",
@@ -32,8 +32,8 @@ const modalState = reactive<Record<ModalName, boolean>>(
       acc[name] = false;
       return acc;
     },
-    {} as Record<ModalName, boolean>
-  )
+    {} as Record<ModalName, boolean>,
+  ),
 );
 
 const sharedData = ref<Record<string, any>>({});

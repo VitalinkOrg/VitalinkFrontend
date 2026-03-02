@@ -1,198 +1,197 @@
-import type { ApiResponse, Appointment } from "@/types";
+import { useLogger } from "@/composables/useLogger";
 import useApi from "./useApi";
 
-interface AppointmentPayload {
-  customer_id?: string;
-  proforma_file_code?: string;
-  appointment_date?: string;
-  appointment_hour?: string;
-  reservation_type?: string;
-  appointment_status_code?: string;
-  supplier_id?: number;
-  package_id?: number;
-  procedure_id?: number;
-  application_date?: string;
-  payment_status_code?: string;
-  payment_method_code?: string;
-  appointment_result_code?: string;
-  user_description?: string;
-  recommendation_post_appointment?: string;
-  diagnostic?: string;
-  is_for_external_user?: boolean;
-  phone_number_external_user?: string;
-}
-
-interface UploadProforma {
-  appointment_result_code?: string;
-  proforma_file_code?: string;
-}
-
-interface GetDocumentResponse {
-  id: number;
-  name: string;
-  code: string;
-  file_name: string;
-  type: string;
-  extension: string;
-  description: string;
-  url: string;
-  id_for_table: number;
-  table: string;
-  user_id: string;
-  is_public: number;
-  created_date: string;
-}
-
-interface CreateAppointment {
-  customer_id: string;
-  appointment_date: string;
-  appointment_hour: string;
-  supplier_id: number;
-  package_id?: number;
-  user_description: string;
-  is_for_external_user: boolean;
-  phone_number_external_user: string;
-  procedure_id?: number;
-}
-
 export const useAppointment = () => {
-  const config = useRuntimeConfig();
   const { getToken } = useAuthToken();
+  const logger = useLogger("useAppointment");
 
-  const fetchAllAppointments = () => {
+  const getAuthHeaders = (): Record<string, string> => {
     const token = getToken();
-    if (!token) throw new Error("No authentication token found");
-
-    const url = `${config.public.API_BASE_URL}/appointment/get_all`;
-
-    return useApi<ApiResponse<Appointment[]>>(url, {
-      method: "GET",
-      headers: {
-        Authorization: token,
-        "Content-Type": "application/json",
-      },
-    });
+    if (!token) {
+      logger.error("No authentication token found");
+      throw new Error("No authentication token found");
+    }
+    return {
+      Authorization: token,
+      "Content-Type": "application/json",
+    };
   };
 
-  const createAppointment = (body: CreateAppointment) => {
-    const token = getToken();
-    if (!token) throw new Error("No authentication token found");
+  const executeRequest = async <T>(
+    operationName: string,
+    endpoint: string,
+    options: Parameters<typeof $fetch>[1],
+  ): Promise<{ data: T | undefined; error: IApiErrorResponse | null }> => {
+    try {
+      const headers = getAuthHeaders();
+      const { response, request, error } = useApi<T>(endpoint, {
+        ...options,
+        headers: { ...headers, ...options?.headers },
+      });
 
-    const url = `${config.public.API_BASE_URL}/appointment/add`;
+      await request();
 
-    return useApi<ApiResponse<any>>(url, {
+      if (error.value) {
+        logger.error(`${operationName} failed`, {
+          endpoint,
+          status: error.value.status?.http_code,
+          message: error.value.info,
+        });
+        return { data: undefined, error: error.value };
+      }
+
+      logger.debug(`${operationName} succeeded`, { endpoint });
+      return { data: response.value, error: null };
+    } catch (err: unknown) {
+      const fallbackError: IApiErrorResponse = {
+        status: { id: 0, message: "Error inesperado", http_code: 500 },
+        info:
+          err instanceof Error
+            ? err.message
+            : "Ocurrió un error inesperado antes de realizar la solicitud",
+        data: null,
+      };
+
+      logger.error(`${operationName} threw unexpectedly`, {
+        endpoint,
+        error: fallbackError.info,
+      });
+
+      return { data: undefined, error: fallbackError };
+    }
+  };
+
+  const createAppointment = (payload: ICreateAppointmentRequest) =>
+    executeRequest<IAppointment>("createAppointment", "appointment/add", {
       method: "POST",
-      body: JSON.stringify(body),
-      headers: {
-        Authorization: token,
-        "Content-Type": "application/json",
-      },
+      body: JSON.stringify(payload),
     });
-  };
-
-  const confirmProcedure = (appointmentId: number) => {
-    const token = getToken();
-    if (!token) throw new Error("No authentication token found");
-
-    const url = `${config.public.API_BASE_URL}/appointment/confirm_procedure?id=${appointmentId}`;
-
-    return useApi<ApiResponse<any>>(url, {
-      method: "PUT",
-      headers: {
-        Authorization: token,
-        "Content-Type": "application/json",
-      },
-    });
-  };
-
-  const setProcedureRealized = (appointmentId: number) => {
-    const token = getToken();
-    if (!token) throw new Error("No authentication token found");
-
-    const url = `${config.public.API_BASE_URL}/appointment/set_procedure_realized?id=${appointmentId}`;
-
-    return useApi<ApiResponse<any>>(url, {
-      method: "PUT",
-      headers: {
-        Authorization: token,
-        "Content-Type": "application/json",
-      },
-    });
-  };
-
-  const confirmValorationAppointment = (appointmentId: number) => {
-    const token = getToken();
-    if (!token) throw new Error("No authentication token found");
-
-    const url = `${config.public.API_BASE_URL}/appointment/confirm_valoration_appointment?id=${appointmentId}`;
-
-    return useApi<ApiResponse<any>>(url, {
-      method: "PUT",
-      headers: {
-        Authorization: token,
-        "Content-Type": "application/json",
-      },
-    });
-  };
 
   const updateAppointment = (
-    body: AppointmentPayload,
-    appointmentId: number
-  ) => {
-    const token = getToken();
-    if (!token) throw new Error("No authentication token found");
-
-    const url = `${config.public.API_BASE_URL}/appointment/edit?id=${appointmentId}`;
-
-    return useApi<ApiResponse<any>>(url, {
+    appointmentId: number,
+    payload: IAppointmentUpdateRequest,
+  ) =>
+    executeRequest<IAppointment>("updateAppointment", "appointment/edit", {
       method: "PUT",
-      body: JSON.stringify(body),
-      headers: {
-        Authorization: token,
-        "Content-Type": "application/json",
-      },
+      body: JSON.stringify(payload),
+      query: { id: appointmentId },
     });
-  };
 
-  const uploadProforma = (body: UploadProforma, appointmentId: number) => {
-    const token = getToken();
-    if (!token) throw new Error("No authentication token found");
-
-    const url = `${config.public.API_BASE_URL}/appointment/upload_proforma?id=${appointmentId}`;
-
-    return useApi<ApiResponse<any>>(url, {
-      method: "PUT",
-      body: JSON.stringify(body),
-      headers: {
-        Authorization: token,
-        "Content-Type": "application/json",
-      },
-    });
-  };
-
-  const fetchDocumentByCode = (proformaFileCode: string) => {
-    const token = getToken();
-    if (!token) throw new Error("No authentication token found");
-
-    const url = `${config.public.API_BASE_URL}/document/get_by_code?code=${proformaFileCode}`;
-
-    return useApi<ApiResponse<GetDocumentResponse>>(url, {
+  const getAppointmentById = (appointmentId: number) =>
+    executeRequest<IAppointment>("getAppointmentById", "appointment/get", {
       method: "GET",
-      headers: {
-        Authorization: token,
-        "Content-Type": "application/json",
-      },
+      query: { id: appointmentId },
     });
-  };
+
+  const getAllAppointments = () =>
+    executeRequest<IAppointment[]>(
+      "getAllAppointments",
+      "appointment/get_all",
+      {
+        method: "GET",
+      },
+    );
+
+  const deleteAppointment = (appointmentId: number) =>
+    executeRequest<null>("deleteAppointment", "appointment/delete", {
+      method: "DELETE",
+      query: { id: appointmentId },
+    });
+
+  const confirmValorationAppointment = (appointmentId: number) =>
+    executeRequest<IAppointment>(
+      "confirmValorationAppointment",
+      "appointment/confirm_valoration_appointment",
+      {
+        method: "PUT",
+        query: { id: appointmentId },
+      },
+    );
+
+  const successPaymentValorationAppointment = (
+    appointmentId: number,
+    paymentMethodCode: string,
+  ) =>
+    executeRequest<IAppointment>(
+      "successPaymentValorationAppointment",
+      "appointment/success_payment_valoration_appointment",
+      {
+        method: "PUT",
+        body: JSON.stringify({ payment_method_code: paymentMethodCode }),
+        query: { id: appointmentId },
+      },
+    );
+
+  const uploadProforma = (
+    appointmentId: number,
+    payload: IUploadProformaRequest,
+  ) =>
+    executeRequest<IAppointment>(
+      "uploadProforma",
+      "appointment/upload_proforma",
+      {
+        method: "PUT",
+        body: JSON.stringify(payload),
+        query: { id: appointmentId },
+      },
+    );
+
+  const reserveProcedure = (appointmentId: number) =>
+    executeRequest<IAppointment>(
+      "reserveProcedure",
+      "appointment/reserve_procedure",
+      {
+        method: "PUT",
+        query: { id: appointmentId },
+      },
+    );
+
+  const confirmProcedure = (appointmentId: number) =>
+    executeRequest<IAppointment>(
+      "confirmProcedure",
+      "appointment/confirm_procedure",
+      {
+        method: "PUT",
+        query: { id: appointmentId },
+      },
+    );
+
+  const successPaymentProcedure = (
+    appointmentId: number,
+    paymentMethodCode: string,
+  ) =>
+    executeRequest<IAppointment>(
+      "successPaymentProcedure",
+      "appointment/success_payment_procedure",
+      {
+        method: "PUT",
+        body: JSON.stringify({ payment_method_code: paymentMethodCode }),
+        query: { id: appointmentId },
+      },
+    );
+
+  const setProcedureRealized = (appointmentId: number) =>
+    executeRequest<IAppointment>(
+      "setProcedureRealized",
+      "appointment/set_procedure_realized",
+      {
+        method: "PUT",
+        query: { id: appointmentId },
+      },
+    );
 
   return {
-    updateAppointment,
-    uploadProforma,
-    confirmProcedure,
-    setProcedureRealized,
-    confirmValorationAppointment,
-    fetchDocumentByCode,
-    fetchAllAppointments,
     createAppointment,
+    updateAppointment,
+    getAppointmentById,
+    getAllAppointments,
+    deleteAppointment,
+    confirmValorationAppointment,
+    successPaymentValorationAppointment,
+    uploadProforma,
+    reserveProcedure,
+    confirmProcedure,
+    successPaymentProcedure,
+    setProcedureRealized,
   };
 };

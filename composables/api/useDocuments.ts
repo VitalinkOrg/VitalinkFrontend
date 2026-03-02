@@ -1,134 +1,142 @@
-import type { ApiResponse } from "@/types";
-import useApi, { type UsableAPI } from "./useApi";
-
-export interface DocumentUploadFields {
-  title: string;
-  type: string;
-  description?: string;
-  id_for_table: string;
-  table: string;
-  action_type: string;
-  user_id: string;
-  is_public: number;
-}
-
-export interface DocumentResponse {
-  id: number;
-  name: string;
-  code: string;
-  file_name: string;
-  type: string;
-  extension: string;
-  description: string;
-  url: string;
-  id_for_table: number;
-  table: string;
-  user_id: string;
-  is_public: number;
-  action_type?: string;
-  created_date: string;
-}
-
-export interface DocumentFilters {
-  table?: string;
-  id_for_table?: string;
-  action_type?: string;
-  user_id?: string;
-}
+import { useLogger } from "@/composables/useLogger";
+import useApi from "./useApi";
 
 export function useDocuments() {
-  const config = useRuntimeConfig();
   const { getToken } = useAuthToken();
+  const logger = useLogger("useDocuments");
 
-  const uploadDocument = (
-    file: File,
-    fields: DocumentUploadFields
-  ): UsableAPI<ApiResponse<DocumentResponse>> => {
+  const getAuthHeaders = (
+    includeContentType: boolean = true,
+  ): Record<string, string> => {
     const token = getToken();
-    if (!token) throw new Error("No authentication token found");
-
-    const formData = new FormData();
-    formData.append("file", file);
-    formData.append("fields", JSON.stringify(fields));
-
-    const url = `${config.public.API_BASE_URL}/document/add`;
-
-    return useApi<ApiResponse<DocumentResponse>>(url, {
-      method: "POST",
-      headers: {
-        Authorization: token,
-      },
-      body: formData,
-    });
+    if (!token) {
+      logger.error("No authentication token found");
+      throw new Error("No authentication token found");
+    }
+    const headers: Record<string, string> = {
+      Authorization: token,
+    };
+    if (includeContentType) {
+      headers["Content-Type"] = "application/json";
+    }
+    return headers;
   };
 
-  const updateDocument = (
-    id: number,
-    file: File,
-    fields: DocumentUploadFields
-  ): UsableAPI<ApiResponse<DocumentResponse>> => {
-    const token = getToken();
-    if (!token) throw new Error("No authentication token found");
+  const executeRequest = async <T>(
+    operationName: string,
+    endpoint: string,
+    options: Parameters<typeof $fetch>[1],
+    isFormData: boolean = false,
+  ): Promise<{ data: T | undefined; error: IApiErrorResponse | null }> => {
+    try {
+      const headers = getAuthHeaders(!isFormData);
 
-    const formData = new FormData();
-    formData.append("file", file);
-    formData.append("fields", JSON.stringify(fields));
+      const { response, request, error } = useApi<T>(endpoint, {
+        ...options,
+        headers: { ...headers, ...options?.headers },
+      });
 
-    const url = `${config.public.API_BASE_URL}/document/edit?id=${id}`;
+      await request();
 
-    return useApi<ApiResponse<DocumentResponse>>(url, {
-      method: "PUT",
-      headers: {
-        Authorization: token,
-      },
-      body: formData,
-    });
-  };
-
-  const getDocumentsByFilters = (
-    filters: DocumentFilters
-  ): UsableAPI<ApiResponse<DocumentResponse[]>> => {
-    const token = getToken();
-    if (!token) throw new Error("No authentication token found");
-
-    const queryParams = new URLSearchParams();
-    Object.entries(filters).forEach(([key, value]) => {
-      if (value !== undefined && value !== null) {
-        queryParams.append(key, String(value));
+      if (error.value) {
+        logger.error(`${operationName} failed`, {
+          endpoint,
+          status: error.value.status?.http_code,
+          message: error.value.info,
+        });
+        return { data: undefined, error: error.value };
       }
-    });
 
-    const url = `${config.public.API_BASE_URL}/document/get_by_filters?${queryParams.toString()}`;
+      logger.debug(`${operationName} succeeded`, { endpoint });
+      return { data: response.value, error: null };
+    } catch (err: unknown) {
+      const fallbackError: IApiErrorResponse = {
+        status: { id: 0, message: "Error inesperado", http_code: 500 },
+        info:
+          err instanceof Error
+            ? err.message
+            : "Ocurrió un error inesperado antes de realizar la solicitud",
+        data: null,
+      };
 
-    return useApi<ApiResponse<DocumentResponse[]>>(url, {
+      logger.error(`${operationName} threw unexpectedly`, {
+        endpoint,
+        error: fallbackError.info,
+      });
+
+      return { data: undefined, error: fallbackError };
+    }
+  };
+
+  const buildFormData = (payload: IDocumentCreationRequest): FormData => {
+    const formData = new FormData();
+    formData.append("file", payload.file);
+    formData.append("fields", JSON.stringify(payload.fields));
+    return formData;
+  };
+
+  const addDocument = (payload: IDocumentCreationRequest) => {
+    const formData = buildFormData(payload);
+    return executeRequest<IDocument>(
+      "addDocument",
+      "document/add",
+      {
+        method: "POST",
+        body: formData,
+      },
+      true,
+    );
+  };
+
+  const editDocument = (
+    documentId: number,
+    payload: IDocumentCreationRequest,
+  ) => {
+    const formData = buildFormData(payload);
+    return executeRequest<IDocument>(
+      "editDocument",
+      "document/edit",
+      {
+        method: "PUT",
+        body: formData,
+        query: { id: documentId },
+      },
+      true,
+    );
+  };
+
+  const getDocumentByCode = (code: string) =>
+    executeRequest<IDocument>("getDocumentByCode", "document/get_by_code", {
       method: "GET",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: token,
-      },
+      query: { code },
     });
-  };
 
-  const deleteDocument = (
-    id: number
-  ): UsableAPI<ApiResponse<DocumentResponse>> => {
-    const token = getToken();
-    if (!token) throw new Error("No authentication token found");
+  const getAllDocuments = () =>
+    executeRequest<IDocument[]>("getAllDocuments", "document/get_all", {
+      method: "GET",
+    });
 
-    const url = `${config.public.API_BASE_URL}/document/delete?id=${id}`;
+  const getDocumentsByFilters = (filters: IDocumentFilters) =>
+    executeRequest<IDocument[]>(
+      "getDocumentsByFilters",
+      "document/get_by_filters",
+      {
+        method: "GET",
+        query: { ...filters },
+      },
+    );
 
-    return useApi<ApiResponse<DocumentResponse>>(url, {
+  const deleteDocument = (documentId: number) =>
+    executeRequest<null>("deleteDocument", "document/delete", {
       method: "DELETE",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: token,
-      },
+      query: { id: documentId },
     });
-  };
 
   return {
-    uploadDocument,
-    updateDocument,
+    addDocument,
+    editDocument,
+    getDocumentByCode,
+    getAllDocuments,
     getDocumentsByFilters,
     deleteDocument,
   };

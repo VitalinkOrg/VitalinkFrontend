@@ -1,4 +1,4 @@
-import type { Package, Product } from "~/types";
+import type { Package, Product } from "~/types/test-index";
 
 /**
  * Composable for handling assessment appointment packages.
@@ -29,7 +29,7 @@ export const useAssessmentPackage = () => {
   const createAssessmentPackage = (
     price: number = DEFAULT_PRICE,
     discount: number = 0,
-    packageId: number = 0
+    packageId: number = 0,
   ): Package => {
     const discountRate = discount / 100;
     const discountedPrice = price * (1 - discountRate);
@@ -101,7 +101,7 @@ export const useAssessmentPackage = () => {
     packages: Package[],
     price?: number,
     discount?: number,
-    packageId?: number
+    packageId?: number,
   ): Package[] => {
     const assessment = createAssessmentPackage(price, discount, packageId);
     return [assessment, ...packages];

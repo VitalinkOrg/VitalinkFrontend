@@ -1,9 +1,9 @@
 import { useLogger } from "@/composables/useLogger";
 import useApi from "./useApi";
 
-export const useSupplier = () => {
+export const useLocation = () => {
   const { getToken } = useAuthToken();
-  const logger = useLogger("useSupplier");
+  const logger = useLogger("useLocation");
 
   const getAuthHeaders = (): Record<string, string> => {
     const token = getToken();
@@ -21,13 +21,7 @@ export const useSupplier = () => {
     operationName: string,
     endpoint: string,
     options: Parameters<typeof $fetch>[1],
-  ): Promise<{
-    data: T | undefined;
-    error: IApiErrorResponse | null;
-    loading: Ref<boolean>;
-  }> => {
-    const loading = ref(true);
-
+  ): Promise<{ data: T | undefined; error: IApiErrorResponse | null }> => {
     try {
       const headers = getAuthHeaders();
       const { response, request, error } = useApi<T>(endpoint, {
@@ -37,22 +31,18 @@ export const useSupplier = () => {
 
       await request();
 
-      loading.value = false;
-
       if (error.value) {
         logger.error(`${operationName} failed`, {
           endpoint,
           status: error.value.status?.http_code,
           message: error.value.info,
         });
-        return { data: undefined, error: error.value, loading };
+        return { data: undefined, error: error.value };
       }
 
       logger.debug(`${operationName} succeeded`, { endpoint });
-      return { data: response.value, error: null, loading };
+      return { data: response.value, error: null };
     } catch (err: unknown) {
-      loading.value = false;
-
       const fallbackError: IApiErrorResponse = {
         status: { id: 0, message: "Error inesperado", http_code: 500 },
         info:
@@ -67,59 +57,48 @@ export const useSupplier = () => {
         error: fallbackError.info,
       });
 
-      return { data: undefined, error: fallbackError, loading };
+      return { data: undefined, error: fallbackError };
     }
   };
 
-  const createSupplier = (payload: ICreateSupplierRequest) =>
-    executeRequest<ISupplierSystem>("createSupplier", "supplier/add", {
+  const createLocation = (payload: ILocationCreationRequest) =>
+    executeRequest<ILocation>("createLocation", "location/add", {
       method: "POST",
       body: JSON.stringify(payload),
     });
 
-  const updateSupplier = (
-    supplierId: number,
-    payload: ISupplierUpdateRequest,
+  const updateLocation = (
+    locationId: number,
+    payload: ILocationUpdateRequest,
   ) =>
-    executeRequest<ISupplierSystem>("updateSupplier", "supplier/edit", {
+    executeRequest<ILocation>("updateLocation", "location/edit", {
       method: "PUT",
       body: JSON.stringify(payload),
-      query: { id: supplierId },
+      query: { id: locationId },
     });
 
-  const getSupplierById = (supplierId: number) =>
-    executeRequest<ISupplierDetail>("getSupplierById", "supplier/get", {
-      method: "GET",
-      query: { id: supplierId },
-    });
-
-  const getAllSuppliers = () =>
-    executeRequest<ISupplierSystem[]>("getAllSuppliers", "supplier/get_all", {
+  const getAllLocations = () =>
+    executeRequest<ILocation[]>("getAllLocations", "location/get_all", {
       method: "GET",
     });
 
-  const getAllMainSuppliers = (params?: ISupplierParams) =>
-    executeRequest<ISupplierMain[]>(
-      "getAllMainSuppliers",
-      "supplier/get_all_main",
-      {
-        method: "GET",
-        query: params,
-      },
-    );
+  const getLocationById = (locationId: number) =>
+    executeRequest<ILocation>("getLocationById", "location/", {
+      method: "GET",
+      query: { id: locationId },
+    });
 
-  const deleteSupplier = (supplierId: number) =>
-    executeRequest<{ success: boolean }>("deleteSupplier", "supplier/delete", {
+  const deleteLocation = (locationId: number) =>
+    executeRequest<null>("deleteLocation", "location/delete", {
       method: "DELETE",
-      query: { id: supplierId },
+      query: { id: locationId },
     });
 
   return {
-    createSupplier,
-    updateSupplier,
-    getSupplierById,
-    getAllSuppliers,
-    getAllMainSuppliers,
-    deleteSupplier,
+    createLocation,
+    updateLocation,
+    getAllLocations,
+    getLocationById,
+    deleteLocation,
   };
 };

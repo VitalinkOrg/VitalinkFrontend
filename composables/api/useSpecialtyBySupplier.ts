@@ -1,15 +1,9 @@
 import { useLogger } from "@/composables/useLogger";
 import useApi from "./useApi";
 
-interface AppointmentCreditPayload {
-  appointment?: number;
-  already_been_used?: number;
-  credit_status?: string;
-}
-
-export const useAppointmentCredit = () => {
+export const useSpecialtyBySupplier = () => {
   const { getToken } = useAuthToken();
-  const logger = useLogger("useAppointment");
+  const logger = useLogger("useSpecialtyBySupplier");
 
   const getAuthHeaders = (): Record<string, string> => {
     const token = getToken();
@@ -67,42 +61,79 @@ export const useAppointmentCredit = () => {
     }
   };
 
-  const getAllAppointmentCreditByQrCode = (appointmentQrCode: string) =>
-    executeRequest<IAppointmentCredit[]>(
-      "getAllAppointmentCreditByQrCode",
-      "appointmentcredit/get_all",
-      {
-        method: "GET",
-        query: { appointment_qr_code: appointmentQrCode },
-      },
-    );
-
-  const getAllAppointmentCredit = () =>
-    executeRequest<IAppointmentCredit[]>(
-      "getAllAppointmentCredit",
-      "appointmentcredit/get_all",
-      {
-        method: "GET",
-      },
-    );
-
-  const updateAppointmentCredit = (
-    payload: IAppointmentCreditUpdateRequest,
-    appointmentId: number,
+  const createSpecialtyBySupplier = (
+    payload: ICreateSpecialtyBySupplierRequest,
   ) =>
-    executeRequest<IAppointmentCredit>(
-      "updateAppointmentCredit",
-      "appointmentcredit/edit",
+    executeRequest<ISpecialtyBySupplier>(
+      "createSpecialtyBySupplier",
+      "/specialtybysupplier/add",
+      {
+        method: "POST",
+        body: JSON.stringify(payload),
+      },
+    );
+
+  const createMultipleSpecialtiesBySupplier = (
+    payload: ICreateSpecialtyBySupplierRequest[],
+  ) =>
+    executeRequest<ISpecialtyBySupplier[]>(
+      "createMultipleSpecialtiesBySupplier",
+      "specialtybysupplier/add_multiple",
+      {
+        method: "POST",
+        body: JSON.stringify(payload),
+      },
+    );
+
+  const updateSpecialtyBySupplier = (
+    specialtyBySupplierId: number,
+    payload: ISpecialtyBySupplierUpdateRequest,
+  ) =>
+    executeRequest<ISpecialtyBySupplier>(
+      "updateSpecialtyBySupplier",
+      "specialtybysupplier/edit",
       {
         method: "PUT",
         body: JSON.stringify(payload),
-        query: { id: appointmentId },
+        query: { id: specialtyBySupplierId },
+      },
+    );
+
+  const getSpecialtyBySupplierById = (specialtyBySupplierId: number) =>
+    executeRequest<ISpecialtyBySupplier>(
+      "getSpecialtyBySupplierById",
+      "specialtybysupplier/get",
+      {
+        method: "POST",
+        query: { id: specialtyBySupplierId },
+      },
+    );
+
+  const getAllSpecialtyBySupplier = () =>
+    executeRequest<ISpecialtyBySupplier[]>(
+      "getAllSpecialtyBySupplier",
+      "specialtybysupplier/get_all",
+      {
+        method: "POST",
+      },
+    );
+
+  const deleteSpecialtyBySupplier = (specialtyBySupplierId: number) =>
+    executeRequest<null>(
+      "deleteSpecialtyBySupplier",
+      "specialtybysupplier/delete",
+      {
+        method: "DELETE",
+        query: { id: specialtyBySupplierId },
       },
     );
 
   return {
-    updateAppointmentCredit,
-    getAllAppointmentCredit,
-    getAllAppointmentCreditByQrCode,
+    createSpecialtyBySupplier,
+    createMultipleSpecialtiesBySupplier,
+    getSpecialtyBySupplierById,
+    getAllSpecialtyBySupplier,
+    updateSpecialtyBySupplier,
+    deleteSpecialtyBySupplier,
   };
 };

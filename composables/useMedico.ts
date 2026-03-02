@@ -1,77 +1,83 @@
-
-import { type IPaciente, type ICita, ECitaEstado, type IVaucher, EVaucherEstado, type IMedico } from '@/types'
+import { ECitaEstado, type ICita } from "~/types/test-index";
 
 export default function useMedico() {
-
-  const citas = useState<ICita[]>('citas', () => [{
-    id: '2356374',
-    medico: { id: '32637', nombre: 'Dra. Andrea Morales Solis' },
-    paciente: 'Andrea Morales Solis',
-    fecha: '10/11/2023',
-    hora: '18:00 - 18:45',
-    procedimiento: 'Operación de Cataratas',
-    vaucher: 'AG528GE6',
-    lugar: {
-      texto: 'Hospital CIMA'
+  const citas = useState<ICita[]>("citas", () => [
+    {
+      id: "2356374",
+      medico: { id: "32637", nombre: "Dra. Andrea Morales Solis" },
+      paciente: "Andrea Morales Solis",
+      fecha: "10/11/2023",
+      hora: "18:00 - 18:45",
+      procedimiento: "Operación de Cataratas",
+      vaucher: "AG528GE6",
+      lugar: {
+        texto: "Hospital CIMA",
+      },
+      estado: ECitaEstado.CONCRETADA,
     },
-    estado: ECitaEstado.CONCRETADA
-  },
-  {
-    id: '2356374',
-    medico: { id: '32637', nombre: 'Dra. Andrea Morales Solis' },
-    paciente: 'Carlos Rodriguez',
+    {
+      id: "2356374",
+      medico: { id: "32637", nombre: "Dra. Andrea Morales Solis" },
+      paciente: "Carlos Rodriguez",
 
-    fecha: '10/11/2023',
-    hora: '18:00 - 18:45',
-    procedimiento: 'Operación de Cataratas',
-    vaucher: 'SDF89552',
+      fecha: "10/11/2023",
+      hora: "18:00 - 18:45",
+      procedimiento: "Operación de Cataratas",
+      vaucher: "SDF89552",
 
-    lugar: {
-      texto: 'Hospital CIMA'
+      lugar: {
+        texto: "Hospital CIMA",
+      },
+      estado: ECitaEstado.CANCELADA,
     },
-    estado: ECitaEstado.CANCELADA
-  },
-  {
-    id: '2356374',
-    medico: { id: '32637', nombre: 'Dra. Andrea Morales Solis' },
-    paciente: 'Maria Fernandez',
+    {
+      id: "2356374",
+      medico: { id: "32637", nombre: "Dra. Andrea Morales Solis" },
+      paciente: "Maria Fernandez",
 
-    fecha: '10/11/2023',
-    hora: '18:00 - 18:45',
-    procedimiento: 'Operación de Cataratas',
-    vaucher: '-',
+      fecha: "10/11/2023",
+      hora: "18:00 - 18:45",
+      procedimiento: "Operación de Cataratas",
+      vaucher: "-",
 
-    lugar: {
-      texto: 'Hospital CIMA'
+      lugar: {
+        texto: "Hospital CIMA",
+      },
+      estado: ECitaEstado.PENDIENTE,
     },
-    estado: ECitaEstado.PENDIENTE
-  }
-  ])
+  ]);
 
-  // Update this open depending on API 
-  const onboarding = useState('onboarding', () => [{
-    open: true,
-    step: 1
-  }])
+  // Update this open depending on API
+  const onboarding = useState("onboarding", () => [
+    {
+      open: true,
+      step: 1,
+    },
+  ]);
 
-  const updateEducacion = useState('updateEducacion', () => [{
-    open: false
-  }])
+  const updateEducacion = useState("updateEducacion", () => [
+    {
+      open: false,
+    },
+  ]);
 
-  const updateExperiencia = useState('updateExperiencia', () => [{
-    open: false
-  }])
+  const updateExperiencia = useState("updateExperiencia", () => [
+    {
+      open: false,
+    },
+  ]);
 
-  const updateIdioma = useState('updateIdioma', () => [{
-    open: false
-  }])
-
+  const updateIdioma = useState("updateIdioma", () => [
+    {
+      open: false,
+    },
+  ]);
 
   return {
     citas,
     onboarding,
     updateEducacion,
     updateExperiencia,
-    updateIdioma
-  }
+    updateIdioma,
+  };
 }

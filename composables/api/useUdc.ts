@@ -1,52 +1,108 @@
-import type { ApiResponse, IUdc } from "@/types";
-import useApi, { type UsableAPI } from "./useApi";
-
-type UdcType =
-  | "MEDICAL_SPECIALTY"
-  | "MEDICAL_PRODUCT"
-  | "MEDICAL_PROCEDURE"
-  | "ID_TYPE"
-  | "MEDICAL_TYPE"
-  | "REVIEW"
-  | "ASSESSMENT_DETAIL"
-  | "ODONTOLOGHY_MEDICAL"
-  | "ASSESSMENT";
+import { useLogger } from "@/composables/useLogger";
+import useApi from "./useApi";
 
 export function useUdc() {
-  const config = useRuntimeConfig();
-  const token = useCookie("token");
+  const { getToken } = useAuthToken();
+  const logger = useLogger("useUdc");
 
-  const fetchUdc = (
-    type: UdcType,
-    params?: Record<string, string>,
-    options?: { authRequired?: boolean },
-  ): UsableAPI<ApiResponse<IUdc[]>> => {
-    const { authRequired = true } = options || {};
+  const getAuthHeaders = (
+    authRequired: boolean = true,
+  ): Record<string, string> => {
+    const token = getToken();
 
-    if (authRequired && !token.value) {
+    if (!token && authRequired) {
+      logger.error("No authentication token found");
       throw new Error("No authentication token found");
     }
-
-    const query = new URLSearchParams({
-      type,
-      ...params,
-    });
-
-    const url = `${config.public.API_BASE_URL}/udc/get_all?${query.toString()}`;
 
     const headers: Record<string, string> = {
       "Content-Type": "application/json",
     };
 
-    if (authRequired && token.value) {
-      headers.Authorization = token.value;
+    if (token && authRequired) {
+      headers.Authorization = token;
     }
 
-    return useApi<ApiResponse<IUdc[]>>(url, {
-      method: "GET",
-      headers,
-    });
+    return headers;
   };
 
-  return { fetchUdc };
+  const executeRequest = async <T>(
+    operationName: string,
+    endpoint: string,
+    options: Parameters<typeof $fetch>[1],
+    authRequired: boolean = true,
+  ): Promise<{ data: T | undefined; error: IApiErrorResponse | null }> => {
+    try {
+      const headers = getAuthHeaders(authRequired);
+      const { response, request, error } = useApi<T>(endpoint, {
+        ...options,
+        headers: { ...headers, ...options?.headers },
+      });
+
+      await request();
+
+      if (error.value) {
+        logger.error(`${operationName} failed`, {
+          endpoint,
+          status: error.value.status?.http_code,
+          message: error.value.info,
+        });
+        return { data: undefined, error: error.value };
+      }
+
+      logger.debug(`${operationName} succeeded`, { endpoint });
+      return { data: response.value, error: null };
+    } catch (err: unknown) {
+      const fallbackError: IApiErrorResponse = {
+        status: { id: 0, message: "Error inesperado", http_code: 500 },
+        info:
+          err instanceof Error
+            ? err.message
+            : "Ocurrió un error inesperado antes de realizar la solicitud",
+        data: null,
+      };
+
+      logger.error(`${operationName} threw unexpectedly`, {
+        endpoint,
+        error: fallbackError.info,
+      });
+
+      return { data: undefined, error: fallbackError };
+    }
+  };
+
+  const createUdc = (payload: ICreateUdcRequest) =>
+    executeRequest<IUdc>("createUdc", "udc/add", {
+      method: "POST",
+      body: JSON.stringify(payload),
+    });
+
+  const updateUdc = (udcId: number, payload: IUdcUpdateRequest) =>
+    executeRequest<IUdc>("updateUdc", "udc/edit", {
+      method: "PUT",
+      body: JSON.stringify(payload),
+      query: { id: udcId },
+    });
+
+  const getAllUdcs = (
+    params?: Partial<IUdcParams>,
+    authRequired: boolean = false,
+  ) =>
+    executeRequest<IUdc[]>(
+      "getAllUdcs",
+      "udc/get_all",
+      {
+        method: "GET",
+        query: params,
+      },
+      authRequired,
+    );
+
+  const deleteUdc = (udcId: number) =>
+    executeRequest<null>("deleteUdc", "udc/delete", {
+      method: "DELETE",
+      query: { id: udcId },
+    });
+
+  return { createUdc, updateUdc, getAllUdcs, deleteUdc };
 }

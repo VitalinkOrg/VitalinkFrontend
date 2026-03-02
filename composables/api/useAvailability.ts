@@ -1,104 +1,94 @@
-import type { ApiResponse, Location, Supplier } from "@/types";
-import useApi, { type UsableAPI } from "./useApi";
-
-export interface Availability {
-  id: number;
-  supplier: Supplier;
-  location: Location;
-  weekday: string;
-  from_hour: string;
-  to_hour: string;
-  created_date: string;
-  updated_date: string;
-}
-
-export interface CreateAvailabilityPayload {
-  supplier_id: number;
-  location_id: number;
-  weekday: string;
-  from_hour: string;
-  to_hour: string;
-}
-
-export interface UpdateAvailabilityPayload {
-  supplier_id?: number;
-  location_id?: number;
-  weekday?: string;
-  from_hour?: string;
-  to_hour?: string;
-}
+import useApi from "./useApi";
 
 export const useAvailability = () => {
-  const config = useRuntimeConfig();
   const { getToken } = useAuthToken();
 
-  const getHeaders = (): HeadersInit => {
+  const createAvailability = (
+    payload: IAvailabilityCreationRequest,
+  ): IUsableAPI<IApiResponse<IAvailability>> => {
     const token = getToken();
     if (!token) throw new Error("No authentication token found");
 
-    return {
-      Authorization: token,
-      "Content-Type": "application/json",
-    };
-  };
-
-  const fetchAvailability = (): UsableAPI<ApiResponse<Availability[]>> => {
-    return useApi<ApiResponse<Availability[]>>(
-      `${config.public.API_BASE_URL}/availability/get_all`,
-      { method: "GET", headers: getHeaders() },
-    );
-  };
-
-  const fetchAvailabilityBySupplierId = (
-    supplierId: number,
-  ): UsableAPI<ApiResponse<Availability[]>> => {
-    return useApi<ApiResponse<Availability[]>>(
-      `${config.public.API_BASE_URL}/availability/get_all?supplier_id=${supplierId}`,
-      { method: "GET", headers: getHeaders() },
-    );
-  };
-
-  const fetchAvailabilityById = (
-    id: number,
-  ): UsableAPI<ApiResponse<Availability>> => {
-    return useApi<ApiResponse<Availability>>(
-      `${config.public.API_BASE_URL}/availability/get?id=${id}`,
-      { method: "GET", headers: getHeaders() },
-    );
-  };
-
-  const createAvailability = (
-    payload: CreateAvailabilityPayload,
-  ): UsableAPI<ApiResponse<Availability>> => {
-    return useApi<ApiResponse<Availability>>(
-      `${config.public.API_BASE_URL}/availability/add`,
-      { method: "POST", headers: getHeaders(), body: JSON.stringify(payload) },
-    );
+    return useApi<IApiResponse<IAvailability>>("/availability/add", {
+      method: "POST",
+      headers: {
+        Authorization: token,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(payload),
+    });
   };
 
   const updateAvailability = (
-    id: number,
-    payload: UpdateAvailabilityPayload,
-  ): UsableAPI<ApiResponse<Availability>> => {
-    return useApi<ApiResponse<Availability>>(
-      `${config.public.API_BASE_URL}/availability/edit?id=${id}`,
-      { method: "PUT", headers: getHeaders(), body: JSON.stringify(payload) },
-    );
+    availabilityId: number,
+    payload: IAvailabilityUpdateRequest,
+  ): IUsableAPI<IApiResponse<IAvailability>> => {
+    const token = getToken();
+    if (!token) throw new Error("No authentication token found");
+
+    return useApi<IApiResponse<IAvailability>>("/availability/edit", {
+      method: "PUT",
+      headers: {
+        Authorization: token,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(payload),
+      query: { id: availabilityId },
+    });
   };
 
-  const deleteAvailability = (id: number): UsableAPI<ApiResponse<void>> => {
-    return useApi<ApiResponse<void>>(
-      `${config.public.API_BASE_URL}/availability/delete?id=${id}`,
-      { method: "DELETE", headers: getHeaders() },
-    );
+  const getAllAvailabilities = (): IUsableAPI<
+    IApiResponse<IAvailability[]>
+  > => {
+    const token = getToken();
+    if (!token) throw new Error("No authentication token found");
+
+    return useApi<IApiResponse<IAvailability[]>>("/availability/get_all", {
+      method: "GET",
+      headers: {
+        Authorization: token,
+        "Content-Type": "application/json",
+      },
+    });
+  };
+
+  const getAvailabilityById = (
+    availabilityId: number,
+  ): IUsableAPI<IApiResponse<IAvailability>> => {
+    const token = getToken();
+    if (!token) throw new Error("No authentication token found");
+
+    return useApi<IApiResponse<IAvailability>>("/availability/", {
+      method: "GET",
+      headers: {
+        Authorization: token,
+        "Content-Type": "application/json",
+      },
+      query: { id: availabilityId },
+    });
+  };
+
+  const deleteAvailability = (
+    availabilityId: number,
+  ): IUsableAPI<IApiResponse<null>> => {
+    const token = getToken();
+    if (!token) throw new Error("No authentication token found");
+
+    return useApi<IApiResponse<null>>("/availability/delete", {
+      method: "DELETE",
+      headers: {
+        Authorization: token,
+        "Content-Type": "application/json",
+      },
+      query: { id: availabilityId },
+    });
   };
 
   return {
-    fetchAvailability,
-    fetchAvailabilityBySupplierId,
-    fetchAvailabilityById,
     createAvailability,
     updateAvailability,
+    getAllAvailabilities,
+    getAvailabilityById,
     deleteAvailability,
   };
 };

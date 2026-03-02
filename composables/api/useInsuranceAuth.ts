@@ -1,4 +1,4 @@
-import type { ApiResponse, InsuranceRegisterData } from "~/types";
+import type { ApiResponse, InsuranceRegisterData } from "~/types/test-index";
 import useApi, { type UsableAPI } from "./useApi";
 
 export const useInsuranceAuth = () => {
@@ -6,7 +6,7 @@ export const useInsuranceAuth = () => {
   const token = useCookie("token");
 
   const registerInsurance = (
-    body: InsuranceRegisterData
+    body: InsuranceRegisterData,
   ): UsableAPI<ApiResponse<any>> => {
     if (!token.value) throw new Error("No authentication token found");
 
@@ -22,7 +22,7 @@ export const useInsuranceAuth = () => {
   };
 
   const loginInsurance = (
-    body: InsuranceRegisterData
+    body: InsuranceRegisterData,
   ): UsableAPI<ApiResponse<any>> => {
     if (!token.value) throw new Error("No authentication token found");
 
