@@ -35,7 +35,6 @@
       </button>
     </nav>
 
-    <!-- ═══════════════════ DOCTORS PANEL ═══════════════════ -->
     <section
       v-if="activeTab === 'doctors'"
       id="panel-doctors"
@@ -194,7 +193,6 @@
         </template>
       </UiAppointmentTableBase>
 
-      <!-- Doctor Deletion Confirmation -->
       <AtomsModalBase
         :is-open="isDoctorDeletionDialogVisible"
         size="small"
@@ -235,7 +233,6 @@
       </AtomsModalBase>
     </section>
 
-    <!-- ═══════════════════ HOSPITALS PANEL ═══════════════════ -->
     <section
       v-if="activeTab === 'hospitals'"
       id="panel-hospitals"
@@ -332,7 +329,6 @@
         </div>
       </template>
 
-      <!-- Hospital Add/Edit Modal -->
       <MedicosModalesAgregarHospital
         :is-open="isHospitalModalOpen"
         :edit-mode="hospitalModalMode"
@@ -342,7 +338,6 @@
         @hospital-updated="handleHospitalUpdated"
       />
 
-      <!-- Hospital Deletion Confirmation -->
       <AtomsModalBase
         :is-open="isHospitalDeletionDialogVisible"
         size="small"
@@ -397,12 +392,8 @@ definePageMeta({
   middleware: ["auth-doctors-hospitals"],
 });
 
-/* ──────────────────────────── Types ──────────────────────────── */
-
 type PanelTab = "doctors" | "hospitals";
 type HospitalModalMode = "create" | "edit";
-
-/* ──────────────────────────── Dependencies ───────────────────── */
 
 const toast = useToast();
 const logger = useLogger("MyPractitionersPage");
@@ -410,11 +401,7 @@ const { getAllMainSuppliers, deleteSupplier } = useSupplier();
 const { getAllLocations, deleteLocation } = useLocation();
 const { getUserInfo } = useUserInfo();
 
-/* ──────────────────────────── Shared State ───────────────────── */
-
 const activeTab = ref<PanelTab>("doctors");
-
-/* ──────────────────────────── Doctors State ──────────────────── */
 
 const allDoctors = ref<ISupplierMain[]>([]);
 const isDoctorsLoading = ref(false);
@@ -427,8 +414,6 @@ const doctorPendingDeletion = ref<ISupplierMain | null>(null);
 const isDoctorDeletionDialogVisible = ref(false);
 const isDoctorDeletionInProgress = ref(false);
 
-/* ──────────────────────────── Hospitals State ────────────────── */
-
 const allHospitals = ref<ILocation[]>([]);
 const isHospitalsLoading = ref(false);
 const hospitalSearchQuery = ref("");
@@ -440,8 +425,6 @@ const hospitalSelectedForEdit = ref<ILocation | null>(null);
 const hospitalPendingDeletion = ref<ILocation | null>(null);
 const isHospitalDeletionDialogVisible = ref(false);
 const isHospitalDeletionInProgress = ref(false);
-
-/* ──────────────────────────── Constants ──────────────────────── */
 
 const DOCTOR_TABLE_COLUMNS: TableColumn[] = [
   { key: "name", label: "Nombre completo", sortable: false },
@@ -456,8 +439,6 @@ const DOCTOR_TABLE_COLUMNS: TableColumn[] = [
     cellClass: "appointment-table-base__cell--actions",
   },
 ];
-
-/* ──────────────────────────── Search Helpers ─────────────────── */
 
 const normalizeSearchTerm = (value: string): string =>
   value
@@ -502,8 +483,6 @@ const filteredHospitals = computed<ILocation[]>(() => {
   });
 });
 
-/* ──────────────────────────── Tab Keyboard Nav (a11y) ────────── */
-
 function handleTabKeydown(event: KeyboardEvent, targetTab: PanelTab): void {
   if (event.key === "ArrowRight" || event.key === "ArrowLeft") {
     event.preventDefault();
@@ -517,8 +496,6 @@ function handleTabKeydown(event: KeyboardEvent, targetTab: PanelTab): void {
     });
   }
 }
-
-/* ──────────────────────────── Doctors CRUD ────────────────────── */
 
 function initiateDoctorEditing(doctor: ISupplierMain): void {
   selectedDoctorForEdit.value = doctor;
@@ -587,8 +564,6 @@ async function executeDoctorDeletion(): Promise<void> {
     isDoctorDeletionInProgress.value = false;
   }
 }
-
-/* ──────────────────────────── Hospitals CRUD ─────────────────── */
 
 function openHospitalModal(
   mode: HospitalModalMode,
@@ -666,8 +641,6 @@ async function executeHospitalDeletion(): Promise<void> {
     isHospitalDeletionInProgress.value = false;
   }
 }
-
-/* ──────────────────────────── Lifecycle ───────────────────────── */
 
 onMounted(() => {
   refreshDoctorsList();

@@ -312,6 +312,8 @@ import { useUdc } from "@/composables/api/useUdc";
 import { useLogger } from "@/composables/useLogger";
 
 export interface PackFormItem {
+  id?: number;
+  productId?: number;
   procedure_code: string;
   product_code: string;
   discount: number | null;

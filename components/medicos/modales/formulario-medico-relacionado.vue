@@ -616,10 +616,10 @@ const emit = defineEmits<Emits>();
 
 const logger = useLogger("FormularioMedicoRelacionado");
 const toast = useToast();
-const { getAllUdcs, createUdc } = useUdc();
+const { getAllUdcs, createUdc, updateUdc } = useUdc();
 const { createSupplier, updateSupplier, getSupplierById } = useSupplier();
 const { createMultipleSpecialtiesBySupplier } = useSpecialtyBySupplier();
-const { createPackage, deletePackage } = usePackage();
+const { createPackage, updatePackage, deletePackage } = usePackage();
 const { getAllLocations } = useLocation();
 const { getUserInfo } = useUserInfo();
 const { addDocument } = useDocuments();
@@ -1153,22 +1153,6 @@ async function executeEditSubmission(supplierId: number) {
   );
   if (updateError) throw new Error(updateError.info);
 
-  await delay(1000);
-
-  for (const pkgId of existingPackageIds.value) {
-    logger.debug("Eliminando package existente", { pkgId });
-    const { error: delErr } = await deletePackage(pkgId);
-    if (delErr) {
-      logger.warn("Error al eliminar package existente", {
-        packageId: pkgId,
-        info: delErr.info,
-      });
-    }
-    await delay(500);
-  }
-
-  await delay(1500);
-
   const specialtyCodeToIdMap = new Map<string, number>();
   const detail = editSupplierDetail.value;
 
@@ -1188,7 +1172,107 @@ async function executeEditSubmission(supplierId: number) {
     );
   }
 
-  await persistAllPackages(supplierId, specialtyCodeToIdMap);
+  const currentPackIds = new Set(
+    packsList.value.filter((p) => p.id !== undefined).map((p) => p.id!),
+  );
+  for (const pkgId of existingPackageIds.value) {
+    if (!currentPackIds.has(pkgId)) {
+      logger.debug("Eliminando package removido por usuario", { pkgId });
+      const { error: delErr } = await deletePackage(pkgId);
+      if (delErr) {
+        logger.warn("Error al eliminar package", {
+          packageId: pkgId,
+          info: delErr.info,
+        });
+      }
+      await delay(500);
+    }
+  }
+
+  // Actualizar packages existentes y crear los nuevos
+  for (let i = 0; i < packsList.value.length; i++) {
+    const pack = packsList.value[i];
+    const specialtyId = specialtyCodeToIdMap.get(pack.specialty_code) ?? 0;
+
+    if (specialtyId === 0) {
+      throw new Error(
+        `No se encontró el specialty_by_supplier ID para "${pack.specialty_code}".`,
+      );
+    }
+
+    if (pack.id) {
+      // Package existente: actualizar UDC del producto y luego el package
+      if (pack.productId) {
+        const udcUpdatePayload: IUdcUpdateRequest = {
+          name: pack.product_name?.trim() || pack.procedure_code,
+          value1: String(pack.reference_price ?? 0),
+          value2: String(pack.product_valoration_price ?? 0),
+        };
+        logger.debug(`Payload updateUdc (pack ${i + 1}):`, {
+          udcUpdatePayload,
+        });
+        const { error: udcErr } = await updateUdc(
+          pack.productId,
+          udcUpdatePayload,
+        );
+        if (udcErr) {
+          logger.warn(`Error al actualizar UDC del pack ${i + 1}`, {
+            info: udcErr.info,
+          });
+        }
+      }
+
+      const packUpdatePayload: IPackageUpdateRequest = {
+        specialty_id: specialtyId,
+        procedure_code: pack.procedure_code,
+        product_code: pack.product_code,
+        discount: pack.apply_discount && pack.discount ? pack.discount : 0,
+        reference_price: pack.reference_price ?? 0,
+        services_offer: { ASSESSMENT_DETAILS: pack.services_offer ?? [] },
+      };
+      logger.debug(`Payload updatePackage (pack ${i + 1}):`, {
+        packUpdatePayload,
+      });
+      const { error: updErr } = await updatePackage(pack.id, packUpdatePayload);
+      if (updErr) {
+        logger.warn(`Error al actualizar pack ${i + 1}`, {
+          info: updErr.info,
+        });
+      } else {
+        logger.debug(`Pack ${i + 1} actualizado exitosamente`);
+      }
+    } else {
+      // Package nuevo: crear producto y package
+      const productCode = await createProductForPackage(supplierId, pack);
+      if (!productCode) {
+        logger.warn(`Omitiendo pack ${i + 1}: no se pudo crear el producto`);
+        continue;
+      }
+      await delay(1000);
+      const packagePayload: IPackageCreationRequest = {
+        specialty_id: specialtyId,
+        procedure_code: pack.procedure_code,
+        product_code: productCode,
+        discount: pack.apply_discount && pack.discount ? pack.discount : 0,
+        reference_price: pack.reference_price ?? 0,
+        services_offer: { ASSESSMENT_DETAILS: pack.services_offer ?? [] },
+        is_king: 0,
+        observations: "",
+        postoperative_assessments: 0,
+      };
+      logger.debug(`Payload createPackage (pack ${i + 1}):`, {
+        packagePayload,
+      });
+      const { error: pkgError } = await createPackage(packagePayload);
+      if (pkgError) {
+        logger.warn(`Error al crear pack ${i + 1}`, { info: pkgError.info });
+      } else {
+        logger.debug(`Pack ${i + 1} creado exitosamente`);
+      }
+    }
+
+    if (i < packsList.value.length - 1) await delay(500);
+  }
 
   emit("supplier-updated");
   toast.success("Médico actualizado correctamente");
@@ -1356,6 +1440,8 @@ function populatePacksFromDetail(detail: ISupplierDetail) {
         const servicesOffer = pkg.services_offer as IServicesOffer | undefined;
 
         extracted.push({
+          id: pkg.id,
+          productId: pkg.product?.id,
           procedure_code: proc.procedure.code,
           product_code: pkg.product?.code ?? "",
           discount: typeof pkg.discount === "number" ? pkg.discount : null,
