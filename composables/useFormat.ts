@@ -42,6 +42,8 @@ export const useFormat = () => {
     date: string | Date,
     format: "full" | "short" = "full",
   ): string => {
+    if (!date) return "";
+
     let dateObj: Date;
 
     if (typeof date === "string") {

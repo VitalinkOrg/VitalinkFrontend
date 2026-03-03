@@ -565,7 +565,20 @@ const WIZARD_STEPS = ["Datos del médico", "Packs y precios"];
 
 const MEDICAL_TYPE_SPECIALTY_MAP: Record<string, string> = {
   SPECIALTY_MEDICAL: "SPECIALTY_MEDICAL",
-  ODONTOLOGY: "ODONTOLOGY",
+  ODONTOLOGY: "ODONTOLOGY_MEDICAL",
+};
+
+const ODONTOLOGY_FALLBACK: IUdc = {
+  id: 50,
+  code: "ODONTOLOGY",
+  name: "Odontología",
+  type: "ODONTOLOGY_SPECIALTY",
+  value1: null,
+  value2: null,
+  father_code: "ODONTOLOGY_MEDICAL",
+  supplier_id: null,
+  created_date: "2026-02-26T06:19:08.000Z",
+  updated_date: null,
 };
 
 interface SelectedSpecialty {
@@ -745,7 +758,7 @@ const isDocumentNumberValid = computed(() => {
 
 const documentNumberPlaceholder = computed(() => {
   const map: Record<string, string> = {
-    PHYSICAL_DNI: "Ej: 1-0234-0567",
+    PHYSICAL_DNI: "Ej: 102340567",
     JURIDICAL_DNI: "Ej: 3-101-123456",
     PASSPORT: "Ej: AB1234567",
     DIMEX: "Ej: 100000012345",
@@ -897,10 +910,21 @@ async function handleMedicalTypeChange(code: string) {
     const fatherCode = MEDICAL_TYPE_SPECIALTY_MAP[code];
     if (fatherCode) {
       await fetchSpecialtiesByFatherCode(fatherCode);
-    } else {
-      logger.debug("No specialty cascade for medical type, loading all", {
-        code,
-      });
+    }
+
+    if (code === "ODONTOLOGY" && specialtiesCatalog.value.length === 0) {
+      logger.debug("No odontology specialties from API, trying by type");
+      await fetchSpecialtiesByType("ODONTOLOGY_SPECIALTY");
+    }
+
+    if (code === "ODONTOLOGY") {
+      const exists = specialtiesCatalog.value.some(
+        (s) => s.code === ODONTOLOGY_FALLBACK.code,
+      );
+      if (!exists) {
+        logger.debug("Adding odontology fallback specialty");
+        specialtiesCatalog.value.push(ODONTOLOGY_FALLBACK);
+      }
     }
 
     if (specialtiesCatalog.value.length === 0) {
@@ -1442,6 +1466,22 @@ async function populateFormFromDetail(detail: ISupplierDetail) {
     if (fatherCode) {
       await fetchSpecialtiesByFatherCode(fatherCode);
     }
+
+    if (
+      doctorForm.medicalTypeCode === "ODONTOLOGY" &&
+      specialtiesCatalog.value.length === 0
+    ) {
+      await fetchSpecialtiesByType("ODONTOLOGY_SPECIALTY");
+    }
+
+    if (doctorForm.medicalTypeCode === "ODONTOLOGY") {
+      const exists = specialtiesCatalog.value.some(
+        (s) => s.code === ODONTOLOGY_FALLBACK.code,
+      );
+      if (!exists) {
+        specialtiesCatalog.value.push(ODONTOLOGY_FALLBACK);
+      }
+    }
   }
 
   if (detail.locations?.length > 0) {
@@ -1553,6 +1593,26 @@ async function fetchSpecialtiesByFatherCode(fatherCode: string) {
     if (error) {
       logger.error("Failed to fetch specialties", {
         fatherCode,
+        info: error.info,
+      });
+      return;
+    }
+    specialtiesCatalog.value = data ?? [];
+  } finally {
+    isLoadingSpecialties.value = false;
+  }
+}
+
+async function fetchSpecialtiesByType(type: string) {
+  isLoadingSpecialties.value = true;
+  try {
+    const { data, error } = await getAllUdcs(
+      { type } as Partial<IUdcParams>,
+      false,
+    );
+    if (error) {
+      logger.error("Failed to fetch specialties by type", {
+        type,
         info: error.info,
       });
       return;

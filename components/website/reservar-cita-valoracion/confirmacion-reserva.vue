@@ -167,7 +167,7 @@ const appointmentSummaryRows = computed<TablaBaseRow[]>(() => [
     font-weight: 600;
 
     &--discount {
-      color: $color-success;
+      color: $color-info;
     }
   }
 }
