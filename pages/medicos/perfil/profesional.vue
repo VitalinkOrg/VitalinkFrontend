@@ -1,360 +1,333 @@
 <script setup lang="ts">
-import { useDocuments, useSupplier } from "@/composables/api";
-import type { DocumentResponse } from "@/composables/api/useDocuments";
-import type { Supplier, UserInformation } from "@/types";
+import { useDocuments } from "~/composables/api/useDocuments";
+import { useSupplier } from "~/composables/api/useSupplier";
 
-definePageMeta({
-  middleware: ["auth-doctors-hospitals"],
-});
+const { getUserInfo } = useUserInfo();
+const { show: showToast } = useToast();
+const { updateSupplier, getSupplierById } = useSupplier();
+const { addDocument } = useDocuments();
 
-interface ExtendedUserInfo extends UserInformation {
-  supplier?: Supplier;
-  description?: string;
-  num_medical_enrollment?: string;
-}
+const userProfile = getUserInfo();
 
-const { updateHospital: updateSupplier, fetchAllSuppliers } = useSupplier();
-const { uploadDocument, updateDocument, getDocumentsByFilters } =
-  useDocuments();
-const { userInfo, setUserInfo } = useUserInfo();
+const supplierData = ref<ISupplierDetail | null>(null);
+const profileDescription = ref("");
+const medicalEnrollmentNumber = ref("");
+const selectedProfileImage = ref<File | null>(null);
+const profileImagePreview = ref<string | null>(null);
 
-const currentUser = computed(() => userInfo.value as ExtendedUserInfo);
+const isSubmitting = ref(false);
+const isLoadingProfile = ref(true);
+const isUploadingImage = ref(false);
 
-const description = ref<string>(currentUser.value?.description || "");
-const medicalNumber = ref<string>(
-  currentUser.value?.num_medical_enrollment || ""
+const supplierId = computed(() => userProfile.value?.id);
+
+const isFormReady = computed(() => true);
+
+const hasProfileImage = computed(
+  () =>
+    !!profileImagePreview.value || !!supplierData.value?.profile_picture_url,
 );
 
-const profilePicture = ref<File | null>(null);
-const imagePreview = ref<string | null>(null);
-const existingProfilePicture = ref<DocumentResponse | null>(null);
-const supplierData = ref<Supplier | null>(null);
+const displayedImageSrc = computed(
+  () =>
+    profileImagePreview.value ||
+    supplierData.value?.profile_picture_url ||
+    "/_nuxt/src/assets/picture.svg",
+);
 
-const isLoading = ref(false);
-const errorMessage = ref<string>("");
-const successMessage = ref<string>("");
-
-const handleFileChange = (event: Event) => {
-  const target = event.target as HTMLInputElement;
-  const file = target.files?.[0];
-
-  if (file) {
-    if (!file.type.startsWith("image/")) {
-      errorMessage.value = "Por favor selecciona un archivo de imagen válido";
-      return;
-    }
-
-    if (file.size > 5 * 1024 * 1024) {
-      errorMessage.value = "La imagen no debe superar los 5MB";
-      return;
-    }
-
-    profilePicture.value = file;
-    imagePreview.value = URL.createObjectURL(file);
-    errorMessage.value = "";
-  }
+const notify = (message: string, type: "success" | "error") => {
+  showToast(message, type);
 };
 
-const loadSupplierData = async () => {
-  if (!currentUser.value?.id) return;
-
-  const { response, request, error } = fetchAllSuppliers();
-  await request();
-
-  if (error.value) {
-    console.error("Error al cargar datos del proveedor:", error.value);
+const fetchSupplierProfile = async () => {
+  if (!supplierId.value) {
+    isLoadingProfile.value = false;
     return;
   }
 
-  if (response.value?.data) {
-    const supplier = response.value.data.find(
-      (s) =>
-        String(s.legal_representative?.id) === String(currentUser.value?.id)
-    );
-
-    if (supplier) {
-      supplierData.value = supplier;
-      description.value = supplier.description || "";
-      medicalNumber.value = supplier.num_medical_enrollment || "";
-    } else {
-      errorMessage.value = "No se encontró información del proveedor asociado";
-    }
-  }
-};
-
-const loadExistingProfilePicture = async () => {
-  if (!currentUser.value?.id) return;
-
-  const { response, request, error } = getDocumentsByFilters({
-    table: "USER",
-    id_for_table: currentUser.value.id,
-    action_type: "PROFILE_PICTURE",
-  });
-
-  await request();
-
-  if (error.value) {
-    console.error("Error al cargar foto existente:", error.value);
-    return;
-  }
-
-  if (response.value?.data && response.value.data.length > 0) {
-    existingProfilePicture.value = response.value.data[0];
-  }
-};
-
-const updateProfilePicture = async (): Promise<boolean> => {
-  if (!profilePicture.value || !currentUser.value?.id) return true;
+  isLoadingProfile.value = true;
 
   try {
-    const fields = {
-      title: "Foto de perfil",
-      type: "IMG",
-      description: "",
-      id_for_table: currentUser.value.id,
-      table: "USER",
-      action_type: "PROFILE_PICTURE",
-      user_id: currentUser.value.id,
-      is_public: 1,
+    const { data, error } = await getSupplierById(supplierId.value);
+
+    if (error) {
+      notify(error.info || "Error al cargar el perfil profesional", "error");
+      return;
+    }
+
+    if (data) {
+      supplierData.value = data;
+      profileDescription.value = data.description || "";
+      medicalEnrollmentNumber.value = data.num_medical_enrollment || "";
+    }
+  } catch {
+    notify("Error inesperado al cargar el perfil", "error");
+  } finally {
+    isLoadingProfile.value = false;
+  }
+};
+
+const handleImageSelection = (event: Event) => {
+  const input = event.target as HTMLInputElement;
+  const file = input.files?.[0];
+
+  if (!file) return;
+
+  const allowedTypes = ["image/jpeg", "image/png", "image/webp"];
+  const maxSizeInBytes = 5 * 1024 * 1024;
+
+  if (!allowedTypes.includes(file.type)) {
+    notify("Formato no válido. Use JPG, PNG o WebP", "error");
+    input.value = "";
+    return;
+  }
+
+  if (file.size > maxSizeInBytes) {
+    notify("La imagen no debe superar los 5 MB", "error");
+    input.value = "";
+    return;
+  }
+
+  selectedProfileImage.value = file;
+
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    profileImagePreview.value = e.target?.result as string;
+  };
+  reader.onerror = () => {
+    notify("Error al previsualizar la imagen", "error");
+  };
+  reader.readAsDataURL(file);
+};
+
+const uploadProfileImage = async (): Promise<string | null> => {
+  if (!selectedProfileImage.value || !userProfile.value?.id) return null;
+
+  isUploadingImage.value = true;
+
+  try {
+    const { data, error } = await addDocument({
+      file: selectedProfileImage.value,
+      fields: {
+        title: `profile_picture_${userProfile.value.id}`,
+        type: "IMG",
+        description: "Foto de perfil profesional",
+        id_for_table: String(supplierId.value),
+        table: "supplier",
+        action_type: "GENERAL_GALLERY",
+        user_id: String(userProfile.value.id),
+        is_public: 1,
+      },
+    });
+
+    if (error) {
+      notify(error.info || "Error al subir la imagen", "error");
+      return null;
+    }
+
+    return data?.code || data?.url || null;
+  } catch {
+    notify("Error inesperado al subir la imagen", "error");
+    return null;
+  } finally {
+    isUploadingImage.value = false;
+  }
+};
+
+const submitProfileUpdate = async () => {
+  if (!supplierId.value || !supplierData.value) {
+    notify("No se encontró la información del proveedor", "error");
+    return;
+  }
+
+  isSubmitting.value = true;
+
+  try {
+    let profilePictureUrl = supplierData.value.profile_picture_url;
+
+    if (selectedProfileImage.value) {
+      const uploadedCode = await uploadProfileImage();
+
+      if (uploadedCode) {
+        profilePictureUrl = uploadedCode;
+      } else if (selectedProfileImage.value) {
+        return;
+      }
+    }
+
+    const payload: ISupplierUpdateRequest = {
+      description: profileDescription.value.trim(),
+      num_medical_enrollment: medicalEnrollmentNumber.value.trim(),
+      profile_picture_url: profilePictureUrl || "",
     };
 
-    let response, request, error;
+    const { data, error } = await updateSupplier(supplierId.value, payload);
 
-    if (existingProfilePicture.value) {
-      ({ response, request, error } = updateDocument(
-        existingProfilePicture.value.id,
-        profilePicture.value,
-        fields
-      ));
-    } else {
-      ({ response, request, error } = uploadDocument(
-        profilePicture.value,
-        fields
-      ));
-    }
-
-    await request();
-
-    if (error.value) {
-      console.error("Error al actualizar foto:", error.value);
-      errorMessage.value = "Error al actualizar la foto de perfil";
-      return false;
-    }
-
-    if (response.value?.data?.url) {
-      const updatedUserInfo = {
-        ...currentUser.value,
-        profile_picture_url: response.value.data.url,
-      };
-      setUserInfo(updatedUserInfo);
-      existingProfilePicture.value = response.value.data;
-    }
-
-    return true;
-  } catch (err) {
-    console.error("Error al procesar la foto de perfil:", err);
-    errorMessage.value = "Error inesperado al procesar la foto";
-    return false;
-  }
-};
-
-const updateSupplierInfo = async (): Promise<boolean> => {
-  if (!supplierData.value?.id) {
-    errorMessage.value = "No se encontró información del proveedor";
-    return false;
-  }
-
-  try {
-    const { response, request, error } = updateSupplier(
-      String(supplierData.value.id),
-      {
-        num_medical_enrollment: medicalNumber.value,
-        description: description.value,
-      }
-    );
-
-    await request();
-
-    if (error.value) {
-      console.error("Error al actualizar proveedor:", error.value);
-      errorMessage.value =
-        error.value.message ||
-        "Error al actualizar la información del proveedor";
-      return false;
-    }
-
-    if (response.value?.data) {
-      const updatedUserInfo = {
-        ...currentUser.value,
-        description: description.value,
-        num_medical_enrollment: medicalNumber.value,
-      };
-      setUserInfo(updatedUserInfo);
-    }
-
-    return true;
-  } catch (err) {
-    console.error("Error:", err);
-    errorMessage.value = "Error inesperado al actualizar";
-    return false;
-  }
-};
-
-const updateProfile = async (event: Event) => {
-  event.preventDefault();
-
-  isLoading.value = true;
-  errorMessage.value = "";
-  successMessage.value = "";
-
-  try {
-    const photoSuccess = await updateProfilePicture();
-
-    if (!photoSuccess) {
+    if (error) {
+      notify(error.info || "Error al actualizar el perfil", "error");
       return;
     }
 
-    const infoSuccess = await updateSupplierInfo();
+    if (data) {
+      supplierData.value = {
+        ...supplierData.value,
+        description: payload.description ?? supplierData.value.description,
+        num_medical_enrollment:
+          payload.num_medical_enrollment ??
+          supplierData.value.num_medical_enrollment,
+        profile_picture_url:
+          profilePictureUrl ?? supplierData.value.profile_picture_url,
+      };
 
-    if (!infoSuccess) {
-      return;
+      selectedProfileImage.value = null;
+      notify("Perfil actualizado exitosamente", "success");
     }
-
-    successMessage.value = "✓ Perfil actualizado correctamente";
-
-    if (imagePreview.value) {
-      URL.revokeObjectURL(imagePreview.value);
-      imagePreview.value = null;
-    }
-    profilePicture.value = null;
-
-    setTimeout(() => {
-      successMessage.value = "";
-    }, 3000);
-  } catch (err) {
-    console.error("Error general:", err);
-    errorMessage.value = "Error inesperado al actualizar el perfil";
+  } catch {
+    notify("Error inesperado al actualizar el perfil", "error");
   } finally {
-    isLoading.value = false;
+    isSubmitting.value = false;
   }
 };
 
 onMounted(() => {
-  loadSupplierData();
-  loadExistingProfilePicture();
-});
-
-onUnmounted(() => {
-  if (imagePreview.value) {
-    URL.revokeObjectURL(imagePreview.value);
-  }
+  fetchSupplierProfile();
 });
 </script>
 
 <template>
   <NuxtLayout name="medicos-dashboard-perfil">
-    <form class="professional-form" @submit.prevent="updateProfile">
-      <Transition name="fade">
-        <div
-          v-if="errorMessage"
-          class="professional-form__alert professional-form__alert--error"
-        >
-          {{ errorMessage }}
-        </div>
-      </Transition>
+    <div
+      v-if="isLoadingProfile"
+      class="professional-profile__loading"
+      role="status"
+      aria-live="polite"
+    >
+      Cargando perfil profesional...
+    </div>
 
-      <Transition name="fade">
-        <div
-          v-if="successMessage"
-          class="professional-form__alert professional-form__alert--success"
-        >
-          {{ successMessage }}
-        </div>
-      </Transition>
+    <form
+      v-else
+      class="professional-profile"
+      novalidate
+      @submit.prevent="submitProfileUpdate"
+      aria-label="Formulario de perfil profesional"
+    >
+      <fieldset class="professional-profile__fieldset">
+        <legend class="professional-profile__visually-hidden">
+          Información profesional del médico
+        </legend>
 
-      <div class="professional-form__group">
-        <label class="professional-form__label">Foto de Perfil</label>
-        <p class="professional-form__description">
-          Esta será la foto que vean tus pacientes cuando encuentren tu perfil
-          en Vitalink
-        </p>
-        <div class="professional-form__upload-section">
-          <div class="profile-picture">
-            <img
-              :src="
-                imagePreview ||
-                currentUser?.profile_picture_url ||
-                '/_nuxt/src/assets/picture.svg'
+        <div class="professional-profile__field">
+          <span class="professional-profile__label" id="photo-label">
+            Foto de Perfil
+          </span>
+          <p class="professional-profile__hint" id="photo-hint">
+            Esta será la foto que vean tus pacientes cuando encuentren tu perfil
+            en Vitalink.
+          </p>
+
+          <div
+            class="professional-profile__avatar-group"
+            role="group"
+            aria-labelledby="photo-label"
+            aria-describedby="photo-hint"
+          >
+            <figure class="professional-profile__avatar">
+              <img
+                :src="displayedImageSrc"
+                :class="[
+                  'professional-profile__avatar-image',
+                  hasProfileImage
+                    ? 'professional-profile__avatar-image--filled'
+                    : 'professional-profile__avatar-image--placeholder',
+                ]"
+                alt="Foto de perfil actual"
+              />
+            </figure>
+
+            <label
+              for="profile-image-upload"
+              class="professional-profile__avatar-trigger"
+              :class="{
+                'professional-profile__avatar-trigger--disabled': !isFormReady,
+              }"
+              role="button"
+              tabindex="0"
+              aria-label="Cambiar foto de perfil"
+              @keydown.enter.prevent="
+                ($refs.imageInput as HTMLInputElement)?.click()
               "
-              :class="[
-                'profile-picture__image',
-                !profilePicture && !imagePreview
-                  ? 'profile-picture__image--preview'
-                  : 'profile-picture__image--uploaded',
-              ]"
-              alt="Profile Picture"
+              @keydown.space.prevent="
+                ($refs.imageInput as HTMLInputElement)?.click()
+              "
+            >
+              <img src="@/src/assets/camera.svg" alt="" aria-hidden="true" />
+            </label>
+
+            <input
+              id="profile-image-upload"
+              ref="imageInput"
+              type="file"
+              accept="image/jpeg,image/png,image/webp"
+              class="professional-profile__visually-hidden"
+              :disabled="!isFormReady"
+              @change="handleImageSelection"
             />
           </div>
+        </div>
+
+        <div class="professional-profile__field">
           <label
-            for="upload-picture"
-            class="profile-picture__upload-button"
-            :class="{ 'is-loading': isLoading }"
+            for="professional-description"
+            class="professional-profile__label"
           >
-            <img src="@/src/assets/camera.svg" alt="Upload Picture" />
+            Escribe una breve descripción profesional
+          </label>
+          <textarea
+            id="professional-description"
+            v-model="profileDescription"
+            class="professional-profile__textarea"
+            rows="3"
+            placeholder="Escribe una descripción sobre ti y tu experiencia profesional"
+            :disabled="!isFormReady"
+            aria-describedby="description-counter"
+          />
+          <span
+            id="description-counter"
+            class="professional-profile__char-count"
+            aria-live="polite"
+          >
+            {{ profileDescription.length }} caracteres
+          </span>
+        </div>
+
+        <div class="professional-profile__field">
+          <label for="medical-enrollment" class="professional-profile__label">
+            Nº Matrícula Médica
           </label>
           <input
-            type="file"
-            id="upload-picture"
-            accept="image/*"
-            class="profile-picture__input"
-            :disabled="isLoading"
-            @change="handleFileChange"
+            id="medical-enrollment"
+            v-model="medicalEnrollmentNumber"
+            type="text"
+            class="professional-profile__input"
+            placeholder="Escribe el número de tu matrícula"
+            :disabled="!isFormReady"
           />
         </div>
-      </div>
+      </fieldset>
 
-      <div class="professional-form__group">
-        <label for="descripcion" class="professional-form__label">
-          Escribe una breve descripción profesional
-        </label>
-        <textarea
-          name="descripcion"
-          id="descripcion"
-          cols="30"
-          rows="3"
-          class="professional-form__textarea"
-          v-model="description"
-          :disabled="isLoading"
-          placeholder="Escribe una descripción sobre ti y tu experiencia profesional"
-        ></textarea>
-      </div>
-
-      <div class="professional-form__group">
-        <label for="matricula-medica" class="professional-form__label">
-          Nº Matrícula Médica
-        </label>
-        <input
-          type="text"
-          name="matricula-medica"
-          id="matricula-medica"
-          v-model="medicalNumber"
-          :disabled="isLoading"
-          placeholder="Escribe el número de tu matrícula"
-          class="professional-form__input"
-        />
-      </div>
-
-      <div class="professional-form__actions">
+      <div class="professional-profile__actions">
         <button
           type="submit"
-          class="professional-form__button"
-          :disabled="isLoading || !supplierData"
+          class="professional-profile__submit"
+          :disabled="!isFormReady"
+          :aria-busy="isSubmitting || isUploadingImage"
         >
-          <span v-if="!isLoading">Actualizar Perfil</span>
-          <span v-else class="button-loading">
-            <span class="spinner"></span>
-            Actualizando...
-          </span>
+          <template v-if="isSubmitting || isUploadingImage">
+            <span class="professional-profile__spinner" aria-hidden="true" />
+            {{ isUploadingImage ? "Subiendo imagen..." : "Actualizando..." }}
+          </template>
+          <template v-else> Actualizar Perfil </template>
         </button>
       </div>
     </form>
@@ -362,8 +335,24 @@ onUnmounted(() => {
 </template>
 
 <style lang="scss" scoped>
-.professional-form {
-  &__group {
+.professional-profile {
+  &__loading {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 200px;
+    font-family: $font-family-main;
+    font-size: 14px;
+    color: $color-text-secondary;
+  }
+
+  &__fieldset {
+    border: none;
+    margin: 0;
+    padding: 0;
+  }
+
+  &__field {
     margin-bottom: 1.5rem;
 
     @include respond-to-max(md) {
@@ -385,15 +374,14 @@ onUnmounted(() => {
     }
   }
 
-  &__description {
+  &__hint {
     @include text-base;
     color: $color-text-muted;
     font-weight: 300;
     margin-top: 0.25rem;
     margin-bottom: 0.75rem;
     font-size: 14px;
-    line-height: 100%;
-    letter-spacing: 0;
+    line-height: 1.4;
 
     @include respond-to-max(md) {
       font-size: 0.8125rem;
@@ -406,7 +394,7 @@ onUnmounted(() => {
     }
   }
 
-  &__upload-section {
+  &__avatar-group {
     position: relative;
     display: flex;
     align-items: flex-end;
@@ -414,6 +402,120 @@ onUnmounted(() => {
 
     @include respond-to-max(sm) {
       gap: 0.5rem;
+    }
+  }
+
+  &__avatar {
+    margin: 0;
+    border-radius: 1.125rem;
+    border: 0.1875rem solid #c2c6e9;
+    background: #f8faff;
+    width: 8.125rem;
+    height: 8.25rem;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    flex-shrink: 0;
+    overflow: hidden;
+
+    @include respond-to-max(md) {
+      width: 7rem;
+      height: 7.125rem;
+      border-radius: 1rem;
+      border-width: 0.15rem;
+    }
+
+    @include respond-to-max(sm) {
+      width: 6rem;
+      height: 6.125rem;
+      border-radius: 0.875rem;
+      border-width: 0.125rem;
+    }
+  }
+
+  &__avatar-image {
+    &--placeholder {
+      width: 2.5rem;
+      height: 2.5rem;
+      object-fit: contain;
+
+      @include respond-to-max(md) {
+        width: 2.25rem;
+        height: 2.25rem;
+      }
+
+      @include respond-to-max(sm) {
+        width: 2rem;
+        height: 2rem;
+      }
+    }
+
+    &--filled {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+  }
+
+  &__avatar-trigger {
+    z-index: 10;
+    border-radius: 50%;
+    width: 2.5rem;
+    height: 2.5rem;
+    margin-left: -1.5625rem;
+    cursor: pointer;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background-color: $color-primary;
+    flex-shrink: 0;
+    transition: all 0.2s ease;
+
+    @include respond-to-max(md) {
+      width: 2.25rem;
+      height: 2.25rem;
+      margin-left: -1.375rem;
+    }
+
+    @include respond-to-max(sm) {
+      width: 2rem;
+      height: 2rem;
+      margin-left: -1.125rem;
+    }
+
+    &:hover:not(&--disabled) {
+      background-color: $color-primary-darkened-5;
+      transform: scale(1.05);
+    }
+
+    &:active:not(&--disabled) {
+      background-color: $color-primary-darkened-10;
+      transform: scale(0.98);
+    }
+
+    &:focus-visible {
+      outline: 2px solid $color-primary;
+      outline-offset: 2px;
+    }
+
+    &--disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
+
+    img {
+      width: 1.25rem;
+      height: 1.25rem;
+
+      @include respond-to-max(md) {
+        width: 1.125rem;
+        height: 1.125rem;
+      }
+
+      @include respond-to-max(sm) {
+        width: 1rem;
+        height: 1rem;
+      }
     }
   }
 
@@ -450,6 +552,15 @@ onUnmounted(() => {
     }
   }
 
+  &__char-count {
+    display: block;
+    margin-top: 0.25rem;
+    font-family: $font-family-main;
+    font-size: 12px;
+    color: $color-text-muted;
+    text-align: right;
+  }
+
   &__actions {
     margin-top: 2rem;
     display: flex;
@@ -464,7 +575,7 @@ onUnmounted(() => {
     }
   }
 
-  &__button {
+  &__submit {
     @include primary-button;
 
     @include respond-to-max(md) {
@@ -477,170 +588,26 @@ onUnmounted(() => {
     }
   }
 
-  &__alert {
-    padding: 12px 16px;
-    border-radius: 8px;
-    margin-bottom: 20px;
-    font-size: 14px;
-    font-weight: 500;
-
-    &--error {
-      background-color: #fee;
-      color: #c33;
-      border: 1px solid #fcc;
-    }
-
-    &--success {
-      background-color: #efe;
-      color: #2d5;
-      border: 1px solid #cfc;
-    }
-  }
-}
-
-.profile-picture {
-  border-radius: 1.125rem;
-  border: 0.1875rem solid #c2c6e9;
-  background: #f8faff;
-  width: 8.125rem;
-  height: 8.25rem;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  flex-shrink: 0;
-  overflow: hidden;
-  position: relative;
-
-  @include respond-to-max(md) {
-    width: 7rem;
-    height: 7.125rem;
-    border-radius: 1rem;
-    border-width: 0.15rem;
+  &__spinner {
+    display: inline-block;
+    width: 16px;
+    height: 16px;
+    border: 2px solid rgba(255, 255, 255, 0.3);
+    border-top-color: $white;
+    border-radius: 50%;
+    animation: rotate-spinner 0.6s linear infinite;
+    margin-right: 8px;
+    vertical-align: middle;
   }
 
-  @include respond-to-max(sm) {
-    width: 6rem;
-    height: 6.125rem;
-    border-radius: 0.875rem;
-    border-width: 0.125rem;
-  }
-
-  &__image {
-    &--preview {
-      width: 2.5rem;
-      height: 2.5rem;
-      object-fit: contain;
-
-      @include respond-to-max(md) {
-        width: 2.25rem;
-        height: 2.25rem;
-      }
-
-      @include respond-to-max(sm) {
-        width: 2rem;
-        height: 2rem;
-      }
-    }
-
-    &--uploaded {
-      width: 100%;
-      height: 100%;
-      object-fit: cover;
-    }
-  }
-
-  &__upload-button {
-    z-index: 10;
-    border-radius: 2.4375rem;
-    width: 2.5rem;
-    height: 2.5rem;
-    margin-left: -1.5625rem;
-    cursor: pointer;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    background-color: $color-primary;
-    flex-shrink: 0;
-    transition: all 0.2s ease;
-
-    @include respond-to-max(md) {
-      width: 2.25rem;
-      height: 2.25rem;
-      margin-left: -1.375rem;
-      border-radius: 2rem;
-    }
-
-    @include respond-to-max(sm) {
-      width: 2rem;
-      height: 2rem;
-      margin-left: -1.125rem;
-      border-radius: 1.75rem;
-    }
-
-    &:hover:not(.is-loading) {
-      background-color: $color-primary-darkened-5;
-      transform: scale(1.05);
-    }
-
-    &:active:not(.is-loading) {
-      background-color: $color-primary-darkened-10;
-      transform: scale(0.98);
-    }
-
-    &.is-loading {
-      opacity: 0.6;
-      cursor: not-allowed;
-    }
-
-    img {
-      width: 1.25rem;
-      height: 1.25rem;
-
-      @include respond-to-max(md) {
-        width: 1.125rem;
-        height: 1.125rem;
-      }
-
-      @include respond-to-max(sm) {
-        width: 1rem;
-        height: 1rem;
-      }
-    }
-  }
-
-  &__input {
+  &__visually-hidden {
     @include visually-hidden;
   }
 }
 
-.button-loading {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.spinner {
-  width: 16px;
-  height: 16px;
-  border: 2px solid rgba(255, 255, 255, 0.3);
-  border-top-color: white;
-  border-radius: 50%;
-  animation: spin 0.6s linear infinite;
-}
-
-@keyframes spin {
+@keyframes rotate-spinner {
   to {
     transform: rotate(360deg);
   }
-}
-
-.fade-enter-active,
-.fade-leave-active {
-  transition: opacity 0.3s ease;
-}
-
-.fade-enter-from,
-.fade-leave-to {
-  opacity: 0;
 }
 </style>

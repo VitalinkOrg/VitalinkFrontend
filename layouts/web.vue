@@ -2,6 +2,7 @@
   <WebsiteNavbar v-if="!isAuthenticated" />
   <PacientesNav v-else="isAuthenticated" />
   <slot />
+  <UiNotificationToast />
   <WebsiteFooter />
 </template>
 <style src="@/assets/styles/vitalink.scss" />

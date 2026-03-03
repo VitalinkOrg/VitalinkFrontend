@@ -1,9 +1,7 @@
 <script lang="ts" setup>
-import type { Supplier } from "~/types";
-
 interface Props {
-  supplierData?: Supplier | Partial<Supplier> | null;
-  supplier?: Supplier | Partial<Supplier> | null;
+  supplierData?: ISupplierDetail | Partial<ISupplierDetail> | null;
+  supplier?: ISupplierDetail | Partial<ISupplierDetail> | null;
 }
 
 interface Emits {
@@ -25,7 +23,9 @@ const handleOpenModal = (): void => {
   emit("openModal");
 };
 
-const currentSupplier = computed<Supplier | Partial<Supplier> | null>(() => {
+const currentSupplier = computed<
+  ISupplierDetail | Partial<ISupplierDetail> | null
+>(() => {
   return props.supplierData || props.supplier || null;
 });
 

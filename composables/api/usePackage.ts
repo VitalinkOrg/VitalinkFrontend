@@ -1,132 +1,101 @@
-import type { ApiResponse, Package } from "~/types";
-import useApi, { type UsableAPI } from "./useApi";
-
-interface PackageCreationRequest {
-  specialty_id: number;
-  procedure_code: string;
-  product_code: string;
-  discount: number;
-  valoracion_cost: number;
-  discount_price: number | null;
-  services_offer: {
-    ASSESSMENT_DETAILS: string[];
-  };
-  is_king: number;
-  observations: string;
-  postoperative_assessments: number;
-}
+import { useLogger } from "@/composables/useLogger";
+import useApi from "./useApi";
 
 export const usePackage = () => {
-  const config = useRuntimeConfig();
   const { getToken } = useAuthToken();
+  const logger = useLogger("usePackage");
 
-  const fetchPackages = (): UsableAPI<ApiResponse<Package[]>> => {
+  const getAuthHeaders = (): Record<string, string> => {
     const token = getToken();
-    if (!token) throw new Error("No authentication token found");
-
-    const url = `${config.public.API_BASE_URL}/package/get_all`;
-
-    return useApi<ApiResponse<Package[]>>(url, {
-      method: "GET",
-      headers: {
-        Authorization: token,
-        "Content-Type": "application/json",
-      },
-    });
+    if (!token) {
+      logger.error("No authentication token found");
+      throw new Error("No authentication token found");
+    }
+    return {
+      Authorization: token,
+      "Content-Type": "application/json",
+    };
   };
 
-  const fetchPackagesBySupplierId = (
-    supplierId: number,
-  ): UsableAPI<ApiResponse<Package[]>> => {
-    const token = getToken();
-    if (!token) throw new Error("No authentication token found");
+  const executeRequest = async <T>(
+    operationName: string,
+    endpoint: string,
+    options: Parameters<typeof $fetch>[1],
+  ): Promise<{ data: T | undefined; error: IApiErrorResponse | null }> => {
+    try {
+      const headers = getAuthHeaders();
+      const { response, request, error } = useApi<T>(endpoint, {
+        ...options,
+        headers: { ...headers, ...options?.headers },
+      });
 
-    const url = `${config.public.API_BASE_URL}/package/get_all?supplier_id=${supplierId}`;
+      await request();
 
-    return useApi<ApiResponse<Package[]>>(url, {
-      method: "GET",
-      headers: {
-        Authorization: token,
-        "Content-Type": "application/json",
-      },
-    });
+      if (error.value) {
+        logger.error(`${operationName} failed`, {
+          endpoint,
+          status: error.value.status?.http_code,
+          message: error.value.info,
+        });
+        return { data: undefined, error: error.value };
+      }
+
+      logger.debug(`${operationName} succeeded`, { endpoint });
+      return { data: response.value, error: null };
+    } catch (err: unknown) {
+      const fallbackError: IApiErrorResponse = {
+        status: { id: 0, message: "Error inesperado", http_code: 500 },
+        info:
+          err instanceof Error
+            ? err.message
+            : "Ocurrió un error inesperado antes de realizar la solicitud",
+        data: null,
+      };
+
+      logger.error(`${operationName} threw unexpectedly`, {
+        endpoint,
+        error: fallbackError.info,
+      });
+
+      return { data: undefined, error: fallbackError };
+    }
   };
 
-  const createPackage = (
-    packageData: Partial<PackageCreationRequest>,
-  ): UsableAPI<ApiResponse<Package>> => {
-    const token = getToken();
-    if (!token) throw new Error("No authentication token found");
-
-    const url = `${config.public.API_BASE_URL}/package/add`;
-
-    return useApi<ApiResponse<Package>>(url, {
+  const createPackage = (payload: IPackageCreationRequest) =>
+    executeRequest<IPackage>("createPackage", "package/add", {
       method: "POST",
-      headers: {
-        Authorization: token,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(packageData),
+      body: JSON.stringify(payload),
     });
-  };
 
-  const fetchPackageById = (
-    packageId: number,
-  ): UsableAPI<ApiResponse<Package>> => {
-    const token = getToken();
-    if (!token) throw new Error("No authentication token found");
-
-    const url = `${config.public.API_BASE_URL}/package/get?id=${packageId}`;
-
-    return useApi<ApiResponse<Package>>(url, {
-      method: "GET",
-      headers: {
-        Authorization: token,
-        "Content-Type": "application/json",
-      },
-    });
-  };
-
-  const updatePackage = (
-    packageId: number,
-    packageData: Partial<PackageCreationRequest>,
-  ): UsableAPI<ApiResponse<Package>> => {
-    const token = getToken();
-    if (!token) throw new Error("No authentication token found");
-
-    const url = `${config.public.API_BASE_URL}/package/edit?id=${packageId}`;
-
-    return useApi<ApiResponse<Package>>(url, {
+  const updatePackage = (packageId: number, payload: IPackageUpdateRequest) =>
+    executeRequest<IPackage>("updatePackage", "package/edit", {
       method: "PUT",
-      headers: {
-        Authorization: token,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(packageData),
+      body: JSON.stringify(payload),
+      query: { id: packageId },
     });
-  };
 
-  const deletePackage = (packageId: number): UsableAPI<ApiResponse<void>> => {
-    const token = getToken();
-    if (!token) throw new Error("No authentication token found");
+  const getAllPackages = () =>
+    executeRequest<IPackage[]>("getAllPackages", "package/get_all", {
+      method: "GET",
+    });
 
-    const url = `${config.public.API_BASE_URL}/package/delete?id=${packageId}`;
+  const getPackageById = (packageId: number) =>
+    executeRequest<IPackage>("getPackageById", "package/", {
+      method: "GET",
+      query: { id: packageId },
+    });
 
-    return useApi<ApiResponse<void>>(url, {
+  const deletePackage = (packageId: number) =>
+    executeRequest<null>("deletePackage", "package/delete", {
       method: "DELETE",
-      headers: {
-        Authorization: token,
-        "Content-Type": "application/json",
-      },
+      query: { id: packageId },
     });
-  };
 
   return {
-    fetchPackages,
-    fetchPackagesBySupplierId,
-    fetchPackageById,
     createPackage,
     updatePackage,
+    getAllPackages,
+    getPackageById,
     deletePackage,
   };
 };

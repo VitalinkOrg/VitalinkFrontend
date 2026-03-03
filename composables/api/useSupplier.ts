@@ -1,318 +1,125 @@
-import type { ApiResponse, Service, Supplier } from "@/types";
-import useApi, { type UsableAPI } from "./useApi";
-
-export interface SupplierSpecialty {
-  supplier_id: number;
-  medical_specialty_code: string;
-}
-
-export interface CreateSupplier {
-  id_type: string;
-  card_id: string;
-  email: string;
-  medical_type_code: string;
-  legal_representative: string;
-  num_medical_enrollment: string;
-  name: string;
-  phone_number: string;
-  country_iso_code: string;
-  province: string;
-  city_name: string;
-  postal_code?: string;
-  profile_picture_url: string;
-  description: string;
-  is_hospital: boolean;
-  code_card_id_file: string;
-  code_medical_license_file: string;
-  gender?: string;
-  address?: string;
-  street_number?: string;
-  floor?: string;
-  door_number?: string;
-  latitude?: string;
-  longitude?: string;
-  experience_years?: string;
-  patients_number?: string;
-  our_history?: string;
-  mission?: string;
-  vision?: string;
-}
-
-export interface CreateHospital {
-  name: string;
-  email: string;
-  phone_number: string;
-  country_iso_code: string;
-  province: string;
-  city_name: string;
-  address: string;
-  street_number?: string;
-  postal_code?: string;
-  floor?: string;
-  door_number?: string;
-  id_type: "JURIDICAL_DNI";
-  card_id: string;
-  legal_representative: string;
-  is_hospital: true;
-  description?: string;
-  medical_type_code: string;
-  num_medical_enrollment: string;
-  profile_picture_url: string;
-  code_card_id_file: string;
-  code_medical_license_file: string;
-}
-
-export interface UpdateHospital {
-  name?: string;
-  email?: string;
-  phone_number?: string;
-  country_iso_code?: string;
-  province?: string;
-  city_name?: string;
-  address?: string;
-  street_number?: string;
-  postal_code?: string;
-  floor?: string;
-  door_number?: string;
-
-  id_type?: "JURIDICAL_DNI";
-  card_id?: string;
-  description?: string;
-  medical_type_code?: string;
-  num_medical_enrollment?: string;
-  // is_hospital: true;
-}
+import { useLogger } from "@/composables/useLogger";
+import useApi from "./useApi";
 
 export const useSupplier = () => {
-  const config = useRuntimeConfig();
   const { getToken } = useAuthToken();
+  const logger = useLogger("useSupplier");
 
-  const fetchAllSuppliers = (): UsableAPI<ApiResponse<Supplier[]>> => {
+  const getAuthHeaders = (): Record<string, string> => {
     const token = getToken();
-    if (!token) throw new Error("No authentication token found");
-
-    const url = `${config.public.API_BASE_URL}/supplier/get_all`;
-
-    return useApi<ApiResponse<Supplier[]>>(url, {
-      method: "GET",
-      headers: {
-        Authorization: token,
-        "Content-Type": "application/json",
-      },
-    });
-  };
-
-  const fetchSupplier = (userId: string | number, token?: string) => {
-    const authToken = token || getToken();
-    if (!authToken) {
+    if (!token) {
+      logger.error("No authentication token found");
       throw new Error("No authentication token found");
     }
-
-    const url = `${config.public.API_BASE_URL}/supplier/get?id=${userId}`;
-
-    return useApi<ApiResponse<Supplier>>(url, {
-      method: "GET",
-      headers: {
-        Authorization: authToken,
-        "Content-Type": "application/json",
-      },
-    });
+    return {
+      Authorization: token,
+      "Content-Type": "application/json",
+    };
   };
 
-  const fetchAllMain = (params?: Record<string, string>) => {
-    const token = getToken();
-    if (!token) throw new Error("No authentication token found");
+  const executeRequest = async <T>(
+    operationName: string,
+    endpoint: string,
+    options: Parameters<typeof $fetch>[1],
+  ): Promise<{
+    data: T | undefined;
+    error: IApiErrorResponse | null;
+    loading: Ref<boolean>;
+  }> => {
+    const loading = ref(true);
 
-    const queryString = params
-      ? `?${new URLSearchParams(params).toString()}`
-      : "";
+    try {
+      const headers = getAuthHeaders();
+      const { response, request, error } = useApi<T>(endpoint, {
+        ...options,
+        headers: { ...headers, ...options?.headers },
+      });
 
-    const url = `${config.public.API_BASE_URL}/supplier/get_all_main${queryString}`;
+      await request();
 
-    return useApi<ApiResponse<Supplier[]>>(url, {
-      method: "GET",
-      headers: {
-        Authorization: token,
-        "Content-Type": "application/json",
-      },
-    });
+      loading.value = false;
+
+      if (error.value) {
+        logger.error(`${operationName} failed`, {
+          endpoint,
+          status: error.value.status?.http_code,
+          message: error.value.info,
+        });
+        return { data: undefined, error: error.value, loading };
+      }
+
+      logger.debug(`${operationName} succeeded`, { endpoint });
+      return { data: response.value, error: null, loading };
+    } catch (err: unknown) {
+      loading.value = false;
+
+      const fallbackError: IApiErrorResponse = {
+        status: { id: 0, message: "Error inesperado", http_code: 500 },
+        info:
+          err instanceof Error
+            ? err.message
+            : "Ocurrió un error inesperado antes de realizar la solicitud",
+        data: null,
+      };
+
+      logger.error(`${operationName} threw unexpectedly`, {
+        endpoint,
+        error: fallbackError.info,
+      });
+
+      return { data: undefined, error: fallbackError, loading };
+    }
   };
 
-  const fetchSpecialtyBySupplier = (supplierId: number, token?: string) => {
-    const authToken = token || getToken();
-    if (!authToken) throw new Error("No authentication token found");
-
-    const url = `${config.public.API_BASE_URL}/specialtybysupplier/get_all?supplier_id=${supplierId}`;
-
-    return useApi<ApiResponse<Service[]>>(url, {
-      method: "GET",
-      headers: {
-        Authorization: authToken,
-        "Content-Type": "application/json",
-      },
-    });
-  };
-
-  const createSupplier = (body: CreateSupplier, token?: string) => {
-    const authToken = token || getToken();
-    if (!authToken) throw new Error("No authentication token found");
-
-    const url = `${config.public.API_BASE_URL}/supplier/add`;
-
-    return useApi<ApiResponse<any>>(url, {
+  const createSupplier = (payload: ICreateSupplierRequest) =>
+    executeRequest<ISupplierSystem>("createSupplier", "supplier/add", {
       method: "POST",
-      body: JSON.stringify(body),
-      headers: {
-        Authorization: authToken,
-        "Content-Type": "application/json",
-      },
+      body: JSON.stringify(payload),
     });
-  };
-
-  const uploadSpecialtyBySupplier = (
-    body: SupplierSpecialty[],
-    token?: string
-  ) => {
-    const authToken = token || getToken();
-    if (!authToken) throw new Error("No authentication token found");
-
-    const url = `${config.public.API_BASE_URL}/specialtybysupplier/add_multiple`;
-
-    return useApi<ApiResponse<any>>(url, {
-      method: "POST",
-      body: JSON.stringify(body),
-      headers: {
-        Authorization: authToken,
-        "Content-Type": "application/json",
-      },
-    });
-  };
-
-  const createHospital = (body: CreateHospital, token?: string) => {
-    const authToken = token || getToken();
-    if (!authToken) throw new Error("No authentication token found");
-
-    const url = `${config.public.API_BASE_URL}/supplier/add`;
-
-    return useApi<ApiResponse<any>>(url, {
-      method: "POST",
-      body: JSON.stringify(body),
-      headers: {
-        Authorization: authToken,
-        "Content-Type": "application/json",
-      },
-    });
-  };
-
-  const updateHospital = (id: string, body: UpdateHospital, token?: string) => {
-    const authToken = token || getToken();
-    if (!authToken) throw new Error("No authentication token found");
-
-    const url = `${config.public.API_BASE_URL}/supplier/edit?id=${encodeURIComponent(id)}`;
-
-    return useApi<ApiResponse<any>>(url, {
-      method: "PUT",
-      body: JSON.stringify(body),
-      headers: {
-        Authorization: authToken,
-        "Content-Type": "application/json",
-      },
-    });
-  };
-
-  const deleteHospital = (id: string, token?: string) => {
-    const authToken = token || getToken();
-    if (!authToken) throw new Error("No authentication token found");
-
-    const url = `${config.public.API_BASE_URL}/supplier/delete?id=${encodeURIComponent(id)}`;
-
-    return useApi<ApiResponse<any>>(url, {
-      method: "DELETE",
-      headers: {
-        Authorization: authToken,
-        "Content-Type": "application/json",
-      },
-    });
-  };
-
-  const deleteSupplier = (id: number, token?: string) => {
-    const authToken = token || getToken();
-    if (!authToken) throw new Error("No authentication token found");
-
-    const url = `${config.public.API_BASE_URL}/supplier/delete?id=${id}`;
-
-    return useApi<ApiResponse<any>>(url, {
-      method: "DELETE",
-      headers: {
-        Authorization: authToken,
-        "Content-Type": "application/json",
-      },
-    });
-  };
-
-  const deleteSpecialtyBySupplier = (id: number, token?: string) => {
-    const authToken = token || getToken();
-    if (!authToken) throw new Error("No authentication token found");
-
-    const url = `${config.public.API_BASE_URL}/specialtybysupplier/delete?id=${id}`;
-
-    return useApi<ApiResponse<any>>(url, {
-      method: "DELETE",
-      headers: {
-        Authorization: authToken,
-        "Content-Type": "application/json",
-      },
-    });
-  };
 
   const updateSupplier = (
-    id: number,
-    body: Partial<CreateSupplier>,
-    token?: string
-  ) => {
-    const authToken = token || getToken();
-    if (!authToken) throw new Error("No authentication token found");
-
-    const url = `${config.public.API_BASE_URL}/supplier/edit?id=${id}`;
-
-    return useApi<ApiResponse<any>>(url, {
+    supplierId: number,
+    payload: ISupplierUpdateRequest,
+  ) =>
+    executeRequest<ISupplierSystem>("updateSupplier", "supplier/edit", {
       method: "PUT",
-      body: JSON.stringify(body),
-      headers: {
-        Authorization: authToken,
-        "Content-Type": "application/json",
-      },
+      body: JSON.stringify(payload),
+      query: { id: supplierId },
     });
-  };
 
-  const checkSupplierExists = (cardId: string, token?: string) => {
-    const authToken = token || getToken();
-    if (!authToken) throw new Error("No authentication token found");
-
-    const url = `${config.public.API_BASE_URL}/supplier/get_all?card_id=${cardId}`;
-
-    return useApi<ApiResponse<Supplier[]>>(url, {
+  const getSupplierById = (supplierId: number) =>
+    executeRequest<ISupplierDetail>("getSupplierById", "supplier/get", {
       method: "GET",
-      headers: {
-        Authorization: authToken,
-        "Content-Type": "application/json",
-      },
+      query: { id: supplierId },
     });
-  };
+
+  const getAllSuppliers = () =>
+    executeRequest<ISupplierSystem[]>("getAllSuppliers", "supplier/get_all", {
+      method: "GET",
+    });
+
+  const getAllMainSuppliers = (params?: ISupplierParams) =>
+    executeRequest<ISupplierMain[]>(
+      "getAllMainSuppliers",
+      "supplier/get_all_main",
+      {
+        method: "GET",
+        query: params,
+      },
+    );
+
+  const deleteSupplier = (supplierId: number) =>
+    executeRequest<{ success: boolean }>("deleteSupplier", "supplier/delete", {
+      method: "DELETE",
+      query: { id: supplierId },
+    });
 
   return {
     createSupplier,
-    fetchAllSuppliers,
-    fetchSupplier,
-    uploadSpecialtyBySupplier,
-    fetchSpecialtyBySupplier,
-    fetchAllMain,
-    createHospital,
-    updateHospital,
-    deleteHospital,
-    deleteSupplier,
-    deleteSpecialtyBySupplier,
     updateSupplier,
-    checkSupplierExists,
+    getSupplierById,
+    getAllSuppliers,
+    getAllMainSuppliers,
+    deleteSupplier,
   };
 };

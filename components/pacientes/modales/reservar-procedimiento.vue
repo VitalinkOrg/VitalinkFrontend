@@ -123,10 +123,8 @@
 </template>
 
 <script lang="ts" setup>
-import type { TablaBaseRow } from "~/components/medicos/tabla-detalles-cita.vue";
-import { useFormat } from "~/composables/useFormat";
-import type { ModalName } from "~/types";
-import type { Appointment } from "~/types/appointment";
+import type { TablaBaseRow } from "@/components/medicos/tabla-detalles-cita.vue";
+import { useFormat } from "@/composables/useFormat";
 
 const { formatCurrency } = useFormat();
 
@@ -136,7 +134,7 @@ const token = useCookie("token");
 const config = useRuntimeConfig();
 
 interface Props {
-  appointment: Appointment;
+  appointment: IAppointment;
   isOpen: boolean;
 }
 
@@ -246,7 +244,7 @@ const tableRows = computed((): TablaBaseRow[] => {
           props.appointment.appointment_credit?.approved_amount || 0,
           {
             decimalPlaces: 0,
-          }
+          },
         ),
       },
       {
@@ -254,7 +252,7 @@ const tableRows = computed((): TablaBaseRow[] => {
         header: "Saldo pendiente:",
         value: formatCurrency(calculateBalance(), { decimalPlaces: 0 }),
         isEndRow: true,
-      }
+      },
     );
   }
 
@@ -262,13 +260,13 @@ const tableRows = computed((): TablaBaseRow[] => {
     {
       key: "appointment-date",
       header: "Fecha de la cita:",
-      value: "", // El valor se mostrará mediante el slot
+      value: "",
     },
     {
       key: "appointment-time",
       header: "Hora de la cita:",
-      value: "", // El valor se mostrará mediante el slot
-    }
+      value: "",
+    },
   );
 
   return rows;
@@ -291,7 +289,7 @@ const selectDate = (date: string) => {
     const dropdownElement = document.getElementById("dateDropdown");
     if (dropdownElement) {
       const dropdownInstance = (window as any).bootstrap?.Dropdown.getInstance(
-        dropdownElement
+        dropdownElement,
       );
       if (dropdownInstance) {
         dropdownInstance.hide();
@@ -310,7 +308,7 @@ const selectTime = (time: string) => {
     const dropdownElement = document.getElementById("timeDropdown");
     if (dropdownElement) {
       const dropdownInstance = (window as any).bootstrap?.Dropdown.getInstance(
-        dropdownElement
+        dropdownElement,
       );
       if (dropdownInstance) {
         dropdownInstance.hide();
@@ -345,12 +343,12 @@ const handleConfirmReservation = async () => {
           proposed_date: selectedDate.value,
           proposed_time: selectedTime.value,
         },
-      }
+      },
     );
 
     if (error.value) {
       throw new Error(
-        error.value.data?.message || "Error al reservar el procedimiento"
+        error.value.data?.message || "Error al reservar el procedimiento",
       );
     }
 
@@ -374,7 +372,7 @@ watch(
       selectedDate.value = "";
       selectedTime.value = "";
     }
-  }
+  },
 );
 </script>
 

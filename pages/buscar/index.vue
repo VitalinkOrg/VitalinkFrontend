@@ -1,16 +1,47 @@
 <script lang="ts" setup>
 import { useSupplier, useUdc } from "@/composables/api";
-import type { Supplier } from "@/types";
+import { useLogger } from "@/composables/useLogger";
+import { useToast } from "@/composables/useToast";
 import type { LocationQueryValue } from "vue-router";
 
 definePageMeta({
   middleware: ["auth-pacientes"],
 });
 
-const route = useRoute();
-const router = useRouter();
-const { fetchAllMain } = useSupplier();
-const { fetchUdc } = useUdc();
+const SORT_OPTIONS = [
+  { value: "relevantes", label: "Más Relevantes" },
+  { value: "disponibilidad", label: "Disponibilidad" },
+  { value: "precio-min", label: "Precio más bajo" },
+  { value: "precio-max", label: "Precio más alto" },
+] as const;
+
+const DEFAULT_SORT = "disponibilidad";
+
+const AVAILABILITY_OPTIONS = [
+  { code: "all", name: "Todos" },
+  { code: "weeks", name: "Próximas semanas" },
+  { code: "months", name: "Próximos meses" },
+  { code: "days", name: "Próximos días" },
+] as const;
+
+const FILTER_KEYS: (keyof SearchFilters)[] = [
+  "filter_name",
+  "procedure_code",
+  "specialty_code",
+  "min_stars",
+  "min_price",
+  "max_price",
+  "province",
+];
+
+const SYNCED_ROUTE_KEYS: (keyof SearchFilters)[] = [
+  "filter_name",
+  "procedure_code",
+  "min_stars",
+  "min_price",
+  "max_price",
+  "province",
+];
 
 interface SearchFilters {
   filter_name: string;
@@ -19,54 +50,66 @@ interface SearchFilters {
   min_stars: string;
   min_price: string;
   max_price: string;
-  lugar: string;
+  province: string;
 }
 
-interface Specialty {
+interface CatalogItem {
   code: string;
   name: string;
 }
 
-interface Procedure {
-  code: string;
-  name: string;
+interface FilterChangePayload {
+  procedimiento?: string;
+  province?: string;
+  valoracion?: string;
+  min?: string;
+  max?: string;
 }
 
-const clinicas = ref<Supplier[]>([]);
-const specialties = ref<Specialty[]>([]);
-const procedures = ref<Procedure[]>([]);
+const route = useRoute();
+const router = useRouter();
+const logger = useLogger("SearchPage");
+const toast = useToast();
+const { getAllMainSuppliers } = useSupplier();
+const { getAllUdcs } = useUdc();
+
+const clinicas = ref<ISupplierMain[]>([]);
+const specialties = ref<IUdc[]>([]);
+const procedures = ref<CatalogItem[]>([]);
 
 const isLoading = ref(false);
 const isSpecialtiesLoading = ref(false);
 const isMapVisible = ref(false);
+const selectedSort = ref(DEFAULT_SORT);
+
+const hasSearchError = ref(false);
+const hasSpecialtiesError = ref(false);
 
 const filters = reactive<SearchFilters>({
-  filter_name: getQueryParam("filter_name"),
-  specialty_code: getQueryParam("specialty_code"),
-  procedure_code: getQueryParam("procedure_code"),
-  min_stars: getQueryParam("min_stars"),
-  min_price: getQueryParam("min_price"),
-  max_price: getQueryParam("max_price"),
-  lugar: getQueryParam("lugar"),
+  filter_name: extractQueryParam("filter_name"),
+  specialty_code: extractQueryParam("specialty_code"),
+  procedure_code: extractQueryParam("procedure_code"),
+  min_stars: extractQueryParam("min_stars"),
+  min_price: extractQueryParam("min_price"),
+  max_price: extractQueryParam("max_price"),
+  province: extractQueryParam("province"),
 });
 
-const currentProcedureName = computed(() => {
+const currentProcedureName = computed((): string | null => {
   if (!filters.procedure_code || !procedures.value.length) return null;
-  const procedure = procedures.value.find(
-    (p) => p.code === filters.procedure_code
-  );
-  return procedure?.name ?? null;
+  const found = procedures.value.find((p) => p.code === filters.procedure_code);
+  return found?.name ?? null;
 });
 
-const currentSpecialtyName = computed(() => {
+const currentSpecialtyName = computed((): string | null => {
   if (!filters.specialty_code || !specialties.value.length) return null;
-  const specialty = specialties.value.find(
-    (s) => s.code === filters.specialty_code
+  const found = specialties.value.find(
+    (s) => s.code === filters.specialty_code,
   );
-  return specialty?.name ?? null;
+  return found?.name ?? null;
 });
 
-const searchDisplayText = computed(() => {
+const searchDisplayText = computed((): string => {
   return (
     currentProcedureName.value ||
     currentSpecialtyName.value ||
@@ -74,162 +117,189 @@ const searchDisplayText = computed(() => {
   );
 });
 
+const resultsCountText = computed((): string => {
+  const count = clinicas.value.length;
+  return count === 1 ? "1 resultado" : `${count} resultados`;
+});
+
 const filtersData = computed(() => ({
   procedimiento: filters.procedure_code,
-  lugar: filters.lugar,
+  province: filters.province,
   valoracion: filters.min_stars ? Number(filters.min_stars) : undefined,
   min: filters.min_price ? Number(filters.min_price) : undefined,
   max: filters.max_price ? Number(filters.max_price) : undefined,
-  disponibilidad: [
-    { code: "all", name: "Todos" },
-    { code: "weeks", name: "Próximas semanas" },
-    { code: "months", name: "Próximos meses" },
-    { code: "days", name: "Próximos días" },
-  ],
+  disponibilidad: [...AVAILABILITY_OPTIONS],
   procedures: procedures.value,
 }));
 
-function getQueryParam(key: string): string {
+const hasResults = computed((): boolean => clinicas.value.length > 0);
+
+function extractQueryParam(key: string): string {
   const value = route.query[key];
-  return (Array.isArray(value) ? value[0] : value) || "";
+  return (Array.isArray(value) ? value[0] : value) ?? "";
 }
 
 function buildSearchParams(): Record<string, string> {
-  const params: Record<string, string> = {};
-
-  if (filters.filter_name) params.filter_name = filters.filter_name;
-  if (filters.procedure_code) params.procedure_code = filters.procedure_code;
-  if (filters.specialty_code) params.specialty_code = filters.specialty_code;
-  if (filters.min_stars) params.min_stars = filters.min_stars;
-  if (filters.min_price) params.min_price = filters.min_price;
-  if (filters.max_price) params.max_price = filters.max_price;
-  if (filters.lugar) params.lugar = filters.lugar;
-
-  console.log("🔍 Parámetros construidos:", params);
-
-  return params;
+  return FILTER_KEYS.reduce<Record<string, string>>((params, key) => {
+    const value = filters[key];
+    if (value) params[key] = value;
+    return params;
+  }, {});
 }
 
-function updateRouteQuery(newFilters: Partial<SearchFilters>) {
-  const combinedQuery = { ...route.query, ...newFilters };
+function mapToCatalogItems(
+  items: { code: string; name: string }[],
+): CatalogItem[] {
+  return items.map(({ code, name }) => ({ code, name }));
+}
 
-  const query = Object.entries(combinedQuery).reduce(
-    (acc, [key, value]) => {
-      if (value) {
-        acc[key] = value;
-      }
-      return acc;
-    },
-    {} as Record<string, LocationQueryValue | LocationQueryValue[]>
-  );
+function updateRouteQuery(updates: Partial<SearchFilters>): void {
+  const merged = { ...route.query, ...updates };
+
+  const query = Object.entries(merged).reduce<
+    Record<string, LocationQueryValue | LocationQueryValue[]>
+  >((acc, [key, value]) => {
+    if (value) acc[key] = value;
+    return acc;
+  }, {});
 
   router.push({ path: "/buscar", query });
 }
 
-async function loadSpecialties() {
+function syncFiltersFromRoute(): void {
+  SYNCED_ROUTE_KEYS.forEach((key) => {
+    filters[key] = extractQueryParam(key);
+  });
+}
+
+async function fetchSpecialties(): Promise<void> {
   isSpecialtiesLoading.value = true;
+  hasSpecialtiesError.value = false;
 
   try {
-    const { response, request } = fetchUdc("MEDICAL_SPECIALTY");
-    await request();
+    const { data, error } = await getAllUdcs({
+      type: "MEDICAL_SPECIALTY",
+    });
 
-    if (response.value?.data) {
-      specialties.value = response.value.data.map((item) => ({
-        code: item.code,
-        name: item.name,
-      }));
+    if (error && !data) {
+      logger.error("Error al cargar las especialidades", { info: error.info });
+      toast.error(error.info);
+      throw new Error(error.info || "Error al cargar las especialidades");
     }
-  } catch (error) {
-    console.error("Error loading specialties:", error);
+
+    specialties.value = data ?? [];
+  } catch (err) {
+    hasSpecialtiesError.value = true;
+    logger.error("Failed to load specialties", { error: String(err) });
+    toast.error("No se pudieron cargar las especialidades. Intenta de nuevo.");
   } finally {
     isSpecialtiesLoading.value = false;
   }
 }
 
-async function loadProcedures(specialtyCode: string) {
+async function fetchProcedures(specialtyCode: string): Promise<void> {
   if (!specialtyCode) {
     procedures.value = [];
     return;
   }
 
   try {
-    const { response, request } = fetchUdc("MEDICAL_PROCEDURE", {
-      father_code: specialtyCode,
+    const { data, error } = await getAllUdcs({
+      type: "MEDICAL_PROCEDURE",
+      code: specialtyCode,
     });
-    await request();
 
-    if (response.value?.data) {
-      procedures.value = response.value.data.map((item) => ({
-        code: item.code,
-        name: item.name,
-      }));
-    } else {
-      procedures.value = [];
+    if (error && !data) {
+      logger.error("Error al cargar los procedimientos", { info: error.info });
+      toast.error(error.info);
+      throw new Error(error.info || "Error al cargar los procedimientos");
     }
-  } catch (error) {
-    console.error("Error loading procedures:", error);
+
+    procedures.value = data ? mapToCatalogItems(data) : [];
+  } catch (err) {
     procedures.value = [];
+    logger.error("Failed to load procedures", {
+      specialtyCode,
+      error: String(err),
+    });
   }
 }
 
-async function searchSuppliers() {
+async function fetchSuppliers(): Promise<void> {
   isLoading.value = true;
+  hasSearchError.value = false;
   clinicas.value = [];
 
   try {
     const params = buildSearchParams();
+    const { data, error } = await getAllMainSuppliers(params);
 
-    const { response, request } = fetchAllMain(params);
-
-    await request();
-
-    if (response.value?.data) {
-      clinicas.value = response.value.data;
-      console.log("✅ Búsqueda exitosa:", clinicas.value.length, "resultados");
-      console.log("📋 Parámetros de búsqueda:", params);
+    if (error && !data) {
+      logger.error("Error al cargar los médicos y clínicas", {
+        info: error.info,
+      });
+      toast.error(error.info);
+      throw new Error(error.info || "Error al cargar los médicos y clínicas");
     }
-  } catch (error) {
-    console.error("❌ Error en búsqueda:", error);
+
+    clinicas.value = data ?? [];
+    logger.info("Search completed", { count: clinicas.value.length });
+  } catch (err) {
+    hasSearchError.value = true;
+    logger.error("Search failed", { error: String(err) });
+    toast.error("Error al buscar clínicas. Intenta de nuevo.");
   } finally {
     isLoading.value = false;
   }
 }
 
-function onFiltersChange(newFilters: any) {
-  const queryUpdates: Partial<SearchFilters> = {};
+function handleRetrySearch(): void {
+  fetchSuppliers();
+}
 
-  if (newFilters.procedimiento !== undefined) {
-    queryUpdates.procedure_code = newFilters.procedimiento;
+function handleRetrySpecialties(): void {
+  fetchSpecialties();
+}
+
+function handleFiltersChange(payload: FilterChangePayload): void {
+  const updates: Partial<SearchFilters> = {};
+
+  if (payload.procedimiento !== undefined) {
+    updates.procedure_code = payload.procedimiento;
   }
-  if (newFilters.lugar !== undefined) {
-    queryUpdates.lugar = newFilters.lugar;
+  if (payload.province !== undefined) {
+    updates.province = payload.province;
   }
-  if (newFilters.valoracion !== undefined) {
-    queryUpdates.min_stars = newFilters.valoracion;
+  if (payload.valoracion !== undefined) {
+    updates.min_stars = payload.valoracion;
   }
-  if (newFilters.min !== undefined) {
-    queryUpdates.min_price = newFilters.min;
+  if (payload.min !== undefined) {
+    updates.min_price = payload.min;
   }
-  if (newFilters.max !== undefined) {
-    queryUpdates.max_price = newFilters.max;
+  if (payload.max !== undefined) {
+    updates.max_price = payload.max;
   }
 
-  updateRouteQuery(queryUpdates);
+  updateRouteQuery(updates);
+}
+
+function handleToggleMap(): void {
+  isMapVisible.value = !isMapVisible.value;
 }
 
 watch(
   () => route.query.specialty_code,
   async (newVal) => {
-    filters.specialty_code = getQueryParam("specialty_code");
+    filters.specialty_code = extractQueryParam("specialty_code");
 
     if (newVal) {
-      await loadProcedures(newVal as string);
+      await fetchProcedures(newVal as string);
     } else {
       procedures.value = [];
     }
 
-    searchSuppliers();
-  }
+    fetchSuppliers();
+  },
 );
 
 watch(
@@ -241,39 +311,55 @@ watch(
     route.query.lugar,
   ],
   () => {
-    filters.filter_name = getQueryParam("filter_name");
-    filters.procedure_code = getQueryParam("procedure_code");
-    filters.min_stars = getQueryParam("min_stars");
-    filters.min_price = getQueryParam("min_price");
-    filters.max_price = getQueryParam("max_price");
-    filters.lugar = getQueryParam("lugar");
-
-    searchSuppliers();
-  }
+    syncFiltersFromRoute();
+    fetchSuppliers();
+  },
 );
 
 onMounted(async () => {
-  await loadSpecialties();
+  await fetchSpecialties();
 
   if (filters.specialty_code) {
-    await loadProcedures(filters.specialty_code);
+    await fetchProcedures(filters.specialty_code);
   }
 
-  searchSuppliers();
+  fetchSuppliers();
 });
 </script>
 
 <template>
-  <NuxtLayout name="web">
+  <NuxtLayout name="pacientes-dashboard">
     <main class="search-page">
-      <section class="search-page__hero">
+      <section
+        class="search-page__hero"
+        aria-label="Buscador de servicios médicos"
+      >
         <div class="search-page__container">
           <div class="search-page__hero-content">
             <div class="search-page__hero-inner">
               <h1 class="search-page__title">
                 ¿Qué servicio médico estás buscando?
               </h1>
+
+              <div
+                v-if="hasSpecialtiesError"
+                class="search-page__error"
+                role="alert"
+              >
+                <p class="search-page__error-text">
+                  No se pudieron cargar las especialidades.
+                </p>
+                <button
+                  class="search-page__error-retry"
+                  type="button"
+                  @click="handleRetrySpecialties"
+                >
+                  Reintentar
+                </button>
+              </div>
+
               <WebsiteSearchBar
+                v-else
                 :specialties="specialties"
                 :loading="isSpecialtiesLoading"
               />
@@ -282,81 +368,136 @@ onMounted(async () => {
         </div>
       </section>
 
-      <WebsitePerfilDoctorPantallaCarga v-if="isLoading" />
+      <WebsitePerfilDoctorPantallaCarga
+        v-if="isLoading"
+        aria-label="Cargando resultados"
+      />
 
       <div v-else class="search-page__content">
-        <section class="search-results">
-          <div class="search-results__header">
+        <section class="search-results" aria-label="Resultados de búsqueda">
+          <header class="search-results__header">
             <div class="search-results__info">
               <div class="search-results__info-content">
-                <span class="search-results__title">
+                <h2 class="search-results__title">
                   {{ searchDisplayText }}
-                </span>
-                <span class="search-results__count">
-                  {{ clinicas.length }} resultados
+                </h2>
+                <span
+                  class="search-results__count"
+                  aria-live="polite"
+                  aria-atomic="true"
+                >
+                  {{ resultsCountText }}
                 </span>
               </div>
             </div>
 
-            <div class="search-results__controls">
+            <div
+              class="search-results__controls"
+              role="toolbar"
+              aria-label="Controles de búsqueda"
+            >
               <WebsiteMasFiltrosModal
                 :filters="filtersData"
-                @filters-changed="onFiltersChange"
+                @filters-changed="handleFiltersChange"
               />
 
               <div class="search-results__sort">
-                <span class="search-results__sort-label">Ordenar por:</span>
-                <select
-                  name="medicos-sort"
-                  id="medicos-sort"
-                  class="search-results__sort-select"
+                <label
+                  class="search-results__sort-label"
+                  for="search-sort-select"
                 >
-                  <option value="relevantes">Más Relevantes</option>
-                  <option value="disponibilidad" selected>
-                    Disponibilidad
+                  Ordenar por:
+                </label>
+                <select
+                  id="search-sort-select"
+                  v-model="selectedSort"
+                  class="search-results__sort-select"
+                  aria-label="Ordenar resultados"
+                >
+                  <option
+                    v-for="option in SORT_OPTIONS"
+                    :key="option.value"
+                    :value="option.value"
+                  >
+                    {{ option.label }}
                   </option>
-                  <option value="precio-min">Precio más bajo</option>
-                  <option value="precio-max">Precio más alto</option>
                 </select>
               </div>
 
               <div class="search-results__map-toggle">
-                <input
-                  class="search-results__map-input"
-                  type="checkbox"
-                  role="switch"
-                  id="flexSwitchCheckDefault"
-                  v-model="isMapVisible"
-                />
                 <label
-                  class="search-results__map-label"
-                  for="flexSwitchCheckDefault"
+                  class="search-results__map-toggle-wrapper"
+                  for="map-visibility-toggle"
                 >
-                  Mostrar mapa
+                  <input
+                    id="map-visibility-toggle"
+                    class="search-results__map-input"
+                    type="checkbox"
+                    role="switch"
+                    :aria-checked="isMapVisible"
+                    aria-label="Mostrar mapa"
+                    :checked="isMapVisible"
+                    @change="handleToggleMap"
+                  />
+                  <span class="search-results__map-label"> Mostrar mapa </span>
                 </label>
               </div>
             </div>
+          </header>
+
+          <div v-if="hasSearchError" class="search-results__error" role="alert">
+            <p class="search-results__error-text">
+              Ocurrió un error al cargar los resultados.
+            </p>
+            <button
+              class="search-results__error-retry"
+              type="button"
+              @click="handleRetrySearch"
+            >
+              Reintentar búsqueda
+            </button>
           </div>
 
-          <div class="search-results__body">
+          <div
+            v-else-if="!hasResults"
+            class="search-results__empty"
+            role="status"
+          >
+            <p class="search-results__empty-text">
+              No se encontraron resultados para tu búsqueda.
+            </p>
+            <p class="search-results__empty-hint">
+              Intenta con otros filtros o una especialidad diferente.
+            </p>
+          </div>
+
+          <div v-else class="search-results__body">
             <div
               class="search-results__main"
               :class="{ 'search-results__main--with-map': isMapVisible }"
             >
-              <div class="search-results__grid">
-                <div
-                  class="search-results__item"
+              <ul
+                class="search-results__grid"
+                role="list"
+                aria-label="Lista de clínicas"
+              >
+                <li
                   v-for="clinica in clinicas"
                   :key="clinica.id"
+                  class="search-results__item"
                 >
                   <WebsiteClinicasListItem :clinica="clinica" />
-                </div>
-              </div>
+                </li>
+              </ul>
             </div>
 
-            <div class="search-results__map" v-show="isMapVisible">
+            <aside
+              v-show="isMapVisible"
+              class="search-results__map"
+              aria-label="Mapa de ubicaciones"
+            >
               <AtomsMapaInteractivo />
-            </div>
+            </aside>
           </div>
         </section>
       </div>
@@ -377,52 +518,72 @@ onMounted(async () => {
 
   &__content {
     max-width: 1310px;
-    padding: 24px 0px;
+    padding: $spacing-lg 0;
     margin: 0 auto;
     background-color: #f8f8f8;
   }
-}
 
-.search-page__hero {
-  background-color: rgba($color-primary, 0.03);
-  margin-bottom: 1.5rem;
+  &__hero {
+    background-color: rgba($color-primary, 0.03);
+    margin-bottom: 1.5rem;
+  }
 
-  .search-page__container {
+  &__hero .search-page__container {
     padding-top: 3rem;
     padding-bottom: 1.5rem;
   }
 
-  &-content {
+  &__hero-content {
     display: flex;
     justify-content: center;
   }
 
-  &-inner {
+  &__hero-inner {
     width: 100%;
   }
-}
 
-.search-page__title {
-  @include label-base;
-  font-weight: 500;
-  font-size: 16px;
-  line-height: 1.2;
-  letter-spacing: 0;
-  text-align: center;
-  color: #19213d;
-  margin-bottom: 20px;
+  &__title {
+    @include label-base;
+    font-weight: 500;
+    font-size: 16px;
+    line-height: 1.2;
+    letter-spacing: 0;
+    text-align: center;
+    color: $color-foreground;
+    margin-bottom: 20px;
 
-  @include respond-to(sm) {
-    font-size: 18px;
+    @include respond-to(sm) {
+      font-size: 18px;
+    }
+
+    @include respond-to(md) {
+      font-size: 20px;
+    }
+
+    @include respond-to(lg) {
+      font-size: 25.21px;
+      line-height: 21px;
+    }
   }
 
-  @include respond-to(md) {
-    font-size: 20px;
+  &__error {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: $spacing-sm;
+    padding: $spacing-lg;
+    text-align: center;
   }
 
-  @include respond-to(lg) {
-    font-size: 25.21px;
-    line-height: 21px;
+  &__error-text {
+    @include text-base;
+    color: $color-error;
+  }
+
+  &__error-retry {
+    @include outline-button;
+    padding: $spacing-sm $spacing-md;
+    font-size: 14px;
   }
 }
 
@@ -442,12 +603,10 @@ onMounted(async () => {
     }
   }
 
-  &__info {
-    &-content {
-      display: flex;
-      flex-direction: column;
-      gap: 0.5rem;
-    }
+  &__info-content {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
   }
 
   &__title {
@@ -455,6 +614,7 @@ onMounted(async () => {
     font-size: 1.25rem;
     color: $color-foreground;
     font-family: $font-family-main;
+    margin: 0;
   }
 
   &__count {
@@ -482,31 +642,33 @@ onMounted(async () => {
     border-radius: 105.02px;
     background-color: #ffffff;
     border: 1.05px solid #e5e7eb;
+  }
 
-    &-label {
-      @include label-base;
-      white-space: nowrap;
-      font-weight: 400;
-      font-size: 14px;
-      line-height: 21px;
-      color: #6d758f;
-    }
+  &__sort-label {
+    @include label-base;
+    white-space: nowrap;
+    font-weight: 400;
+    font-size: 14px;
+    line-height: 21px;
+    color: #6d758f;
+  }
 
-    &-select {
-      @include label-base;
-      border: none;
-      background: transparent;
-      outline: none;
-      padding: 0.25rem 0.5rem;
-      cursor: pointer;
-      color: #19213d;
-      font-weight: 400;
-      font-size: 14px;
-      line-height: 21px;
+  &__sort-select {
+    @include label-base;
+    border: none;
+    background: transparent;
+    outline: none;
+    padding: 0.25rem 0.5rem;
+    cursor: pointer;
+    color: $color-foreground;
+    font-weight: 400;
+    font-size: 14px;
+    line-height: 21px;
 
-      &:focus {
-        outline: none;
-      }
+    &:focus-visible {
+      outline: 2px solid $color-primary;
+      outline-offset: 2px;
+      border-radius: 4px;
     }
   }
 
@@ -519,10 +681,17 @@ onMounted(async () => {
     border: 1.05px solid #e5e7eb;
   }
 
+  &__map-toggle-wrapper {
+    display: flex;
+    align-items: center;
+    gap: 8.4px;
+    cursor: pointer;
+    margin: 0;
+  }
+
   &__map-input {
     margin: 0;
     cursor: pointer;
-
     appearance: none;
     width: 36px;
     height: 20px;
@@ -530,6 +699,7 @@ onMounted(async () => {
     border-radius: 0.75rem;
     position: relative;
     transition: background-color 0.3s;
+    flex-shrink: 0;
 
     &:checked {
       background-color: $color-primary;
@@ -545,12 +715,26 @@ onMounted(async () => {
       top: 0.6px;
       left: 0.8px;
       transition: transform 0.3s;
-      box-shadow: 0px 1px 2px 0px #1018280f;
-      box-shadow: 0px 1px 3px 0px #1018281a;
+      box-shadow:
+        0px 1px 2px 0px rgba(16, 24, 40, 0.06),
+        0px 1px 3px 0px rgba(16, 24, 40, 0.1);
     }
 
     &:checked::before {
       transform: translateX(16px);
+    }
+
+    &:focus-visible {
+      outline: 2px solid $color-primary;
+      outline-offset: 2px;
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      transition: none;
+
+      &::before {
+        transition: none;
+      }
     }
   }
 
@@ -561,47 +745,92 @@ onMounted(async () => {
     color: $color-foreground;
     font-family: $font-family-main;
   }
-}
 
-.search-results__body {
-  display: flex;
-  gap: 1.5rem;
-}
-
-.search-results__main {
-  flex: 1;
-
-  &--with-map {
-    flex: 0 0 66.666667%;
-  }
-}
-
-.search-results__grid {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 1.5rem;
-
-  .search-results__main--with-map & {
-    grid-template-columns: repeat(2, 1fr);
+  &__error {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: $spacing-md;
+    padding: $spacing-xl $spacing-md;
+    text-align: center;
   }
 
-  @include respond-to-max(lg) {
-    grid-template-columns: repeat(2, 1fr);
+  &__error-text {
+    @include text-base;
+    color: $color-error;
+    font-size: 16px;
+  }
+
+  &__error-retry {
+    @include primary-button;
+    padding: $spacing-sm $spacing-lg;
+    font-size: 14px;
+  }
+
+  &__empty {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: $spacing-sm;
+    padding: $spacing-xl $spacing-md;
+    text-align: center;
+  }
+
+  &__empty-text {
+    @include text-base;
+    font-size: 16px;
+    font-weight: 500;
+  }
+
+  &__empty-hint {
+    @include label-base;
+    font-size: 14px;
+    color: $color-text-muted;
+  }
+
+  &__body {
+    display: flex;
+    gap: 1.5rem;
+  }
+
+  &__main {
+    flex: 1;
+
+    &--with-map {
+      flex: 0 0 66.666667%;
+    }
+  }
+
+  &__grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1.5rem;
+    list-style: none;
+    margin: 0;
+    padding: 0;
 
     .search-results__main--with-map & {
+      grid-template-columns: repeat(2, 1fr);
+    }
+
+    @include respond-to-max(lg) {
+      grid-template-columns: repeat(2, 1fr);
+
+      .search-results__main--with-map & {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    @include respond-to-max(md) {
       grid-template-columns: 1fr;
     }
   }
 
-  @include respond-to-max(md) {
-    grid-template-columns: 1fr;
+  &__map {
+    flex: 0 0 33.333333%;
+    min-height: 400px;
+    padding: 1.25rem 0 0 0;
   }
-}
-
-.search-results__map {
-  flex: 0 0 33.333333%;
-  min-height: 400px;
-  padding: 1.25rem 0 0 0;
 }
 
 @include respond-to-max(md) {
@@ -613,10 +842,8 @@ onMounted(async () => {
     flex-direction: column;
   }
 
-  .search-results__main {
-    &--with-map {
-      flex: 1;
-    }
+  .search-results__main--with-map {
+    flex: 1;
   }
 
   .search-results__map {

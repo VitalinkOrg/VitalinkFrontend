@@ -4,22 +4,42 @@ definePageMeta({
 });
 
 import { useSupplier, useUdc } from "@/composables/api";
-import type { IUdc, Supplier } from "@/types";
+import { useLogger } from "@/composables/useLogger";
+import { useToast } from "@/composables/useToast";
 import { useRoute, useRouter } from "vue-router";
 
 const route = useRoute();
 const router = useRouter();
-const { fetchUdc } = useUdc();
-const { fetchAllMain } = useSupplier();
+const logger = useLogger("PacientesInicio");
+const toast = useToast();
+
+const { getAllUdcs } = useUdc();
+const { getAllMainSuppliers } = useSupplier();
 
 const { getUserInfo } = useUserInfo();
 const userInfo = getUserInfo?.() ?? null;
 
 const safeUser = computed(() => userInfo?.value ?? userInfo ?? {});
 
-const openPackagesModal = ref(false);
+const ITEMS_PER_SECTION = 6;
+const SKELETON_COUNT = 3;
 
-const supplier = ref<Supplier | null>(null);
+const GENDER_MAP: Record<string, string> = {
+  male: "Bienvenido",
+  female: "Bienvenida",
+};
+const GENDER_FALLBACK = "Bienvenido/a";
+
+const openPackagesModal = ref(false);
+const supplier = ref<ISupplierMain | null>(null);
+
+const isLoadingSpecialties = ref(false);
+const isLoadingHistory = ref(false);
+const specialtiesError = ref<string | null>(null);
+const historyError = ref<string | null>(null);
+
+const specialties = ref<IUdc[]>([]);
+const history = ref<ISupplierMain[]>([]);
 
 const getQueryParam = (param: string): string => {
   const value = route.query[param];
@@ -30,113 +50,292 @@ const getQueryParam = (param: string): string => {
 const procedureCode = computed(() => getQueryParam("procedure_code"));
 const specialtyCode = computed(() => getQueryParam("specialty_code"));
 
-const specialties = ref<IUdc[]>([]);
-const history = ref<any[]>([]);
+const recommended = computed(() => history.value.slice(0, ITEMS_PER_SECTION));
 
-const handleGetSpecialities = async () => {
-  const api = fetchUdc("MEDICAL_SPECIALTY");
-  await api.request();
-
-  const response = api.response.value;
-
-  if (response?.data) {
-    specialties.value = response.data;
-  }
-};
-
-const handleGetHistory = async () => {
-  const api = fetchAllMain();
-  await api.request();
-
-  const response = api.response.value;
-
-  if (response?.data) {
-    history.value = response.data;
-  }
-};
+const popular = computed(() =>
+  history.value.slice(ITEMS_PER_SECTION, ITEMS_PER_SECTION * 2),
+);
 
 const genderWelcome = computed(() => {
   const gender = safeUser.value.gender;
-  if (!gender) return "Bienvenido/a";
-  if (gender.toLowerCase() === "male") return "Bienvenido";
-  if (gender.toLowerCase() === "female") return "Bienvenida";
-  return "Bienvenido/a";
+  if (!gender) return GENDER_FALLBACK;
+  return GENDER_MAP[gender.toLowerCase()] ?? GENDER_FALLBACK;
 });
 
-const selectDoctor = async ({
-  selectedSupplier,
-}: {
-  selectedSupplier: Supplier;
-}) => {
-  openPackagesModal.value = true;
+const userName = computed(() => safeUser.value.name ?? "");
 
-  supplier.value = selectedSupplier;
+const handleFetchSpecialties = async (): Promise<void> => {
+  isLoadingSpecialties.value = true;
+  specialtiesError.value = null;
+
+  try {
+    const { data, error } = await getAllUdcs({ type: "MEDICAL_SPECIALTY" });
+
+    if (error && !data) {
+      logger.error("No se pudieron cargar las especialidades", {
+        info: error.info,
+      });
+      toast.error(error.info);
+      throw new Error(error.info || "Error al cargar las especialidades");
+    }
+
+    specialties.value = data ?? [];
+  } catch (err) {
+    specialtiesError.value = "Error inesperado al cargar especialidades.";
+    logger.error("Unexpected error fetching specialties", {
+      error: String(err),
+    });
+  } finally {
+    isLoadingSpecialties.value = false;
+  }
 };
 
-const closePackagesModal = () => {
+const handleFetchHistory = async (): Promise<void> => {
+  isLoadingHistory.value = true;
+  historyError.value = null;
+
+  try {
+    const { data, error } = await getAllMainSuppliers();
+
+    if (error && !data) {
+      logger.error("No se pudieron cargar los médicos y clínicas", {
+        info: error.info,
+      });
+      toast.error(error.info);
+      throw new Error(
+        error.info || "No se pudieron cargar los médicos y clínicas",
+      );
+    }
+
+    history.value = data ?? [];
+  } catch (err) {
+    historyError.value = "Error inesperado al cargar médicos.";
+    logger.error("Unexpected error fetching suppliers", {
+      error: String(err),
+    });
+  } finally {
+    isLoadingHistory.value = false;
+  }
+};
+
+const handleRetrySpecialties = async (): Promise<void> => {
+  toast.info("Reintentando carga de especialidades…");
+  await handleFetchSpecialties();
+};
+
+const handleRetryHistory = async (): Promise<void> => {
+  toast.info("Reintentando carga de médicos…");
+  await handleFetchHistory();
+};
+
+const handleSelectDoctor = ({
+  selectedSupplier,
+}: {
+  selectedSupplier: ISupplierMain;
+}) => {
+  if (!selectedSupplier?.id) {
+    logger.warn("Attempted to select doctor without valid ID");
+    toast.warning("No se pudo seleccionar el médico.");
+    return;
+  }
+
+  supplier.value = selectedSupplier;
+  openPackagesModal.value = true;
+};
+
+const handleClosePackagesModal = (): void => {
   openPackagesModal.value = false;
   supplier.value = null;
   router.replace({ query: {} });
 };
 
 onMounted(async () => {
-  await handleGetSpecialities();
-  await handleGetHistory();
+  await Promise.all([handleFetchSpecialties(), handleFetchHistory()]);
 });
 </script>
 
 <template>
   <NuxtLayout name="pacientes-dashboard">
-    <div>
-      <header class="hero">
+    <div class="inicio-page">
+      <header class="hero" role="banner">
         <div class="hero__container">
           <h1 class="hero__title">
             <span class="hero__greeting">
-              {{ genderWelcome }} {{ safeUser.name }}
+              {{ genderWelcome }} {{ userName }}
             </span>
             <span class="hero__question">
               ¿Qué servicio médico estás buscando?
             </span>
           </h1>
-          <WebsiteSearchBar :specialties="specialties" />
+
+          <div
+            v-if="specialtiesError"
+            class="hero__alert"
+            role="alert"
+            aria-live="assertive"
+          >
+            <p class="hero__alert-message">{{ specialtiesError }}</p>
+            <button
+              class="hero__alert-retry"
+              type="button"
+              @click="handleRetrySpecialties"
+            >
+              Reintentar
+            </button>
+          </div>
+
+          <WebsiteSearchBar
+            v-else
+            :specialties="specialties"
+            :loading="isLoadingSpecialties"
+            aria-label="Buscar especialidad médica"
+          />
         </div>
       </header>
 
-      <main class="content">
+      <main class="content" id="main-content">
         <div class="content__container">
-          <section class="section">
-            <div class="section__content">
-              <div class="section__header">
-                <h2 class="section__title">Recomendados</h2>
-              </div>
-              <div class="cards-grid">
-                <WebsiteTarjetaMedico
-                  v-for="medico in history"
-                  :key="medico.id"
-                  :medico="medico"
-                  @toggle-favorite="() => {}"
-                  @show-packages="selectDoctor"
-                />
-              </div>
-            </div>
-          </section>
+          <div
+            v-if="historyError"
+            class="error-banner"
+            role="alert"
+            aria-live="assertive"
+          >
+            <p class="error-banner__message">{{ historyError }}</p>
+            <button
+              class="error-banner__retry"
+              type="button"
+              @click="handleRetryHistory"
+            >
+              Reintentar carga
+            </button>
+          </div>
 
-          <section class="section">
-            <div class="section__content">
-              <div class="section__header">
-                <h2 class="section__title">Más populares</h2>
+          <template v-else>
+            <section class="section" aria-labelledby="recommended-heading">
+              <div class="section__content">
+                <div class="section__header">
+                  <h2 id="recommended-heading" class="section__title">
+                    Recomendados
+                  </h2>
+                </div>
+
+                <div
+                  v-if="isLoadingHistory"
+                  class="section__loading"
+                  role="status"
+                  aria-live="polite"
+                >
+                  <span class="sr-only">Cargando médicos recomendados…</span>
+                  <div class="skeleton-grid" aria-hidden="true">
+                    <div
+                      v-for="n in SKELETON_COUNT"
+                      :key="`skeleton-rec-${n}`"
+                      class="skeleton-card"
+                    />
+                  </div>
+                </div>
+
+                <div
+                  v-else-if="recommended.length === 0"
+                  class="empty-state"
+                  role="status"
+                  aria-live="polite"
+                >
+                  <div class="empty-state__content">
+                    <p class="empty-state__title">
+                      No hay recomendados disponibles
+                    </p>
+                    <p class="empty-state__description">
+                      Intenta buscar por especialidad para encontrar médicos o
+                      clínicas.
+                    </p>
+                  </div>
+                </div>
+
+                <ul
+                  v-else
+                  class="cards-grid"
+                  role="list"
+                  aria-label="Lista de médicos recomendados"
+                >
+                  <li
+                    v-for="medico in recommended"
+                    :key="`rec-${medico.id}`"
+                    class="cards-grid__item"
+                  >
+                    <WebsiteTarjetaMedico
+                      :medico="medico"
+                      @toggle-favorite="() => {}"
+                      @show-packages="handleSelectDoctor"
+                    />
+                  </li>
+                </ul>
               </div>
-              <div class="cards-grid">
-                <WebsiteTarjetaMedico
-                  v-for="medico in history"
-                  :key="medico.id"
-                  :medico="medico"
-                  @toggle-favorite="() => {}"
-                  @show-packages="selectDoctor"
-                />
+            </section>
+
+            <section class="section" aria-labelledby="popular-heading">
+              <div class="section__content">
+                <div class="section__header">
+                  <h2 id="popular-heading" class="section__title">
+                    Más populares
+                  </h2>
+                </div>
+
+                <div
+                  v-if="isLoadingHistory"
+                  class="section__loading"
+                  role="status"
+                  aria-live="polite"
+                >
+                  <span class="sr-only">Cargando médicos populares…</span>
+                  <div class="skeleton-grid" aria-hidden="true">
+                    <div
+                      v-for="n in SKELETON_COUNT"
+                      :key="`skeleton-pop-${n}`"
+                      class="skeleton-card"
+                    />
+                  </div>
+                </div>
+
+                <div
+                  v-else-if="popular.length === 0"
+                  class="empty-state"
+                  role="status"
+                  aria-live="polite"
+                >
+                  <div class="empty-state__content">
+                    <p class="empty-state__title">
+                      No hay populares disponibles
+                    </p>
+                    <p class="empty-state__description">
+                      Intenta buscar por especialidad para encontrar médicos o
+                      clínicas.
+                    </p>
+                  </div>
+                </div>
+
+                <ul
+                  v-else
+                  class="cards-grid"
+                  role="list"
+                  aria-label="Lista de médicos más populares"
+                >
+                  <li
+                    v-for="medico in popular"
+                    :key="`pop-${medico.id}`"
+                    class="cards-grid__item"
+                  >
+                    <WebsiteTarjetaMedico
+                      :medico="medico"
+                      @toggle-favorite="() => {}"
+                      @show-packages="handleSelectDoctor"
+                    />
+                  </li>
+                </ul>
               </div>
-            </div>
-          </section>
+            </section>
+          </template>
         </div>
       </main>
 
@@ -147,19 +346,23 @@ onMounted(async () => {
         :user-info="userInfo"
         :procedure-code="procedureCode"
         :specialty-code="specialtyCode"
-        @close-modal="closePackagesModal"
+        @close-modal="handleClosePackagesModal"
       />
     </div>
   </NuxtLayout>
 </template>
 
 <style lang="scss" scoped>
+.sr-only {
+  @include visually-hidden;
+}
+
 .hero {
   background-color: #ebecf7;
   padding: 20px 15px;
 
   @include respond-to(sm) {
-    padding: 30px 30px;
+    padding: 30px;
   }
 
   @include respond-to(md) {
@@ -179,12 +382,10 @@ onMounted(async () => {
   }
 
   &__container {
-    & > * + * {
-      margin-top: 15px;
+    @include space-y(15px);
 
-      @include respond-to(md) {
-        margin-top: 20px;
-      }
+    @include respond-to(md) {
+      @include space-y(20px);
     }
   }
 
@@ -193,7 +394,7 @@ onMounted(async () => {
     flex-direction: column;
     padding: 10px 15px;
     gap: 10px;
-    text-shadow: 0px 1.05px 4.2px 0px #19213d14;
+    text-shadow: 0 1.05px 4.2px rgba(25, 33, 61, 0.08);
 
     @include respond-to(md) {
       padding: 15.75px 18.9px;
@@ -206,10 +407,8 @@ onMounted(async () => {
     font-weight: 700;
     font-size: 20px;
     line-height: 1.2;
-    letter-spacing: 0;
     text-align: center;
-    vertical-align: middle;
-    color: #19213d;
+    color: $color-foreground;
 
     @include respond-to(sm) {
       font-size: 22px;
@@ -226,10 +425,8 @@ onMounted(async () => {
     font-weight: 500;
     font-size: 16px;
     line-height: 1.2;
-    letter-spacing: 0;
     text-align: center;
-    vertical-align: middle;
-    color: #19213d;
+    color: $color-foreground;
 
     @include respond-to(sm) {
       font-size: 18px;
@@ -243,6 +440,30 @@ onMounted(async () => {
       font-size: 25.21px;
       line-height: 21px;
     }
+  }
+
+  &__alert {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: $spacing-sm;
+    padding: $spacing-md;
+    background-color: $white;
+    border-left: 4px solid $color-error;
+    border-radius: $border-radius-md;
+  }
+
+  &__alert-message {
+    @include text-base;
+    color: $color-error;
+    font-size: 14px;
+    text-align: center;
+  }
+
+  &__alert-retry {
+    @include primary-button;
+    padding: $spacing-sm $spacing-md;
+    font-size: 14px;
   }
 }
 
@@ -262,7 +483,7 @@ onMounted(async () => {
     width: 100%;
     margin: 0 auto;
     max-width: 1310px;
-    padding: 12px 0px;
+    padding: 12px 0;
 
     @include respond-to(md) {
       max-width: 720px;
@@ -282,6 +503,30 @@ onMounted(async () => {
   }
 }
 
+.error-banner {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: $spacing-md;
+  padding: $spacing-xl $spacing-md;
+  background-color: $white;
+  border-left: 4px solid $color-error;
+  border-radius: $border-radius-md;
+  text-align: center;
+
+  &__message {
+    @include text-base;
+    color: $color-error;
+    font-weight: 500;
+  }
+
+  &__retry {
+    @include primary-button;
+    padding: $spacing-sm $spacing-lg;
+    font-size: 14px;
+  }
+}
+
 .section {
   background-color: #f8f8f8;
 
@@ -292,12 +537,10 @@ onMounted(async () => {
   &__title {
     @include label-base;
     font-weight: 600;
-    font-style: Semi Bold;
     font-size: 16px;
     line-height: 1.2;
-    letter-spacing: 0;
-    color: #19213d;
-    margin-bottom: 16px;
+    color: $color-foreground;
+    margin-bottom: $spacing-md;
 
     @include respond-to(md) {
       font-size: 18px;
@@ -310,12 +553,22 @@ onMounted(async () => {
     margin-top: 1rem;
     min-height: 400px;
   }
+
+  &__loading {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 200px;
+  }
 }
 
 .cards-grid {
   display: grid;
   grid-template-columns: 1fr;
-  gap: 16px;
+  gap: $spacing-md;
+  list-style: none;
+  padding: 0;
+  margin: 0;
 
   @include respond-to(sm) {
     gap: 20px;
@@ -323,7 +576,7 @@ onMounted(async () => {
 
   @include respond-to(md) {
     grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
-    gap: 24px;
+    gap: $spacing-lg;
   }
 
   @include respond-to(lg) {
@@ -332,6 +585,40 @@ onMounted(async () => {
 
   @include respond-to(xl) {
     grid-template-columns: repeat(auto-fit, minmax(420px, 1fr));
+  }
+
+  &__item {
+    min-width: 0;
+  }
+}
+
+.skeleton-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: $spacing-md;
+  width: 100%;
+
+  @include respond-to(md) {
+    grid-template-columns: repeat(3, 1fr);
+    gap: $spacing-lg;
+  }
+}
+
+.skeleton-card {
+  height: 220px;
+  border-radius: 12px;
+  background: linear-gradient(90deg, #e8e8e8 25%, #f0f0f0 50%, #e8e8e8 75%);
+  background-size: 200% 100%;
+  animation: skeleton-shimmer 1.5s ease-in-out infinite;
+}
+
+@keyframes skeleton-shimmer {
+  0% {
+    background-position: 200% 0;
+  }
+
+  100% {
+    background-position: -200% 0;
   }
 }
 
@@ -346,14 +633,6 @@ onMounted(async () => {
     padding: 60px 40px;
   }
 
-  &__media {
-    margin-bottom: 20px;
-
-    @include respond-to(md) {
-      margin-bottom: 30px;
-    }
-  }
-
   &__content {
     max-width: 400px;
   }
@@ -361,7 +640,7 @@ onMounted(async () => {
   &__title {
     font-size: 18px;
     font-weight: 600;
-    color: #19213d;
+    color: $color-foreground;
     margin-bottom: 10px;
 
     @include respond-to(md) {
@@ -372,7 +651,7 @@ onMounted(async () => {
 
   &__description {
     font-size: 14px;
-    color: #6d758f;
+    color: $color-text-secondary;
     line-height: 1.4;
     margin-bottom: 20px;
 
@@ -381,45 +660,11 @@ onMounted(async () => {
       margin-bottom: 25px;
     }
   }
+}
 
-  &__action {
-    @include button-base;
-    background-color: #3541b4;
-    color: white;
-    padding: 12px 24px;
-    border-radius: 8px;
-    font-size: 14px;
-    font-weight: 600;
-
-    @include respond-to(md) {
-      padding: 15px 30px;
-      font-size: 16px;
-    }
-
-    &:hover {
-      background-color: darken(#3541b4, 10%);
-    }
-
-    &--secondary {
-      background-color: transparent;
-      color: #3541b4;
-      border: 2px solid #3541b4;
-
-      &:hover {
-        background-color: #3541b4;
-        color: white;
-      }
-    }
-
-    &--large {
-      padding: 16px 32px;
-      font-size: 18px;
-
-      @include respond-to(md) {
-        padding: 20px 40px;
-        font-size: 20px;
-      }
-    }
+@media (prefers-reduced-motion: reduce) {
+  .skeleton-card {
+    animation: none;
   }
 }
 </style>

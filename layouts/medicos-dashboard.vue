@@ -55,5 +55,6 @@ const customUrls = {
     middleware="auth-doctors-hospitals"
   >
     <slot />
+    <UiNotificationToast />
   </BaseDashboard>
 </template>

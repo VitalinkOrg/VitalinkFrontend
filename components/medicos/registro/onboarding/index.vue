@@ -4,7 +4,7 @@
     @openProviderFormModal="handleOpenAddDoctorModal"
   />
 
-  <MedicosModalesAgregarMedicoRelacionado
+  <MedicosModalesFormularioMedicoRelacionado
     ref="addDoctorModalRef"
     @doctor-added="handleDoctorAdded"
     @doctor-added-onboarding="handleDoctorAddedOnboarding"

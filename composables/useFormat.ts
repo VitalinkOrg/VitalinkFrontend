@@ -40,7 +40,7 @@ export const useFormat = () => {
    */
   const formatDate = (
     date: string | Date,
-    format: "full" | "short" = "full"
+    format: "full" | "short" = "full",
   ): string => {
     let dateObj: Date;
 
@@ -71,11 +71,11 @@ export const useFormat = () => {
     const monthOptions: Intl.DateTimeFormatOptions = { month: "long" };
 
     const dayName = new Intl.DateTimeFormat("es-ES", dayOptions).format(
-      dateObj
+      dateObj,
     );
     const dayNumber = dateObj.getDate();
     const monthName = new Intl.DateTimeFormat("es-ES", monthOptions).format(
-      dateObj
+      dateObj,
     );
 
     const capitalizedDayName =
@@ -126,7 +126,7 @@ export const useFormat = () => {
       currency?: string;
       locale?: string;
       decimalPlaces?: number;
-    }
+    },
   ): string => {
     const {
       currency = "₡",
@@ -209,7 +209,7 @@ export const useFormat = () => {
    */
   const formatPhone = (
     phone: string,
-    options: PhoneFormatOptions = {}
+    options: PhoneFormatOptions = {},
   ): string => {
     const { countryCode = "506", addPrefix = false } = options;
     const digits = phone.replace(/\D/g, "");
@@ -423,7 +423,7 @@ export const useFormat = () => {
    */
   const convertCedulaForBackend = (
     value: string,
-    documentType: string
+    documentType: string,
   ): string => {
     const numbersOnly = value.replace(/\D/g, "");
     const normalizedType = documentType.toUpperCase();

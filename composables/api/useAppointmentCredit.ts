@@ -1,5 +1,5 @@
-import type { ApiResponse, AppointmentCredit, Credit } from "@/types";
-import useApi, { type UsableAPI } from "./useApi";
+import { useLogger } from "@/composables/useLogger";
+import useApi from "./useApi";
 
 interface AppointmentCreditPayload {
   appointment?: number;
@@ -8,63 +8,101 @@ interface AppointmentCreditPayload {
 }
 
 export const useAppointmentCredit = () => {
-  const config = useRuntimeConfig();
   const { getToken } = useAuthToken();
+  const logger = useLogger("useAppointment");
 
-  const fetchAllAppointmentCreditByQrCode = (
-    appointmentQrCode: string
-  ): UsableAPI<ApiResponse<AppointmentCredit[]>> => {
+  const getAuthHeaders = (): Record<string, string> => {
     const token = getToken();
-    if (!token) throw new Error("No authentication token found");
-
-    const url = `${config.public.API_BASE_URL}/appointmentcredit/get_all?appointment_qr_code=${appointmentQrCode}`;
-
-    return useApi<ApiResponse<AppointmentCredit[]>>(url, {
-      method: "GET",
-      headers: {
-        Authorization: token,
-        "Content-Type": "application/json",
-      },
-    });
+    if (!token) {
+      logger.error("No authentication token found");
+      throw new Error("No authentication token found");
+    }
+    return {
+      Authorization: token,
+      "Content-Type": "application/json",
+    };
   };
 
-  const fetchAllAppointmentCredit = (): UsableAPI<ApiResponse<Credit[]>> => {
-    const token = getToken();
-    if (!token) throw new Error("No authentication token found");
+  const executeRequest = async <T>(
+    operationName: string,
+    endpoint: string,
+    options: Parameters<typeof $fetch>[1],
+  ): Promise<{ data: T | undefined; error: IApiErrorResponse | null }> => {
+    try {
+      const headers = getAuthHeaders();
+      const { response, request, error } = useApi<T>(endpoint, {
+        ...options,
+        headers: { ...headers, ...options?.headers },
+      });
 
-    const url = `${config.public.API_BASE_URL}/appointmentcredit/get_all`;
+      await request();
 
-    return useApi<ApiResponse<Credit[]>>(url, {
-      method: "GET",
-      headers: {
-        Authorization: token,
-        "Content-Type": "application/json",
-      },
-    });
+      if (error.value) {
+        logger.error(`${operationName} failed`, {
+          endpoint,
+          status: error.value.status?.http_code,
+          message: error.value.info,
+        });
+        return { data: undefined, error: error.value };
+      }
+
+      logger.debug(`${operationName} succeeded`, { endpoint });
+      return { data: response.value, error: null };
+    } catch (err: unknown) {
+      const fallbackError: IApiErrorResponse = {
+        status: { id: 0, message: "Error inesperado", http_code: 500 },
+        info:
+          err instanceof Error
+            ? err.message
+            : "Ocurrió un error inesperado antes de realizar la solicitud",
+        data: null,
+      };
+
+      logger.error(`${operationName} threw unexpectedly`, {
+        endpoint,
+        error: fallbackError.info,
+      });
+
+      return { data: undefined, error: fallbackError };
+    }
   };
+
+  const getAllAppointmentCreditByQrCode = (appointmentQrCode: string) =>
+    executeRequest<IAppointmentCredit[]>(
+      "getAllAppointmentCreditByQrCode",
+      "appointmentcredit/get_all",
+      {
+        method: "GET",
+        query: { appointment_qr_code: appointmentQrCode },
+      },
+    );
+
+  const getAllAppointmentCredit = () =>
+    executeRequest<IAppointmentCredit[]>(
+      "getAllAppointmentCredit",
+      "appointmentcredit/get_all",
+      {
+        method: "GET",
+      },
+    );
 
   const updateAppointmentCredit = (
-    body: AppointmentCreditPayload,
-    appointmentId: number
-  ) => {
-    const token = getToken();
-    if (!token) throw new Error("No authentication token found");
-
-    const url = `${config.public.API_BASE_URL}/appointmentcredit/edit?id=${appointmentId}`;
-
-    return useApi<ApiResponse<any>>(url, {
-      method: "PUT",
-      body: JSON.stringify(body),
-      headers: {
-        Authorization: token,
-        "Content-Type": "application/json",
+    payload: IAppointmentCreditUpdateRequest,
+    appointmentId: number,
+  ) =>
+    executeRequest<IAppointmentCredit>(
+      "updateAppointmentCredit",
+      "appointmentcredit/edit",
+      {
+        method: "PUT",
+        body: JSON.stringify(payload),
+        query: { id: appointmentId },
       },
-    });
-  };
+    );
 
   return {
     updateAppointmentCredit,
-    fetchAllAppointmentCredit,
-    fetchAllAppointmentCreditByQrCode,
+    getAllAppointmentCredit,
+    getAllAppointmentCreditByQrCode,
   };
 };

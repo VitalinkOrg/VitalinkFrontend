@@ -105,9 +105,7 @@
 </template>
 
 <script lang="ts" setup>
-import { useFormat } from "~/composables/useFormat";
-import type { ModalName } from "~/types";
-import type { Appointment } from "~/types/appointment";
+import { useFormat } from "@/composables/useFormat";
 
 const { formatCurrency } = useFormat();
 
@@ -117,7 +115,7 @@ const config = useRuntimeConfig();
 const refreshAppointments = inject<() => Promise<void>>("refreshAppointments");
 
 interface Props {
-  appointment: Appointment;
+  appointment: IAppointment;
   isOpen: boolean;
 }
 
@@ -191,7 +189,7 @@ const validateAmount = () => {
   }
   if (requestedAmount.value > Number(props.appointment.price_procedure)) {
     validationError.value = `El monto no puede ser mayor a ${formatCurrency(
-      props.appointment.price_procedure
+      props.appointment.price_procedure,
     )}`;
     return;
   }
@@ -206,7 +204,7 @@ watch(
       validationError.value = "";
       isLoading.value = false;
     }
-  }
+  },
 );
 
 const handleOpenModal = (modalName: ModalName) => {
@@ -226,6 +224,11 @@ const handleSendRequest = async () => {
 
   isLoading.value = true;
 
+  console.log({
+    appointment: props.appointment.id,
+    requested_amount: requestedAmount.value,
+  });
+
   try {
     const { data, error } = await useFetch(
       config.public.API_BASE_URL + "/appointmentcredit/add",
@@ -236,12 +239,12 @@ const handleSendRequest = async () => {
           appointment: props.appointment.id,
           requested_amount: requestedAmount.value,
         },
-      }
+      },
     );
 
     if (error.value) {
       throw new Error(
-        error.value.data?.message || "Error al solicitar el crédito"
+        error.value.data?.message || "Error al solicitar el crédito",
       );
     }
 

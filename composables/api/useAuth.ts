@@ -1,201 +1,147 @@
-import type { ApiResponse, UserInformation } from "@/types";
-import useApi, { type UsableAPI } from "./useApi";
-
-export interface IRegister {
-  card_id: string;
-  name: string;
-  email: string;
-  password: string;
-  gender: string; // "M,"F","O"
-  role_code: string;
-  phone_number: string;
-  country_iso_code: string;
-  province: string;
-  profile_picture_url: string;
-  code_contract?: string;
-  id_type?: string;
-  city_name?: string;
-  address?: string;
-  postal_code?: string;
-  birth_date?: string;
-}
-
-export interface ILogin {
-  email: string;
-  username: string;
-  password: string;
-}
-
-export interface ILoginResponse {
-  access_token: string;
-  refresh_token: string;
-  screens_access: any[];
-}
-
-export interface IForgotPassword {
-  email: string;
-}
-
-export interface IResetPassword {
-  password: string;
-}
-
-export interface IForgotPasswordResponse {
-  message: string;
-  token?: string;
-}
-
-export interface IVerifyTokenResponse {
-  valid: boolean;
-  message: string;
-}
-
-export interface IResetPasswordResponse {
-  message: string;
-  success: boolean;
-}
+import { useLogger } from "@/composables/useLogger";
+import useApi from "./useApi";
 
 export const useAuth = () => {
-  const config = useRuntimeConfig();
   const { getToken, clearTokens } = useAuthToken();
   const { clearAuthState } = useAuthState();
   const { clearUserInfo } = useUserInfo();
+  const logger = useLogger("useAuth");
 
-  const register = (body: IRegister) => {
-    const url = `${config.public.API_BASE_URL}/auth/register`;
-
-    return useApi<ApiResponse<any>>(url, {
-      method: "POST",
-      body: JSON.stringify(body),
-      headers: {
-        "Content-Type": "application/json",
-      },
-    });
-  };
-
-  const login = (body: ILogin): UsableAPI<ApiResponse<ILoginResponse>> => {
-    const url = `${config.public.API_BASE_URL}/auth/login`;
-
-    return useApi<ApiResponse<ILoginResponse>>(url, {
-      method: "POST",
-      body: JSON.stringify(body),
-      headers: {
-        "Content-Type": "application/json",
-      },
-    });
-  };
-
-  const fetchUserInfo = (
-    userId: string,
-    token?: string,
-  ): UsableAPI<ApiResponse<UserInformation>> => {
-    const authToken = token || getToken();
-    if (!authToken) {
-      throw new Error("No authentication token found");
-    }
-
-    const url = `${config.public.API_BASE_URL}/user/get?id=${userId}`;
-
-    return useApi<ApiResponse<UserInformation>>(url, {
-      method: "GET",
-      headers: {
-        Authorization: authToken,
-        "Content-Type": "application/json",
-      },
-    });
-  };
-
-  const fetchHospitalInfo = (token?: string): UsableAPI<ApiResponse<any>> => {
-    const authToken = token || getToken();
-    if (!authToken) {
-      throw new Error("No authentication token found");
-    }
-
-    const url = `${config.public.API_BASE_URL}/hospitals/get_hospital_info`;
-
-    return useApi<ApiResponse<any>>(url, {
-      method: "GET",
-      headers: {
-        Authorization: authToken,
-        "Content-Type": "application/json",
-      },
-    });
-  };
-
-  const deleteUser = (userId: string): UsableAPI<ApiResponse<void>> => {
+  const getAuthHeaders = (): Record<string, string> => {
     const token = getToken();
     if (!token) {
+      logger.error("No authentication token found");
       throw new Error("No authentication token found");
     }
-
-    const url = `${config.public.API_BASE_URL}/user/delete?id=${userId}`;
-
-    return useApi<ApiResponse<void>>(url, {
-      method: "DELETE",
-      headers: {
-        Authorization: token,
-        "Content-Type": "application/json",
-      },
-    });
+    return { Authorization: token };
   };
 
-  const forgotPassword = (
-    body: IForgotPassword,
-  ): UsableAPI<ApiResponse<IForgotPasswordResponse>> => {
-    const url = `${config.public.API_BASE_URL}/forgot_password`;
+  const executeRequest = async <T>(
+    operationName: string,
+    endpoint: string,
+    options: Parameters<typeof $fetch>[1],
+  ): Promise<{
+    data: T | undefined;
+    error: IApiErrorResponse | null;
+  }> => {
+    try {
+      const { response, request, error } = useApi<T>(endpoint, options);
 
-    return useApi<ApiResponse<IForgotPasswordResponse>>(url, {
+      await request();
+
+      if (error.value) {
+        logger.error(`${operationName} failed`, {
+          endpoint,
+          status: error.value.status?.http_code,
+          message: error.value.info,
+        });
+        return { data: undefined, error: error.value };
+      }
+
+      logger.debug(`${operationName} succeeded`, { endpoint });
+      return { data: response.value, error: null };
+    } catch (err: unknown) {
+      const fallbackError: IApiErrorResponse = {
+        status: { id: 0, message: "Error inesperado", http_code: 500 },
+        info:
+          err instanceof Error
+            ? err.message
+            : "Ocurrió un error inesperado antes de realizar la solicitud",
+        data: null,
+      };
+
+      logger.error(`${operationName} threw unexpectedly`, {
+        endpoint,
+        error: fallbackError.info,
+      });
+
+      return { data: undefined, error: fallbackError };
+    }
+  };
+
+  // ─── Public endpoints (no auth required) ───
+
+  const register = (payload: IRegisterRequest) =>
+    executeRequest<ILoginResponse>("register", "auth/register", {
       method: "POST",
-      body: JSON.stringify(body),
-      headers: {
-        "Content-Type": "application/json",
-      },
+      body: payload,
     });
-  };
 
-  const verifyForgotPasswordToken = (
-    token: string,
-  ): UsableAPI<ApiResponse<IVerifyTokenResponse>> => {
-    const url = `${config.public.API_BASE_URL}/verify_forgot_password/${token}`;
+  const login = (payload: ILoginRequest) =>
+    executeRequest<ILoginResponse>("login", "auth/login", {
+      method: "POST",
+      body: payload,
+    });
 
-    return useApi<ApiResponse<IVerifyTokenResponse>>(url, {
+  const forgotPassword = (payload: IForgotPassword) =>
+    executeRequest<IForgotPasswordResponse>(
+      "forgotPassword",
+      "forgot_password",
+      {
+        method: "POST",
+        body: payload,
+      },
+    );
+
+  const verifyForgotPasswordToken = (token: string) =>
+    executeRequest<IVerifyTokenResponse>(
+      "verifyForgotPasswordToken",
+      `verify_forgot_password/${token}`,
+      {
+        method: "GET",
+      },
+    );
+
+  const resetPassword = (token: string, payload: IResetPassword) =>
+    executeRequest<IResetPasswordResponse>(
+      "resetPassword",
+      `reset_password/${token}`,
+      {
+        method: "POST",
+        body: payload,
+      },
+    );
+
+  // ─── Authenticated endpoints ───
+
+  const getUserById = (userId: string, token?: string) => {
+    const headers = token ? { Authorization: token } : getAuthHeaders();
+
+    return executeRequest<IUser>("getUserById", "user/get", {
       method: "GET",
-      headers: {
-        "Content-Type": "application/json",
-      },
+      headers,
+      query: { id: userId },
     });
   };
 
-  const resetPassword = (
-    token: string,
-    body: IResetPassword,
-  ): UsableAPI<ApiResponse<IResetPasswordResponse>> => {
-    const url = `${config.public.API_BASE_URL}/reset_password/${token}`;
+  const deleteUser = (userId: string) =>
+    executeRequest<void>("deleteUser", "user/delete", {
+      method: "DELETE",
+      headers: getAuthHeaders(),
+      query: { id: userId },
+    });
 
-    return useApi<ApiResponse<IResetPasswordResponse>>(url, {
+  const logout = async () => {
+    const result = await executeRequest<null>("logout", "auth/logout", {
       method: "POST",
-      body: JSON.stringify(body),
-      headers: {
-        "Content-Type": "application/json",
-      },
+      headers: getAuthHeaders(),
     });
-  };
 
-  const logout = () => {
     clearTokens();
     clearAuthState();
     clearUserInfo();
+
+    return result;
   };
 
   return {
     register,
     login,
-    logout,
-    fetchUserInfo,
-    fetchHospitalInfo,
+    getUserById,
     deleteUser,
     forgotPassword,
     verifyForgotPasswordToken,
     resetPassword,
+    logout,
   };
 };

@@ -23,10 +23,8 @@
 </template>
 
 <script setup lang="ts">
-import type { Supplier } from "~/types";
-
 defineProps<{
-  supplier: Supplier | Partial<Supplier> | null;
+  supplier: ISupplierDetail | Partial<ISupplierDetail> | null;
 }>();
 </script>
 

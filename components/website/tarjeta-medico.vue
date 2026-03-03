@@ -117,7 +117,13 @@
 
         <div class="medico-card__footer">
           <div class="medico-card__price">
-            <p class="medico-card__price-value">₡{{ displayPrice }}</p>
+            <p class="medico-card__price-value">
+              {{
+                formatCurrency(displayPrice, {
+                  decimalPlaces: 0,
+                })
+              }}
+            </p>
             <p class="medico-card__price-description">
               {{ priceDescription }}
             </p>
@@ -145,45 +151,18 @@ const props = defineProps({
   queryParams: Object,
 });
 
+console.log(props.medico);
+
 const emit = defineEmits(["toggle-favorite", "show-packages"]);
 
 const route = useRoute();
 
+const { formatCurrency } = useFormat();
+
 const searchProcedureCode = computed(() => route.query.procedure_code);
 
-const citaValoracionPackage = computed(() => {
-  return {
-    id: 0,
-    product: {
-      id: 9999,
-      code: "ASSESSMENT_APPOINTMENT",
-      name: "Cita de Valoración",
-      type: "MEDICAL_PRODUCT",
-      description: "Cita de valoración médica inicial",
-      father_code: null,
-      value1: "18000",
-      created_date: new Date().toISOString(),
-      updated_date: null,
-      is_deleted: 0,
-    },
-    reference_price: 18000,
-    discount: 0,
-    discounted_price: 18000,
-    services_offer: {
-      ASSESSMENT_DETAILS: [],
-    },
-    is_king: 0,
-    observations: "",
-    postoperative_assessments: null,
-  };
-});
-
 const displayPrice = computed(() => {
-  if (searchProcedureCode.value) {
-    return citaValoracionPackage.value.discounted_price.toLocaleString();
-  } else {
-    return props.medico.search_reference_price;
-  }
+  return props.medico.search_reference_price;
 });
 
 const priceDescription = computed(() => {

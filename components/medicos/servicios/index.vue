@@ -70,7 +70,7 @@
             class="services__toggle"
             :class="{
               'services__toggle--active': expandedServices.includes(
-                procedure.procedure.id
+                procedure.procedure.id,
               ),
             }"
             @click="toggleExpanded(procedure.procedure.id)"
@@ -231,7 +231,6 @@
 
 <script lang="ts" setup>
 import { usePackage, useUdc } from "~/composables/api";
-import type { AssessmentDetail, Package, Service, Supplier } from "~/types";
 
 interface Props {
   service: Service;
@@ -299,7 +298,7 @@ const getAssessmentLabel = (assessmentCode: string) => {
   }
 
   const detail = assessments.value.find(
-    (item) => item?.code === assessmentCode
+    (item) => item?.code === assessmentCode,
   );
   return detail?.name || assessmentCode;
 };
@@ -331,14 +330,14 @@ watch(
   (newValue) => {
     nextTick(() => {
       const selectAllCheckbox = document.getElementById(
-        "select-all"
+        "select-all",
       ) as HTMLInputElement;
       if (selectAllCheckbox) {
         selectAllCheckbox.indeterminate = newValue;
       }
     });
   },
-  { immediate: true }
+  { immediate: true },
 );
 
 await loadPackages();

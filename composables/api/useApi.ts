@@ -1,66 +1,75 @@
-import { ref, type Ref } from "vue";
-import { useErrorHandler } from "./useErrorHandler";
+import { translateError } from "@/utils/errorTranslations";
 
-export interface UsableAPI<T> {
-  response: Ref<T | undefined>;
-  request: () => Promise<void>;
-  error: Ref<ApiErrorResponse | null>;
-  loading: Ref<boolean>;
-}
+/**
+ * Generic composable for API requests with translated error handling.
+ *
+ * Wraps Nuxt's $fetch with reactive state for loading, response, and error.
+ * Backend error messages are automatically translated to Spanish.
+ */
+const useApi = <T>(
+  endpoint: string,
+  options?: Parameters<typeof $fetch>[1],
+): IUsableAPI<T> => {
+  const config = useRuntimeConfig();
 
-export interface ApiErrorResponse {
-  httpCode: number;
-  info?: string;
-  message: string;
-  raw?: string;
-  statusId?: number;
-  isDuplicateEntry?: boolean;
-  isNetworkError?: boolean;
-}
-
-export default function useApi<T>(
-  url: RequestInfo,
-  options?: RequestInit & { params?: Record<string, any> },
-): UsableAPI<T> {
-  const response = ref<T>();
-  const error = ref<ApiErrorResponse | null>(null);
+  const response = ref<T>() as Ref<T | undefined>;
+  const error = ref<IApiErrorResponse | null>(null);
   const loading = ref(false);
-  const { parseError, logError } = useErrorHandler();
 
-  const request = async () => {
+  const request = async (): Promise<void> => {
     loading.value = true;
     error.value = null;
+    response.value = undefined;
 
     try {
-      const res = await fetch(url, options);
+      const result = await $fetch<IApiResponse<T>>(endpoint, {
+        baseURL: `${config.public.API_BASE_URL}/`,
+        ...options,
+      });
 
-      if (!res.ok) {
-        const errorData = await res.text().catch(() => null);
-        throw new Error(`HTTP ${res.status}: ${errorData || res.statusText}`);
-      }
-
-      const data = await res.json();
-      response.value = data as T;
-      error.value = null;
-    } catch (err) {
-      const parsedError = parseError(err);
-      logError(parsedError, `API Request to ${url}`);
-
-      error.value = {
-        httpCode: parsedError.httpCode,
-        info: parsedError.info,
-        message: parsedError.message,
-        raw: parsedError.raw,
-        statusId: parsedError.statusId,
-        isDuplicateEntry: parsedError.isDuplicateEntry,
-        isNetworkError: parsedError.isNetworkError,
-      };
-
-      response.value = undefined;
+      response.value = result.data;
+    } catch (err: unknown) {
+      error.value = normalizeApiError(err);
     } finally {
       loading.value = false;
     }
   };
 
   return { response, request, error, loading };
+};
+
+/**
+ * Normalizes any caught error into the IApiErrorResponse structure,
+ * translating messages to Spanish.
+ */
+function normalizeApiError(err: unknown): IApiErrorResponse {
+  const fetchError = err as {
+    response?: { _data?: IApiErrorResponse; status?: number };
+    message?: string;
+  };
+
+  const data = fetchError?.response?._data;
+
+  if (data?.status && data?.info) {
+    return {
+      ...data,
+      status: {
+        ...data.status,
+        message: translateError(data.status.message),
+      },
+      info: translateError(data.info),
+    };
+  }
+
+  return {
+    status: {
+      id: 0,
+      message: translateError("Unknown Error"),
+      http_code: fetchError?.response?.status ?? 500,
+    },
+    info: translateError(fetchError?.message ?? "An unexpected error occurred"),
+    data: null,
+  };
 }
+
+export default useApi;

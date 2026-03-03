@@ -136,7 +136,7 @@ watch(
   () => {
     scheduleUpdate();
   },
-  { flush: "post" }
+  { flush: "post" },
 );
 
 watch(
@@ -144,7 +144,7 @@ watch(
   () => {
     scheduleUpdate();
   },
-  { deep: true, flush: "post" }
+  { deep: true, flush: "post" },
 );
 
 onBeforeUnmount(() => {

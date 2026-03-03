@@ -1,552 +1,539 @@
-// pages\pacientes\citas.vue
-
 <script setup lang="ts">
-import { useRefreshToken } from "#imports";
-import type { Appointment } from "@/types";
+import { useAppointment } from "@/composables/api";
+import { useLogger } from "@/composables/useLogger";
+import { useToast } from "@/composables/useToast";
 import { jsPDF } from "jspdf";
-import { computed, onMounted, ref, watch } from "vue";
-import { useAppointment } from "~/composables/api";
+import { computed, onBeforeUnmount, onMounted, provide, ref } from "vue";
 
 definePageMeta({
   middleware: "auth-pacientes",
 });
 
-const VALORATION_STATUS_CODES = [
-  "PENDING_VALORATION_APPOINTMENT",
-  "CONFIRM_VALIDATION_APPOINTMENT",
-  "VALUATION_PENDING_VALORATION_APPOINTMENT",
-  "VALUED_VALORATION_APPOINTMENT",
-];
-
-const PROCEDURE_STATUS_CODES = [
-  "PENDING_PROCEDURE",
-  "CONFIRM_PROCEDURE",
-  "WAITING_PROCEDURE",
-  "CONCRETED_APPOINTMENT",
-  "CANCEL_APPOINTMENT",
-];
-
 type SortOption = "date-desc" | "date-asc" | "status" | "supplier";
 
-const isRefreshing = ref(false);
-const previousAppointments = ref<Appointment[]>([]);
-const appointmentsResponse = ref<Appointment[] | null>(null);
-const tab = ref(1);
-const sort = ref(false);
+const SORT_OPTIONS: readonly { value: SortOption; label: string }[] = [
+  { value: "date-desc", label: "Fecha (más reciente)" },
+  { value: "date-asc", label: "Fecha (más antigua)" },
+  { value: "status", label: "Estado" },
+  { value: "supplier", label: "Clínica/Hospital" },
+] as const;
+
+const logger = useLogger("PacientesCitas");
+const toast = useToast();
+
+const sortDropdownOpen = ref(false);
 const searchQuery = ref("");
 const sortOption = ref<SortOption>("date-desc");
+const isRefreshing = ref(false);
+const hasInitialLoadError = ref(false);
+const appointments = ref<IAppointment[]>([]);
 
-const { response, request, loading } = useAppointment().fetchAllAppointments();
+const isLoading = ref<boolean>(true);
 
-const appointmentsData = computed(() => {
-  return appointmentsResponse.value || previousAppointments.value;
-});
+const { getAllAppointments } = useAppointment();
 
-onMounted(async () => {
-  await request();
-  if (response.value?.data) {
-    appointmentsResponse.value = response.value.data;
-    previousAppointments.value = response.value.data;
-    useRefreshToken();
-  }
-});
+function getSearchableText(appointment: IAppointment): string {
+  const fields: (string | null | undefined)[] = [
+    appointment.appointment_type?.value1,
+    appointment.appointment_status?.value1,
+    appointment.supplier?.name,
+    appointment.supplier?.city_name,
+    appointment.supplier?.province,
+    appointment.package?.procedure?.name,
+    appointment.package?.product?.name,
+    appointment.customer?.name,
+    appointment.customer?.card_id,
+    appointment.customer?.email,
+    appointment.customer?.phone_number,
+    appointment.reservation_type?.name,
+    appointment.payment_status?.value1,
+    appointment.user_description,
+    appointment.appointment_qr_code,
+    appointment.appointment_date
+      ? new Date(appointment.appointment_date).toLocaleDateString("es-ES")
+      : null,
+    appointment.appointment_hour,
+    appointment.appointment_credit?.credit_status?.name,
+    appointment.appointment_credit?.credit_observations,
+  ];
 
-const fetchAppointments = async (isRefresh = false) => {
-  if (isRefresh) {
-    isRefreshing.value = true;
-  }
+  return fields.filter(Boolean).join(" ").toLowerCase();
+}
 
-  try {
-    await request();
-    if (response.value?.data) {
-      if (appointmentsResponse.value) {
-        previousAppointments.value = appointmentsResponse.value;
-      }
-      appointmentsResponse.value = response.value.data;
-      useRefreshToken();
-    }
-  } catch (error) {
-    console.error("Fetch error:", error);
-  } finally {
-    isRefreshing.value = false;
-  }
-};
+function matchesSearch(appointment: IAppointment, query: string): boolean {
+  if (!query) return true;
+  return getSearchableText(appointment).includes(query.toLowerCase().trim());
+}
 
-watch(
-  appointmentsResponse,
-  (newVal, oldVal) => {
-    if (oldVal && newVal !== oldVal) {
-      previousAppointments.value = oldVal;
-    }
-  },
-  { deep: true },
-);
+function buildAppointmentDate(appt: IAppointment): number {
+  const dateStr = `${appt.appointment_date} ${appt.appointment_hour}`;
+  const parsed = new Date(dateStr).getTime();
+  return Number.isNaN(parsed) ? 0 : parsed;
+}
 
-const refreshAppointments = async () => {
-  await fetchAppointments(true);
-};
+function sortAppointments(
+  list: IAppointment[],
+  option: SortOption,
+): IAppointment[] {
+  const sorted = [...list];
 
-provide("refreshAppointments", refreshAppointments);
-
-const displayAppointments = computed(() => {
-  const sourceData = appointmentsData.value || [];
-  let filtered = [...sourceData];
-
-  if (tab.value === 2) {
-    filtered = filtered.filter((appointment) => {
-      const statusCode = appointment.appointment_status?.code;
-      return statusCode && PROCEDURE_STATUS_CODES.includes(statusCode);
-    });
-  } else if (tab.value === 3) {
-    filtered = filtered.filter((appointment) => {
-      const statusCode = appointment.appointment_status?.code;
-      return statusCode && VALORATION_STATUS_CODES.includes(statusCode);
-    });
-  }
-
-  if (searchQuery.value.trim()) {
-    const query = searchQuery.value.toLowerCase().trim();
-    filtered = filtered.filter((appointment) => {
-      const searchableFields = [
-        appointment.appointment_type?.value1,
-        appointment.appointment_status?.value1,
-        appointment.supplier?.name,
-        appointment.supplier?.city_name,
-        appointment.supplier?.province,
-        appointment.package?.procedure?.name,
-        appointment.package?.product?.name,
-        appointment.package?.product?.description,
-        appointment.customer?.name,
-        appointment.customer?.card_id,
-        appointment.customer?.email,
-        appointment.customer?.phone_number,
-        appointment.reservation_type?.name,
-        appointment.payment_method,
-        appointment.payment_status?.value1,
-        appointment.user_description,
-        appointment.appointment_qr_code,
-        appointment.appointment_date
-          ? new Date(appointment.appointment_date).toLocaleDateString("es-ES")
-          : null,
-        appointment.appointment_hour,
-        appointment.appointment_credit?.credit_status?.name,
-        appointment.appointment_credit?.credit_observations,
-      ];
-
-      return searchableFields.some(
-        (field) => field && field.toString().toLowerCase().includes(query),
-      );
-    });
-  }
-
-  return sortAppointments(filtered);
-});
-
-const sortAppointments = (appointments: Appointment[]) => {
-  const sorted = [...appointments];
-
-  switch (sortOption.value) {
+  switch (option) {
     case "date-desc":
-      return sorted.sort((a, b) => {
-        const dateA = new Date(`${a.appointment_date} ${a.appointment_hour}`);
-        const dateB = new Date(`${b.appointment_date} ${b.appointment_hour}`);
-        return dateB.getTime() - dateA.getTime();
-      });
+      return sorted.sort(
+        (a, b) => buildAppointmentDate(b) - buildAppointmentDate(a),
+      );
     case "date-asc":
-      return sorted.sort((a, b) => {
-        const dateA = new Date(`${a.appointment_date} ${a.appointment_hour}`);
-        const dateB = new Date(`${b.appointment_date} ${b.appointment_hour}`);
-        return dateA.getTime() - dateB.getTime();
-      });
+      return sorted.sort(
+        (a, b) => buildAppointmentDate(a) - buildAppointmentDate(b),
+      );
     case "status":
-      return sorted.sort((a, b) => {
-        const statusA = a.appointment_status?.value1 || "";
-        const statusB = b.appointment_status?.value1 || "";
-        return statusA.localeCompare(statusB);
-      });
+      return sorted.sort((a, b) =>
+        (a.appointment_status?.value1 ?? "").localeCompare(
+          b.appointment_status?.value1 ?? "",
+        ),
+      );
     case "supplier":
-      return sorted.sort((a, b) => {
-        const supplierA = a.supplier?.name || "";
-        const supplierB = b.supplier?.name || "";
-        return supplierA.localeCompare(supplierB);
-      });
+      return sorted.sort((a, b) =>
+        (a.supplier?.name ?? "").localeCompare(b.supplier?.name ?? ""),
+      );
     default:
       return sorted;
   }
-};
+}
 
-const applySortOption = (option: SortOption) => {
+const displayAppointments = computed<IAppointment[]>(() => {
+  const query = searchQuery.value.trim();
+  const filtered = appointments.value.filter((appt) =>
+    matchesSearch(appt, query),
+  );
+  return sortAppointments(filtered, sortOption.value);
+});
+
+const hasAppointments = computed(() => displayAppointments.value.length > 0);
+
+async function loadAppointments(): Promise<void> {
+  try {
+    const { data, error } = await getAllAppointments();
+
+    if (error) {
+      const message = error.info || error.status?.message;
+      logger.error("Error de API al cargar citas", { error: message });
+      toast.error(message || "No se pudieron cargar las citas");
+      hasInitialLoadError.value = appointments.value.length === 0;
+      return;
+    }
+
+    if (Array.isArray(data)) {
+      appointments.value = data;
+      hasInitialLoadError.value = false;
+    }
+  } catch (err: unknown) {
+    const errorMessage =
+      err instanceof Error ? err.message : "Error desconocido";
+    logger.error("Excepción al cargar citas", { error: errorMessage });
+    toast.error("No se pudieron cargar las citas. Intenta de nuevo.");
+    hasInitialLoadError.value = appointments.value.length === 0;
+  } finally {
+    isLoading.value = false;
+  }
+}
+
+async function refreshAppointments(): Promise<void> {
+  isRefreshing.value = true;
+  try {
+    await loadAppointments();
+  } finally {
+    isRefreshing.value = false;
+  }
+}
+
+function applySortOption(option: SortOption): void {
   sortOption.value = option;
-  sort.value = false;
-};
+  sortDropdownOpen.value = false;
+}
 
-const getFilterText = () => {
-  if (tab.value === 1) return "Mis Citas";
-  if (tab.value === 2) return "Procedimientos";
-  if (tab.value === 3) return "Valoraciones";
-  return "Mis Citas";
-};
+function toggleSortDropdown(): void {
+  sortDropdownOpen.value = !sortDropdownOpen.value;
+}
 
-const applyFilter = (typeFilter: string, tabNumber: number) => {
-  tab.value = tabNumber;
-};
+function closeSortDropdown(): void {
+  sortDropdownOpen.value = false;
+}
 
-const clearSearch = () => {
+function clearSearch(): void {
   searchQuery.value = "";
-};
+}
 
-const handleRefresh = async () => {
-  await refreshAppointments();
-};
+function handleSortKeydown(event: KeyboardEvent, option: SortOption): void {
+  if (event.key === "Enter" || event.key === " ") {
+    event.preventDefault();
+    applySortOption(option);
+  }
+}
 
-const downloadAppointmentsSummary = () => {
-  if (!displayAppointments.value || displayAppointments.value.length === 0) {
-    console.warn("No hay citas disponibles para descargar");
+function handleSortToggleKeydown(event: KeyboardEvent): void {
+  if (event.key === "Escape") {
+    closeSortDropdown();
+  }
+}
+
+function handleClickOutsideSort(event: MouseEvent): void {
+  if (!sortDropdownOpen.value) return;
+  const target = event.target as HTMLElement;
+  if (!target.closest(".citas-sort")) {
+    closeSortDropdown();
+  }
+}
+
+function formatCurrency(value: string | number): string {
+  const num = typeof value === "string" ? parseFloat(value) : value;
+  if (Number.isNaN(num)) return "N/A";
+  return num.toLocaleString("es-CR", { style: "currency", currency: "CRC" });
+}
+
+function formatDate(date: string | Date | null | undefined): string {
+  if (!date) return "N/A";
+  try {
+    return new Date(date).toLocaleDateString("es-ES");
+  } catch {
+    return "N/A";
+  }
+}
+
+function downloadAppointmentsSummary(): void {
+  const data = displayAppointments.value;
+
+  if (data.length === 0) {
+    toast.warning("No hay citas disponibles para descargar.");
     return;
   }
 
-  const doc = new jsPDF();
+  try {
+    const doc = new jsPDF();
+    const pageHeight = doc.internal.pageSize.height;
+    let y = 20;
 
-  doc.setFontSize(18);
-  doc.setFont("helvetica", "bold");
-  doc.text("Resumen de Mis Citas Médicas", 105, 20, { align: "center" });
-
-  doc.setDrawColor(200, 200, 200);
-  doc.line(20, 25, 190, 25);
-
-  doc.setFontSize(14);
-  doc.setFont("helvetica", "bold");
-  doc.text("Información del Paciente", 20, 35);
-
-  let yPosition = 45;
-  doc.setFontSize(12);
-
-  const addPatientField = (label: string, value: string) => {
-    doc.setFont("helvetica", "bold");
-    doc.text(`${label}:`, 20, yPosition);
-    doc.setFont("helvetica", "normal");
-    const text = value || "N/A";
-    doc.text(text, 60, yPosition);
-    yPosition += 7;
-  };
-
-  const firstAppointment = displayAppointments.value[0];
-  if (firstAppointment?.customer) {
-    addPatientField("Nombre", firstAppointment.customer.name);
-    addPatientField("Cédula", firstAppointment.customer.card_id);
-    addPatientField("Email", firstAppointment.customer.email);
-    addPatientField("Teléfono", firstAppointment.customer.phone_number);
-    addPatientField(
-      "Dirección",
-      `${firstAppointment.customer.city_name || ""}, ${firstAppointment.customer.province || ""}`,
-    );
-  }
-
-  yPosition += 5;
-
-  const filterText = getFilterText();
-
-  doc.setFont("helvetica", "bold");
-  doc.text("Filtro aplicado:", 20, yPosition);
-  doc.setFont("helvetica", "normal");
-  doc.text(filterText, 65, yPosition);
-  yPosition += 7;
-
-  doc.setFont("helvetica", "bold");
-  doc.text("Total de citas:", 20, yPosition);
-  doc.setFont("helvetica", "normal");
-  doc.text(displayAppointments.value.length.toString(), 65, yPosition);
-  yPosition += 15;
-
-  doc.setFontSize(14);
-  doc.setFont("helvetica", "bold");
-  doc.text("Detalle de Citas", 20, yPosition);
-  yPosition += 10;
-
-  const pageHeight = doc.internal.pageSize.height;
-
-  displayAppointments.value.forEach((appointment, index) => {
-    if (yPosition > pageHeight - 80) {
-      doc.addPage();
-      yPosition = 20;
-    }
-
-    doc.setFontSize(12);
-    doc.setFont("helvetica", "bold");
-    doc.setFillColor(240, 240, 240);
-    doc.rect(20, yPosition - 5, 170, 10, "F");
-    doc.setTextColor(0, 0, 0);
-    doc.text(
-      `Cita ${index + 1} - ${appointment.appointment_type?.value1 || "N/A"}`,
-      22,
-      yPosition,
-    );
-    yPosition += 12;
-
-    doc.setFont("helvetica", "normal");
-    doc.setFontSize(10);
-
-    const addAppointmentField = (label: string, value: string) => {
-      if (yPosition > pageHeight - 20) {
+    const ensureSpace = (needed: number): void => {
+      if (y + needed > pageHeight - 20) {
         doc.addPage();
-        yPosition = 20;
+        y = 20;
       }
-      doc.setFont("helvetica", "bold");
-      doc.text(`${label}:`, 25, yPosition);
-      doc.setFont("helvetica", "normal");
-      const text = value || "N/A";
-      doc.text(text, 70, yPosition);
-      yPosition += 6;
     };
 
-    const appointmentDate = appointment.appointment_date
-      ? new Date(appointment.appointment_date).toLocaleDateString("es-ES")
-      : "N/A";
-    addAppointmentField("Fecha", appointmentDate);
-    addAppointmentField("Hora", appointment.appointment_hour || "N/A");
-
-    if (appointment.supplier) {
-      addAppointmentField("Clínica/Hospital", appointment.supplier.name);
-      addAppointmentField(
-        "Ubicación",
-        `${appointment.supplier.city_name || ""}, ${appointment.supplier.province || ""}`,
-      );
-      addAppointmentField("Teléfono", appointment.supplier.phone_number);
-    }
-
-    if (appointment.package) {
-      addAppointmentField(
-        "Procedimiento",
-        appointment.package.procedure?.name || "",
-      );
-      addAppointmentField("Producto", appointment.package.product?.name || "");
-      if (appointment.package.product?.description) {
-        doc.setFont("helvetica", "bold");
-        doc.text("Descripción:", 25, yPosition);
-        doc.setFont("helvetica", "normal");
-        const splitDescription = doc.splitTextToSize(
-          appointment.package.product.description,
-          120,
-        );
-        doc.text(splitDescription, 70, yPosition);
-        yPosition += splitDescription.length * 6;
-      }
-    }
-
-    addAppointmentField("Estado", appointment.appointment_status?.value1 || "");
-    addAppointmentField(
-      "Tipo de reserva",
-      appointment.reservation_type?.name || "",
-    );
-
-    if (appointment.payment_status) {
-      addAppointmentField("Estado de pago", appointment.payment_status.value1);
-      addAppointmentField("Método de pago", appointment.payment_method || "");
-    }
-
-    if (appointment.price_procedure) {
-      const price = parseFloat(appointment.price_procedure).toLocaleString(
-        "es-CR",
-        {
-          style: "currency",
-          currency: "CRC",
-        },
-      );
-      addAppointmentField("Precio procedimiento", price);
-    }
-
-    if (appointment.price_valoration_appointment) {
-      const valuationPrice = parseFloat(
-        appointment.price_valoration_appointment,
-      ).toLocaleString("es-CR", {
-        style: "currency",
-        currency: "CRC",
-      });
-      addAppointmentField("Precio valoración", valuationPrice);
-    }
-
-    if (appointment.appointment_credit) {
-      yPosition += 3;
+    const addField = (
+      label: string,
+      value: string,
+      xLabel = 25,
+      xValue = 70,
+      fontSize = 10,
+    ): void => {
+      ensureSpace(8);
+      doc.setFontSize(fontSize);
       doc.setFont("helvetica", "bold");
-      doc.text("Información de Crédito:", 25, yPosition);
-      yPosition += 6;
-
-      const requestedAmount = parseFloat(
-        appointment.appointment_credit.requested_amount,
-      ).toLocaleString("es-CR", {
-        style: "currency",
-        currency: "CRC",
-      });
-      const approvedAmount = parseFloat(
-        appointment.appointment_credit.approved_amount,
-      ).toLocaleString("es-CR", {
-        style: "currency",
-        currency: "CRC",
-      });
-
-      addAppointmentField(
-        "  Estado crédito",
-        appointment.appointment_credit.credit_status?.name || "",
-      );
-      addAppointmentField("  Monto solicitado", requestedAmount);
-      addAppointmentField("  Monto aprobado", approvedAmount);
-
-      if (appointment.appointment_credit.credit_observations) {
-        addAppointmentField(
-          "  Observaciones",
-          appointment.appointment_credit.credit_observations,
-        );
-      }
-    }
-
-    if (appointment.user_description) {
-      yPosition += 3;
-      doc.setFont("helvetica", "bold");
-      doc.text("Descripción:", 25, yPosition);
-      yPosition += 6;
+      doc.text(`${label}:`, xLabel, y);
       doc.setFont("helvetica", "normal");
-      const splitUserDescription = doc.splitTextToSize(
-        appointment.user_description,
-        140,
+      doc.text(value || "N/A", xValue, y);
+      y += 6;
+    };
+
+    doc.setFontSize(18);
+    doc.setFont("helvetica", "bold");
+    doc.text("Resumen de Mis Citas Médicas", 105, y, { align: "center" });
+    y += 8;
+    doc.setDrawColor(200, 200, 200);
+    doc.line(20, y, 190, y);
+    y += 12;
+
+    const patient = data[0]?.customer;
+    if (patient) {
+      doc.setFontSize(14);
+      doc.setFont("helvetica", "bold");
+      doc.text("Información del Paciente", 20, y);
+      y += 10;
+
+      addField("Nombre", patient.name, 20, 60, 12);
+      addField("Cédula", patient.card_id, 20, 60, 12);
+      addField("Email", patient.email, 20, 60, 12);
+      addField("Teléfono", patient.phone_number, 20, 60, 12);
+      addField(
+        "Dirección",
+        `${patient.city_name ?? ""}, ${patient.province ?? ""}`,
+        20,
+        60,
+        12,
       );
-      doc.text(splitUserDescription, 25, yPosition);
-      yPosition += splitUserDescription.length * 6;
+      y += 5;
     }
 
-    if (appointment.appointment_qr_code) {
-      addAppointmentField("Código QR", appointment.appointment_qr_code);
-    }
+    addField("Total de citas", data.length.toString(), 20, 65, 12);
+    y += 10;
 
-    yPosition += 8;
-  });
+    doc.setFontSize(14);
+    doc.setFont("helvetica", "bold");
+    doc.text("Detalle de Citas", 20, y);
+    y += 10;
 
-  if (yPosition > pageHeight - 30) {
-    doc.addPage();
-    yPosition = pageHeight - 20;
-  } else {
-    yPosition = pageHeight - 20;
+    data.forEach((appt, index) => {
+      ensureSpace(80);
+
+      doc.setFontSize(12);
+      doc.setFont("helvetica", "bold");
+      doc.setFillColor(240, 240, 240);
+      doc.rect(20, y - 5, 170, 10, "F");
+      doc.setTextColor(0, 0, 0);
+      doc.text(
+        `Cita ${index + 1} — ${appt.appointment_type?.value1 ?? "N/A"}`,
+        22,
+        y,
+      );
+      y += 12;
+
+      addField("Fecha", formatDate(appt.appointment_date));
+      addField("Hora", appt.appointment_hour ?? "N/A");
+
+      if (appt.supplier) {
+        addField("Clínica/Hospital", appt.supplier.name);
+        addField(
+          "Ubicación",
+          `${appt.supplier.city_name ?? ""}, ${appt.supplier.province ?? ""}`,
+        );
+        addField("Teléfono", appt.supplier.phone_number);
+      }
+
+      if (appt.package) {
+        addField("Procedimiento", appt.package.procedure?.name ?? "");
+        addField("Producto", appt.package.product?.name ?? "");
+      }
+
+      addField("Estado", appt.appointment_status?.value1 ?? "");
+      addField("Tipo de reserva", appt.reservation_type?.name ?? "");
+
+      if (appt.payment_status) {
+        addField("Estado de pago", appt.payment_status.value1 ?? "");
+      }
+
+      if (appt.price_procedure) {
+        addField("Precio procedimiento", formatCurrency(appt.price_procedure));
+      }
+
+      if (appt.price_valoration_appointment) {
+        addField(
+          "Precio valoración",
+          formatCurrency(appt.price_valoration_appointment),
+        );
+      }
+
+      if (appt.appointment_credit) {
+        y += 3;
+        ensureSpace(30);
+        doc.setFont("helvetica", "bold");
+        doc.text("Información de Crédito:", 25, y);
+        y += 6;
+
+        addField(
+          "Estado crédito",
+          appt.appointment_credit.credit_status?.name ?? "",
+        );
+        addField(
+          "Monto solicitado",
+          formatCurrency(appt.appointment_credit.requested_amount),
+        );
+        addField(
+          "Monto aprobado",
+          formatCurrency(appt.appointment_credit.approved_amount),
+        );
+
+        if (appt.appointment_credit.credit_observations) {
+          addField(
+            "Observaciones",
+            appt.appointment_credit.credit_observations,
+          );
+        }
+      }
+
+      if (appt.user_description) {
+        y += 3;
+        ensureSpace(20);
+        doc.setFont("helvetica", "bold");
+        doc.setFontSize(10);
+        doc.text("Descripción:", 25, y);
+        y += 6;
+        doc.setFont("helvetica", "normal");
+        const lines = doc.splitTextToSize(appt.user_description, 140);
+        doc.text(lines, 25, y);
+        y += lines.length * 6;
+      }
+
+      if (appt.appointment_qr_code) {
+        addField("Código QR", appt.appointment_qr_code);
+      }
+
+      y += 8;
+    });
+
+    const footerY = pageHeight - 15;
+    doc.setFontSize(10);
+    doc.setTextColor(100, 100, 100);
+    doc.text(
+      `Documento generado el: ${new Date().toLocaleDateString("es-ES")}`,
+      20,
+      footerY,
+    );
+    doc.text("Vitalink — Sistema de Gestión Médica", 105, footerY, {
+      align: "center",
+    });
+
+    const safeName = (patient?.name ?? "Usuario").replace(/\s+/g, "_");
+    const dateSlug = new Date().toISOString().split("T")[0];
+    doc.save(`${safeName}_Citas_${dateSlug}.pdf`);
+
+    toast.success("Resumen descargado correctamente.");
+  } catch (err: unknown) {
+    const errorMessage =
+      err instanceof Error ? err.message : "Error desconocido";
+    logger.error("Error al generar PDF", { error: errorMessage });
+    toast.error("No se pudo generar el PDF. Intenta de nuevo.");
   }
+}
 
-  doc.setFontSize(10);
-  doc.setTextColor(100, 100, 100);
-  doc.text(
-    "Documento generado el: " + new Date().toLocaleDateString("es-ES"),
-    20,
-    yPosition,
-  );
-  doc.text("Vitalink - Sistema de Gestión Médica", 105, yPosition, {
-    align: "center",
-  });
+onMounted(async () => {
+  document.addEventListener("click", handleClickOutsideSort);
+  await loadAppointments();
+});
 
-  const patientName = firstAppointment?.customer?.name || "Usuario";
-  const fileName = `${patientName.replace(/\s+/g, "_")}_Citas_${getFilterText().replace(/\s+/g, "_")}_${new Date().toISOString().split("T")[0]}.pdf`;
-  doc.save(fileName);
-};
+onBeforeUnmount(() => {
+  document.removeEventListener("click", handleClickOutsideSort);
+});
 
-provide("handleRefresh", handleRefresh);
+provide("refreshAppointments", refreshAppointments);
+provide("handleRefresh", refreshAppointments);
 </script>
 
 <template>
   <NuxtLayout name="pacientes-dashboard">
-    <div v-if="loading" class="appointments-page__loader"></div>
-    <main v-else class="appointments-page">
-      <section class="appointments-page__content">
-        <div class="appointments-page__header">
-          <h1 class="appointments-page__title">Mis Citas</h1>
-        </div>
+    <div
+      v-if="isLoading && appointments.length === 0"
+      class="citas-page__loader"
+      role="status"
+      aria-live="polite"
+      aria-label="Cargando citas"
+    >
+      <span class="visually-hidden">Cargando citas…</span>
+    </div>
 
-        <div class="appointments-page__controls">
-          <nav class="appointments-tabs">
-            <ul class="appointments-tabs__list">
-              <li class="appointments-tabs__item">
-                <button
-                  class="appointments-tabs__button"
-                  :class="{ 'appointments-tabs__button--active': tab === 1 }"
-                  @click="applyFilter('ALL', 1)"
-                >
-                  Mis citas
-                </button>
-              </li>
-            </ul>
-          </nav>
+    <section
+      v-else-if="hasInitialLoadError"
+      class="citas-page__error"
+      role="alert"
+      aria-live="assertive"
+    >
+      <p class="citas-page__error-message">No se pudieron cargar las citas.</p>
+      <button
+        class="citas-page__retry-button"
+        :disabled="isLoading"
+        @click="loadAppointments"
+      >
+        {{ isLoading ? "Cargando…" : "Reintentar" }}
+      </button>
+    </section>
 
-          <NuxtLink href="/buscar" class="new-appointment-button">
-            <AtomsIconsPlusIcon />
+    <main v-else class="citas-page" aria-label="Gestión de citas médicas">
+      <section class="citas-page__content">
+        <header class="citas-page__header">
+          <h1 class="citas-page__title">Mis Citas</h1>
+
+          <NuxtLink
+            href="/buscar"
+            class="citas-page__new-appointment"
+            aria-label="Crear nueva cita médica"
+          >
+            <AtomsIconsPlusIcon aria-hidden="true" />
             Nueva Cita
           </NuxtLink>
-        </div>
+        </header>
 
-        <div class="appointments-page__toolbar">
+        <div
+          class="citas-page__toolbar"
+          role="toolbar"
+          aria-label="Herramientas de citas"
+        >
           <UiSearchInput
             v-model="searchQuery"
-            placeholder="Buscar"
+            placeholder="Buscar citas…"
             aria-label="Buscar en mis citas"
             max-width="320px"
             @clear="clearSearch"
           />
 
-          <div class="toolbar-actions">
+          <div class="citas-toolbar">
             <button
-              class="toolbar-actions__button toolbar-actions__button--download"
+              class="citas-toolbar__button citas-toolbar__button--download"
+              :disabled="!hasAppointments"
+              :aria-disabled="!hasAppointments"
+              aria-label="Descargar resumen de citas en PDF"
               @click="downloadAppointmentsSummary"
             >
-              <AtomsIconsDownloadIcon size="20" />
+              <AtomsIconsDownloadIcon size="20" aria-hidden="true" />
               Descargar
             </button>
 
-            <div class="sort-dropdown">
+            <div class="citas-sort" @keydown="handleSortToggleKeydown">
               <button
-                class="sort-dropdown__toggle"
-                @click="sort = !sort"
+                class="citas-sort__toggle"
                 type="button"
-                :aria-expanded="sort"
+                :aria-expanded="sortDropdownOpen"
+                aria-haspopup="listbox"
+                aria-label="Ordenar citas"
+                @click="toggleSortDropdown"
               >
                 Ordenar por
-                <AtomsIconsChevronDown size="20" />
+                <AtomsIconsChevronDown
+                  size="20"
+                  aria-hidden="true"
+                  :class="{ 'citas-sort__chevron--open': sortDropdownOpen }"
+                />
               </button>
+
               <ul
-                class="sort-dropdown__menu"
-                :class="{ 'sort-dropdown__menu--show': sort }"
+                v-show="sortDropdownOpen"
+                class="citas-sort__menu"
+                role="listbox"
+                aria-label="Opciones de ordenamiento"
               >
-                <li>
-                  <a
-                    class="sort-dropdown__item"
-                    @click="applySortOption('date-desc')"
-                  >
-                    Fecha (más reciente)
-                  </a>
-                </li>
-                <li>
-                  <a
-                    class="sort-dropdown__item"
-                    @click="applySortOption('date-asc')"
-                  >
-                    Fecha (más antigua)
-                  </a>
-                </li>
-                <li>
-                  <a
-                    class="sort-dropdown__item"
-                    @click="applySortOption('status')"
-                  >
-                    Estado
-                  </a>
-                </li>
-                <li>
-                  <a
-                    class="sort-dropdown__item"
-                    @click="applySortOption('supplier')"
-                  >
-                    Clínica/Hospital
-                  </a>
+                <li
+                  v-for="opt in SORT_OPTIONS"
+                  :key="opt.value"
+                  role="option"
+                  :aria-selected="sortOption === opt.value"
+                  class="citas-sort__item"
+                  :class="{
+                    'citas-sort__item--active': sortOption === opt.value,
+                  }"
+                  tabindex="0"
+                  @click="applySortOption(opt.value)"
+                  @keydown="handleSortKeydown($event, opt.value)"
+                >
+                  {{ opt.label }}
                 </li>
               </ul>
             </div>
           </div>
         </div>
 
-        <div class="appointments-table-container">
-          <PacientesCitasTable :appointments="displayAppointments" />
+        <div aria-live="polite" class="citas-page__results">
+          <div
+            v-if="isRefreshing"
+            class="citas-page__refreshing-banner"
+            role="status"
+            aria-live="polite"
+          >
+            <span class="visually-hidden">Actualizando citas…</span>
+            Actualizando…
+          </div>
+
+          <div class="citas-page__table-container">
+            <PacientesCitasTable :appointments="displayAppointments" />
+          </div>
         </div>
       </section>
     </main>
@@ -554,7 +541,7 @@ provide("handleRefresh", handleRefresh);
 </template>
 
 <style lang="scss" scoped>
-.appointments-page {
+.citas-page {
   background-color: #f8f9fa;
   min-height: 100vh;
 
@@ -563,6 +550,29 @@ provide("handleRefresh", handleRefresh);
     justify-content: center;
     align-items: center;
     min-height: 50vh;
+  }
+
+  &__error {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 1rem;
+    min-height: 40vh;
+    padding: 2rem;
+    text-align: center;
+  }
+
+  &__error-message {
+    font-family: $font-family-main;
+    font-size: 1rem;
+    color: $color-error;
+    margin: 0;
+  }
+
+  &__retry-button {
+    @include primary-button;
+    min-width: 10rem;
   }
 
   &__content {
@@ -574,7 +584,16 @@ provide("handleRefresh", handleRefresh);
   }
 
   &__header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
     margin-bottom: 1.5rem;
+    gap: 1rem;
+
+    @include respond-to-max(md) {
+      flex-direction: column;
+      align-items: stretch;
+    }
   }
 
   &__title {
@@ -585,17 +604,16 @@ provide("handleRefresh", handleRefresh);
     margin: 0;
   }
 
-  &__controls {
-    display: flex;
-    justify-content: space-between;
-    align-items: flex-end;
-    margin-bottom: 1.5rem;
-    gap: 1rem;
+  &__new-appointment {
+    @include primary-button;
+    white-space: nowrap;
+    min-width: fit-content;
+    padding: 0.5rem 0.875rem;
+    gap: 0.5rem;
 
     @include respond-to-max(md) {
-      flex-direction: column;
-      align-items: stretch;
-      gap: 1rem;
+      width: 100%;
+      justify-content: center;
     }
   }
 
@@ -609,150 +627,60 @@ provide("handleRefresh", handleRefresh);
     @include respond-to-max(md) {
       flex-direction: column;
       align-items: stretch;
-      gap: 1rem;
-    }
-  }
-}
-
-.appointments-tabs {
-  &__list {
-    display: flex;
-    list-style: none;
-    margin: 0;
-    padding: 0;
-    gap: 0.5rem;
-    overflow-x: auto;
-
-    @include respond-to-max(sm) {
-      gap: 0;
     }
   }
 
-  &__item {
-    flex-shrink: 0;
+  &__results {
+    position: relative;
   }
 
-  &__button {
-    @include button-base;
-    background: none;
-    border: none;
-    border-bottom: 0.125rem solid transparent;
-    border-radius: 0;
-    padding: 0.75rem 1rem;
+  &__refreshing-banner {
+    background-color: rgba($color-primary, 0.08);
+    color: $color-primary;
+    text-align: center;
+    padding: 0.5rem;
+    font-family: $font-family-main;
+    font-size: 0.875rem;
     font-weight: 500;
-    color: $color-text-muted;
-    white-space: nowrap;
-
-    &:hover {
-      color: $color-primary;
-    }
-
-    &--active {
-      color: $color-primary;
-      border-bottom-color: $color-primary;
-      font-weight: 600;
-    }
-
-    @include respond-to-max(sm) {
-      padding: 0.5rem 0.75rem;
-      font-size: 0.875rem;
-    }
+    border-radius: 0.375rem 0.375rem 0 0;
   }
-}
 
-.new-appointment-button {
-  @include primary-button;
-  white-space: nowrap;
-  min-width: fit-content;
-  padding: 0.5rem 0.875rem;
-  gap: 0.5rem;
-
-  @include respond-to-max(md) {
-    width: 100%;
-    justify-content: center;
-  }
-}
-
-.search-input {
-  position: relative;
-  display: flex;
-  align-items: center;
-
-  &__wrapper {
-    display: flex;
-    align-items: center;
+  &__table-container {
     background: $white;
     border-radius: 0.5rem;
     box-shadow: 0 0.0625rem 0.1875rem rgba(0, 0, 0, 0.1);
     overflow: hidden;
-    max-width: 18.75rem;
-    width: 100%;
-    position: relative;
-
-    @include respond-to-max(md) {
-      max-width: none;
-    }
   }
 
-  &__icon {
-    position: absolute;
-    left: 0.75rem;
+  &__empty {
     display: flex;
-    align-items: center;
-    color: #6c757d;
-    pointer-events: none;
-  }
-
-  &__field {
-    @include input-base;
-    padding: 0.625rem 0.875rem 0.625rem 2.5rem;
-    font-weight: 300;
-    font-size: 1rem;
-    color: #6d758f;
-    border-radius: 0.5rem;
-    border: 0.0625rem solid #f1f3f7;
-    box-shadow: 0 0.0625rem 0.125rem #1018280d;
-    background-color: #fff;
-    width: 100%;
-
-    &:focus-visible {
-      border: none;
-      box-shadow: none;
-    }
-  }
-
-  &__clear {
-    position: absolute;
-    right: 0.5rem;
-    top: 50%;
-    transform: translateY(-50%);
-    background: none;
-    border: none;
-    width: 1.25rem;
-    height: 1.25rem;
-    border-radius: 50%;
-    display: flex;
+    flex-direction: column;
     align-items: center;
     justify-content: center;
+    gap: 1rem;
+    padding: 3rem 1.5rem;
+    background: $white;
+    border-radius: 0.5rem;
+    box-shadow: 0 0.0625rem 0.1875rem rgba(0, 0, 0, 0.1);
+    text-align: center;
+  }
+
+  &__empty-text {
+    font-family: $font-family-main;
+    font-size: 0.9375rem;
     color: $color-text-muted;
-    cursor: pointer;
-    font-size: 1rem;
-    font-weight: bold;
-    line-height: 1;
+    margin: 0;
+  }
 
-    &:hover {
-      background-color: #f1f1f1;
-      color: $color-foreground;
-    }
-
-    &:focus {
-      outline: 0.125rem solid $color-primary;
-      outline-offset: 0.0625rem;
-    }
+  &__empty-action {
+    @include gradient-button;
+    text-decoration: none;
+    font-size: 0.875rem;
+    padding: 0.625rem 1.25rem;
   }
 }
 
-.toolbar-actions {
+.citas-toolbar {
   display: flex;
   align-items: center;
   gap: 0.5rem;
@@ -772,10 +700,19 @@ provide("handleRefresh", handleRefresh);
         flex: 1;
       }
     }
+
+    &:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+  }
+
+  &__icon--spinning {
+    animation: spin-icon 0.8s linear infinite;
   }
 }
 
-.sort-dropdown {
+.citas-sort {
   position: relative;
 
   &__toggle {
@@ -788,28 +725,27 @@ provide("handleRefresh", handleRefresh);
     }
   }
 
+  &__chevron--open {
+    transform: rotate(180deg);
+    transition: transform 0.2s ease;
+  }
+
   &__menu {
     position: absolute;
     top: 100%;
     right: 0;
     z-index: 1000;
-    display: none;
     min-width: 10rem;
     padding: 0.5rem 0;
-    margin: 0.125rem 0 0;
+    margin: 0.25rem 0 0;
     font-size: 0.875rem;
     color: $color-foreground;
     text-align: left;
     list-style: none;
     background-color: $white;
-    background-clip: padding-box;
     border: 0.0625rem solid #d0d5dd;
     border-radius: 0.5rem;
     box-shadow: 0 0.375rem 0.75rem rgba(0, 0, 0, 0.175);
-
-    &--show {
-      display: block;
-    }
 
     @include respond-to-max(sm) {
       left: 0;
@@ -821,34 +757,37 @@ provide("handleRefresh", handleRefresh);
   &__item {
     @include link-base;
     display: block;
-    padding: 0.375rem 1rem;
-    clear: both;
+    padding: 0.5rem 1rem;
     font-weight: 400;
     color: $color-foreground;
-    text-decoration: none;
     white-space: nowrap;
-    transition: background-color 0.2s ease;
     cursor: pointer;
+    transition: background-color 0.15s ease;
 
-    &:hover {
+    &:hover,
+    &:focus-visible {
       background-color: #f8f9fa;
+      outline: none;
     }
 
-    &:focus {
-      outline: none;
-      background-color: #f8f9fa;
+    &--active {
+      color: $color-primary;
+      font-weight: 600;
+      background-color: rgba($color-primary, 0.04);
     }
   }
 }
 
-.appointments-table-container {
-  background: $white;
-  border-radius: 0.5rem;
-  box-shadow: 0 0.0625rem 0.1875rem rgba(0, 0, 0, 0.1);
-  overflow: hidden;
-}
-
 .visually-hidden {
   @include visually-hidden;
+}
+
+@keyframes spin-icon {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
 }
 </style>

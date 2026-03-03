@@ -1,29 +1,20 @@
 <script lang="ts" setup>
-import type {
-  AssessmentDetail,
-  Customer,
-  MedicalSpecialty,
-  Package,
-  Procedures,
-  Supplier,
-} from "@/types";
-
 interface Props {
-  supplier?: Supplier | Partial<Supplier> | null;
-  selectPackage: (selectedPackage: Package) => void;
-  customer?: Customer | null;
+  supplier?: ISupplierDetail | Partial<ISupplierDetail> | null;
+  selectPackage: (selectedPackage: IPackage) => void;
+  customer?: ICustomer | null;
   searchSpecialtyCode?: string | null;
   searchProcedureCode?: string | null;
   isSearchMode?: boolean;
   selectedSpecialty?: string | null;
   selectedProcedure?: string | null;
-  filteredProcedures?: Procedures[];
-  filteredPackages?: Package[];
+  filteredProcedures?: IProcedures[];
+  filteredPackages?: IPackage[];
   selectSpecialty?: (code: string, id: number) => void;
   selectProcedure?: (code: string, id: number) => void;
-  specialties?: MedicalSpecialty[];
+  specialties?: IUdc[];
   getAssessmentLabel: (code: string) => string;
-  assessmentDetails?: AssessmentDetail[];
+  assessmentDetails?: IUdc[];
 }
 
 const props = withDefaults(defineProps<Props>(), {
@@ -44,7 +35,9 @@ const props = withDefaults(defineProps<Props>(), {
 
 const { formatCurrency } = useFormat();
 
-const currentSupplier = computed<Supplier | Partial<Supplier> | null>(() => {
+const currentSupplier = computed<
+  ISupplierDetail | Partial<ISupplierDetail> | null
+>(() => {
   return props.supplier || null;
 });
 
@@ -57,18 +50,16 @@ const hasServices = computed<boolean>(() => {
   return supplierServices.value.length > 0;
 });
 
-const availableSpecialties = computed<MedicalSpecialty[]>(() => {
+const availableSpecialties = computed<IUdc[]>(() => {
   if (props.specialties && props.specialties.length > 0) {
     return props.specialties;
   }
   return supplierServices.value
     .map((service) => service.medical_specialty)
-    .filter(
-      (specialty): specialty is MedicalSpecialty => specialty !== undefined,
-    );
+    .filter((specialty): specialty is IUdc => specialty !== undefined);
 });
 
-const currentFilteredProcedures = computed<Procedures[]>(() => {
+const currentFilteredProcedures = computed<IProcedures[]>(() => {
   if (props.filteredProcedures && props.filteredProcedures.length > 0) {
     return props.filteredProcedures;
   }
@@ -82,14 +73,14 @@ const currentFilteredProcedures = computed<Procedures[]>(() => {
   return Array.isArray(specialty?.procedures) ? specialty.procedures : [];
 });
 
-const currentFilteredPackages = computed<Package[]>(() => {
+const currentFilteredPackages = computed<IPackage[]>(() => {
   if (props.filteredPackages && props.filteredPackages.length > 0) {
     return props.filteredPackages.filter(
       (pkg) => pkg.product?.code !== "ASSESSMENT_APPOINTMENT",
     );
   }
 
-  let packages: Package[] = [];
+  let packages: IPackage[] = [];
 
   if (!props.selectedProcedure && currentFilteredProcedures.value.length > 0) {
     const firstProcedure = currentFilteredProcedures.value[0];
@@ -150,14 +141,14 @@ const supplierReviews = (): {
   });
 };
 
-const getPackagePrice = (pkg: Package): number => {
+const getPackagePrice = (pkg: IPackage): number => {
   if (!pkg?.product?.value1) return 0;
   const price = parseFloat(pkg.product.value1);
   const discount = (pkg.discount || 0) / 100;
   return price - price * discount;
 };
 
-const formatPackagePrice = (pkg: Package): string => {
+const formatPackagePrice = (pkg: IPackage): string => {
   const price = getPackagePrice(pkg);
   return formatCurrency(price);
 };

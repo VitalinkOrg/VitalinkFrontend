@@ -46,10 +46,9 @@
 
 <script lang="ts" setup>
 import { useAppointment } from "@/composables/api";
-import type { Appointment } from "@/types";
 
 interface SharedData {
-  appointment: Appointment;
+  appointment: IAppointment;
   priceProcedure: string;
   recommendation: string;
   diagnostic: string;
@@ -61,7 +60,7 @@ const { isOpen, closeModal, getSharedData, openModal } =
   useMedicalModalManager();
 
 const modalData = computed(() =>
-  getSharedData<SharedData>("confirmValoration")
+  getSharedData<SharedData>("confirmValoration"),
 );
 
 const sharedData = computed(() => ({
@@ -102,13 +101,12 @@ const handleConfirmValoration = async () => {
     if (!sharedData.value.appointment) throw new Error("Appointment not found");
 
     isLoading.value = true;
-    const api = uploadProforma(payload, sharedData.value.appointment.id);
-    await api.request();
+    const { data, error } = await uploadProforma(
+      sharedData.value.appointment.id,
+      payload,
+    );
 
-    const response = api.response.value;
-    const error = api.error.value;
-
-    if (response?.data) {
+    if (data) {
       await refreshAppointments?.();
       handleCloseModal();
       closeModal("detallesValoracion");

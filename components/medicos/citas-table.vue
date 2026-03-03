@@ -60,15 +60,25 @@
       </template>
 
       <template #cell-appointment_date="{ item }">
-        <time
-          :datetime="item.appointment_date"
-          class="appointments-table__datetime"
-        >
-          {{ formatDate(item.appointment_date) }}
-          <span class="appointments-table__time">
-            a las {{ formatTime(item.appointment_hour) }}
-          </span>
-        </time>
+        <div v-if="item.appointment_date && item.appointment_hour">
+          <time
+            :datetime="
+              item.appointment_date ? formatDate(item.appointment_date) : '-'
+            "
+            class="appointments-table__datetime"
+          >
+            {{
+              item.appointment_date ? formatDate(item.appointment_date) : "-"
+            }}
+            <span class="appointments-table__time">
+              a las
+              {{
+                item.appointment_hour ? formatTime(item.appointment_hour) : "-"
+              }}
+            </span>
+          </time>
+        </div>
+        <div v-else>-</div>
       </template>
 
       <template #cell-procedure_name="{ item }">
@@ -343,11 +353,10 @@
 import { useMedicalModalManager } from "@/composables/useMedicalModalManager";
 import { jsPDF } from "jspdf";
 import { computed, ref, watch } from "vue";
-import type { Appointment, AppointmentStatusCode } from "~/types";
 import type { TableColumn } from "../ui/appointment-table-base.vue";
 
 interface Props {
-  appointments: Appointment[];
+  appointments: IAppointment[];
   useDropdown: boolean;
   itemsPerPage: number;
 }
@@ -364,7 +373,7 @@ const { openModal, isOpen } = useMedicalModalManager();
 
 const selectedAppointments = ref<Set<number>>(new Set());
 const allSelected = ref<boolean>(false);
-const localAppointments = ref<Appointment[]>([]);
+const localAppointments = ref<IAppointment[]>([]);
 
 const dynamicColumns = computed<TableColumn[]>(() => {
   const baseColumns: TableColumn[] = [];
@@ -450,23 +459,23 @@ const dynamicColumns = computed<TableColumn[]>(() => {
   return baseColumns;
 });
 
-const handleOpenDetallesCita = (appointment: Appointment) => {
+const handleOpenDetallesCita = (appointment: IAppointment) => {
   openModal("detallesCita", { appointment });
 };
 
-const handleOpenDetallesValoracion = (appointment: Appointment) => {
+const handleOpenDetallesValoracion = (appointment: IAppointment) => {
   openModal("detallesValoracion", { appointment });
 };
 
-const handleOpenConfirmacionReserva = (appointment: Appointment) => {
+const handleOpenConfirmacionReserva = (appointment: IAppointment) => {
   openModal("confirmacionReserva", { appointment });
 };
 
-const handleOpenEditorFechaHora = (appointment: Appointment) => {
+const handleOpenEditorFechaHora = (appointment: IAppointment) => {
   openModal("editorFechaHora", { appointment });
 };
 
-const handleOpenAnularCita = (appointment: Appointment) => {
+const handleOpenAnularCita = (appointment: IAppointment) => {
   openModal("anularCita", { appointment });
 };
 
@@ -482,7 +491,7 @@ const toggleAllAppointments = (): void => {
   if (allSelected.value) {
     selectedAppointments.value.clear();
   } else {
-    props.appointments.forEach((appointment: Appointment) => {
+    props.appointments.forEach((appointment: IAppointment) => {
       selectedAppointments.value.add(appointment.id);
     });
   }
@@ -505,7 +514,7 @@ const statusClass = (status: AppointmentStatusCode): string => {
   return statusMap[status] || "";
 };
 
-const downloadSummary = (appointment: Appointment): void => {
+const downloadSummary = (appointment: IAppointment): void => {
   const doc = new jsPDF();
 
   doc.setFontSize(18);
@@ -533,10 +542,20 @@ const downloadSummary = (appointment: Appointment): void => {
 
   addField("Paciente", appointment.customer.name);
   addField("Tipo de Reserva", appointment.reservation_type.name);
-  addField("Fecha de la cita", formatDate(appointment.appointment_date));
-  addField("Hora de la cita", formatTime(appointment.appointment_hour));
+  addField(
+    "Fecha de la cita",
+    appointment.appointment_date
+      ? formatDate(appointment.appointment_date)
+      : "-",
+  );
+  addField(
+    "Hora de la cita",
+    appointment.appointment_hour
+      ? formatTime(appointment.appointment_hour)
+      : "-",
+  );
   addField("Procedimiento", appointment.package?.procedure?.name || "N/A");
-  addField("Estado", appointment.appointment_status.value1);
+  addField("Estado", appointment.appointment_status?.value1 || "N/A");
 
   doc.setFontSize(10);
   doc.setTextColor(100, 100, 100);

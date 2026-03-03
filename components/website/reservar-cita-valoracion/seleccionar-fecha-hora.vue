@@ -9,12 +9,6 @@
         referencia para poder concretar una cita con tu médico.
       </p>
     </header>
-
-    <UiAvailabilitySelector
-      v-if="supplierId"
-      v-model="selectedDateTime"
-      :supplier-id="supplierId"
-    />
   </section>
 </template>
 
@@ -44,7 +38,7 @@ watch(
     if (newDay) {
       emit("set-selected-day", newDay);
     }
-  }
+  },
 );
 
 watch(
@@ -53,7 +47,7 @@ watch(
     if (newHour) {
       emit("set-selected-hour", newHour);
     }
-  }
+  },
 );
 
 // Watch para sincronizar props con el estado local
@@ -63,7 +57,7 @@ watch(
     if (newDay !== selectedDateTime.value.day) {
       selectedDateTime.value.day = newDay;
     }
-  }
+  },
 );
 
 watch(
@@ -72,7 +66,7 @@ watch(
     if (newHour !== selectedDateTime.value.hour) {
       selectedDateTime.value.hour = newHour;
     }
-  }
+  },
 );
 </script>
 

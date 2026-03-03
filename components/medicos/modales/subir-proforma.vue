@@ -59,9 +59,6 @@
 </template>
 
 <script lang="ts" setup>
-import { computed, ref } from "vue";
-import { useFormat } from "~/composables/useFormat";
-import type { Appointment, AppointmentStatusCode } from "~/types";
 import type { TablaBaseRow } from "../tabla-detalles-cita.vue";
 
 const { formatDate, formatTime } = useFormat();
@@ -71,7 +68,7 @@ const { isOpen, closeModal, getSharedData, openModal } =
 const isLoading = ref<boolean>(false);
 
 const modalData = computed(() =>
-  getSharedData<{ appointment: Appointment }>("subirProforma")
+  getSharedData<{ appointment: IAppointment }>("subirProforma"),
 );
 
 const currentAppointment = computed(() => modalData.value?.appointment);
@@ -89,13 +86,17 @@ const appointmentRowsWithData = computed((): TablaBaseRow[] => {
     {
       key: "fecha",
       header: "Fecha de la cita:",
-      value: formatDate(appointment.appointment_date),
+      value: appointment.appointment_date
+        ? formatDate(appointment.appointment_date)
+        : "-",
       class: "appointment-editor__details-row--editable",
     },
     {
       key: "hora",
       header: "Hora de la cita:",
-      value: formatTime(appointment.appointment_hour, "hs"),
+      value: appointment.appointment_hour
+        ? formatTime(appointment.appointment_hour, "hs")
+        : "-",
       class: "appointment-editor__details-row--editable",
     },
     {

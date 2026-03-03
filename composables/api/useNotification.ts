@@ -1,4 +1,4 @@
-import type { ApiResponse, UserNotification } from "@/types";
+import type { ApiResponse, UserNotification } from "~/types/test-index";
 import useApi from "./useApi";
 
 export const useUserNotification = () => {

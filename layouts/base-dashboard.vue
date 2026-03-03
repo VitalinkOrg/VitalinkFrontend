@@ -1,7 +1,4 @@
 <script lang="ts" setup>
-import type { Supplier } from "@/types";
-import { onMounted, onUnmounted, ref, type Component, type Ref } from "vue";
-
 interface NavigationItem {
   href: string;
   label: string;
@@ -46,7 +43,7 @@ const role = useCookie("role");
 const authenticated = useCookie("authenticated");
 const router = useRouter();
 
-const user_info: Partial<Supplier> = {
+const user_info: Partial<ISupplierDetail> = {
   id: 1,
   name:
     props.userType === "medical"

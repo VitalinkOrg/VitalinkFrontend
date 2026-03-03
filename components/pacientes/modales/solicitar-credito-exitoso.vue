@@ -43,11 +43,8 @@
 </template>
 
 <script lang="ts" setup>
-import type { ModalName } from "~/types";
-import type { Appointment } from "~/types/appointment";
-
 interface Props {
-  appointment: Appointment;
+  appointment: IAppointment;
   isOpen: boolean;
 }
 

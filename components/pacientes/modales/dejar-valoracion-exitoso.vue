@@ -1,89 +1,105 @@
 <template>
   <AtomsModalBase
-    :is-open="isModalOpen"
+    :is-open="isModalVisible"
     size="small"
-    @close="handleCloseModal('leaveReviewSuccess')"
+    :close-on-backdrop="false"
     header-class="header-border-bottom"
     footer-class="footer-border-top"
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="review-success-heading"
+    aria-describedby="review-success-description"
+    @close="emitCloseModal('leaveReviewSuccess')"
   >
-    <div class="leave-rating-success-modal__content">
-      <div class="leave-rating-success-modal__icon-wrapper">
+    <section class="review-success__body">
+      <div class="review-success__icon-container">
         <AtomsIconsCheckIcon
           size="24"
-          class="leave-rating-success-modal__icon"
+          class="review-success__icon"
+          aria-hidden="true"
         />
       </div>
 
-      <div>
-        <h2 class="leave-rating-success-modal__title">
+      <div class="review-success__message-group">
+        <h2 id="review-success-heading" class="review-success__heading">
           ¡Gracias por dejarnos tu reseña!
         </h2>
-        <p class="leave-rating-success-modal__message">
-          <span class="leave-rating-success-modal__text">
-            Esto nos ayudará a mejorar el servicio
-          </span>
+        <p id="review-success-description" class="review-success__description">
+          Esto nos ayudará a mejorar el servicio
         </p>
       </div>
-    </div>
+    </section>
 
     <template #footer>
-      <div class="leave-rating-success-modal__footer">
+      <nav
+        class="review-success__actions"
+        aria-label="Opciones tras enviar reseña"
+      >
         <button
-          class="leave-rating-success-modal__button--outline"
-          @click="handleNavigateToHome"
+          class="review-success__btn review-success__btn--outline"
+          @click="navigateToHome"
         >
           Ir al home
         </button>
         <button
-          class="leave-rating-success-modal__button--primary"
-          @click="handleCloseModal('leaveReviewSuccess')"
+          class="review-success__btn review-success__btn--primary"
+          @click="emitCloseModal('leaveReviewSuccess')"
         >
           Seguir en citas
         </button>
-      </div>
+      </nav>
     </template>
   </AtomsModalBase>
 </template>
 
 <script lang="ts" setup>
-import type { ModalName } from "~/types";
-import type { Appointment } from "~/types/appointment";
+import { useLogger } from "@/composables/useLogger";
+
+const router = useRouter();
+const logger = useLogger("ReviewSuccessModal");
 
 interface Props {
-  appointment: Appointment;
+  appointment: IAppointment;
   isOpen: boolean;
 }
 
 interface Emits {
-  (e: "open-modal", modalName: ModalName): void;
+  (e: "open-modal", modalName: ModalName, appointmentId?: number): void;
   (e: "close-modal", modalName: ModalName): void;
 }
 
 const props = defineProps<Props>();
 const emit = defineEmits<Emits>();
 
-const handleCloseModal = (modalName: ModalName): void => {
-  emit("close-modal", modalName);
-};
-
-const isModalOpen = computed({
+const isModalVisible = computed({
   get: () => props.isOpen,
   set: (value: boolean) => {
     if (!value) {
-      emit("close-modal", "leaveReview");
+      emitCloseModal("leaveReviewSuccess");
     }
   },
 });
 
-const handleNavigateToHome = () => {
-  handleCloseModal("scheduleProcedureSuccess");
-  useRouter().push("/pacientes/inicio");
-};
+function emitCloseModal(modalName: ModalName): void {
+  emit("close-modal", modalName);
+}
+
+async function navigateToHome(): Promise<void> {
+  try {
+    emitCloseModal("leaveReviewSuccess");
+    await router.push("/pacientes/inicio");
+  } catch (error) {
+    logger.error("Error al navegar al inicio tras reseña exitosa.", {
+      appointmentId: props.appointment.id,
+      error: error instanceof Error ? error.message : String(error),
+    });
+  }
+}
 </script>
 
 <style lang="scss" scoped>
-.leave-rating-success-modal {
-  &__content {
+.review-success {
+  &__body {
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -91,7 +107,7 @@ const handleNavigateToHome = () => {
     gap: 1.25rem;
   }
 
-  &__icon-wrapper {
+  &__icon-container {
     display: flex;
     justify-content: center;
     margin-bottom: 1.25rem;
@@ -107,7 +123,11 @@ const handleNavigateToHome = () => {
     padding: 0.375rem;
   }
 
-  &__title {
+  &__message-group {
+    text-align: center;
+  }
+
+  &__heading {
     @include label-base;
     font-weight: 600;
     font-size: 1.5rem;
@@ -117,25 +137,17 @@ const handleNavigateToHome = () => {
     margin-bottom: 0.5rem;
   }
 
-  &____message {
-    display: flex;
-    flex-direction: column;
-    gap: 0.625rem;
-    text-align: center;
-  }
-
-  &__text {
+  &__description {
     @include label-base;
     display: block;
     font-weight: 500;
     font-size: 1rem;
     line-height: 1.5rem;
-    letter-spacing: 0;
     text-align: center;
     color: $color-text-secondary;
   }
 
-  &__footer {
+  &__actions {
     width: 100%;
     display: flex;
     justify-content: space-between;
@@ -143,11 +155,12 @@ const handleNavigateToHome = () => {
     gap: 0.75rem;
   }
 
-  &__button {
+  &__btn {
     &--outline {
       @include outline-button;
       width: 100%;
     }
+
     &--primary {
       @include primary-button;
       width: 100%;

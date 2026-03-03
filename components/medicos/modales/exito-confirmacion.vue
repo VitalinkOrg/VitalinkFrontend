@@ -57,14 +57,13 @@
 <script lang="ts" setup>
 import type { TablaBaseRow } from "~/components/medicos/tabla-detalles-cita.vue";
 import { useFormat } from "~/composables/useFormat";
-import type { Appointment, AppointmentStatusCode } from "~/types";
 
-const { formatDate } = useFormat();
+const { formatDate, formatTime } = useFormat();
 
 const { isOpen, closeModal, getSharedData } = useMedicalModalManager();
 
 const modalData = computed(() =>
-  getSharedData<{ appointment: Appointment }>("exitoConfirmacion")
+  getSharedData<{ appointment: IAppointment }>("exitoConfirmacion"),
 );
 
 const currentAppointment = computed(() => modalData.value?.appointment);
@@ -90,13 +89,17 @@ const appointmentRowsWithData = computed((): TablaBaseRow[] | undefined => {
     {
       key: "fecha",
       header: "Fecha de la cita:",
-      value: formatDate(appointment.appointment_date),
+      value: appointment.appointment_date
+        ? formatDate(appointment.appointment_date)
+        : "-",
       class: "appointment-editor__details-row--editable",
     },
     {
       key: "hora",
       header: "Hora de la cita:",
-      value: appointment.appointment_hour,
+      value: appointment.appointment_hour
+        ? formatTime(appointment.appointment_hour)
+        : "-",
       class: "appointment-editor__details-row--editable",
       isEndRow: true,
     },

@@ -2,133 +2,119 @@
   <AtomsModalBase
     :is-open="isModalOpen"
     size="medium"
-    class="appointment-editor"
     :close-on-backdrop="false"
-    @close="handleCloseModal"
+    @close="handleClose"
     header-class="header-border-bottom"
     footer-class="footer-border-top"
+    aria-labelledby="reschedule-modal-title"
   >
     <template #title>
-      <h1 id="appointment-modal-title" class="appointment-editor__title">
-        {{ appointmentTitle }}
-      </h1>
+      <h2 id="reschedule-modal-title" class="reschedule-modal__title">
+        {{ modalTitle }}
+      </h2>
     </template>
 
-    <div class="appointment-editor__content">
+    <div class="reschedule-modal__body">
       <MedicosTablaDetallesCita
-        :rows="appointmentRowsWithData"
-        :title="appointmentTitle"
+        :rows="detailRows"
+        :title="modalTitle"
         :hidden-title="true"
-        :aria-label="`Detalles de la cita de ${currentAppointment?.customer.name}`"
+        :aria-label="`Detalles de la cita de ${appointment?.customer?.name}`"
       >
         <template #data-fecha>
-          <UiDatePicker
-            v-model="selectedDate"
-            :min-date="new Date()"
-            custom-class="appointment-editor__date-picker"
-            @update:model-value="handleDateChange"
-          />
-          <div
-            v-if="dateError"
-            class="appointment-editor__error"
-            role="alert"
-            aria-live="polite"
-          >
-            {{ dateError }}
+          <div class="reschedule-modal__field">
+            <UiDatePicker
+              id="reschedule-date"
+              v-model="selectedDate"
+              :min-date="new Date()"
+              custom-class="reschedule-modal__date-picker"
+              @update:model-value="handleDateChange"
+            />
+            <p
+              v-if="dateError"
+              class="reschedule-modal__field-error"
+              role="alert"
+              aria-live="polite"
+            >
+              {{ dateError }}
+            </p>
           </div>
         </template>
 
         <template #data-hora>
-          <UiDropdownBase
-            v-model="selectedTime"
-            :items="timeOptions"
-            :disabled="!selectedDate"
-            placeholder="Seleccionar hora"
-            custom-class="appointment-editor__time-dropdown"
-            @select="handleTimeSelect"
-          >
-            <template #icon>
-              <AtomsIconsClockIcon size="20" />
-            </template>
-          </UiDropdownBase>
-          <div
-            v-if="timeError"
-            class="appointment-editor__error"
-            role="alert"
-            aria-live="polite"
-          >
-            {{ timeError }}
+          <div class="reschedule-modal__field">
+            <UiDropdownBase
+              id="reschedule-time"
+              v-model="selectedTime"
+              :items="timeSlotOptions"
+              :disabled="!selectedDate"
+              placeholder="Seleccionar hora"
+              custom-class="reschedule-modal__time-dropdown"
+              @select="handleTimeSelect"
+            >
+              <template #icon>
+                <AtomsIconsClockIcon size="20" />
+              </template>
+            </UiDropdownBase>
+            <p
+              v-if="timeError"
+              class="reschedule-modal__field-error"
+              role="alert"
+              aria-live="polite"
+            >
+              {{ timeError }}
+            </p>
           </div>
         </template>
 
         <template #data-estado-cita>
-          <span
-            v-if="currentAppointment"
-            class="status-badge"
-            :class="getStatusClass(currentAppointment.appointment_status.code)"
-          >
-            {{ currentAppointment?.appointment_status.value1 }}
+          <span v-if="appointment" :class="statusBadgeClass">
+            {{ appointment.appointment_status.value1 }}
           </span>
         </template>
       </MedicosTablaDetallesCita>
 
-      <div
-        v-if="shouldShowCoordinationReminder"
-        class="appointment-editor__reminder"
-      >
+      <div v-if="isPendingConfirmation" class="reschedule-modal__reminder">
         <div
-          class="appointment-editor__alert appointment-editor__alert--info"
+          class="reschedule-modal__banner reschedule-modal__banner--info"
           role="note"
           aria-labelledby="coordination-reminder"
         >
-          <AtomsIconsInfoIcon
-            width="12"
-            height="12"
-            class="appointment-editor__alert-icon"
-            aria-hidden="true"
-          />
-          <p id="coordination-reminder" class="appointment-editor__alert-text">
-            Asegúrate de coordinar con el paciente antes de confirmar con la
-            cita
+          <AtomsIconsInfoIcon width="12" height="12" aria-hidden="true" />
+          <p id="coordination-reminder" class="reschedule-modal__banner-text">
+            Asegúrate de coordinar con el paciente antes de confirmar la cita
           </p>
         </div>
       </div>
 
-      <div
-        v-if="apiError"
-        class="appointment-editor__api-error"
-        role="alert"
-        aria-live="polite"
-      >
-        <div class="appointment-editor__alert appointment-editor__alert--error">
-          <AtomsIconsErrorIcon
-            width="16"
-            height="16"
-            class="appointment-editor__alert-icon"
-            aria-hidden="true"
-          />
-          <p class="appointment-editor__alert-text">
-            {{ apiError }}
-          </p>
+      <div v-if="apiError" class="reschedule-modal__api-error">
+        <div
+          class="reschedule-modal__banner reschedule-modal__banner--error"
+          role="alert"
+          aria-live="polite"
+        >
+          <AtomsIconsErrorIcon width="16" height="16" aria-hidden="true" />
+          <p class="reschedule-modal__banner-text">{{ apiError }}</p>
         </div>
       </div>
     </div>
 
     <template #footer>
-      <div class="appointment-editor__actions">
+      <div class="reschedule-modal__actions">
         <button
-          :disabled="isLoading"
-          class="appointment-editor__button appointment-editor__button--cancel"
-          @click="handleCloseModal"
+          :disabled="isSaving"
+          class="reschedule-modal__action reschedule-modal__action--cancel"
+          @click="handleClose"
         >
           Cancelar
         </button>
         <button
-          :disabled="isLoading || !canProceed"
-          class="appointment-editor__button appointment-editor__button--primary"
-          @click="handleSaveChanges"
+          :disabled="isSaving || !isFormComplete"
+          :aria-busy="isSaving"
+          class="reschedule-modal__action reschedule-modal__action--primary"
+          @click="handleSave"
         >
-          {{ isLoading ? "Guardando..." : "Guardar cambios" }}
+          {{ isSaving ? "Guardando..." : "Guardar cambios" }}
         </button>
       </div>
     </template>
@@ -136,187 +122,197 @@
 </template>
 
 <script lang="ts" setup>
-import type { TablaBaseRow } from "~/components/medicos/tabla-detalles-cita.vue";
-import { useFormat } from "~/composables/useFormat";
-import type { Appointment, AppointmentStatusCode } from "~/types";
+import type { TablaBaseRow } from "@/components/medicos/tabla-detalles-cita.vue";
+import { useAppointment } from "@/composables/api";
+import { useFormat } from "@/composables/useFormat";
+import { useLogger } from "@/composables/useLogger";
+import { useMedicalModalManager } from "@/composables/useMedicalModalManager";
+
+interface DropdownItem {
+  value: string | number;
+  label: string;
+}
 
 const { isOpen, closeModal, getSharedData, openModal } =
   useMedicalModalManager();
+const { updateAppointment, getAppointmentById } = useAppointment();
+const { formatDate, formatCurrency } = useFormat();
+const logger = useLogger("EditorFechaHora");
+const toast = useToast();
 
-const modalData = computed(() =>
-  getSharedData<{ appointment: Appointment }>("editorFechaHora")
-);
-
-const currentAppointment = computed(() => modalData.value?.appointment);
+const refreshAppointments = inject<() => Promise<void>>("refreshAppointments");
 
 const isModalOpen = computed(() => isOpen.editorFechaHora);
 
-const { formatDate, formatCurrency } = useFormat();
-
-const isLoading = ref<boolean>(false);
-const selectedDate = ref<Date | null>(null);
-const selectedTime = ref<string>("");
-const dateError = ref<string>("");
-const timeError = ref<string>("");
-const apiError = ref<string>("");
-
-const availableTimes = ref<string[]>([
-  "08:30",
-  "09:00",
-  "10:00",
-  "11:30",
-  "14:00",
-  "15:30",
-  "16:00",
-  "17:00",
-]);
-
-const timeOptions = computed(() =>
-  availableTimes.value.map((time) => ({
-    value: time,
-    label: `${time}hs`,
-  }))
+const modalData = computed(() =>
+  getSharedData<{ appointment: IAppointment }>("editorFechaHora"),
 );
 
-const canProceed = computed(() => {
-  return selectedDate.value !== null && selectedTime.value !== "";
-});
+const appointment = computed(() => modalData.value?.appointment);
 
-const formattedSelectedDate = computed(() => {
-  if (!selectedDate.value) return "";
+const statusCode = computed(
+  () => appointment.value?.appointment_status?.code ?? "",
+);
 
-  const year = selectedDate.value.getFullYear();
-  const month = String(selectedDate.value.getMonth() + 1).padStart(2, "0");
-  const day = String(selectedDate.value.getDate()).padStart(2, "0");
-  return `${year}-${month}-${day}`;
-});
+const isSaving = ref(false);
+const selectedDate = ref<Date | null>(null);
+const selectedTime = ref("");
+const dateError = ref("");
+const timeError = ref("");
+const apiError = ref("");
 
-const formattedSelectedHour = computed(() => {
-  if (!selectedTime.value) return "";
+const TIME_SLOTS = [
+  "08:00",
+  "08:30",
+  "09:00",
+  "09:30",
+  "10:00",
+  "10:30",
+  "11:00",
+  "11:30",
+  "12:00",
+  "13:00",
+  "13:30",
+  "14:00",
+  "14:30",
+  "15:00",
+  "15:30",
+  "16:00",
+  "16:30",
+  "17:00",
+];
 
-  return selectedTime.value.includes(":")
-    ? selectedTime.value.split(":").length === 2
-      ? `${selectedTime.value}:00`
-      : selectedTime.value
-    : `${selectedTime.value}:00:00`;
-});
+const timeSlotOptions = computed((): DropdownItem[] =>
+  TIME_SLOTS.map((time) => ({ value: time, label: `${time}hs` })),
+);
 
-const appointmentRowsWithData = computed((): TablaBaseRow[] => [
-  {
-    key: "paciente",
-    header: "Paciente:",
-    value: currentAppointment.value?.customer?.name ?? "",
-  },
-  {
-    key: "tipo-servicio",
-    header: "Tipo de servicio:",
-    value: currentAppointment.value?.appointment_type?.name ?? "",
-  },
-  {
-    key: "fecha",
-    header: "Fecha de la cita:",
-    value: currentAppointment.value?.appointment_date ?? "",
-    class: "appointment-editor__details-row--editable",
-  },
-  {
-    key: "hora",
-    header: "Hora de la cita:",
-    value: currentAppointment.value?.appointment_hour ?? "",
-    class: "appointment-editor__details-row--editable",
-    isEndRow: true,
-  },
-  {
-    key: "motivo",
-    header: "Motivo:",
-    value: currentAppointment.value?.user_description ?? "",
-  },
-  {
-    key: "procedimiento",
-    header: "Procedimiento:",
-    value: currentAppointment.value?.package?.procedure?.name ?? "",
-  },
-  {
-    key: "costo-servicio",
-    header: "Costo del servicio:",
-    value: "A confirmar en la cita",
-  },
-  {
-    key: "fecha-solicitud",
-    header: "Fecha de la solicitud:",
-    value: formatDate(
-      currentAppointment.value?.application_date ?? "",
-      "short"
-    ),
-  },
-  {
-    key: "tipo-reserva",
-    header: "Tipo de reserva:",
-    value: currentAppointment.value?.reservation_type?.value1 ?? "",
-  },
-  {
-    key: "apto-credito",
-    header: "Apto para crédito:",
-    value: "Sí",
-    show:
-      currentAppointment.value?.appointment_status?.code ===
-        "WAITING_PROCEDURE" ||
-      currentAppointment.value?.appointment_status?.code ===
-        "CONFIRM_PROCEDURE",
-  },
-  {
-    key: "costo-servicio",
-    header: "Costo del servicio:",
-    value: formatCurrency(currentAppointment.value?.price_procedure ?? 0, {
-      decimalPlaces: 0,
-    }),
-    show:
-      currentAppointment.value?.appointment_status?.code ===
-        "WAITING_PROCEDURE" ||
-      currentAppointment.value?.appointment_status?.code ===
-        "CONFIRM_PROCEDURE",
-  },
-  {
-    key: "costo-servicio",
-    header: "Costo del servicio:",
-    value: "Cubierto por crédito",
-    show:
-      currentAppointment.value?.appointment_status?.code ===
-        "WAITING_PROCEDURE" ||
-      currentAppointment.value?.appointment_status?.code ===
-        "CONFIRM_PROCEDURE",
-  },
-  {
-    key: "estado-cita",
-    header: "Estado de la cita:",
-    value: currentAppointment.value?.appointment_status?.code ?? "",
-  },
-]);
+const isFormComplete = computed(
+  () => selectedDate.value !== null && selectedTime.value !== "",
+);
 
-const appointmentTitle = computed(() => {
-  if (!currentAppointment.value) return;
+const PENDING_STATUSES = [
+  "PENDING_VALORATION_APPOINTMENT",
+  "PENDING_PROCEDURE",
+];
+const PROCEDURE_STATUSES = ["WAITING_PROCEDURE", "CONFIRM_PROCEDURE"];
 
-  const { code: typeCode } = currentAppointment.value.appointment_type;
-  const { code: statusCode } = currentAppointment.value.appointment_status;
+const isPendingConfirmation = computed(() =>
+  PENDING_STATUSES.includes(statusCode.value),
+);
 
+const isInProcedurePhase = computed(() =>
+  PROCEDURE_STATUSES.includes(statusCode.value),
+);
+
+const STATUS_BADGE_MAP: Record<string, string> = {
+  CANCEL_APPOINTMENT: "status-badge--cancelled",
+  PENDING_VALORATION_APPOINTMENT: "status-badge--warning",
+  PENDING_PROCEDURE: "status-badge--warning",
+  CONFIRM_PROCEDURE: "status-badge--primary",
+  CONCRETED_APPOINTMENT: "status-badge--primary",
+  VALUED_VALORATION_APPOINTMENT: "status-badge--success",
+  CONFIRM_VALIDATION_APPOINTMENT: "status-badge--success",
+  VALUATION_PENDING_VALORATION_APPOINTMENT: "status-badge--primary",
+  WAITING_PROCEDURE: "status-badge--warning",
+};
+
+const statusBadgeClass = computed(
+  () => STATUS_BADGE_MAP[statusCode.value] ?? "",
+);
+
+const modalTitle = computed(() => {
+  if (!appointment.value) return "";
+  const typeCode = appointment.value.appointment_type?.code;
   if (typeCode === "VALORATION_APPOINTMENT")
-    return "Detalles de la Cita de valoración";
-  if (statusCode === "WAITING_PROCEDURE") return "Detalles del procedimiento";
-  return "Detalles de la reserva";
+    return "Reprogramar cita de valoración";
+  if (statusCode.value === "WAITING_PROCEDURE")
+    return "Reprogramar procedimiento";
+  return "Reprogramar reserva";
 });
 
-const shouldShowCoordinationReminder = computed(() => {
-  if (!currentAppointment.value) return;
-  const { code } = currentAppointment.value.appointment_status;
-  return (
-    code === "PENDING_VALORATION_APPOINTMENT" || code === "PENDING_PROCEDURE"
-  );
+const detailRows = computed((): TablaBaseRow[] => {
+  const apt = appointment.value;
+  if (!apt) return [];
+
+  const rows: TablaBaseRow[] = [
+    {
+      key: "paciente",
+      header: "Paciente:",
+      value: apt.customer?.name ?? "",
+    },
+    {
+      key: "tipo-servicio",
+      header: "Tipo de servicio:",
+      value: apt.appointment_type?.name ?? "",
+    },
+    {
+      key: "fecha",
+      header: "Fecha de la cita:",
+      value: " ",
+      class: "reschedule-modal__row--editable",
+    },
+    {
+      key: "hora",
+      header: "Hora de la cita:",
+      value: " ",
+      class: "reschedule-modal__row--editable",
+      isEndRow: true,
+    },
+    {
+      key: "motivo",
+      header: "Motivo:",
+      value: apt.user_description ?? "",
+    },
+    {
+      key: "procedimiento",
+      header: "Procedimiento:",
+      value: apt.package?.procedure?.name ?? "",
+    },
+    {
+      key: "costo-servicio",
+      header: "Costo del servicio:",
+      value: isInProcedurePhase.value
+        ? formatCurrency(apt.price_procedure ?? 0, { decimalPlaces: 0 })
+        : "A confirmar en la cita",
+    },
+    {
+      key: "fecha-solicitud",
+      header: "Fecha de la solicitud:",
+      value: formatDate(apt.application_date ?? "", "short"),
+    },
+    {
+      key: "tipo-reserva",
+      header: "Tipo de reserva:",
+      value: apt.reservation_type?.value1 ?? "",
+    },
+    {
+      key: "estado-cita",
+      header: "Estado de la cita:",
+      value: apt.appointment_status?.value1 ?? "",
+    },
+  ];
+
+  if (isInProcedurePhase.value) {
+    rows.splice(rows.length - 1, 0, {
+      key: "apto-credito",
+      header: "Apto para crédito:",
+      value: "Sí",
+    });
+  }
+
+  return rows;
 });
 
-const handleCloseModal = () => {
-  closeModal("editorFechaHora");
-  clearErrors();
-  selectedDate.value = null;
-  selectedTime.value = "";
+const formatDateForApi = (date: Date): string => {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+};
+
+const formatTimeForApi = (time: string): string => {
+  if (!time) return "";
+  return time.split(":").length === 2 ? `${time}:00` : time;
 };
 
 const clearErrors = () => {
@@ -325,77 +321,96 @@ const clearErrors = () => {
   apiError.value = "";
 };
 
-const validateForm = (): boolean => {
+const validate = (): boolean => {
   clearErrors();
-  let isValid = true;
+  let valid = true;
 
   if (!selectedDate.value) {
     dateError.value = "Por favor selecciona una fecha";
-    isValid = false;
+    valid = false;
   }
 
   if (!selectedTime.value) {
     timeError.value = "Por favor selecciona una hora";
-    isValid = false;
+    valid = false;
   }
 
-  return isValid;
+  return valid;
 };
 
-const handleDateChange = (date: Date | null) => {
-  selectedDate.value = date;
+const handleDateChange = (_date: Date | null) => {
   selectedTime.value = "";
-  if (dateError.value) {
-    dateError.value = "";
+  dateError.value = "";
+};
+
+const handleTimeSelect = (item: DropdownItem) => {
+  selectedTime.value = String(item.value);
+  timeError.value = "";
+};
+
+const handleSave = async () => {
+  if (!validate()) return;
+
+  const apt = appointment.value;
+  if (!apt) return;
+
+  isSaving.value = true;
+  apiError.value = "";
+
+  try {
+    const { error } = await updateAppointment(apt.id, {
+      appointment_date: formatDateForApi(selectedDate.value!),
+      appointment_hour: formatTimeForApi(selectedTime.value),
+    });
+
+    if (error) {
+      apiError.value =
+        error.info || "No se pudo reprogramar la cita. Intenta de nuevo.";
+      logger.error("Failed to reschedule appointment", {
+        appointmentId: apt.id,
+        error: error.info,
+      });
+      return;
+    }
+
+    const { data: updatedAppointment } = await getAppointmentById(apt.id);
+
+    await refreshAppointments?.();
+
+    closeModal("editorFechaHora");
+    closeModal("detallesCita");
+
+    openModal("cambiosGuardados", {
+      appointment: updatedAppointment ?? apt,
+    });
+  } catch (err) {
+    apiError.value = "Ocurrió un error inesperado. Intenta de nuevo.";
+    logger.error("Unexpected error rescheduling appointment", {
+      error: err instanceof Error ? err.message : String(err),
+    });
+  } finally {
+    isSaving.value = false;
   }
 };
 
-const handleTimeSelect = (item: {
-  value: string | number;
-  label: string;
-  disabled?: boolean;
-}) => {
-  selectedTime.value = item.value as string;
-  if (timeError.value) {
-    timeError.value = "";
-  }
+const resetState = () => {
+  selectedDate.value = null;
+  selectedTime.value = "";
+  clearErrors();
 };
 
-const handleSaveChanges = async () => {
-  console.log({
-    appointment: currentAppointment,
-    appointmentDate: formattedSelectedDate.value,
-    appointmentHour: formattedSelectedHour.value,
-  });
-  if (!validateForm()) {
-    return;
-  }
-
-  openModal("confirmacionReprogramacion", {
-    appointment: currentAppointment,
-    appointmentDate: formattedSelectedDate.value,
-    appointmentHour: formattedSelectedHour.value,
-  });
+const handleClose = () => {
+  closeModal("editorFechaHora");
+  resetState();
 };
 
-const getStatusClass = (status: AppointmentStatusCode) => {
-  const statusClassMap = {
-    CANCEL_APPOINTMENT: "status-badge--cancelled",
-    PENDING_VALORATION_APPOINTMENT: "status-badge--warning",
-    PENDING_PROCEDURE: "status-badge--warning",
-    CONFIRM_PROCEDURE: "status-badge--primary",
-    CONCRETED_APPOINTMENT: "status-badge--primary",
-    VALUED_VALORATION_APPOINTMENT: "status-badge--success",
-    CONFIRM_VALIDATION_APPOINTMENT: "status-badge--success",
-    VALUATION_PENDING_VALORATION_APPOINTMENT: "status-badge--primary",
-    WAITING_PROCEDURE: "status-badge--warning",
-  };
-  return statusClassMap[status] || "";
-};
+watch(isModalOpen, (open) => {
+  if (!open) resetState();
+});
 </script>
 
 <style lang="scss" scoped>
-.appointment-editor {
+.reschedule-modal {
   &__title {
     font-family: $font-family-main;
     font-weight: 600;
@@ -405,33 +420,28 @@ const getStatusClass = (status: AppointmentStatusCode) => {
     margin: 0;
   }
 
-  &__content {
+  &__body {
     padding: 1.5rem;
   }
 
-  &__date-picker {
-    width: 100%;
-  }
-
-  &__time-dropdown {
-    width: 100%;
-  }
-
-  &__datetime {
-    color: inherit;
-    text-decoration: none;
-  }
-
-  &__details-row--editable {
+  &__row--editable {
     background-color: #f8f9fa;
   }
 
-  &__error {
-    margin-top: 0.25rem;
+  &__field {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+    width: 100%;
+  }
+
+  &__field-error {
+    font-family: $font-family-alt;
     font-size: 0.75rem;
     line-height: 1rem;
-    color: $color-error;
     font-weight: 500;
+    color: $color-danger;
+    margin: 0;
   }
 
   &__reminder {
@@ -442,45 +452,32 @@ const getStatusClass = (status: AppointmentStatusCode) => {
     margin-top: 1rem;
   }
 
-  &__alert {
+  &__banner {
     display: inline-flex;
     align-items: center;
-    gap: 0.25rem;
-    padding: 0.125rem 0.5rem;
+    gap: 0.375rem;
+    padding: 0.375rem 0.75rem;
     border-radius: 1rem;
 
     &--info {
       background-color: #dbeafe;
+      color: #1e40af;
     }
 
     &--error {
       background-color: #fef2f2;
+      color: $color-danger;
       padding: 0.5rem 0.75rem;
     }
   }
 
-  &__alert-icon {
-    flex-shrink: 0;
-    color: #1d4ed8;
-
-    .appointment-editor__alert--error & {
-      color: $color-error;
-    }
-  }
-
-  &__alert-text {
+  &__banner-text {
     @include label-base;
     font-weight: 500;
     font-size: 0.75rem;
     line-height: 1.125rem;
-    letter-spacing: 0;
-    text-align: center;
-    color: #1e40af;
-
-    .appointment-editor__alert--error & {
-      color: $color-error;
-      text-align: left;
-    }
+    color: inherit;
+    margin: 0;
   }
 
   &__actions {
@@ -489,12 +486,13 @@ const getStatusClass = (status: AppointmentStatusCode) => {
     gap: 0.75rem;
   }
 
-  &__button {
+  &__action {
     &--cancel {
       @include outline-danger-button;
       width: 100%;
       border: none;
     }
+
     &--primary {
       @include primary-button;
       width: 100%;

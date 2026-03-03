@@ -1,7 +1,7 @@
 <script lang="ts" setup>
 import type { DropdownItem } from "@/components/ui/dropdown-base.vue";
 import { onClickOutside } from "@vueuse/core";
-import type { UserInformation } from "~/types";
+import type { UserInformation } from "~/types/test-index";
 
 interface ValidationError {
   field: string;
@@ -143,7 +143,7 @@ const formattedPhone = computed(() => {
 
 const selectedCountry = computed(() => {
   return countries.find(
-    (country) => country.code === user_info.value.country_iso_code
+    (country) => country.code === user_info.value.country_iso_code,
   );
 });
 
@@ -159,7 +159,7 @@ const filteredCountries = computed(() => {
     return countries;
   }
   return countries.filter((country) =>
-    country.name.toLowerCase().includes(countrySearchText.value.toLowerCase())
+    country.name.toLowerCase().includes(countrySearchText.value.toLowerCase()),
   );
 });
 
@@ -334,7 +334,7 @@ const validateFile = (file: File): { isValid: boolean; error?: string } => {
 
 const clearFileErrors = (): void => {
   validationErrors.value = validationErrors.value.filter(
-    (error) => error.field !== "profile_picture_url"
+    (error) => error.field !== "profile_picture_url",
   );
 };
 
@@ -423,7 +423,7 @@ const updateUser = async (): Promise<void> => {
         method: "PUT",
         headers,
         body,
-      }
+      },
     );
 
     if (error.value) {
@@ -564,7 +564,7 @@ const getFieldError = (fieldName: string): string | null => {
           class="profile__picture-container"
           :class="{
             'profile__picture-container--error': getFieldError(
-              'profile_picture_url'
+              'profile_picture_url',
             ),
           }"
         >

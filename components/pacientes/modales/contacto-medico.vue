@@ -74,8 +74,6 @@
 </template>
 
 <script lang="ts" setup>
-import type { Appointment } from "@/types";
-
 const { formatPhone } = useFormat();
 
 const isOpen = ref<boolean>(false);
@@ -86,14 +84,13 @@ const titleId = ref<string>(
 const phoneNumber = computed(() => props.appointment.supplier.phone_number);
 
 interface Props {
-  appointment: Appointment;
+  appointment: IAppointment;
 }
 
 const props = defineProps<Props>();
 
 const openModal = () => {
   isOpen.value = true;
-  // Gestión de foco: mover el foco al modal cuando se abre
   nextTick(() => {
     const modalElement = document.querySelector('[role="dialog"]');
     if (modalElement instanceof HTMLElement) {

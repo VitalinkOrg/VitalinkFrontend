@@ -3,7 +3,7 @@ import { jsPDF } from "jspdf";
 import "jspdf-autotable";
 import { ref } from "vue";
 
-import type { Customer } from "~/types";
+import type { Customer } from "~/types/test-index";
 
 interface RuntimeConfig {
   public: {
@@ -192,7 +192,7 @@ const downloadAllPatients = (): void => {
     `Generado el: ${new Date().toLocaleDateString("es-ES")}`,
     pageWidth / 2,
     yPosition,
-    { align: "center" }
+    { align: "center" },
   );
   yPosition += 15;
 

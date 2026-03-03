@@ -1,8 +1,5 @@
-// pages\socio-financiero\creditos.vue
-
 <script lang="ts" setup>
 import { useAppointmentCredit } from "@/composables/api";
-import type { Credit } from "@/types";
 import { jsPDF } from "jspdf";
 import "jspdf-autotable";
 
@@ -20,7 +17,7 @@ type SortOption =
 
 const loading = ref<boolean>(false);
 const isRefreshing = ref<boolean>(false);
-const creditsData = ref<Credit[]>([]);
+const creditsData = ref<IAppointmentCredit[]>([]);
 const selectedStatuses = ref<Set<string>>(new Set(["Todos"]));
 const sortOption = ref<SortOption>("date-desc");
 const searchQuery = ref<string>("");
@@ -34,7 +31,7 @@ const statusMap: Record<string, string> = {
   "Aprobada Parcial": "APPROVED_PERCENTAGE",
 };
 
-const { fetchAllAppointmentCredit } = useAppointmentCredit();
+const { getAllAppointmentCredit } = useAppointmentCredit();
 
 const isStatusSelected = (status: string): boolean => {
   return selectedStatuses.value.has(status);
@@ -81,7 +78,7 @@ const selectedStatusBadges = computed((): string[] => {
   return Array.from(selectedStatuses.value);
 });
 
-const filteredCredits = computed<Credit[]>(() => {
+const filteredCredits = computed<IAppointmentCredit[]>(() => {
   if (!creditsData.value || creditsData.value.length === 0) {
     return [];
   }
@@ -122,7 +119,7 @@ const filteredCredits = computed<Credit[]>(() => {
   return sortCredits(filtered);
 });
 
-const sortCredits = (credits: Credit[]) => {
+const sortCredits = (credits: IAppointmentCredit[]) => {
   const sorted = [...credits];
 
   switch (sortOption.value) {
@@ -185,14 +182,14 @@ const sortOptions: SortOptionType[] = [
   { label: "Paciente (A-Z)", value: "patient" },
 ];
 
-const loadCredits = async () => {
-  loading.value = true;
+const loadCredits = async (isRefresh: boolean = false) => {
+  if (isRefresh) {
+    isRefreshing.value = true;
+  } else {
+    loading.value = true;
+  }
   try {
-    const api = fetchAllAppointmentCredit();
-    await api.request();
-
-    const response = api.response.value;
-    const error = api.error.value;
+    const { data, error } = await getAllAppointmentCredit();
 
     if (error) {
       console.error("Error al cargar créditos:", error);
@@ -200,8 +197,8 @@ const loadCredits = async () => {
       return;
     }
 
-    if (response?.data && Array.isArray(response.data)) {
-      creditsData.value = response.data;
+    if (data && Array.isArray(data)) {
+      creditsData.value = data;
     } else {
       console.warn("No se recibieron datos de créditos");
       creditsData.value = [];
@@ -211,47 +208,14 @@ const loadCredits = async () => {
     creditsData.value = [];
   } finally {
     loading.value = false;
-  }
-};
-
-const fetchCredits = async (isRefresh: boolean = false) => {
-  if (isRefresh) {
-    isRefreshing.value = true;
-  } else {
-    loading.value = true;
-  }
-
-  try {
-    const api = fetchAllAppointmentCredit();
-    await api.request();
-
-    const response = api.response.value;
-    const error = api.error.value;
-
-    if (error) {
-      console.error("Error al actualizar créditos:", error);
-      return;
-    }
-
-    if (response?.data && Array.isArray(response.data)) {
-      creditsData.value = response.data;
-    }
-  } catch (error) {
-    console.error("Fetch error:", error);
-  } finally {
-    loading.value = false;
     isRefreshing.value = false;
   }
 };
 
-const refreshCredits = async () => {
-  await fetchCredits(true);
-};
-
-provide("refreshCredits", refreshCredits);
+provide("refreshCredits", loadCredits);
 
 const handleRefresh = async () => {
-  await refreshCredits();
+  await loadCredits();
 };
 
 provide("handleRefresh", handleRefresh);
@@ -388,7 +352,7 @@ const downloadAllCredits = () => {
   doc.save(`Reporte_Creditos_${new Date().toISOString().slice(0, 10)}.pdf`);
 };
 
-provide("refreshAppointments", refreshCredits);
+provide("refreshAppointments", loadCredits);
 
 onMounted(async () => {
   await loadCredits();

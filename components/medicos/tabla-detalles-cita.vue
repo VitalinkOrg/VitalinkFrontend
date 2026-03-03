@@ -81,7 +81,7 @@ const props = withDefaults(defineProps<Props>(), {
 const titleId = computed(() =>
   props.title
     ? `tabla-title-${Math.random().toString(36).substr(2, 9)}`
-    : undefined
+    : undefined,
 );
 
 const filteredRows = computed(() => {

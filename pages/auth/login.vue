@@ -1,10 +1,11 @@
 <template>
   <NuxtLayout name="pacientes-autenticacion">
     <form
-      @submit.prevent="handleLogin"
+      @submit.prevent="onSubmit"
       class="login-form"
       role="form"
       aria-labelledby="login-heading"
+      novalidate
     >
       <div class="login-form__header">
         <h1 id="login-heading" class="login-form__title">
@@ -12,46 +13,88 @@
         </h1>
       </div>
 
+      <div
+        v-if="generalError"
+        class="login-form__alert"
+        role="alert"
+        aria-live="assertive"
+      >
+        {{ generalError }}
+      </div>
+
       <div class="login-form__body">
         <div class="form-field">
-          <label for="email" class="form-field__label">
+          <label for="login-email" class="form-field__label">
             Nº de Cédula o Correo electrónico
           </label>
           <input
+            ref="emailInputRef"
             v-model="email"
             type="email"
-            id="email"
+            id="login-email"
             class="form-field__input"
-            :class="{ 'form-field__input--error': emailError }"
+            :class="{ 'form-field__input--error': errors.email }"
             placeholder="Escribe tu número de cédula o correo electrónico"
             required
             aria-required="true"
-            :aria-invalid="!!emailError"
+            :aria-invalid="!!errors.email"
+            :aria-describedby="errors.email ? 'login-email-error' : undefined"
             autocomplete="username"
             :disabled="isLoading"
+            @blur="clearFieldError('email')"
           />
-          <span v-if="emailError" class="form-field__error" role="alert">
-            {{ emailError }}
+          <span
+            v-if="errors.email"
+            id="login-email-error"
+            class="form-field__error"
+            role="alert"
+          >
+            {{ errors.email }}
           </span>
         </div>
 
         <div class="form-field">
-          <label for="password" class="form-field__label"> Contraseña </label>
-          <input
-            v-model="password"
-            type="password"
-            id="password"
-            class="form-field__input"
-            :class="{ 'form-field__input--error': passwordError }"
-            placeholder="Escribe tu contraseña"
-            required
-            aria-required="true"
-            :aria-invalid="!!passwordError"
-            autocomplete="current-password"
-            :disabled="isLoading"
-          />
-          <span v-if="passwordError" class="form-field__error" role="alert">
-            {{ passwordError }}
+          <label for="login-password" class="form-field__label">
+            Contraseña
+          </label>
+          <div class="form-field__input-wrapper">
+            <input
+              v-model="password"
+              :type="isPasswordVisible ? 'text' : 'password'"
+              id="login-password"
+              class="form-field__input form-field__input--with-toggle"
+              :class="{ 'form-field__input--error': errors.password }"
+              placeholder="Escribe tu contraseña"
+              required
+              aria-required="true"
+              :aria-invalid="!!errors.password"
+              :aria-describedby="
+                errors.password ? 'login-password-error' : undefined
+              "
+              autocomplete="current-password"
+              :disabled="isLoading"
+              @blur="clearFieldError('password')"
+            />
+            <button
+              type="button"
+              class="form-field__toggle-password"
+              :aria-label="
+                isPasswordVisible ? 'Ocultar contraseña' : 'Mostrar contraseña'
+              "
+              :disabled="isLoading"
+              @click="isPasswordVisible = !isPasswordVisible"
+            >
+              <AtomsIconsEyeOffIcon v-if="isPasswordVisible" />
+              <AtomsIconsEyeIcon v-else />
+            </button>
+          </div>
+          <span
+            v-if="errors.password"
+            id="login-password-error"
+            class="form-field__error"
+            role="alert"
+          >
+            {{ errors.password }}
           </span>
         </div>
 
@@ -64,21 +107,19 @@
           </NuxtLink>
         </div>
 
-        <div class="text-center d-flex flex-column">
-          <div class="social-login">
-            <p class="social-login__label" id="social-login-label">
-              <small>O hacerlo con:</small>
-            </p>
-            <button
-              type="button"
-              class="social-login__button"
-              aria-labelledby="social-login-label google-login-label"
-              :disabled="isLoading"
-            >
-              <AtomsIconsGoogleIcon />
-              <span id="google-login-label">Ingresar con Google</span>
-            </button>
-          </div>
+        <div class="social-login">
+          <p class="social-login__divider" aria-hidden="true">
+            <span>O hacerlo con</span>
+          </p>
+          <button
+            type="button"
+            class="social-login__button"
+            aria-label="Ingresar con Google"
+            :disabled="isLoading"
+          >
+            <AtomsIconsGoogleIcon aria-hidden="true" />
+            <span>Ingresar con Google</span>
+          </button>
         </div>
       </div>
 
@@ -86,202 +127,177 @@
         <button
           type="submit"
           class="login-form__submit"
-          aria-label="Iniciar sesión"
           :disabled="isLoading"
+          :aria-busy="isLoading"
         >
-          {{ isLoading ? "Cargando..." : "Ingresar" }}
+          <span
+            v-if="isLoading"
+            class="login-form__spinner"
+            aria-hidden="true"
+          />
+          {{ isLoading ? "Ingresando..." : "Ingresar" }}
         </button>
 
-        <div class="login-form__links">
-          <p class="login-form__register-prompt" id="register-link-label">
-            <span>¿No tienes cuenta?</span>
-            <NuxtLink
-              to="/pacientes/registro"
-              class="login-form__link"
-              aria-describedby="register-link-label"
-            >
-              Regístrate
-            </NuxtLink>
-          </p>
-        </div>
+        <p class="login-form__register-prompt">
+          <span>¿No tienes cuenta?</span>
+          <NuxtLink to="/pacientes/registro" class="login-form__link">
+            Regístrate
+          </NuxtLink>
+        </p>
       </div>
     </form>
   </NuxtLayout>
 </template>
 
 <script lang="ts" setup>
-import { useAuth, useSupplier } from "@/composables/api";
+import { useAuth } from "@/composables/api";
+import { useLoginForm } from "@/composables/useLoginForm";
+import { useToast } from "@/composables/useToast";
+import {
+  type DecodedToken,
+  type LoginFieldErrors,
+  type LoginResponse,
+  type UserRoleType,
+  ROLE_HOME_ROUTES,
+  ROLES_REQUIRING_PROFILE,
+} from "@/types/auth";
 import { jwtDecode } from "jwt-decode";
 
 definePageMeta({
   middleware: ["auth-login"],
 });
 
-const { login, fetchUserInfo, fetchHospitalInfo } = useAuth();
+const { login, getUserById } = useAuth();
 const { setUserInfo } = useUserInfo();
-const { fetchSupplier } = useSupplier();
 const { setRole, setAuthenticated } = useAuthState();
 const { setToken, setRefreshToken } = useAuthToken();
 const router = useRouter();
+const toast = useToast();
 
-const email = ref<string>("");
-const password = ref<string>("");
-const isLoading = ref<boolean>(false);
+const {
+  email,
+  password,
+  errors,
+  validate,
+  setApiError,
+  clearErrors,
+  credentials,
+} = useLoginForm();
 
-const emailError = ref<string>("");
-const passwordError = ref<string>("");
+const isLoading = ref(false);
+const isPasswordVisible = ref(false);
+const generalError = ref("");
+const emailInputRef = ref<HTMLInputElement | null>(null);
 
-interface DecodedToken {
-  id: string;
-  role: string;
-}
+const clearFieldError = (field: keyof LoginFieldErrors): void => {
+  if (errors[field]) {
+    errors[field] = "";
+  }
+};
 
-const handleLogin = async () => {
+const onSubmit = async (): Promise<void> => {
+  generalError.value = "";
+
+  if (!validate()) {
+    focusFirstInvalidField();
+    return;
+  }
+
+  await performLogin();
+};
+
+const performLogin = async (): Promise<void> => {
+  isLoading.value = true;
+  clearErrors();
+
   try {
-    isLoading.value = true;
-    clearErrors();
-
-    const formData = {
-      email: email.value,
-      username: "",
-      password: password.value,
-    };
-
-    const api = login(formData);
-    await api.request();
-
-    const response = api.response.value;
-    const error = api.error.value;
+    const { data, error } = await login(credentials.value);
 
     if (error) {
-      handleLoginError(error);
+      handleApiError(error);
       return;
     }
 
-    if (response?.data) {
-      await handleSuccessfulLogin(response.data);
+    if (data) {
+      await handleLoginSuccess(data as LoginResponse);
     }
-  } catch (error) {
-    console.error("Login error:", error);
+  } catch (err) {
+    generalError.value = "Ocurrió un error inesperado. Intenta de nuevo.";
+    toast.error(generalError.value);
+    console.error("Login error:", err);
   } finally {
     isLoading.value = false;
   }
 };
 
-const clearErrors = () => {
-  emailError.value = "";
-  passwordError.value = "";
+const handleApiError = (apiError: IApiErrorResponse): void => {
+  const message =
+    apiError.info || apiError.status?.message || "Error al iniciar sesión";
+  setApiError(message);
+  toast.error(message);
+  focusFirstInvalidField();
 };
 
-const handleLoginError = (error: any) => {
-  const errorInfo = error.info || error.message || "Error al iniciar sesión";
+const handleLoginSuccess = async (data: LoginResponse): Promise<void> => {
+  const { access_token, refresh_token } = data;
 
-  if (errorInfo.toLowerCase().includes("password")) {
-    passwordError.value = errorInfo;
-  } else if (
-    errorInfo.toLowerCase().includes("email") ||
-    errorInfo.toLowerCase().includes("user")
-  ) {
-    emailError.value = errorInfo;
-  } else {
-    passwordError.value = errorInfo;
-  }
-};
-
-const handleSuccessfulLogin = async (data: any) => {
-  const accessToken = data.access_token;
-  const refreshToken = data.refresh_token;
-
-  setToken(accessToken);
-  setRefreshToken(refreshToken);
+  setToken(access_token);
+  setRefreshToken(refresh_token);
   setAuthenticated(true);
 
-  const decodedToken = jwtDecode<DecodedToken>(accessToken);
-  setRole(decodedToken.role);
+  const decoded = jwtDecode<DecodedToken>(access_token);
+  setRole(decoded.role);
 
-  await routeUserByRole(decodedToken, accessToken);
+  await loadUserProfile(decoded, access_token);
+  navigateToHome(decoded.role);
 };
 
-const routeUserByRole = async (decodedToken: DecodedToken, token: string) => {
-  const { id, role } = decodedToken;
+const loadUserProfile = async (
+  decoded: DecodedToken,
+  token: string,
+): Promise<void> => {
+  if (!ROLES_REQUIRING_PROFILE.has(decoded.role)) {
+    setUserInfo(decoded);
+    return;
+  }
 
-  switch (role) {
-    case "CUSTOMER":
-      await getUserInfo(id, token);
-      break;
-    case "LEGAL_REPRESENTATIVE":
-      await getDoctorInfo(id, token);
-      break;
-    case "FINANCE_ENTITY":
-      await getFinanceEntityInfo(decodedToken);
-      break;
-    default:
-      await getHospitalInfo(token);
-      break;
+  const { data, error } = await getUserById(decoded.id, token);
+
+  if (error) {
+    console.error("Error al obtener perfil:", error);
+    toast.warning("No se pudo cargar tu perfil completo.");
+    return;
+  }
+
+  if (data) {
+    setUserInfo(data);
   }
 };
 
-const getUserInfo = async (userId: string, token: string) => {
-  try {
-    const api = fetchUserInfo(userId, token);
-    await api.request();
+const navigateToHome = (role: UserRoleType): void => {
+  const route = ROLE_HOME_ROUTES[role];
 
-    const response = api.response.value;
-    const error = api.error.value;
-
-    if (error) {
-      console.error("Error fetching user info:", error);
-      return;
-    }
-
-    if (response?.data) {
-      setUserInfo(response.data);
-      router.push("/pacientes/inicio");
-    }
-  } catch (err) {
-    console.error("Error en getUserInfo:", err);
+  if (!route) {
+    toast.error("Rol de usuario no reconocido.");
+    console.error(`Rol desconocido: ${role}`);
+    return;
   }
+
+  router.push(route);
 };
 
-const getDoctorInfo = async (userId: string, token: string) => {
-  try {
-    const api = fetchUserInfo(userId, token);
-    await api.request();
-
-    const response = api.response.value;
-
-    if (response?.data) {
-      setUserInfo(response.data);
-      router.push("/medicos/inicio");
-    }
-  } catch (err) {
-    console.error("Error en getDoctorInfo:", err);
-  }
-};
-
-const getHospitalInfo = async (token: string) => {
-  try {
-    const api = fetchHospitalInfo(token);
-    await api.request();
-
-    const response = api.response.value;
-
-    if (response?.data) {
-      setUserInfo(response.data);
-      router.push("/medicos/inicio");
-    }
-  } catch (err) {
-    console.error("Error en getHospitalInfo:", err);
-  }
-};
-
-const getFinanceEntityInfo = async (decodedToken: DecodedToken) => {
-  setUserInfo(decodedToken);
-  router.push("/socio-financiero/inicio");
+const focusFirstInvalidField = (): void => {
+  nextTick(() => {
+    const firstInvalid = document.querySelector<HTMLInputElement>(
+      ".form-field__input--error, [aria-invalid='true']",
+    );
+    firstInvalid?.focus();
+  });
 };
 </script>
 
 <style lang="scss" scoped>
+/* Sin cambios en los estilos */
 .login-form {
   display: flex;
   flex-direction: column;
@@ -300,6 +316,18 @@ const getFinanceEntityInfo = async (decodedToken: DecodedToken) => {
     color: $color-foreground;
   }
 
+  &__alert {
+    padding: 12px 16px;
+    margin-bottom: $spacing-lg;
+    border-radius: $border-radius-md;
+    background-color: rgba($color-danger, 0.08);
+    border: 1px solid rgba($color-danger, 0.25);
+    color: $color-error;
+    font-family: $font-family-alt;
+    font-size: 14px;
+    line-height: 1.5;
+  }
+
   &__body {
     display: flex;
     flex-direction: column;
@@ -309,19 +337,32 @@ const getFinanceEntityInfo = async (decodedToken: DecodedToken) => {
 
   &__footer {
     margin-top: auto;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 20px;
   }
 
   &__submit {
     @include primary-button;
     width: 100%;
+    position: relative;
+
+    &[aria-busy="true"] {
+      opacity: 0.85;
+      cursor: wait;
+    }
   }
 
-  &__links {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    width: 100%;
-    margin-top: 20px;
+  &__spinner {
+    display: inline-block;
+    width: 16px;
+    height: 16px;
+    border: 2px solid rgba(#fff, 0.3);
+    border-top-color: #fff;
+    border-radius: 50%;
+    animation: spin 0.6s linear infinite;
+    margin-right: $spacing-sm;
   }
 
   &__register-prompt {
@@ -345,6 +386,12 @@ const getFinanceEntityInfo = async (decodedToken: DecodedToken) => {
       text-decoration: underline;
       color: darken($color-primary, 10%);
     }
+
+    &:focus-visible {
+      outline: 2px solid $color-primary;
+      outline-offset: 2px;
+      border-radius: 2px;
+    }
   }
 }
 
@@ -357,16 +404,55 @@ const getFinanceEntityInfo = async (decodedToken: DecodedToken) => {
     @include label-base;
   }
 
+  &__input-wrapper {
+    position: relative;
+    display: flex;
+    align-items: center;
+  }
+
   &__input {
     @include input-base;
+    width: 100%;
+
+    &--with-toggle {
+      padding-right: 48px;
+    }
 
     &--error {
       border-color: $color-danger;
 
       &:focus {
         border-color: $color-danger;
-        box-shadow: 0 0 0 3px rgba($color-danger, 0.1);
+        box-shadow: 0 0 0 3px rgba($color-danger, 0.15);
       }
+    }
+  }
+
+  &__toggle-password {
+    position: absolute;
+    right: 12px;
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 4px;
+    font-size: 18px;
+    line-height: 1;
+    color: $color-text-muted;
+    border-radius: 4px;
+    transition: opacity 0.2s ease;
+
+    &:hover {
+      opacity: 0.7;
+    }
+
+    &:focus-visible {
+      outline: 2px solid $color-primary;
+      outline-offset: 2px;
+    }
+
+    &:disabled {
+      cursor: not-allowed;
+      opacity: 0.4;
     }
   }
 
@@ -394,12 +480,41 @@ const getFinanceEntityInfo = async (decodedToken: DecodedToken) => {
       text-decoration: underline;
       color: darken($color-primary, 10%);
     }
+
+    &:focus-visible {
+      outline: 2px solid $color-primary;
+      outline-offset: 2px;
+      border-radius: 2px;
+    }
   }
 }
 
 .social-login {
-  &__label {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+
+  &__divider {
     @include label-base;
+    text-align: center;
+    position: relative;
+
+    span {
+      position: relative;
+      z-index: 1;
+      background: $white;
+      padding: 0 12px;
+    }
+
+    &::before {
+      content: "";
+      position: absolute;
+      top: 50%;
+      left: 0;
+      right: 0;
+      height: 1px;
+      background: #d4dae0;
+    }
   }
 
   &__button {
@@ -407,8 +522,17 @@ const getFinanceEntityInfo = async (decodedToken: DecodedToken) => {
     width: 100%;
     padding: 10px 16px;
     gap: 12px;
-  }
 
-  @include space-y(10px, vertical);
+    &:focus-visible {
+      outline: 2px solid $color-primary;
+      outline-offset: 2px;
+    }
+  }
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
 }
 </style>

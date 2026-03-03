@@ -219,13 +219,12 @@
 
 <script lang="ts" setup>
 import { useInsuranceAuth } from "~/composables/api/useInsuranceAuth";
-import type { InsuranceRegisterData } from "~/types";
 
 const { registerInsurance } = useInsuranceAuth();
 const router = useRouter();
 
 const isLoading = ref<boolean>(false);
-interface InsuranceData extends InsuranceRegisterData {
+interface InsuranceData extends IInsuranceRegisterRequest {
   passwordConfirmation: string;
 }
 

@@ -119,7 +119,7 @@
                 if ($event.target) {
                   $emit(
                     'set-alternative-phone-number',
-                    ($event.target as HTMLInputElement).value
+                    ($event.target as HTMLInputElement).value,
                   );
                 }
               "
@@ -147,7 +147,11 @@
                 <td
                   class="reservation-form__table-cell reservation-form__table-cell--amount"
                 >
-                  ₡18.000
+                  {{
+                    formatCurrency(Number(selectedPackage.product.value2), {
+                      decimalPlaces: 0,
+                    })
+                  }}
                 </td>
               </tr>
               <tr class="reservation-form__table-row">
@@ -155,7 +159,15 @@
                 <td
                   class="reservation-form__table-cell reservation-form__table-cell--amount"
                 >
-                  -
+                  {{
+                    formatCurrency(
+                      Number(selectedPackage.product.value2) -
+                        selectedPackage.discount,
+                      {
+                        decimalPlaces: 0,
+                      },
+                    )
+                  }}
                 </td>
               </tr>
               <tr
@@ -169,7 +181,11 @@
                 <td
                   class="reservation-form__table-cell reservation-form__table-cell--bold reservation-form__table-cell--amount"
                 >
-                  ₡18.000
+                  {{
+                    formatCurrency(selectedPackage.discount, {
+                      decimalPlaces: 0,
+                    })
+                  }}
                 </td>
               </tr>
             </tbody>
@@ -185,6 +201,7 @@ interface Props {
   phoneNumber: string;
   alternativePhoneNumber: string | null;
   loading: boolean;
+  selectedPackage: IPackage;
 }
 
 interface Emits {
@@ -195,13 +212,15 @@ interface Emits {
 const props = defineProps<Props>();
 const emit = defineEmits<Emits>();
 
+const { formatCurrency } = useFormat();
+
 const isLoading = ref<boolean>(false);
 
 watch(
   () => props.loading,
   (newValue) => {
     isLoading.value = newValue;
-  }
+  },
 );
 
 const setIsForExternalUser = (event: Event) => {
@@ -221,7 +240,7 @@ const setUserDescription = (event: Event) => {
 const toggleAlternativeNumber = (event: Event): void => {
   const isChecked = (event.target as HTMLInputElement).checked;
   const alternativeInput = document.getElementById(
-    "alternativePhoneNumber"
+    "alternativePhoneNumber",
   ) as HTMLInputElement;
 
   if (isChecked) {

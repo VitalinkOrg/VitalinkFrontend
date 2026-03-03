@@ -102,8 +102,8 @@
 
 <script lang="ts" setup>
 import { useAppointment, useAvailability } from "@/composables/api";
-import type { Availability } from "@/types";
 import { onClickOutside } from "@vueuse/core";
+import type { Availability } from "~/types/test-index";
 
 interface Props {
   supplierId: number;
@@ -116,7 +116,7 @@ interface Props {
 interface Emits {
   (
     e: "update:modelValue",
-    value: { day: string | null; hour: string | null }
+    value: { day: string | null; hour: string | null },
   ): void;
 }
 
@@ -171,7 +171,7 @@ const availableDays = computed(() => {
   today.setHours(0, 0, 0, 0);
 
   const selectedMonthData = months.value.find(
-    (m) => m.value === selectedMonth.value
+    (m) => m.value === selectedMonth.value,
   );
   if (!selectedMonthData) return [];
 
@@ -322,7 +322,7 @@ const getAppointments = async () => {
   if (response?.data) {
     const allAppointments = Array.isArray(response.data) ? response.data : [];
     bookedAppointments.value = allAppointments.filter(
-      (appointment) => appointment.supplier?.id === props.supplierId
+      (appointment) => appointment.supplier?.id === props.supplierId,
     );
   }
 };
@@ -370,7 +370,7 @@ watch(
       selectedHour.value = newValue.hour;
     }
   },
-  { deep: true }
+  { deep: true },
 );
 
 watch(
@@ -381,7 +381,7 @@ watch(
       await getAppointments();
     }
   },
-  { immediate: false }
+  { immediate: false },
 );
 
 onMounted(async () => {

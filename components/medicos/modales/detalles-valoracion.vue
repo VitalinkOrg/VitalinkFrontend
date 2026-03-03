@@ -2,74 +2,80 @@
   <AtomsModalBase
     :is-open="isModalOpen"
     size="large"
-    @close="handleCloseModal"
     :close-on-backdrop="false"
+    @close="handleClose"
     header-class="header-border-bottom"
     footer-class="footer-border-top"
+    aria-labelledby="valoration-modal-title"
   >
     <template #title>
-      <h1 id="appointment-modal-title" class="valoration-details__title">
+      <h2 id="valoration-modal-title" class="valoration-modal__title">
         Detalles de la Cita de valoración
-      </h1>
+      </h2>
     </template>
 
-    <div class="valoration-details__body">
+    <div class="valoration-modal__body">
       <MedicosTablaDetallesCita
-        v-if="appointmentRowsWithData"
-        :rows="appointmentRowsWithData"
-        aria-label="Detalles de la cita médica"
+        v-if="detailRows"
+        :rows="detailRows"
+        aria-label="Detalles de la cita de valoración"
       >
         <template #data-proforma>
-          <div v-if="isEditing">
-            <template v-if="!currentProformaFileName">
+          <div v-if="isEditing" class="valoration-modal__proforma">
+            <template v-if="!form.proformaFileName">
               <button
-                class="valoration-details__download-base-proforma"
                 type="button"
-                @click="handleDownloadBaseProforma"
-                :disabled="isDownloadingProforma"
+                class="valoration-modal__proforma-download"
+                :disabled="isDownloadingBase"
+                :aria-busy="isDownloadingBase"
+                @click="downloadBaseProforma"
               >
                 <AtomsIconsDownloadIcon size="20" aria-hidden="true" />
                 {{
-                  isDownloadingProforma
+                  isDownloadingBase
                     ? "Descargando..."
                     : "Descargar proforma base"
                 }}
               </button>
 
               <label
-                for="attach-proforma"
-                class="valoration-details__attach-proforma"
+                for="proforma-upload"
+                class="valoration-modal__proforma-attach"
               >
                 <AtomsIconsCloudUploadIcon aria-hidden="true" />
                 Adjuntar Proforma
               </label>
               <input
-                id="attach-proforma"
+                id="proforma-upload"
                 type="file"
                 class="visually-hidden"
                 accept=".pdf,.doc,.docx"
-                @change="handleFileUpload"
+                @change="handleFileSelect"
               />
-              <div
+
+              <p
                 v-if="proformaError"
-                class="valoration-details__error-message"
+                class="valoration-modal__field-error"
+                role="alert"
               >
                 {{ proformaError }}
-              </div>
+              </p>
             </template>
+
             <template v-else>
-              <div class="valoration-details__proforma-uploaded-wrapper">
-                <div class="valoration-details__proforma-uploaded">
+              <div class="valoration-modal__proforma-file">
+                <div class="valoration-modal__proforma-file-info">
                   <AtomsIconsFileTextIcon size="20" aria-hidden="true" />
-                  <p class="valoration-details__proforma-name">
-                    <span
-                      class="valoration-details__proforma-name-text"
-                      :title="currentProformaFileName"
-                    >
-                      {{ currentProformaFileName }}
-                    </span>
-                  </p>
-                  <span class="valoration-details__file-success-icon">
+                  <span
+                    class="valoration-modal__proforma-file-name"
+                    :title="form.proformaFileName"
+                  >
+                    {{ form.proformaFileName }}
+                  </span>
+                  <span
+                    class="valoration-modal__proforma-file-badge"
+                    aria-label="Archivo cargado exitosamente"
+                  >
                     <AtomsIconsCircleCheckBigIcon
                       size="12"
                       aria-hidden="true"
@@ -77,117 +83,125 @@
                   </span>
                 </div>
                 <button
-                  class="valoration-details__remove-proforma"
                   type="button"
-                  :aria-label="`Eliminar archivo ${currentProformaFileName}`"
-                  @click="handleRemoveProforma"
+                  class="valoration-modal__proforma-remove"
+                  :aria-label="`Eliminar archivo ${form.proformaFileName}`"
+                  @click="removeProforma"
                 >
                   <AtomsIconsTrashIcon size="20" aria-hidden="true" />
                 </button>
               </div>
             </template>
           </div>
-          <div v-else>
-            {{ currentProformaFileName || "Sin proforma adjunta" }}
-          </div>
+
+          <span v-else class="valoration-modal__proforma-readonly">
+            {{ form.proformaFileName || "Sin proforma adjunta" }}
+          </span>
         </template>
 
         <template #data-valor-procedimiento>
+          <label for="procedure-price" class="visually-hidden">
+            Valor del procedimiento
+          </label>
           <input
+            id="procedure-price"
             type="text"
-            id="price-procedure"
             :value="formattedPriceDisplay"
-            @input="handlePriceInput"
             :disabled="!isEditing"
-            class="valoration-details__input"
+            class="valoration-modal__input"
             placeholder="₡0"
             inputmode="numeric"
+            @input="handlePriceInput"
           />
         </template>
 
         <template #data-recomendaciones>
+          <label for="recommendations-field" class="visually-hidden">
+            Recomendaciones Post-Cita
+          </label>
           <textarea
-            v-model="currentRecommendation"
+            id="recommendations-field"
+            v-model="form.recommendation"
             rows="3"
             :disabled="!isEditing"
-            class="valoration-details__textarea"
+            class="valoration-modal__textarea"
             placeholder="Escribe las recomendaciones médicas..."
           />
         </template>
 
         <template #data-diagnostico>
+          <label for="diagnostic-field" class="visually-hidden">
+            Diagnóstico
+          </label>
           <textarea
-            v-model="currentDiagnostic"
+            id="diagnostic-field"
+            v-model="form.diagnostic"
             rows="3"
             :disabled="!isEditing"
-            class="valoration-details__textarea"
+            class="valoration-modal__textarea"
             placeholder="Escribe el diagnóstico médico..."
           />
         </template>
 
         <template #data-estado-cita>
-          <span
-            v-if="currentAppointment"
-            :class="getStatusClass(currentAppointment.appointment_status.code)"
-          >
-            {{ currentAppointment.appointment_status.value1 }}
+          <span v-if="appointment" :class="statusBadgeClass">
+            {{ appointment.appointment_status?.value1 }}
           </span>
         </template>
       </MedicosTablaDetallesCita>
     </div>
 
     <template #footer>
-      <div class="valoration-details__actions">
-        <template v-if="changesSaved && !isEditing">
-          <div class="valoration-details__saved-changes--wrapper">
-            <span class="valoration-details__saved-changes--text"
-              >Cambios Guardados</span
-            >
-            <span class="valoration-details__saved-changes--icon">
+      <div class="valoration-modal__footer">
+        <template v-if="isSaved && !isEditing">
+          <div class="valoration-modal__saved-indicator">
+            <span class="valoration-modal__saved-text">Cambios Guardados</span>
+            <span class="valoration-modal__saved-icon">
               <AtomsIconsCheckIcon size="20" />
             </span>
           </div>
-          <div class="valoration-details__view-buttons">
+          <div class="valoration-modal__saved-actions">
             <button
-              class="valoration-details__button--outline"
-              @click="handleEdit"
+              class="valoration-modal__action valoration-modal__action--outline"
+              @click="enableEditing"
             >
               <AtomsIconsSquarePenIcon size="20" /> Editar
             </button>
             <button
-              class="valoration-details__button--primary"
-              @click="handleViewInAppointments"
+              class="valoration-modal__action valoration-modal__action--primary"
+              @click="handleClose"
             >
               Ver en citas
             </button>
           </div>
         </template>
 
-        <div v-else class="valoration-details__buttons-wrapper">
+        <div v-else class="valoration-modal__edit-actions">
           <button
-            class="valoration-details__button--outline"
-            :disabled="!hasChanges || isLoading"
-            @click="handleCancel"
+            class="valoration-modal__action valoration-modal__action--outline"
+            :disabled="!hasUnsavedChanges || isSaving"
+            @click="discardChanges"
           >
             Cancelar
           </button>
 
           <button
-            v-if="isValidationAppointment"
-            class="valoration-details__button--primary"
-            @click="handleOpenConfirmValorationModal"
-            :disabled="canSaveProforma"
+            v-if="isValorationStatus"
+            class="valoration-modal__action valoration-modal__action--primary"
+            :disabled="!isValorationFormComplete"
+            @click="openValorationConfirmation"
           >
             Guardar
           </button>
 
           <button
             v-else
-            class="valoration-details__button--primary"
-            :disabled="!canSave || isLoading"
-            @click="handleSaveChanges"
+            class="valoration-modal__action valoration-modal__action--primary"
+            :disabled="!canSave || isSaving"
+            :aria-busy="isSaving"
+            @click="saveChanges"
           >
-            {{ isLoading ? "Guardando..." : "Guardar" }}
+            {{ isSaving ? "Guardando..." : "Guardar" }}
           </button>
         </div>
       </div>
@@ -197,112 +211,237 @@
 
 <script lang="ts" setup>
 import { useAppointment, useDocuments } from "@/composables/api";
-import { nextTick } from "vue";
-import type { Appointment, AppointmentStatusCode } from "~/types";
+import { useFormat } from "@/composables/useFormat";
+import { useLogger } from "@/composables/useLogger";
+import { useMedicalModalManager } from "@/composables/useMedicalModalManager";
 import type { TablaBaseRow } from "../tabla-detalles-cita.vue";
 
-const isLoading = ref(false);
+const { isOpen, closeModal, getSharedData, openModal } =
+  useMedicalModalManager();
+const { uploadProforma } = useAppointment();
+const { addDocument } = useDocuments();
+const { formatDate, formatTime, formatCurrency } = useFormat();
+const logger = useLogger("DetallesValoracion");
+const toast = useToast();
+const { getUserInfo } = useUserInfo();
+
+const refreshAppointments = inject<() => Promise<void>>("refreshAppointments");
+
+const isModalOpen = computed(() => isOpen.detallesValoracion);
+
+const modalData = computed(() =>
+  getSharedData<{ appointment: IAppointment }>("detallesValoracion"),
+);
+
+const appointment = computed(() => modalData.value?.appointment ?? null);
+
+const statusCode = computed(
+  () => appointment.value?.appointment_status?.code ?? "",
+);
+
 const isEditing = ref(true);
-const changesSaved = ref(false);
-const isDownloadingProforma = ref(false);
+const isSaved = ref(false);
+const isSaving = ref(false);
+const isDownloadingBase = ref(false);
 
-const currentRecommendation = ref("");
-const currentDiagnostic = ref("");
-const currentPriceProcedure = ref("");
-const currentProformaFileName = ref<string | null>(null);
+const form = reactive({
+  recommendation: "",
+  diagnostic: "",
+  priceProcedure: "",
+  proformaFileName: null as string | null,
+});
 
-const originalRecommendation = ref("");
-const originalDiagnostic = ref("");
-const originalPriceProcedure = ref("");
-const originalProformaFileName = ref<string | null>(null);
+const snapshot = reactive({
+  recommendation: "",
+  diagnostic: "",
+  priceProcedure: "",
+  proformaFileName: null as string | null,
+});
 
 const proformaFile = ref<File | null>(null);
 const proformaError = ref("");
 
-const refreshAppointments = inject<() => Promise<void>>("refreshAppointments");
+const VALORATION_STATUSES = [
+  "CONFIRM_VALIDATION_APPOINTMENT",
+  "VALUATION_PENDING_VALORATION_APPOINTMENT",
+];
 
-const { isOpen, closeModal, getSharedData, openModal } =
-  useMedicalModalManager();
+const isValorationStatus = computed(() =>
+  VALORATION_STATUSES.includes(statusCode.value),
+);
 
-const modalData = computed(() => {
-  const data = getSharedData<{ appointment: Appointment }>(
-    "detallesValoracion",
-  );
-  return data || null;
-});
-
-const currentAppointment = computed(() => {
-  return modalData.value?.appointment || null;
-});
-
-const isModalOpen = computed(() => isOpen.detallesValoracion);
-
-const { uploadProforma } = useAppointment();
-const { uploadDocument, getDocumentsByFilters } = useDocuments();
-const { formatDate, formatTime, formatCurrency } = useFormat();
-
-const isValidationAppointment = computed(() => {
-  if (!currentAppointment.value) return false;
-
-  return (
-    currentAppointment.value.appointment_status.code ===
-      "CONFIRM_VALIDATION_APPOINTMENT" ||
-    currentAppointment.value.appointment_status.code ===
-      "VALUATION_PENDING_VALORATION_APPOINTMENT"
-  );
-});
-
-const continueWithoutPayment = ref<boolean>(false);
-
-const PAYMENT_WARNING_CONFIG: Record<string, string> = {
-  CONFIRM_VALIDATION_APPOINTMENT:
-    "PAYMENT_STATUS_NOT_PAID_VALORATION_APPOINTMENT",
-  CONFIRM_PROCEDURE: "PAYMENT_STATUS_NOT_PAID_PROCEDURE",
-};
-
-const showPaymentWarningModal = computed(() => {
-  if (!currentAppointment.value) return false;
-
-  const status = currentAppointment.value.appointment_status?.code;
-  const paymentStatus = currentAppointment.value.payment_status?.code;
-
-  return status && paymentStatus
-    ? PAYMENT_WARNING_CONFIG[status] === paymentStatus
-    : false;
-});
-
-continueWithoutPayment.value = showPaymentWarningModal.value;
-
-const hasChanges = computed(
+const hasUnsavedChanges = computed(
   () =>
-    currentRecommendation.value !== originalRecommendation.value ||
-    currentDiagnostic.value !== originalDiagnostic.value ||
-    currentPriceProcedure.value !== originalPriceProcedure.value ||
-    currentProformaFileName.value !== originalProformaFileName.value,
+    form.recommendation !== snapshot.recommendation ||
+    form.diagnostic !== snapshot.diagnostic ||
+    form.priceProcedure !== snapshot.priceProcedure ||
+    form.proformaFileName !== snapshot.proformaFileName,
 );
 
 const canSave = computed(
-  () => hasChanges.value && !!currentProformaFileName.value,
+  () => hasUnsavedChanges.value && !!form.proformaFileName,
 );
 
-const canSaveProforma = computed(() => {
-  return !(
-    currentProformaFileName.value &&
-    currentPriceProcedure.value !== "" &&
-    currentRecommendation.value !== "" &&
-    currentDiagnostic.value !== ""
-  );
+const isValorationFormComplete = computed(
+  () =>
+    !!form.proformaFileName &&
+    form.priceProcedure !== "" &&
+    form.recommendation !== "" &&
+    form.diagnostic !== "",
+);
+
+const formattedPriceDisplay = computed(() => {
+  if (!form.priceProcedure || form.priceProcedure === "0") return "";
+  return formatCurrency(form.priceProcedure, { decimalPlaces: 0 });
 });
 
-const formattedPriceDisplay = computed(() =>
-  !currentPriceProcedure.value || currentPriceProcedure.value === "0"
-    ? ""
-    : formatCurrency(currentPriceProcedure.value, { decimalPlaces: 0 }),
+const STATUS_BADGE_MAP: Record<string, string> = {
+  CANCEL_APPOINTMENT: "status-badge--cancelled",
+  PENDING_VALORATION_APPOINTMENT: "status-badge--warning",
+  PENDING_PROCEDURE: "status-badge--warning",
+  CONFIRM_PROCEDURE: "status-badge--primary",
+  CONCRETED_APPOINTMENT: "status-badge--primary",
+  VALUED_VALORATION_APPOINTMENT: "status-badge--success",
+  CONFIRM_VALIDATION_APPOINTMENT: "status-badge--success",
+  VALUATION_PENDING_VALORATION_APPOINTMENT: "status-badge--primary",
+  WAITING_PROCEDURE: "status-badge--warning",
+};
+
+const statusBadgeClass = computed(
+  () => STATUS_BADGE_MAP[statusCode.value] ?? "",
 );
 
-const handleDownloadBaseProforma = async () => {
-  isDownloadingProforma.value = true;
+const detailRows = computed((): TablaBaseRow[] | undefined => {
+  const apt = appointment.value;
+  if (!apt) return undefined;
+
+  return [
+    {
+      key: "tipo-servicio",
+      header: "Tipo de servicio:",
+      value: apt.appointment_type?.name ?? "-",
+    },
+    {
+      key: "fecha",
+      header: "Fecha de la cita:",
+      value: apt.appointment_date ? formatDate(apt.appointment_date) : "-",
+    },
+    {
+      key: "hora",
+      header: "Hora de la cita:",
+      value: apt.appointment_hour
+        ? formatTime(apt.appointment_hour, "hs")
+        : "-",
+    },
+    {
+      key: "paciente",
+      header: "Paciente:",
+      value: apt.customer?.name ?? "-",
+      isEndRow: true,
+    },
+    {
+      key: "procedimiento",
+      header: "Procedimiento:",
+      value: apt.package?.procedure?.name ?? "-",
+    },
+    {
+      key: "motivo",
+      header: "Motivo:",
+      value: apt.user_description ?? "-",
+    },
+    {
+      key: "costo",
+      header: "Costo del servicio:",
+      value: "Ver en proforma",
+    },
+    {
+      key: "fecha-solicitud",
+      header: "Fecha de la solicitud:",
+      value: formatDate(apt.application_date ?? "", "short"),
+    },
+    {
+      key: "estado-cita",
+      header: "Estado de la cita:",
+      value: apt.appointment_status?.value1 ?? "-",
+      isEndRow: true,
+    },
+    {
+      key: "proforma",
+      header: "Proforma:",
+      value: form.proformaFileName ?? apt.proforma_file_code ?? "Sin proforma",
+    },
+    {
+      key: "valor-procedimiento",
+      header: "Valor del procedimiento:",
+      value: formatCurrency(form.priceProcedure || "0", { decimalPlaces: 0 }),
+    },
+    {
+      key: "recomendaciones",
+      header: "Recomendaciones Post-Cita:",
+      value: form.recommendation || "Sin recomendaciones",
+    },
+    {
+      key: "diagnostico",
+      header: "Diagnóstico:",
+      value: form.diagnostic || "Sin diagnóstico",
+    },
+  ];
+});
+
+const initializeForm = () => {
+  const apt = appointment.value;
+  if (!apt) return;
+
+  form.recommendation = apt.recommendation_post_appointment ?? "";
+  form.diagnostic = apt.diagnostic ?? "";
+  form.priceProcedure = apt.price_procedure ?? "";
+  form.proformaFileName = apt.proforma_file_code ?? null;
+
+  snapshot.recommendation = form.recommendation;
+  snapshot.diagnostic = form.diagnostic;
+  snapshot.priceProcedure = form.priceProcedure;
+  snapshot.proformaFileName = form.proformaFileName;
+
+  proformaFile.value = null;
   proformaError.value = "";
+};
+
+const ALLOWED_EXTENSIONS = [".pdf", ".doc", ".docx"];
+const MAX_FILE_SIZE = 10 * 1024 * 1024;
+
+const handleFileSelect = (event: Event) => {
+  const input = event.target as HTMLInputElement;
+  const file = input.files?.[0];
+
+  input.value = "";
+
+  if (!file) return;
+
+  const extension = `.${file.name.split(".").pop()?.toLowerCase()}`;
+
+  if (!ALLOWED_EXTENSIONS.includes(extension)) {
+    proformaError.value = `Formato no permitido. Solo: ${ALLOWED_EXTENSIONS.join(", ")}`;
+    return;
+  }
+
+  if (file.size > MAX_FILE_SIZE) {
+    proformaError.value = "El archivo es demasiado grande. Máximo 10 MB.";
+    return;
+  }
+
+  form.proformaFileName = file.name;
+  proformaFile.value = file;
+  proformaError.value = "";
+};
+
+const removeProforma = () => {
+  form.proformaFileName = null;
+  proformaFile.value = null;
+  proformaError.value = "";
+};
+
+const downloadBaseProforma = async () => {
+  isDownloadingBase.value = true;
 
   try {
     const link = document.createElement("a");
@@ -311,270 +450,37 @@ const handleDownloadBaseProforma = async () => {
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
-  } catch (error) {
-    console.error("Error descargando proforma base:", error);
+  } catch (err) {
+    logger.error("Failed to download base proforma", {
+      error: err instanceof Error ? err.message : String(err),
+    });
     proformaError.value =
-      "Error al descargar la proforma base. Por favor intenta nuevamente.";
+      "Error al descargar la proforma base. Intenta nuevamente.";
   } finally {
-    isDownloadingProforma.value = false;
+    isDownloadingBase.value = false;
   }
 };
-
-const handleOpenConfirmValorationModal = () => {
-  if (!currentAppointment.value) return;
-  console.log("currentAppointment.value", currentAppointment.value);
-
-  const sharedData = {
-    appointment: currentAppointment.value,
-    recommendation: currentRecommendation.value,
-    diagnostic: currentDiagnostic.value,
-    proformaFileName: currentProformaFileName.value,
-    priceProcedure: currentPriceProcedure.value,
-  };
-
-  console.log("CONFIRAR VALORACIÓN");
-  openModal("confirmValoration", sharedData);
-};
-
-const appointmentRowsWithData = computed((): TablaBaseRow[] | undefined => {
-  if (!currentAppointment.value) return undefined;
-
-  const appointment = currentAppointment.value;
-
-  return [
-    {
-      key: "tipo-servicio",
-      header: "Tipo de servicio:",
-      value: appointment.appointment_type?.name || "N/A",
-    },
-    {
-      key: "fecha",
-      header: "Fecha de la cita:",
-      value: formatDate(appointment.appointment_date),
-    },
-    {
-      key: "hora",
-      header: "Hora de la cita:",
-      value: formatTime(appointment.appointment_hour, "hs"),
-    },
-    {
-      key: "paciente",
-      header: "Paciente:",
-      value: appointment.customer?.name || "N/A",
-      isEndRow: true,
-    },
-    {
-      key: "procedimiento",
-      header: "Procedimiento:",
-      value: appointment.package?.procedure?.name || "N/A",
-    },
-    {
-      key: "motivo",
-      header: "Motivo:",
-      value: appointment.user_description || "N/A",
-    },
-    { key: "costo", header: "Costo del servicio:", value: "Ver en proforma" },
-    {
-      key: "fecha-solicitud",
-      header: "Fecha de la solicitud:",
-      value: formatDate(appointment.application_date, "short"),
-    },
-    {
-      key: "estado-cita",
-      header: "Estado de la cita:",
-      value: appointment.appointment_status?.value1 || "N/A",
-      isEndRow: true,
-    },
-    {
-      key: "proforma",
-      header: "Proforma:",
-      value:
-        currentProformaFileName.value ||
-        appointment.proforma_file_code ||
-        "Sin proforma",
-    },
-    {
-      key: "valor-procedimiento",
-      header: "Valor del procedimiento:",
-      value: formatCurrency(currentPriceProcedure.value, { decimalPlaces: 0 }),
-    },
-    {
-      key: "recomendaciones",
-      header: "Recomendaciones Post-Cita:",
-      value: currentRecommendation.value || "Sin recomendaciones",
-    },
-    {
-      key: "diagnostico",
-      header: "Diagnostico:",
-      value: currentDiagnostic.value || "Sin diagnóstico",
-    },
-  ];
-});
-
-const initializeValues = () => {
-  if (!currentAppointment.value) return;
-
-  const appointment = currentAppointment.value;
-
-  currentRecommendation.value =
-    appointment.recommendation_post_appointment || "";
-  currentDiagnostic.value = appointment.diagnostic || "";
-  currentPriceProcedure.value = appointment.price_procedure || "";
-  currentProformaFileName.value = appointment.proforma_file_code || null;
-
-  originalRecommendation.value = currentRecommendation.value;
-  originalDiagnostic.value = currentDiagnostic.value;
-  originalPriceProcedure.value = currentPriceProcedure.value;
-  originalProformaFileName.value = currentProformaFileName.value;
-
-  proformaError.value = "";
-};
-
-const handleCloseModal = () => {
-  closeModal("detallesValoracion");
-  resetState();
-};
-
-const resetState = () => {
-  isEditing.value = true;
-  changesSaved.value = false;
-  isLoading.value = false;
-  proformaError.value = "";
-  isDownloadingProforma.value = false;
-};
-
-const handleFileUpload = (event: Event) => {
-  const file = (event.target as HTMLInputElement).files?.[0];
-  if (file) {
-    currentProformaFileName.value = file.name;
-    proformaFile.value = file;
-    proformaError.value = "";
-  }
-};
-
-const handleRemoveProforma = () => {
-  currentProformaFileName.value = null;
-  proformaFile.value = null;
-  proformaError.value = "";
-};
-
-const handleCancel = () => {
-  currentRecommendation.value = originalRecommendation.value;
-  currentDiagnostic.value = originalDiagnostic.value;
-  currentPriceProcedure.value = originalPriceProcedure.value;
-  currentProformaFileName.value = originalProformaFileName.value;
-  proformaError.value = "";
-};
-
-const handleUploadDocument = async () => {
-  if (!proformaFile.value) return null;
-  const fields = {
-    title: proformaFile.value.name,
-    type: "DOC",
-    description: "",
-    id_for_table: "6",
-    table: "",
-    action_type: "PRIVATE_CONTRACT",
-    user_id: "",
-    is_public: 0,
-  };
-  const api = uploadDocument(proformaFile.value, fields);
-  await api.request();
-  return api.response.value?.data?.code || null;
-};
-
-const handleSaveChanges = async () => {
-  if (!currentAppointment.value) {
-    proformaError.value = "No se encontró la cita";
-    return;
-  }
-
-  if (!currentProformaFileName.value) {
-    proformaError.value =
-      "Debe adjuntar una proforma para poder guardar los cambios";
-    return;
-  }
-
-  if (!hasChanges.value) return;
-
-  isLoading.value = true;
-  proformaError.value = "";
-
-  try {
-    const appointment = currentAppointment.value;
-
-    const proformaFileCode = await handleUploadDocument();
-    if (!proformaFileCode) throw new Error("Error al cargar el documento");
-
-    const payload = {
-      price_procedure: currentPriceProcedure.value,
-      recommendation_post_appointment: currentRecommendation.value,
-      diagnostic: currentDiagnostic.value,
-      appointment_result_code: "FIT_FOR_PROCEDURE",
-      proforma_file_code: proformaFileCode,
-    };
-
-    const api = uploadProforma(payload, appointment.id);
-    await api.request();
-    if (api.error.value) throw new Error(api.error.value.raw);
-
-    originalRecommendation.value = currentRecommendation.value;
-    originalDiagnostic.value = currentDiagnostic.value;
-    originalPriceProcedure.value = currentPriceProcedure.value;
-    originalProformaFileName.value = currentProformaFileName.value;
-
-    changesSaved.value = true;
-    isEditing.value = false;
-    await refreshAppointments?.();
-  } catch (error) {
-    console.error("Error saving changes:", error);
-    proformaError.value =
-      "Error al guardar los cambios. Por favor intenta nuevamente.";
-  } finally {
-    isLoading.value = false;
-  }
-};
-
-const handleEdit = () => {
-  isEditing.value = true;
-  changesSaved.value = false;
-  proformaError.value = "";
-};
-
-const handleViewInAppointments = () => handleCloseModal();
-
-const getStatusClass = (status: AppointmentStatusCode) =>
-  ({
-    CANCEL_APPOINTMENT: "status-badge--cancelled",
-    PENDING_VALORATION_APPOINTMENT: "status-badge--warning",
-    PENDING_PROCEDURE: "status-badge--warning",
-    CONFIRM_PROCEDURE: "status-badge--primary",
-    CONCRETED_APPOINTMENT: "status-badge--primary",
-    VALUED_VALORATION_APPOINTMENT: "status-badge--success",
-    CONFIRM_VALIDATION_APPOINTMENT: "status-badge--success",
-    VALUATION_PENDING_VALORATION_APPOINTMENT: "status-badge--primary",
-    WAITING_PROCEDURE: "status-badge--warning",
-  })[status] || "";
 
 const handlePriceInput = (event: Event) => {
   const target = event.target as HTMLInputElement;
   const cursorPosition = target.selectionStart ?? 0;
   const oldValue = target.value;
-  const rawValue = oldValue.replace(/[^\d]/g, "");
-  currentPriceProcedure.value = rawValue || "0";
+  const rawDigits = oldValue.replace(/\D/g, "");
+
+  form.priceProcedure = rawDigits || "0";
 
   nextTick(() => {
-    const newFormattedValue = formatCurrency(rawValue || "0", {
-      decimalPlaces: 0,
-    });
+    const formatted = formatCurrency(rawDigits || "0", { decimalPlaces: 0 });
+
     const digitsBeforeCursor = oldValue
       .substring(0, cursorPosition)
-      .replace(/[^\d]/g, "").length;
-    let digitCount = 0;
-    let newCursorPosition = 0;
+      .replace(/\D/g, "").length;
 
-    for (let i = 0; i < newFormattedValue.length; i++) {
-      if (/\d/.test(newFormattedValue[i])) {
+    let digitCount = 0;
+    let newCursorPosition = formatted.length;
+
+    for (let i = 0; i < formatted.length; i++) {
+      if (/\d/.test(formatted[i])) {
         digitCount++;
         if (digitCount === digitsBeforeCursor) {
           newCursorPosition = i + 1;
@@ -583,16 +489,164 @@ const handlePriceInput = (event: Event) => {
       }
     }
 
-    if (digitCount < digitsBeforeCursor)
-      newCursorPosition = newFormattedValue.length;
     target.setSelectionRange(newCursorPosition, newCursorPosition);
   });
 };
 
-watch(isModalOpen, (isOpen) => {
-  if (isOpen) {
-    initializeValues();
+function getUserId(): string {
+  const userInfo = getUserInfo();
+  return userInfo.id;
+}
+
+const uploadProformaDocument = async (): Promise<string | null> => {
+  if (!proformaFile.value) return null;
+
+  try {
+    const { data, error } = await addDocument({
+      file: proformaFile.value,
+      fields: {
+        title: proformaFile.value.name,
+        type: "DOC",
+        description: "Proforma de procedimiento médico",
+        id_for_table: "5",
+        table: "",
+        action_type: "PRIVATE_CONTRACT",
+        user_id: getUserId(),
+        is_public: 0,
+      },
+    });
+
+    if (error) {
+      logger.error("Failed to upload proforma document", {
+        error: error.info,
+      });
+      return null;
+    }
+
+    return data?.code ?? null;
+  } catch (err) {
+    logger.error("Unexpected error uploading proforma", {
+      error: err instanceof Error ? err.message : String(err),
+    });
+    return null;
   }
+};
+
+const saveChanges = async () => {
+  const apt = appointment.value;
+
+  if (!apt) {
+    proformaError.value = "No se encontró la cita.";
+    return;
+  }
+
+  if (!form.proformaFileName) {
+    proformaError.value =
+      "Debe adjuntar una proforma para guardar los cambios.";
+    return;
+  }
+
+  if (!hasUnsavedChanges.value) return;
+
+  isSaving.value = true;
+  proformaError.value = "";
+
+  try {
+    let proformaCode = apt.proforma_file_code ?? "";
+
+    if (proformaFile.value) {
+      const uploadedCode = await uploadProformaDocument();
+
+      if (!uploadedCode) {
+        proformaError.value =
+          "Error al cargar el documento. Intenta nuevamente.";
+        return;
+      }
+
+      proformaCode = uploadedCode;
+    }
+
+    const { error } = await uploadProforma(apt.id, {
+      price_procedure: form.priceProcedure,
+      recommendation_post_appointment: form.recommendation,
+      diagnostic: form.diagnostic,
+      appointment_result_code: "FIT_FOR_PROCEDURE",
+      proforma_file_code: proformaCode,
+    });
+
+    if (error) {
+      proformaError.value =
+        error.info || "Error al guardar los cambios. Intenta nuevamente.";
+      logger.error("Failed to save valoration", {
+        appointmentId: apt.id,
+        error: error.info,
+      });
+      return;
+    }
+
+    snapshot.recommendation = form.recommendation;
+    snapshot.diagnostic = form.diagnostic;
+    snapshot.priceProcedure = form.priceProcedure;
+    snapshot.proformaFileName = form.proformaFileName;
+
+    isSaved.value = true;
+    isEditing.value = false;
+    proformaFile.value = null;
+
+    await refreshAppointments?.();
+  } catch (err) {
+    proformaError.value = "Error inesperado al guardar. Intenta nuevamente.";
+    logger.error("Unexpected error saving valoration", {
+      error: err instanceof Error ? err.message : String(err),
+    });
+  } finally {
+    isSaving.value = false;
+  }
+};
+
+const openValorationConfirmation = () => {
+  if (!appointment.value) return;
+
+  openModal("confirmValoration", {
+    appointment: appointment.value,
+    recommendation: form.recommendation,
+    diagnostic: form.diagnostic,
+    proformaFileName: form.proformaFileName,
+    priceProcedure: form.priceProcedure,
+  });
+};
+
+const discardChanges = () => {
+  form.recommendation = snapshot.recommendation;
+  form.diagnostic = snapshot.diagnostic;
+  form.priceProcedure = snapshot.priceProcedure;
+  form.proformaFileName = snapshot.proformaFileName;
+  proformaFile.value = null;
+  proformaError.value = "";
+};
+
+const enableEditing = () => {
+  isEditing.value = true;
+  isSaved.value = false;
+  proformaError.value = "";
+};
+
+const resetState = () => {
+  isEditing.value = true;
+  isSaved.value = false;
+  isSaving.value = false;
+  isDownloadingBase.value = false;
+  proformaFile.value = null;
+  proformaError.value = "";
+};
+
+const handleClose = () => {
+  closeModal("detallesValoracion");
+  resetState();
+};
+
+watch(isModalOpen, (open) => {
+  if (open) initializeForm();
 });
 </script>
 
@@ -601,7 +655,7 @@ watch(isModalOpen, (isOpen) => {
   @include visually-hidden;
 }
 
-.valoration-details {
+.valoration-modal {
   &__title {
     font-family: $font-family-main;
     font-weight: 600;
@@ -615,10 +669,24 @@ watch(isModalOpen, (isOpen) => {
     padding: 1.5rem;
   }
 
-  &__download-base-proforma {
+  &__field-error {
+    font-family: $font-family-alt;
+    font-size: 0.75rem;
+    line-height: 1rem;
+    font-weight: 500;
+    color: $color-danger;
+    margin: 0.25rem 0 0 0;
+  }
+
+  &__proforma {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+
+  &__proforma-download {
     @include outline-button;
     padding: 0.625rem 1rem;
-    margin-bottom: 0.75rem;
     width: 100%;
 
     svg {
@@ -632,10 +700,13 @@ watch(isModalOpen, (isOpen) => {
     }
   }
 
-  &__attach-proforma {
+  &__proforma-attach {
     @include outline-button;
     padding: 0.625rem 1rem;
     cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
 
     svg {
       width: 1.25rem;
@@ -643,83 +714,65 @@ watch(isModalOpen, (isOpen) => {
     }
   }
 
-  &__error-message {
-    margin-top: 0.25rem;
-    font-family: $font-family-main;
-    font-size: 0.75rem;
-    line-height: 1rem;
-    color: #dc2626;
-    font-weight: 400;
-  }
-
-  &__proforma-uploaded-wrapper {
+  &__proforma-file {
     display: flex;
     justify-content: space-between;
     align-items: center;
   }
 
-  &__proforma-uploaded {
+  &__proforma-file-info {
     display: flex;
     align-items: center;
-    gap: 0.25rem;
+    gap: 0.375rem;
+    min-width: 0;
   }
 
-  &__proforma-name {
+  &__proforma-file-name {
     @include label-base;
     font-weight: 600;
     font-size: 0.875rem;
     line-height: 1.25rem;
     color: $color-foreground;
-    display: flex;
-    gap: $spacing-sm;
-    align-items: center;
-    max-width: 15.625rem;
-  }
-
-  &__proforma-name-text {
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
-    min-width: 0;
+    max-width: 15rem;
   }
 
-  &__no-proforma {
-    @include label-base;
-    font-size: 0.875rem;
-    line-height: 1.25rem;
-    color: $color-text-muted;
-  }
-
-  &__remove-proforma {
-    @include button-base;
-    background: transparent;
-    border: none;
-    color: $color-text-muted;
-    padding: $spacing-xs;
-    border-radius: $border-radius-md;
-
-    &:hover:not(:disabled) {
-      color: $color-error;
-      background-color: #fef2f2;
-    }
-
-    &:disabled {
-      opacity: 0.5;
-      cursor: not-allowed;
-    }
-  }
-
-  &__file-success-icon {
+  &__proforma-file-badge {
     display: flex;
     justify-content: center;
     align-items: center;
-    justify-self: flex-end;
     width: 1.5rem;
     height: 1.5rem;
     border-radius: 50%;
     background-color: #d1fadf;
     color: #039855;
     flex-shrink: 0;
+  }
+
+  &__proforma-remove {
+    background: transparent;
+    border: none;
+    color: $color-text-muted;
+    padding: 0.25rem;
+    border-radius: 0.375rem;
+    cursor: pointer;
+    transition:
+      color 0.15s ease,
+      background-color 0.15s ease;
+
+    &:hover {
+      color: $color-danger;
+      background-color: #fef2f2;
+    }
+  }
+
+  &__proforma-readonly {
+    @include label-base;
+    font-size: 0.875rem;
+    line-height: 1.25rem;
+    color: $color-text-muted;
   }
 
   &__input {
@@ -737,6 +790,7 @@ watch(isModalOpen, (isOpen) => {
     @include input-base;
     width: 100%;
     min-height: 7.5rem;
+    resize: vertical;
 
     &:disabled {
       background-color: #f9fafb;
@@ -745,69 +799,62 @@ watch(isModalOpen, (isOpen) => {
     }
   }
 
-  &__actions {
+  &__footer {
     display: flex;
     justify-content: space-between;
     align-items: center;
     width: 100%;
   }
 
-  &__saved-changes {
-    &--wrapper {
-      display: flex;
-      align-items: center;
-      gap: 0.5rem;
-    }
-
-    &--text {
-      font-family: $font-family-main;
-      font-weight: 600;
-      font-size: 1rem;
-      line-height: 1.5rem;
-      letter-spacing: 0;
-      color: #12b76a;
-    }
-
-    &--icon {
-      width: 1.25rem;
-      height: 1.25rem;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      background: #d1fadf;
-      color: #12b76a;
-      border-radius: 50%;
-      padding: 0.1875rem;
-    }
+  &__saved-indicator {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
   }
 
-  &__view-buttons {
+  &__saved-text {
+    font-family: $font-family-main;
+    font-weight: 600;
+    font-size: 1rem;
+    line-height: 1.5rem;
+    color: #12b76a;
+  }
+
+  &__saved-icon {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    width: 1.25rem;
+    height: 1.25rem;
+    background: #d1fadf;
+    color: #12b76a;
+    border-radius: 50%;
+    padding: 0.1875rem;
+  }
+
+  &__saved-actions {
     display: flex;
     gap: 0.75rem;
   }
 
-  &__buttons-wrapper {
+  &__edit-actions {
     display: flex;
     gap: 0.75rem;
     margin-left: auto;
   }
 
-  &__button {
-    &--danger {
-      @include outline-danger-button;
-      border: none;
-    }
-
+  &__action {
     &--outline {
       @include outline-button;
     }
 
     &--primary {
       @include primary-button;
-    }
 
-    &--full {
-      width: 100%;
+      &:disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
+      }
     }
   }
 }

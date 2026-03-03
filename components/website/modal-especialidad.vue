@@ -85,7 +85,7 @@
 </template>
 
 <script lang="ts" setup>
-import type { ModalContent } from "@/types";
+import type { ModalContent } from "~/types/test-index";
 
 interface Props {
   data?: ModalContent;

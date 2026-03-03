@@ -62,7 +62,7 @@
           class="auth-buttons d-flex align-items-center gap-3"
         >
           <NuxtLink
-            to="/pacientes/login"
+            to="/auth/login"
             class="btn btn-outline-primary btn-custom-secondary"
           >
             Ingresar
@@ -94,7 +94,7 @@ const router = useRouter();
 
 const handleLogout = () => {
   logout();
-  router.push("/pacientes/login");
+  router.push("/auth/login");
 };
 </script>
 

@@ -73,7 +73,7 @@
                 | 'APPROVED'
                 | 'CANCELLED'
                 | 'REJECTED'
-                | 'APPROVED_PERCENTAGE'
+                | 'APPROVED_PERCENTAGE',
             )
           "
         >
@@ -150,8 +150,8 @@
                     {{
                       formatCurrency(
                         Number(
-                          item.appointment.appointment_credit?.requested_amount
-                        ) ?? 0
+                          item.appointment.appointment_credit?.requested_amount,
+                        ) ?? 0,
                       )
                     }}
                   </dd>
@@ -237,7 +237,6 @@
 
 <script setup lang="ts">
 import { useModalManager } from "@/composables/useModalManager";
-import type { Credit } from "@/types";
 import type { TableColumn } from "../ui/appointment-table-base.vue";
 
 interface CreditStatus {
@@ -251,7 +250,7 @@ interface CreditStatus {
 }
 
 interface Props {
-  credits: Credit[];
+  credits: IAppointmentCredit[];
   itemsPerPage?: number;
 }
 
@@ -260,12 +259,14 @@ const props = withDefaults(defineProps<Props>(), {
   itemsPerPage: 10,
 });
 
+const { formatDate, formatCurrency } = useFormat();
+
 const emit = defineEmits(["refreshed"]);
 
 const modalManager = useModalManager();
 
 const refreshAppointments = inject<(() => void) | undefined>(
-  "refreshAppointments"
+  "refreshAppointments",
 );
 
 const selectedVouchers = ref<Set<number>>(new Set());
@@ -318,12 +319,12 @@ const expandedVouchers = computed(() => {
   return props.credits.filter((v) => v.id === expandedRow.value);
 });
 
-const openCreditDetails = (credit: Credit): void => {
+const openCreditDetails = (credit: IAppointmentCredit): void => {
   modalManager.setCredit(credit);
 
   modalManager.setSharedData(
     "approvedAmount",
-    credit.requested_amount?.toString() || ""
+    credit.requested_amount?.toString() || "",
   );
   modalManager.setSharedData("description", "");
   modalManager.setSharedData("uploadedFile", null);
@@ -377,35 +378,19 @@ const getStatusClass = (code: CreditStatus["code"]): string => {
   return statusMap[code] || "";
 };
 
-const getRowClass = (item: Credit): string => {
+const getRowClass = (item: IAppointmentCredit): string => {
   return expandedRow.value === item.id ? "vouchers-table__row--expanded" : "";
 };
 
-const addCommentsModal = (voucher: Credit): void => {
+const addCommentsModal = (voucher: IAppointmentCredit): void => {
   console.log("Agregar comentarios para:", voucher);
 };
 
-const downloadVoucher = (voucher: Credit): void => {
+const downloadVoucher = (voucher: IAppointmentCredit): void => {
   console.log("Descargar voucher:", voucher);
 };
 
-const formatCurrency = (amount: number): string => {
-  return new Intl.NumberFormat("es-CR", {
-    style: "currency",
-    currency: "CRC",
-    minimumFractionDigits: 0,
-  }).format(amount);
-};
-
-const formatDate = (date: string): string => {
-  return new Date(date).toLocaleDateString("es-CR", {
-    day: "numeric",
-    month: "long",
-    year: "numeric",
-  });
-};
-
-const formatFullAddress = (voucher: Credit): string => {
+const formatFullAddress = (voucher: IAppointmentCredit): string => {
   return `${voucher.appointment.customer.address}, ${voucher.appointment.customer.city_name}, ${voucher.appointment.customer.postal_code}`;
 };
 
