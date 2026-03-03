@@ -1,213 +1,10 @@
-<template>
-  <AtomsModalBase
-    :isOpen="isOpen"
-    size="medium"
-    @close="handleCloseModal('appointmentDetails')"
-    :close-on-backdrop="false"
-    header-class="header-border-bottom"
-    :footer-class="
-      appointment.appointment_status.code !== 'CANCEL_APPOINTMENT'
-        ? 'footer-border-top'
-        : 'padding-0'
-    "
-  >
-    <div class="appointment-details-modal__content">
-      <h2 class="appointment-details-modal__title">
-        {{
-          isProcedureDetails
-            ? "Detalles de la cita"
-            : "Detalles del procedimiento"
-        }}
-      </h2>
-
-      <MedicosTablaDetallesCita :rows="tableRows">
-        <template #data-status="{ row }">
-          <span class="status-badge" :class="getStatusClass()">
-            {{ getStatusText() }}
-          </span>
-        </template>
-
-        <template #data-valoration-conclusion="{ row }">
-          <span
-            class="appointment-table__payment-status"
-            :class="setPaymentStatusClass(appointment)"
-          ></span>
-          {{ appointment?.appointment_result?.name }}
-        </template>
-
-        <template #data-proforma="{ row }">
-          <button
-            class="appointment-table__button--outline"
-            :disabled="isLoadingProforma"
-            @click="downloadProforma"
-          >
-            <AtomsIconsDownloadIcon />
-            Descargar Proforma
-          </button>
-        </template>
-
-        <template #data-payment-status="{ row }">
-          <span
-            v-if="!appointment.appointment_credit"
-            class="appointment-table__payment-status"
-            :class="setPaymentStatusClass(appointment)"
-          ></span>
-          {{ row.value }}
-        </template>
-
-        <template #data-recommendations="{ row }">
-          <textarea
-            id="appointment-recommendations"
-            class="appointment-table__textarea"
-            name="recommendations"
-            aria-labelledby="recommendations-label"
-            aria-readonly="true"
-            aria-describedby="recommendations-hint"
-            :value="
-              appointment.recommendation_post_appointment ??
-              'No hay recomendaciones'
-            "
-            disabled
-            readonly
-          ></textarea>
-        </template>
-      </MedicosTablaDetallesCita>
-
-      <div
-        v-if="canShowPaymentMethods"
-        class="appointment-details-modal__payment-information"
-      >
-        <p class="appointment-details-modal__payment-information--title">
-          Información de métodos de Pago:
-        </p>
-        <div class="appointment-details-modal__payment-information--content">
-          <AtomsIconsCircleCheckBigIcon
-            size="12"
-            class="appointment-details-modal__payment-information--icon"
-          />
-          <div class="appointment-details-modal__payment-information--wrapper">
-            <p class="appointment-details-modal__payment-information--subtitle">
-              Pagar en línea con tarjeta.
-            </p>
-            <p class="appointment-details-modal__payment-information--subtext">
-              Paga ahora de forma segura con tu tarjeta.
-            </p>
-          </div>
-        </div>
-        <div class="appointment-details-modal__payment-information--content">
-          <AtomsIconsCircleCheckBigIcon
-            size="12"
-            class="appointment-details-modal__payment-information--icon"
-          />
-          <div class="appointment-details-modal__payment-information--wrapper">
-            <p class="appointment-details-modal__payment-information--subtitle">
-              Pagar en consulta.
-            </p>
-            <p class="appointment-details-modal__payment-information--subtext">
-              Pagaras directamente el día de tu cita.
-            </p>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <template #footer>
-      <div
-        v-if="appointment.appointment_status.code === 'CANCEL_APPOINTMENT'"
-      ></div>
-      <div
-        v-else-if="canLeaveRating"
-        class="appointment-details-modal__footer appointment-details-modal__footer--full-width"
-      >
-        <button
-          class="appointment-details-modal__button--outline"
-          @click="
-            () => {
-              handleOpenModal('leaveReview', props.appointment.id);
-              handleCloseModal('appointmentDetails');
-            }
-          "
-        >
-          Dejar una reseña
-        </button>
-      </div>
-
-      <div
-        v-else-if="
-          appointment.appointment_credit?.credit_status?.code === 'REQUIRED'
-        "
-        class="appointment-details-modal__footer appointment-details-modal__footer--full-width"
-      >
-        <p class="appointment-details-modal__credit-information">
-          <span class="appointment-details-modal__credit-information--text"
-            >Esperando respuesta de crédito</span
-          >
-          <span class="appointment-details-modal__credit-information--subtext">
-            Tu solicitud está siendo evaluada por la asociación solidarista.
-          </span>
-        </p>
-      </div>
-
-      <div
-        v-else-if="
-          appointment.appointment_status.code !==
-          'VALUED_VALORATION_APPOINTMENT'
-        "
-        class="appointment-details-modal__footer"
-      >
-        <button
-          class="appointment-details-modal__button--danger"
-          @click="handleOpenModal('cancelAppointment')"
-        >
-          Anular cita
-        </button>
-        <button
-          v-if="hasOutstandingBalance && shouldShowContinueButton"
-          class="appointment-details-modal__button--primary"
-          @click="handleOpenModal('payAppointment')"
-        >
-          Pagar ahora
-        </button>
-      </div>
-      <div
-        v-else-if="!waitingForCreditResponse"
-        class="appointment-details-modal__footer appointment-details-modal__footer--full-width"
-      >
-        <button
-          class="appointment-details-modal__button--outline"
-          @click="handleOpenModal('scheduleProcedure')"
-        >
-          Reservar procedimiento
-        </button>
-        <button
-          v-if="canRequestCredit"
-          class="appointment-details-modal__button--primary"
-          @click="handleOpenModal('applyCredit')"
-        >
-          Solicitar Crédito
-        </button>
-      </div>
-      <div
-        v-else
-        class="appointment-details-modal__footer appointment-details-modal__footer--full-width"
-      >
-        <button
-          class="appointment-details-modal__button--primary"
-          @click="handleOpenModal('scheduleProcedure')"
-        >
-          Reservar procedimiento
-        </button>
-      </div>
-    </template>
-  </AtomsModalBase>
-</template>
-
 <script lang="ts" setup>
 import { useDocuments } from "@/composables/api";
 import type { TablaBaseRow } from "~/components/medicos/tabla-detalles-cita.vue";
 
 const { formatCurrency, formatPhone, formatDate, formatTime } = useFormat();
 const { getDocumentByCode } = useDocuments();
+const { show: showToast } = useToast();
 
 interface Props {
   appointment: IAppointment;
@@ -222,242 +19,379 @@ interface Emits {
 const props = defineProps<Props>();
 const emit = defineEmits<Emits>();
 
-const isLoadingProforma = ref<boolean>(false);
+const isProformaDownloading = ref(false);
 
-const handleOpenModal = (modalName: ModalName, appointmentId?: number) => {
-  emit("open-modal", modalName, appointmentId);
-};
-
-const handleCloseModal = (modalName: ModalName) => {
-  emit("close-modal", modalName);
-};
-
-const hasOutstandingBalance = computed(() => {
-  const creditAmount = props.appointment.appointment_credit
-    ? Number(props.appointment.appointment_credit.approved_amount)
-    : 0;
-  return Number(props.appointment.price_procedure) - creditAmount !== 0;
-});
-
-const shouldShowContinueButton = computed(() => {
-  const { code: statusCode } = props.appointment.appointment_status;
-  const { code: paymentCode } = props.appointment.payment_status;
-
-  return (
-    (statusCode === "CONFIRM_VALIDATION_APPOINTMENT" &&
-      (paymentCode === "PAYMENT_STATUS_NOT_PAID_VALORATION_APPOINTMENT" ||
-        paymentCode === "PAYMENT_STATUS_NOT_PAID_PROCEDURE")) ||
-    (statusCode === "CONFIRM_PROCEDURE" &&
-      paymentCode === "PAYMENT_STATUS_NOT_PAID_PROCEDURE")
-  );
-});
-
-const isProcedureDetails = computed(() => {
-  return (
-    props.appointment.appointment_type.code === "VALORATION_APPOINTMENT" &&
-    props.appointment.appointment_status.code !==
-      "VALUED_VALORATION_APPOINTMENT"
-  );
-});
-
-const waitingForCreditResponse = computed(
-  () => props.appointment.appointment_credit?.credit_status_code === "REQUIRED",
+const statusCode = computed(() => props.appointment.appointment_status.code);
+const paymentCode = computed(() => props.appointment.payment_status.code);
+const appointmentTypeCode = computed(
+  () => props.appointment.appointment_type.code,
 );
-const canRequestCredit = computed(() => !props.appointment.appointment_credit);
+const creditData = computed(() => props.appointment.appointment_credit);
+const resultCode = computed(() => props.appointment.appointment_result?.code);
 
-const canShowPaymentMethods = computed(() => {
-  const paymentStatusCode = props.appointment.payment_status.code;
-  const appointmentStatusCode = props.appointment.appointment_status.code;
+const isValoration = computed(
+  () => appointmentTypeCode.value === "VALORATION_APPOINTMENT",
+);
+
+const isProcedureType = computed(
+  () => appointmentTypeCode.value === "PROCEDURE_APPOINTMENT",
+);
+
+const isCancelled = computed(() => statusCode.value === "CANCEL_APPOINTMENT");
+
+const isValorationCompleted = computed(
+  () => statusCode.value === "VALUED_VALORATION_APPOINTMENT",
+);
+
+const isConcluded = computed(
+  () => statusCode.value === "CONCRETED_APPOINTMENT",
+);
+
+const isConfirmedProcedure = computed(
+  () => statusCode.value === "CONFIRM_PROCEDURE",
+);
+
+const isPendingValoration = computed(
+  () => statusCode.value === "PENDING_VALORATION_APPOINTMENT",
+);
+
+const isConfirmedValidation = computed(
+  () => statusCode.value === "CONFIRM_VALIDATION_APPOINTMENT",
+);
+
+const isFitForProcedure = computed(
+  () => resultCode.value === "FIT_FOR_PROCEDURE",
+);
+
+const isNotFitForProcedure = computed(
+  () => resultCode.value === "NOT_FIT_FOR_PROCEDURE",
+);
+
+const isPaidValoration = computed(
+  () => paymentCode.value === "PAYMENT_STATUS_PAID_VALORATION_APPOINTMENT",
+);
+
+const isPaidProcedure = computed(
+  () => paymentCode.value === "PAYMENT_STATUS_PAID_PROCEDURE",
+);
+
+const isUnpaidValoration = computed(
+  () => paymentCode.value === "PAYMENT_STATUS_NOT_PAID_VALORATION_APPOINTMENT",
+);
+
+const isUnpaidProcedure = computed(
+  () => paymentCode.value === "PAYMENT_STATUS_NOT_PAID_PROCEDURE",
+);
+
+const isPaid = computed(() => isPaidValoration.value || isPaidProcedure.value);
+const isUnpaid = computed(
+  () => isUnpaidValoration.value || isUnpaidProcedure.value,
+);
+
+const procedureCost = computed(() => Number(props.appointment.price_procedure));
+
+const approvedCreditAmount = computed(() =>
+  Number(creditData.value?.approved_amount || 0),
+);
+
+const outstandingBalance = computed(
+  () => procedureCost.value - approvedCreditAmount.value,
+);
+
+const hasOutstandingBalance = computed(() => outstandingBalance.value !== 0);
+
+const isAwaitingCreditResponse = computed(
+  () =>
+    creditData.value?.credit_status?.code === "REQUIRED" ||
+    creditData.value?.credit_status_code === "REQUIRED",
+);
+
+const canRequestCredit = computed(() => !creditData.value);
+
+const isCreditRejected = computed(
+  () => creditData.value?.credit_status?.code === "REJECTED",
+);
+
+const hasCreditEligibilityInfo = computed(
+  () =>
+    creditData.value &&
+    isValorationCompleted.value &&
+    !isAwaitingCreditResponse.value,
+);
+
+const isCreditActive = computed(
+  () => creditData.value && !isCreditRejected.value,
+);
+
+const modalTitle = computed(() =>
+  isValoration.value && !isValorationCompleted.value
+    ? "Detalles de la cita"
+    : "Detalles del procedimiento",
+);
+
+const shouldDisplayScheduleInfo = computed(
+  () =>
+    isValorationCompleted.value &&
+    isValoration.value &&
+    isFitForProcedure.value,
+);
+
+const shouldShowPayButton = computed(() => {
+  if (!hasOutstandingBalance.value) return false;
+
+  return (
+    (isConfirmedValidation.value &&
+      (isUnpaidValoration.value || isUnpaidProcedure.value)) ||
+    (isConfirmedProcedure.value && isUnpaidProcedure.value)
+  );
+});
+
+const canDisplayPaymentMethods = computed(() => {
+  if (!isUnpaid.value) return false;
+  return isConfirmedValidation.value || isPendingValoration.value;
+});
+
+const canLeaveReview = computed(
+  () => isNotFitForProcedure.value || isConcluded.value,
+);
+
+type FooterVariant =
+  | "cancelled"
+  | "review"
+  | "awaiting-credit"
+  | "default-actions"
+  | "valued-with-credit"
+  | "valued-standard";
+
+const activeFooterVariant = computed((): FooterVariant => {
+  if (isCancelled.value) return "cancelled";
+  if (canLeaveReview.value) return "review";
+  if (isAwaitingCreditResponse.value) return "awaiting-credit";
+  if (!isValorationCompleted.value) return "default-actions";
+  if (isAwaitingCreditResponse.value) return "awaiting-credit";
+  return canRequestCredit.value ? "valued-with-credit" : "valued-standard";
+});
+
+const footerContainerClass = computed(() => {
+  const base = "appointment-detail__footer";
+  const fullWidthVariants: FooterVariant[] = [
+    "review",
+    "awaiting-credit",
+    "valued-with-credit",
+    "valued-standard",
+  ];
+  return fullWidthVariants.includes(activeFooterVariant.value)
+    ? `${base} ${base}--expanded`
+    : base;
+});
+
+const STATUS_APPEARANCE: Record<AppointmentStatusCode, { className: string }> =
+  {
+    CANCEL_APPOINTMENT: { className: "appointment-detail__badge--cancelled" },
+    PENDING_VALORATION_APPOINTMENT: {
+      className: "appointment-detail__badge--warning",
+    },
+    PENDING_PROCEDURE: { className: "appointment-detail__badge--warning" },
+    WAITING_PROCEDURE: { className: "appointment-detail__badge--warning" },
+    CONFIRM_PROCEDURE: { className: "appointment-detail__badge--info" },
+    CONCRETED_APPOINTMENT: { className: "appointment-detail__badge--info" },
+    VALUATION_PENDING_VALORATION_APPOINTMENT: {
+      className: "appointment-detail__badge--info",
+    },
+    VALUED_VALORATION_APPOINTMENT: {
+      className: "appointment-detail__badge--success",
+    },
+    CONFIRM_VALIDATION_APPOINTMENT: {
+      className: "appointment-detail__badge--success",
+    },
+  };
+
+const statusBadgeClass = computed(
+  () => STATUS_APPEARANCE[statusCode.value]?.className || "",
+);
+
+const statusDisplayText = computed(
+  () => props.appointment.appointment_status.value1,
+);
+
+const resolvePaymentIndicator = (appointment: IAppointment): string => {
+  const status = appointment.appointment_status.code;
+  const payment = appointment.payment_status.code;
 
   if (
-    paymentStatusCode === "PAYMENT_STATUS_NOT_PAID_VALORATION_APPOINTMENT" ||
-    paymentStatusCode === "PAYMENT_STATUS_NOT_PAID_PROCEDURE"
+    payment === "PAYMENT_STATUS_PAID_VALORATION_APPOINTMENT" ||
+    payment === "PAYMENT_STATUS_PAID_PROCEDURE"
   ) {
-    if (
-      appointmentStatusCode === "CONFIRM_VALIDATION_APPOINTMENT" ||
-      appointmentStatusCode == "PENDING_VALORATION_APPOINTMENT"
-    ) {
-      return true;
-    }
+    return "appointment-detail__payment-dot--paid";
   }
 
-  return false;
-});
-
-const canLeaveRating = computed(() => {
-  if (props.appointment.appointment_result?.code === "NOT_FIT_FOR_PROCEDURE") {
-    return true;
+  if (status === "CANCEL_APPOINTMENT") {
+    return "appointment-detail__payment-dot--unpaid";
   }
 
-  if (props.appointment.appointment_status.code === "CONCRETED_APPOINTMENT") {
-    return true;
+  if (
+    status === "PENDING_VALORATION_APPOINTMENT" ||
+    status === "PENDING_PROCEDURE"
+  ) {
+    return "appointment-detail__payment-dot--pending";
   }
 
-  return false;
-});
+  if (
+    payment === "PAYMENT_STATUS_NOT_PAID_VALORATION_APPOINTMENT" ||
+    payment === "PAYMENT_STATUS_NOT_PAID_PROCEDURE"
+  ) {
+    return "appointment-detail__payment-dot--paid";
+  }
 
-const calculateBalance = () => {
-  return (
-    Number(props.appointment.price_procedure) -
-    Number(props.appointment.appointment_credit?.approved_amount || 0)
-  );
+  return "appointment-detail__payment-dot--unpaid";
 };
 
-const canShowHourAndTime = computed(() => {
-  return (
-    props.appointment.appointment_status.code ===
-      "VALUED_VALORATION_APPOINTMENT" &&
-    props.appointment.appointment_type.code === "VALORATION_APPOINTMENT" &&
-    props.appointment.appointment_result?.code === "FIT_FOR_PROCEDURE"
-  );
-});
+const resolvePaymentLabel = (appointment: IAppointment): string => {
+  const status = appointment.appointment_status.code;
+  const payment = appointment.payment_status.code;
 
-const isCreditDisabled = computed(() => {
-  if (!props.appointment.appointment_credit) return false;
-  if (props.appointment.appointment_credit.credit_status?.code === "REJECTED")
-    return false;
-  return true;
-});
-
-const canShowCreditStatus = computed(() => {
-  if (!props.appointment.appointment_credit) return false;
   if (
-    props.appointment.appointment_status.code ===
-      "VALUED_VALORATION_APPOINTMENT" &&
-    props.appointment.appointment_credit?.credit_status_code !== "REQUIRED"
-  )
-    return true;
+    payment === "PAYMENT_STATUS_PAID_VALORATION_APPOINTMENT" ||
+    payment === "PAYMENT_STATUS_PAID_PROCEDURE"
+  ) {
+    return "Pagado";
+  }
+
+  if (status === "CANCEL_APPOINTMENT") return "No Pagada";
+
+  if (
+    status === "PENDING_VALORATION_APPOINTMENT" ||
+    status === "PENDING_PROCEDURE"
+  ) {
+    return "Pendiente";
+  }
+
+  if (
+    payment === "PAYMENT_STATUS_NOT_PAID_VALORATION_APPOINTMENT" ||
+    payment === "PAYMENT_STATUS_NOT_PAID_PROCEDURE"
+  ) {
+    return "Pendiente de pago";
+  }
+
+  return "No Pagada";
+};
+
+const serviceCostLabel = computed(() =>
+  isProcedureType.value ? "Monto del procedimiento" : "Costo del servicio",
+);
+
+const serviceCostValue = computed(() => {
+  const useProcedurePrice =
+    isProcedureType.value || isValorationCompleted.value;
+  const amount = useProcedurePrice
+    ? props.appointment.price_procedure
+    : props.appointment.price_valoration_appointment;
+  return formatCurrency(amount, { decimalPlaces: 0 });
 });
 
 const tableRows = computed((): TablaBaseRow[] => {
   const rows: TablaBaseRow[] = [];
+  const appt = props.appointment;
 
-  const serviceTypeValue =
-    props.appointment.appointment_type.code === "PROCEDURE_APPOINTMENT"
+  const serviceTypeLabel =
+    isProcedureType.value || (isValoration.value && isValorationCompleted.value)
       ? "Procedimiento médico"
-      : props.appointment.appointment_type.code === "VALORATION_APPOINTMENT" &&
-          props.appointment.appointment_status.code ===
-            "VALUED_VALORATION_APPOINTMENT"
-        ? "Procedimiento médico"
-        : "Cita de valoración";
+      : "Cita de valoración";
 
   rows.push({
     key: "service-type",
     header: "Tipo de servicio:",
-    value: serviceTypeValue,
-    isEndRow: canShowHourAndTime.value,
+    value: serviceTypeLabel,
+    isEndRow: shouldDisplayScheduleInfo.value,
   });
 
-  if (!canShowHourAndTime.value) {
+  if (!shouldDisplayScheduleInfo.value) {
     rows.push(
       {
         key: "appointment-date",
         header: "Fecha de la cita:",
-        value: formatDate(props.appointment.application_date),
+        value: formatDate(appt.application_date),
       },
       {
         key: "appointment-time",
         header: "Hora de la cita:",
-        value: props.appointment.appointment_hour
-          ? formatTime(props.appointment.appointment_hour, "hs")
+        value: appt.appointment_hour
+          ? formatTime(appt.appointment_hour, "hs")
           : "-",
         isEndRow: true,
       },
     );
   }
 
-  rows.push({
-    key: "patient",
-    header: "Paciente titular:",
-    value: props.appointment.customer.name,
-  });
-
-  rows.push({
-    key: "phone",
-    header: "Teléfono de Contacto:",
-    value: formatPhone(
-      props.appointment.phone_number_external_user ??
-        props.appointment.customer.phone_number,
-    ),
-  });
-
-  rows.push({
-    key: "doctor",
-    header: "Profesional Médico:",
-    value: props.appointment.supplier.name,
-  });
-
-  rows.push({
-    key: "procedure",
-    header: "Procedimiento:",
-    value: props.appointment.package?.procedure?.name,
-  });
-
-  rows.push({
-    key: "status",
-    header: "Estado:",
-    value: "",
-  });
-
-  if (
-    props.appointment.appointment_status.code ===
-    "VALUED_VALORATION_APPOINTMENT"
-  ) {
-    rows.push({
-      key: "valoration-conclusion",
-      header: "Conclusión de valoración:",
+  rows.push(
+    {
+      key: "patient",
+      header: "Paciente titular:",
+      value: appt.customer.name,
+    },
+    {
+      key: "phone",
+      header: "Teléfono de Contacto:",
+      value: formatPhone(
+        appt.phone_number_external_user ?? appt.customer.phone_number,
+      ),
+    },
+    {
+      key: "doctor",
+      header: "Profesional Médico:",
+      value: appt.supplier.name,
+    },
+    {
+      key: "procedure",
+      header: "Procedimiento:",
+      value: appt.package?.procedure?.name,
+    },
+    {
+      key: "status",
+      header: "Estado:",
       value: "",
-    });
+    },
+  );
 
-    rows.push({
-      key: "proforma",
-      header: "Proforma:",
-      value: "",
-      isEndRow: true,
-    });
+  if (isValorationCompleted.value) {
+    rows.push(
+      {
+        key: "valoration-conclusion",
+        header: "Conclusión de valoración:",
+        value: "",
+      },
+      {
+        key: "proforma",
+        header: "Proforma:",
+        value: "",
+        isEndRow: true,
+      },
+    );
   }
 
-  if (canShowCreditStatus.value) {
+  if (hasCreditEligibilityInfo.value) {
     rows.push({
       key: "credit-eligible",
       header: "Apto para crédito:",
-      value: isCreditDisabled.value ? "Sí" : "No",
+      value: isCreditActive.value ? "Sí" : "No",
     });
   }
 
-  if (
-    props.appointment.appointment_type.code !== "VALORATION_APPOINTMENT" &&
-    props.appointment.appointment_status.code !==
-      "VALUED_VALORATION_APPOINTMENT"
-  ) {
+  if (!isValoration.value && !isValorationCompleted.value) {
     rows.push({
       key: "procedure-2",
       header: "Procedimiento:",
-      value: props.appointment.package?.procedure?.name,
+      value: appt.package?.procedure?.name,
     });
   }
 
-  const costLabel =
-    props.appointment.appointment_type.code === "PROCEDURE_APPOINTMENT"
-      ? "Monto del procedimiento"
-      : "Costo del servicio";
-
-  const costValue =
-    props.appointment.appointment_type.code === "PROCEDURE_APPOINTMENT" ||
-    props.appointment.appointment_status.code ===
-      "VALUED_VALORATION_APPOINTMENT"
-      ? formatCurrency(props.appointment.price_procedure, { decimalPlaces: 0 })
-      : formatCurrency(props.appointment.price_valoration_appointment, {
-          decimalPlaces: 0,
-        });
-
   rows.push({
     key: "cost",
-    header: `${costLabel}:`,
-    value: costValue,
+    header: `${serviceCostLabel.value}:`,
+    value: serviceCostValue.value,
   });
 
-  if (props.appointment.appointment_status.code === "CANCEL_APPOINTMENT") {
+  if (isCancelled.value) {
     rows.push({
       key: "recommendations",
       header: "Recomendaciones o anotaciones:",
@@ -466,190 +400,325 @@ const tableRows = computed((): TablaBaseRow[] => {
   }
 
   if (
-    props.appointment.appointment_status.code === "CONFIRM_PROCEDURE" ||
-    (props.appointment.appointment_credit &&
-      props.appointment.appointment_type.code !== "PROCEDURE_APPOINTMENT")
+    isConfirmedProcedure.value ||
+    (creditData.value && !isProcedureType.value)
   ) {
-    if (props.appointment.appointment_credit) {
+    if (creditData.value) {
       rows.push({
         key: "approved-credit",
         header: "Crédito aprobado:",
-        value: formatCurrency(
-          props.appointment.appointment_credit?.approved_amount || 0,
-          {
-            decimalPlaces: 0,
-          },
-        ),
+        value: formatCurrency(approvedCreditAmount.value, { decimalPlaces: 0 }),
       });
     }
 
     rows.push({
       key: "pending-balance",
       header: "Saldo pendiente:",
-      value: formatCurrency(calculateBalance(), { decimalPlaces: 0 }),
+      value: formatCurrency(outstandingBalance.value, { decimalPlaces: 0 }),
     });
   }
 
-  if (
-    props.appointment.appointment_status.code !==
-      "VALUED_VALORATION_APPOINTMENT" &&
-    props.appointment.appointment_status.code !==
-      "PENDING_VALORATION_APPOINTMENT"
-  ) {
-    let paymentStatusValue: string;
+  const shouldShowPaymentRow =
+    !isValorationCompleted.value && !isPendingValoration.value;
 
-    if (props.appointment.appointment_credit) {
-      const balance = calculateBalance();
+  if (shouldShowPaymentRow) {
+    let paymentLabel: string;
 
-      if (balance === 0) {
-        paymentStatusValue = "Cubierto por el crédito";
-      } else {
-        paymentStatusValue = "Cubierto parcialmente por el crédito";
-      }
+    if (creditData.value) {
+      paymentLabel =
+        outstandingBalance.value === 0
+          ? "Cubierto por el crédito"
+          : "Cubierto parcialmente por el crédito";
     } else {
-      paymentStatusValue = setPaymentValueName(props.appointment);
+      paymentLabel = resolvePaymentLabel(appt);
     }
 
     rows.push({
       key: "payment-status",
       header: "Estado de pago:",
-      value: paymentStatusValue,
+      value: paymentLabel,
     });
   }
 
   return rows;
 });
 
-const getStatusClass = () => {
-  const statusMap: Record<
-    | "CANCEL_APPOINTMENT"
-    | "PENDING_VALORATION_APPOINTMENT"
-    | "PENDING_PROCEDURE"
-    | "CONFIRM_PROCEDURE"
-    | "CONCRETED_APPOINTMENT"
-    | "VALUED_VALORATION_APPOINTMENT"
-    | "CONFIRM_VALIDATION_APPOINTMENT"
-    | "VALUATION_PENDING_VALORATION_APPOINTMENT"
-    | "WAITING_PROCEDURE",
-    string
-  > = {
-    CANCEL_APPOINTMENT: "status-badge--cancelled",
-    PENDING_VALORATION_APPOINTMENT: "status-badge--warning",
-    PENDING_PROCEDURE: "status-badge--warning",
-    CONFIRM_PROCEDURE: "status-badge--primary",
-    CONCRETED_APPOINTMENT: "status-badge--primary",
-    VALUED_VALORATION_APPOINTMENT: "status-badge--success",
-    CONFIRM_VALIDATION_APPOINTMENT: "status-badge--success",
-    VALUATION_PENDING_VALORATION_APPOINTMENT: "status-badge--primary",
-    WAITING_PROCEDURE: "status-badge--warning",
-  };
-  return (
-    statusMap[
-      props.appointment.appointment_status.code as keyof typeof statusMap
-    ] || ""
-  );
+const openModal = (name: ModalName, appointmentId?: number) => {
+  emit("open-modal", name, appointmentId);
 };
 
-const getStatusText = () => {
-  return props.appointment.appointment_status.value1;
+const closeModal = (name: ModalName) => {
+  emit("close-modal", name);
 };
 
-const PAID_STATUS_CLASSES = {
-  PENDING: "appointment-table__payment-status--pending",
-  PAID: "appointment-table__payment-status--paid",
-  NOT_PAID: "appointment-table__payment-status--not-paid",
+const handleCloseDetail = () => {
+  closeModal("appointmentDetails");
 };
 
-const setPaymentStatusClass = (appointment: IAppointment) => {
-  const paymentStatusCode = appointment.payment_status.code;
-  const appointmentStatusCode = appointment.appointment_status.code;
-
-  if (
-    paymentStatusCode === "PAYMENT_STATUS_PAID_VALORATION_APPOINTMENT" ||
-    paymentStatusCode === "PAYMENT_STATUS_PAID_PROCEDURE"
-  )
-    return PAID_STATUS_CLASSES.PAID;
-
-  if (appointmentStatusCode === "CANCEL_APPOINTMENT")
-    return PAID_STATUS_CLASSES.NOT_PAID;
-
-  if (
-    appointmentStatusCode === "PENDING_VALORATION_APPOINTMENT" ||
-    appointmentStatusCode === "PENDING_PROCEDURE"
-  )
-    return PAID_STATUS_CLASSES.PENDING;
-
-  if (
-    paymentStatusCode === "PAYMENT_STATUS_NOT_PAID_VALORATION_APPOINTMENT" ||
-    paymentStatusCode === "PAYMENT_STATUS_NOT_PAID_PROCEDURE"
-  )
-    return PAID_STATUS_CLASSES.PAID;
-
-  return PAID_STATUS_CLASSES.NOT_PAID;
+const handleNavigateToReview = () => {
+  openModal("leaveReview", props.appointment.id);
+  closeModal("appointmentDetails");
 };
 
-const setPaymentValueName = (appointment: IAppointment) => {
-  const paymentStatusCode = appointment.payment_status.code;
-  const appointmentStatusCode = appointment.appointment_status.code;
+const handleDownloadProforma = async () => {
+  const fileCode = props.appointment.proforma_file_code;
 
-  if (
-    paymentStatusCode === "PAYMENT_STATUS_PAID_VALORATION_APPOINTMENT" ||
-    paymentStatusCode === "PAYMENT_STATUS_PAID_PROCEDURE"
-  )
-    return "Pagado";
+  if (!fileCode) {
+    showToast("No se encontró el archivo de proforma", "error");
+    return;
+  }
 
-  if (appointmentStatusCode === "CANCEL_APPOINTMENT") return "No Pagada";
+  isProformaDownloading.value = true;
 
-  if (
-    appointmentStatusCode === "PENDING_VALORATION_APPOINTMENT" ||
-    appointmentStatusCode === "PENDING_PROCEDURE"
-  )
-    return "Pendiente";
-
-  if (
-    paymentStatusCode === "PAYMENT_STATUS_NOT_PAID_VALORATION_APPOINTMENT" ||
-    paymentStatusCode === "PAYMENT_STATUS_NOT_PAID_PROCEDURE"
-  )
-    return "Pendiente de pago";
-
-  return "No Pagada";
-};
-
-const downloadProforma = async () => {
   try {
-    isLoadingProforma.value = true;
-    if (!props.appointment.proforma_file_code)
-      throw new Error("No proforma file code");
+    const { data, error } = await getDocumentByCode(fileCode);
 
-    console.log(props.appointment.proforma_file_code);
-
-    const { data, error } = await getDocumentByCode(
-      props.appointment.proforma_file_code,
-    );
-
-    console.log({ data });
-
-    if (data?.url) {
-      const link = document.createElement("a");
-      link.href = data.url;
-      link.target = "_blank";
-      link.rel = "noopener noreferrer";
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
+    if (error) {
+      showToast(error.info || "Error al obtener la proforma", "error");
+      return;
     }
 
-    if (error) throw new Error(error.info);
-  } catch (error) {
-    console.error("Error descargando archivo:", error);
+    if (!data?.url) {
+      showToast("La URL del documento no está disponible", "error");
+      return;
+    }
+
+    const anchor = document.createElement("a");
+    anchor.href = data.url;
+    anchor.target = "_blank";
+    anchor.rel = "noopener noreferrer";
+    document.body.appendChild(anchor);
+    anchor.click();
+    document.body.removeChild(anchor);
+  } catch {
+    showToast("Error inesperado al descargar la proforma", "error");
   } finally {
-    isLoadingProforma.value = false;
+    isProformaDownloading.value = false;
   }
 };
 </script>
 
+<template>
+  <AtomsModalBase
+    :is-open="isOpen"
+    size="medium"
+    :close-on-backdrop="false"
+    header-class="header-border-bottom"
+    :footer-class="isCancelled ? 'padding-0' : 'footer-border-top'"
+    @close="handleCloseDetail"
+  >
+    <div
+      class="appointment-detail__body"
+      role="region"
+      aria-labelledby="detail-modal-title"
+    >
+      <h2 id="detail-modal-title" class="appointment-detail__title">
+        {{ modalTitle }}
+      </h2>
+
+      <MedicosTablaDetallesCita :rows="tableRows">
+        <template #data-status>
+          <span
+            class="appointment-detail__badge"
+            :class="statusBadgeClass"
+            role="status"
+          >
+            {{ statusDisplayText }}
+          </span>
+        </template>
+
+        <template #data-valoration-conclusion>
+          <span
+            class="appointment-detail__payment-dot"
+            :class="resolvePaymentIndicator(appointment)"
+            aria-hidden="true"
+          />
+          {{ appointment.appointment_result?.name }}
+        </template>
+
+        <template #data-proforma>
+          <button
+            type="button"
+            class="appointment-detail__proforma-button"
+            :disabled="isProformaDownloading"
+            :aria-busy="isProformaDownloading"
+            @click="handleDownloadProforma"
+          >
+            <AtomsIconsDownloadIcon aria-hidden="true" />
+            {{
+              isProformaDownloading ? "Descargando..." : "Descargar Proforma"
+            }}
+          </button>
+        </template>
+
+        <template #data-payment-status="{ row }">
+          <span
+            v-if="!creditData"
+            class="appointment-detail__payment-dot"
+            :class="resolvePaymentIndicator(appointment)"
+            aria-hidden="true"
+          />
+          {{ row.value }}
+        </template>
+
+        <template #data-recommendations>
+          <label
+            id="recommendations-label"
+            class="appointment-detail__visually-hidden"
+          >
+            Recomendaciones o anotaciones
+          </label>
+          <textarea
+            class="appointment-detail__notes-field"
+            aria-labelledby="recommendations-label"
+            aria-readonly="true"
+            :value="
+              appointment.recommendation_post_appointment ??
+              'No hay recomendaciones'
+            "
+            disabled
+            readonly
+          />
+        </template>
+      </MedicosTablaDetallesCita>
+
+      <aside
+        v-if="canDisplayPaymentMethods"
+        class="appointment-detail__payment-methods"
+        aria-label="Métodos de pago disponibles"
+      >
+        <p class="appointment-detail__payment-methods-title">
+          Información de métodos de Pago:
+        </p>
+
+        <div class="appointment-detail__payment-option">
+          <AtomsIconsCircleCheckBigIcon
+            size="12"
+            class="appointment-detail__payment-option-icon"
+            aria-hidden="true"
+          />
+          <div>
+            <p class="appointment-detail__payment-option-name">
+              Pagar en línea con tarjeta.
+            </p>
+            <p class="appointment-detail__payment-option-description">
+              Paga ahora de forma segura con tu tarjeta.
+            </p>
+          </div>
+        </div>
+
+        <div class="appointment-detail__payment-option">
+          <AtomsIconsCircleCheckBigIcon
+            size="12"
+            class="appointment-detail__payment-option-icon"
+            aria-hidden="true"
+          />
+          <div>
+            <p class="appointment-detail__payment-option-name">
+              Pagar en consulta.
+            </p>
+            <p class="appointment-detail__payment-option-description">
+              Pagarás directamente el día de tu cita.
+            </p>
+          </div>
+        </div>
+      </aside>
+    </div>
+
+    <template #footer>
+      <div v-if="isCancelled" />
+
+      <div
+        v-else-if="activeFooterVariant === 'review'"
+        :class="footerContainerClass"
+      >
+        <button
+          type="button"
+          class="appointment-detail__action appointment-detail__action--outline"
+          @click="handleNavigateToReview"
+        >
+          Dejar una reseña
+        </button>
+      </div>
+
+      <div
+        v-else-if="activeFooterVariant === 'awaiting-credit'"
+        :class="footerContainerClass"
+      >
+        <div
+          class="appointment-detail__credit-notice"
+          role="status"
+          aria-live="polite"
+        >
+          <span class="appointment-detail__credit-notice-title">
+            Esperando respuesta de crédito
+          </span>
+          <span class="appointment-detail__credit-notice-subtitle">
+            Tu solicitud está siendo evaluada por la asociación solidarista.
+          </span>
+        </div>
+      </div>
+
+      <div
+        v-else-if="activeFooterVariant === 'default-actions'"
+        :class="footerContainerClass"
+      >
+        <button
+          type="button"
+          class="appointment-detail__action appointment-detail__action--danger"
+          @click="openModal('cancelAppointment')"
+        >
+          Anular cita
+        </button>
+        <button
+          v-if="shouldShowPayButton"
+          type="button"
+          class="appointment-detail__action appointment-detail__action--primary"
+          @click="openModal('payAppointment')"
+        >
+          Pagar ahora
+        </button>
+      </div>
+
+      <div
+        v-else-if="activeFooterVariant === 'valued-with-credit'"
+        :class="footerContainerClass"
+      >
+        <button
+          type="button"
+          class="appointment-detail__action appointment-detail__action--outline"
+          @click="openModal('scheduleProcedure')"
+        >
+          Reservar procedimiento
+        </button>
+        <button
+          type="button"
+          class="appointment-detail__action appointment-detail__action--primary"
+          @click="openModal('applyCredit')"
+        >
+          Solicitar Crédito
+        </button>
+      </div>
+
+      <div v-else :class="footerContainerClass">
+        <button
+          type="button"
+          class="appointment-detail__action appointment-detail__action--primary"
+          @click="openModal('scheduleProcedure')"
+        >
+          Reservar procedimiento
+        </button>
+      </div>
+    </template>
+  </AtomsModalBase>
+</template>
+
 <style lang="scss">
-.appointment-details-modal {
+.appointment-detail {
+  &__body {
+    padding: 1.5rem;
+  }
+
   &__title {
     @include label-base;
     font-weight: 600;
@@ -658,123 +727,35 @@ const downloadProforma = async () => {
     color: $color-foreground;
   }
 
-  &__content {
-    padding: 1.5rem;
-  }
+  &__badge {
+    display: inline-block;
+    padding: 0.25rem 0.75rem;
+    border-radius: 0.75rem;
+    font-size: 0.75rem;
+    font-weight: 500;
 
-  &__payment-information {
-    display: flex;
-    flex-direction: column;
-    width: 100%;
-    background-color: #f8faff;
-    border-radius: 1.25rem;
-    gap: 0.625rem;
-    padding: 0.625rem 1.25rem;
-    margin-top: 1.5rem;
-
-    &--content {
-      display: flex;
-      gap: 0.625rem;
-    }
-
-    &--icon {
-      width: 1.4375rem;
-      height: 1.4375rem;
-      border: 0.25rem solid #d1fadf;
-      color: #039855;
-      border-radius: 50%;
-      padding: 0.0625rem;
-    }
-
-    &--title {
-      @include label-base;
-      font-weight: 600;
-      font-size: 0.875rem;
-      line-height: 1.5rem;
-      color: $black;
-    }
-
-    &--subtitle {
-      @include label-base;
-      font-family: $font-family-main;
-      font-weight: 600;
-      font-size: 0.875rem;
-      line-height: 1.5rem;
-      color: $black;
-    }
-
-    &--subtext {
-      @include label-base;
-      font-weight: 500;
-      font-size: 0.875rem;
-      line-height: 1.5rem;
-      color: $color-text-secondary;
-    }
-  }
-
-  &__credit-information {
-    width: 100%;
-    &--text {
-      @include label-base;
-      font-weight: 600;
-      font-size: 1rem;
-      line-height: 1.5rem;
+    &--success {
+      background-color: #dcfce7;
       color: $color-foreground;
-      text-align: center;
-      display: block;
     }
 
-    &--subtext {
-      @include label-base;
-      font-weight: 500;
-      font-size: 0.875rem;
-      line-height: 1.25rem;
-      color: $color-text-secondary;
-      display: block;
-      text-align: center;
-      margin-top: 0.25rem;
-    }
-  }
-
-  &__button {
-    &--primary {
-      @include primary-button;
-      padding: 0.75rem 0;
+    &--warning {
+      background-color: #fef3c7;
+      color: $color-foreground;
     }
 
-    &--outline {
-      @include outline-button;
-      padding: 0.75rem 0;
+    &--info {
+      background-color: #dbeafe;
+      color: $color-foreground;
     }
 
-    &--danger {
-      @include outline-danger-button;
+    &--cancelled {
+      background-color: $color-cancel;
+      color: $color-foreground;
     }
   }
 
-  &__footer {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(0, 1fr));
-    gap: 0.75rem;
-    width: 100%;
-
-    &:has(button:only-child) {
-      grid-template-columns: auto;
-      justify-content: flex-start;
-    }
-
-    &--full-width {
-      &:has(button:only-child) {
-        grid-template-columns: 1fr;
-        justify-content: stretch;
-      }
-    }
-  }
-}
-
-// Estilos de la tabla (de PacientesTablaDetallesCita)
-.appointment-table {
-  &__payment-status {
+  &__payment-dot {
     display: inline-block;
     margin-right: 0.375rem;
     width: 0.5rem;
@@ -788,19 +769,24 @@ const downloadProforma = async () => {
     &--paid {
       background-color: #12b76a;
     }
-    &--not-paid {
+
+    &--unpaid {
       background-color: #f04438;
     }
   }
 
-  &__button {
-    &--outline {
-      @include outline-button;
-      padding: 0.5rem 0.875rem;
+  &__proforma-button {
+    @include outline-button;
+    padding: 0.5rem 0.875rem;
+    gap: 0.375rem;
+
+    &:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
     }
   }
 
-  &__textarea {
+  &__notes-field {
     width: 100%;
     height: 8rem;
     border-radius: 0.5rem;
@@ -808,14 +794,11 @@ const downloadProforma = async () => {
     background-color: #f9fafb;
     box-shadow: 0 0.0625rem 0.125rem 0 #1018280d;
     padding: 0.625rem 0.875rem;
-
     font-family: $font-family-main;
     font-size: 1rem;
     font-weight: 400;
     line-height: 1.5rem;
-    letter-spacing: 0;
     color: $color-text-muted;
-
     resize: vertical;
     outline: none;
     transition:
@@ -841,33 +824,118 @@ const downloadProforma = async () => {
       opacity: 1;
     }
   }
-}
 
-.status-badge {
-  display: inline-block;
-  padding: 0.25rem 0.75rem;
-  border-radius: 0.75rem;
-  font-size: 0.75rem;
-  font-weight: 500;
-
-  &--success {
-    background-color: #dcfce7;
-    color: $color-foreground;
+  &__payment-methods {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    background-color: #f8faff;
+    border-radius: 1.25rem;
+    gap: 0.625rem;
+    padding: 0.625rem 1.25rem;
+    margin-top: 1.5rem;
   }
 
-  &--warning {
-    background-color: #fef3c7;
-    color: $color-foreground;
+  &__payment-methods-title {
+    @include label-base;
+    font-weight: 600;
+    font-size: 0.875rem;
+    line-height: 1.5rem;
+    color: $black;
   }
 
-  &--primary {
-    background-color: #dbeafe;
-    color: $color-foreground;
+  &__payment-option {
+    display: flex;
+    gap: 0.625rem;
   }
 
-  &--cancelled {
-    background-color: $color-cancel;
+  &__payment-option-icon {
+    width: 1.4375rem;
+    height: 1.4375rem;
+    border: 0.25rem solid #d1fadf;
+    color: #039855;
+    border-radius: 50%;
+    padding: 0.0625rem;
+    flex-shrink: 0;
+  }
+
+  &__payment-option-name {
+    @include label-base;
+    font-weight: 600;
+    font-size: 0.875rem;
+    line-height: 1.5rem;
+    color: $black;
+  }
+
+  &__payment-option-description {
+    @include label-base;
+    font-weight: 500;
+    font-size: 0.875rem;
+    line-height: 1.5rem;
+    color: $color-text-secondary;
+  }
+
+  &__footer {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(0, 1fr));
+    gap: 0.75rem;
+    width: 100%;
+
+    &:has(button:only-child) {
+      grid-template-columns: auto;
+      justify-content: flex-start;
+    }
+
+    &--expanded {
+      &:has(button:only-child) {
+        grid-template-columns: 1fr;
+        justify-content: stretch;
+      }
+    }
+  }
+
+  &__action {
+    &--primary {
+      @include primary-button;
+      padding: 0.75rem 0;
+    }
+
+    &--outline {
+      @include outline-button;
+      padding: 0.75rem 0;
+    }
+
+    &--danger {
+      @include outline-danger-button;
+    }
+  }
+
+  &__credit-notice {
+    width: 100%;
+    text-align: center;
+  }
+
+  &__credit-notice-title {
+    @include label-base;
+    font-weight: 600;
+    font-size: 1rem;
+    line-height: 1.5rem;
     color: $color-foreground;
+    display: block;
+  }
+
+  &__credit-notice-subtitle {
+    @include label-base;
+    font-weight: 500;
+    font-size: 0.875rem;
+    line-height: 1.25rem;
+    color: $color-text-secondary;
+    display: block;
+    margin-top: 0.25rem;
+  }
+
+  &__visually-hidden {
+    @include visually-hidden;
   }
 }
 </style>

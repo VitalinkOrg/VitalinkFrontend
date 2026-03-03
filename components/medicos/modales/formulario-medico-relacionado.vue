@@ -565,7 +565,7 @@ const WIZARD_STEPS = ["Datos del médico", "Packs y precios"];
 
 const MEDICAL_TYPE_SPECIALTY_MAP: Record<string, string> = {
   SPECIALTY_MEDICAL: "SPECIALTY_MEDICAL",
-  ODONTOLOGY: "ODONTOLOGY_MEDICAL",
+  ODONTOLOGY: "ODONTOLOGY",
 };
 
 interface SelectedSpecialty {
@@ -885,7 +885,7 @@ function handleDocumentTypeSelection(code: string) {
   touched.documentTypeCode = true;
 }
 
-function handleMedicalTypeChange(code: string) {
+async function handleMedicalTypeChange(code: string) {
   doctorForm.medicalTypeCode = code;
   touched.medicalTypeCode = true;
 
@@ -896,10 +896,34 @@ function handleMedicalTypeChange(code: string) {
   if (code) {
     const fatherCode = MEDICAL_TYPE_SPECIALTY_MAP[code];
     if (fatherCode) {
-      fetchSpecialtiesByFatherCode(fatherCode);
+      await fetchSpecialtiesByFatherCode(fatherCode);
     } else {
-      logger.debug("No specialty cascade for medical type", { code });
+      logger.debug("No specialty cascade for medical type, loading all", {
+        code,
+      });
     }
+
+    if (specialtiesCatalog.value.length === 0) {
+      logger.debug("No specialties found with filter, loading all specialties");
+      await executeGetAllSpecialties();
+    }
+  }
+}
+
+async function executeGetAllSpecialties() {
+  isLoadingSpecialties.value = true;
+  try {
+    const { data, error } = await getAllUdcs(
+      { type: "MEDICAL_SPECIALTY" } as Partial<IUdcParams>,
+      false,
+    );
+    if (error) {
+      logger.error("Failed to fetch all specialties", { info: error.info });
+      return;
+    }
+    specialtiesCatalog.value = data ?? [];
+  } finally {
+    isLoadingSpecialties.value = false;
   }
 }
 
@@ -1189,7 +1213,6 @@ async function executeEditSubmission(supplierId: number) {
     }
   }
 
-  // Actualizar packages existentes y crear los nuevos
   for (let i = 0; i < packsList.value.length; i++) {
     const pack = packsList.value[i];
     const specialtyId = specialtyCodeToIdMap.get(pack.specialty_code) ?? 0;
@@ -1201,7 +1224,6 @@ async function executeEditSubmission(supplierId: number) {
     }
 
     if (pack.id) {
-      // Package existente: actualizar UDC del producto y luego el package
       if (pack.productId) {
         const udcUpdatePayload: IUdcUpdateRequest = {
           name: pack.product_name?.trim() || pack.procedure_code,
@@ -1242,7 +1264,6 @@ async function executeEditSubmission(supplierId: number) {
         logger.debug(`Pack ${i + 1} actualizado exitosamente`);
       }
     } else {
-      // Package nuevo: crear producto y package
       const productCode = await createProductForPackage(supplierId, pack);
       if (!productCode) {
         logger.warn(`Omitiendo pack ${i + 1}: no se pudo crear el producto`);

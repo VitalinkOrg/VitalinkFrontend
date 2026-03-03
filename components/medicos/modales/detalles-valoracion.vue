@@ -223,6 +223,7 @@ const { addDocument } = useDocuments();
 const { formatDate, formatTime, formatCurrency } = useFormat();
 const logger = useLogger("DetallesValoracion");
 const toast = useToast();
+const { getUserInfo } = useUserInfo();
 
 const refreshAppointments = inject<() => Promise<void>>("refreshAppointments");
 
@@ -492,6 +493,11 @@ const handlePriceInput = (event: Event) => {
   });
 };
 
+function getUserId(): string {
+  const userInfo = getUserInfo();
+  return userInfo.id;
+}
+
 const uploadProformaDocument = async (): Promise<string | null> => {
   if (!proformaFile.value) return null;
 
@@ -502,10 +508,10 @@ const uploadProformaDocument = async (): Promise<string | null> => {
         title: proformaFile.value.name,
         type: "DOC",
         description: "Proforma de procedimiento médico",
-        id_for_table: "6",
+        id_for_table: "5",
         table: "",
         action_type: "PRIVATE_CONTRACT",
-        user_id: "",
+        user_id: getUserId(),
         is_public: 0,
       },
     });

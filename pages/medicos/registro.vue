@@ -39,7 +39,7 @@ const logger = useLogger("RegistroMedico");
 
 const isSubmitting = ref(false);
 
-const representativeFormData = ref<IRepresentativeFormData>({
+const representativeFormData = ref<IRepresentativeRegisterRequest>({
   documentType: "",
   documentNumber: "",
   fullName: "",

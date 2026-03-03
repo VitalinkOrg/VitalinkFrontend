@@ -374,14 +374,19 @@ const specialtyDropdownItems = computed<DropdownItem[]>(() =>
 
 function procedureItemsForPack(pack: PackFormItem): DropdownItem[] {
   if (!pack.specialty_code) return [];
-  return allProcedures.value
-    .filter((p) => p.father_code === pack.specialty_code)
-    .map((p) => ({ value: p.code, label: p.name }));
+  const filtered = allProcedures.value.filter(
+    (p) => p.father_code === pack.specialty_code,
+  );
+  const source = filtered.length > 0 ? filtered : allProcedures.value;
+  return source.map((p) => ({ value: p.code, label: p.name }));
 }
 
 function productSuggestionsForPack(pack: PackFormItem): IUdc[] {
   if (!pack.procedure_code) return [];
-  return allProducts.value.filter((p) => p.father_code === pack.procedure_code);
+  const filtered = allProducts.value.filter(
+    (p) => p.father_code === pack.procedure_code,
+  );
+  return filtered.length > 0 ? filtered : allProducts.value;
 }
 
 function availableServiceItemsForPack(pack: PackFormItem): DropdownItem[] {
@@ -536,9 +541,23 @@ async function fetchProceduresBySpecialty(specialtyCode: string) {
         specialty: specialtyCode,
         info: error.info,
       });
-      return;
     }
-    const fetched = data ?? [];
+    let fetched = data ?? [];
+
+    if (fetched.length === 0) {
+      logger.debug("No procedures found for specialty, loading all", {
+        specialtyCode,
+      });
+      const { data: allData, error: allError } = await getAllUdcs(
+        { type: "MEDICAL_PROCEDURE" } as Partial<IUdcParams>,
+        false,
+      );
+      if (allError) {
+        logger.error("Failed to fetch all procedures", { info: allError.info });
+      }
+      fetched = allData ?? [];
+    }
+
     const existingCodes = new Set(allProcedures.value.map((p) => p.code));
     const newItems = fetched.filter((p) => !existingCodes.has(p.code));
     allProcedures.value = [...allProcedures.value, ...newItems];
