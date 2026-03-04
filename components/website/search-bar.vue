@@ -9,6 +9,19 @@ const MAX_HISTORY_ITEMS = 10;
 const RETRY_DELAY_MS = 1000;
 const MAX_RETRIES = 2;
 
+const ODONTOLOGY_SPECIALTY: IUdc = {
+  id: 50,
+  code: "ODONTOLOGY",
+  name: "Odontología",
+  type: "ODONTOLOGY_SPECIALTY",
+  value1: null,
+  value2: null,
+  father_code: "ODONTOLOGY_MEDICAL",
+  supplier_id: null,
+  created_date: "2026-02-26T06:19:08.000Z",
+  updated_date: null,
+};
+
 interface SearchHistory {
   specialtyCode: string;
   specialtyName: string;
@@ -47,8 +60,17 @@ const retryCount = ref(0);
 
 const isAuthenticated = computed(() => !!getToken());
 
+const mergedSpecialties = computed<IUdc[]>(() => {
+  const list = [...props.specialties];
+  const alreadyExists = list.some((s) => s.code === ODONTOLOGY_SPECIALTY.code);
+  if (!alreadyExists) {
+    list.push(ODONTOLOGY_SPECIALTY);
+  }
+  return list;
+});
+
 const specialtyItems = computed<DropdownItem[]>(() =>
-  props.specialties.map((specialty) => ({
+  mergedSpecialties.value.map((specialty) => ({
     value: specialty.code,
     label: specialty.name,
   })),
@@ -235,7 +257,10 @@ function handleSubmitSearch(): void {
     return;
   }
 
-  const specialty = findItemByCode(props.specialties, selectedSpecialty.value);
+  const specialty = findItemByCode(
+    mergedSpecialties.value,
+    selectedSpecialty.value,
+  );
   if (specialty) {
     const procedure = findItemByCode(procedures.value, selectedProcedure.value);
     saveSearchToHistory({

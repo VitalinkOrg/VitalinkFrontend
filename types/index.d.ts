@@ -343,13 +343,14 @@ interface IAvailabilityUpdateRequest
 
 interface IUdc<T = string> {
   id: number;
+  supplier_id?: number | null;
   code: T;
   father_code: string | null;
   name: string;
   type: string;
   value1: string | null; // Precio Producto
   value2: string | null; // Precio cita valoracion producto
-  created_date: Date;
+  created_date?: string | null;
   updated_date: string | null;
 }
 
