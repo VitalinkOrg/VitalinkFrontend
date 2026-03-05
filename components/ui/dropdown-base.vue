@@ -157,10 +157,10 @@ const handleResize = () => {
 };
 
 watch(
-  () => props.items,
+  () => props.modelValue,
   () => {
-    if (props.searchable && props.modelValue !== undefined && !isOpen.value) {
-      searchText.value = selectedItem.value?.label || searchText.value;
+    if (props.searchable) {
+      searchText.value = selectedItem.value?.label || "";
     }
   },
 );
@@ -187,10 +187,9 @@ onBeforeUnmount(() => {
 });
 
 onClickOutside(dropdownRef, (event) => {
-  const target = event.target as Node;
-  // Si el clic fue dentro del menú teleportado, no cerrar
-  if (menuRef.value?.contains(target)) return;
-  closeDropdown();
+  if (menuRef.value && !menuRef.value.contains(event.target as Node)) {
+    closeDropdown();
+  }
 });
 </script>
 
