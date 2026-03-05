@@ -315,6 +315,7 @@ interface ILocationCreationRequest {
   latitude: string;
   longitude: string;
   finance_entity: string;
+  supplier_id: number;
 }
 
 interface ILocationUpdateRequest extends Partial<ILocationCreationRequest> {}
