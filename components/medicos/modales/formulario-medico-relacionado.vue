@@ -349,7 +349,7 @@
                 </span>
               </div>
 
-              <!-- <div class="doctor-form__field">
+              <div class="doctor-form__field">
                 <label id="label-hospital" class="doctor-form__label">
                   Seleccionar Hospitales
                 </label>
@@ -406,7 +406,7 @@
                 >
                   Debes seleccionar al menos un hospital
                 </span>
-              </div> -->
+              </div>
             </form>
           </section>
 
@@ -519,6 +519,7 @@
             <NuxtLink
               to="/medicos/mis-medicos"
               class="doctor-modal__button--secondary doctor-modal__button--full"
+              @click="handleModalClose"
             >
               Ver en mis médicos
             </NuxtLink>
@@ -548,6 +549,7 @@
 <script lang="ts" setup>
 import type { PackFormItem } from "@/components/medicos/modales/precios-packs.vue";
 import type { DropdownItem } from "@/components/ui/dropdown-base.vue";
+import { useAvailability } from "@/composables/api";
 import { useDocuments } from "@/composables/api/useDocuments";
 import { useLocation } from "@/composables/api/useLocation";
 import { usePackage } from "@/composables/api/usePackage";
@@ -563,22 +565,9 @@ const STEP_CONFIRMATION = 3;
 const MAX_SPECIALTIES = 3;
 const WIZARD_STEPS = ["Datos del médico", "Packs y precios"];
 
-const MEDICAL_TYPE_SPECIALTY_MAP: Record<string, string> = {
+const MEDICAL_TYPE_SPECIALTY_TYPE_MAP: Record<string, string> = {
   SPECIALTY_MEDICAL: "SPECIALTY_MEDICAL",
-  ODONTOLOGY: "ODONTOLOGY_MEDICAL",
-};
-
-const ODONTOLOGY_FALLBACK: IUdc = {
-  id: 50,
-  code: "ODONTOLOGY",
-  name: "Odontología",
-  type: "ODONTOLOGY_SPECIALTY",
-  value1: null,
-  value2: null,
-  father_code: "ODONTOLOGY_MEDICAL",
-  supplier_id: null,
-  created_date: "2026-02-26T06:19:08.000Z",
-  updated_date: null,
+  ODONTOLOGY_MEDICAL: "ODONTOLOGY_MEDICAL",
 };
 
 interface SelectedSpecialty {
@@ -636,6 +625,12 @@ const { createPackage, updatePackage, deletePackage } = usePackage();
 const { getAllLocations } = useLocation();
 const { getUserInfo } = useUserInfo();
 const { addDocument } = useDocuments();
+const {
+  deleteAvailability,
+  updateAvailability,
+  createAvailability,
+  getAvailabilitiesBySupplier,
+} = useAvailability();
 
 const isModalVisible = ref(false);
 const currentStep = ref(STEP_DOCTOR_INFO);
@@ -665,6 +660,8 @@ const editSupplierDetail = ref<ISupplierDetail | null>(null);
 const existingPackageIds = ref<number[]>([]);
 
 const packsList = ref<PackFormItem[]>([createEmptyPack()]);
+
+const currentAvailabilities = ref<IAvailability[]>([]);
 
 const doctorForm = reactive<DoctorFormState>({
   documentTypeCode: "",
@@ -713,35 +710,31 @@ const specialtyDropdownItems = computed<DropdownItem[]>(() => {
     .map((u) => ({ value: u.code, label: u.name }));
 });
 
-// const availableLocationDropdownItems = computed<DropdownItem[]>(() => {
-//   const selectedIds = new Set(doctorForm.selectedLocationIds);
-//   return locations.value
-//     .filter((loc) => !selectedIds.has(loc.id))
-//     .map((loc) => ({
-//       value: loc.id,
-//       label: `${loc.name} — ${loc.city_name}, ${loc.province}`,
-//     }));
-// });
-
-// function getLocationLabel(locId: number): string {
-//   const loc = locations.value.find((l) => l.id === locId);
-//   return loc
-//     ? `${loc.name} — ${loc.city_name}, ${loc.province}`
-//     : `Hospital #${locId}`;
-// }
-
-// function addSelectedLocation() {
-//   if (!pendingLocationId.value) return;
-//   if (doctorForm.selectedLocationIds.includes(pendingLocationId.value)) return;
-
-//   doctorForm.selectedLocationIds.push(pendingLocationId.value);
-//   pendingLocationId.value = undefined;
-//   touched.selectedLocationIds = true;
-// }
-
-// function removeLocationAtIndex(index: number) {
-//   doctorForm.selectedLocationIds.splice(index, 1);
-// }
+const availableLocationDropdownItems = computed<DropdownItem[]>(() => {
+  const selectedIds = new Set(doctorForm.selectedLocationIds);
+  return locations.value
+    .filter((loc) => !selectedIds.has(loc.id))
+    .map((loc) => ({
+      value: loc.id,
+      label: `${loc.name} — ${loc.city_name}, ${loc.province}`,
+    }));
+});
+function getLocationLabel(locId: number): string {
+  const loc = locations.value.find((l) => l.id === locId);
+  return loc
+    ? `${loc.name} — ${loc.city_name}, ${loc.province}`
+    : `Hospital #${locId}`;
+}
+function addSelectedLocation() {
+  if (!pendingLocationId.value) return;
+  if (doctorForm.selectedLocationIds.includes(pendingLocationId.value)) return;
+  doctorForm.selectedLocationIds.push(pendingLocationId.value);
+  pendingLocationId.value = undefined;
+  touched.selectedLocationIds = true;
+}
+function removeLocationAtIndex(index: number) {
+  doctorForm.selectedLocationIds.splice(index, 1);
+}
 
 const canAddSpecialty = computed(() => {
   if (!pendingSpecialtyCode.value || isSubmitting.value) return false;
@@ -758,7 +751,7 @@ const isDocumentNumberValid = computed(() => {
 
 const documentNumberPlaceholder = computed(() => {
   const map: Record<string, string> = {
-    PHYSICAL_DNI: "Ej: 102340567",
+    PHYSICAL_DNI: "Ej: 1-0234-0567",
     JURIDICAL_DNI: "Ej: 3-101-123456",
     PASSPORT: "Ej: AB1234567",
     DIMEX: "Ej: 100000012345",
@@ -780,7 +773,7 @@ const isDoctorInfoStepComplete = computed(() => {
     Boolean(doctorForm.medicalEnrollmentCode.trim()) &&
     Boolean(doctorForm.medicalTypeCode) &&
     doctorForm.selectedSpecialties.length > 0 &&
-    // doctorForm.selectedLocationIds.length > 0 &&
+    doctorForm.selectedLocationIds.length > 0 &&
     hasFiles
   );
 });
@@ -898,7 +891,7 @@ function handleDocumentTypeSelection(code: string) {
   touched.documentTypeCode = true;
 }
 
-async function handleMedicalTypeChange(code: string) {
+function handleMedicalTypeChange(code: string) {
   doctorForm.medicalTypeCode = code;
   touched.medicalTypeCode = true;
 
@@ -907,47 +900,7 @@ async function handleMedicalTypeChange(code: string) {
   specialtiesCatalog.value = [];
 
   if (code) {
-    const fatherCode = MEDICAL_TYPE_SPECIALTY_MAP[code];
-    if (fatherCode) {
-      await fetchSpecialtiesByFatherCode(fatherCode);
-    }
-
-    if (code === "ODONTOLOGY" && specialtiesCatalog.value.length === 0) {
-      logger.debug("No odontology specialties from API, trying by type");
-      await fetchSpecialtiesByType("ODONTOLOGY_SPECIALTY");
-    }
-
-    if (code === "ODONTOLOGY") {
-      const exists = specialtiesCatalog.value.some(
-        (s) => s.code === ODONTOLOGY_FALLBACK.code,
-      );
-      if (!exists) {
-        logger.debug("Adding odontology fallback specialty");
-        specialtiesCatalog.value.push(ODONTOLOGY_FALLBACK);
-      }
-    }
-
-    if (specialtiesCatalog.value.length === 0) {
-      logger.debug("No specialties found with filter, loading all specialties");
-      await executeGetAllSpecialties();
-    }
-  }
-}
-
-async function executeGetAllSpecialties() {
-  isLoadingSpecialties.value = true;
-  try {
-    const { data, error } = await getAllUdcs(
-      { type: "MEDICAL_SPECIALTY" } as Partial<IUdcParams>,
-      false,
-    );
-    if (error) {
-      logger.error("Failed to fetch all specialties", { info: error.info });
-      return;
-    }
-    specialtiesCatalog.value = data ?? [];
-  } finally {
-    isLoadingSpecialties.value = false;
+    fetchSpecialtiesByFatherCode(code);
   }
 }
 
@@ -1137,6 +1090,10 @@ async function executeCreateSubmission() {
 
   await delay(1000);
 
+  await linkLocationsToSupplier(supplierId, doctorForm.selectedLocationIds);
+
+  await delay(1000);
+
   logger.debug("Paso 3: Añadiendo especialidades...");
 
   let specialtyCodeToIdMap = new Map<string, number>();
@@ -1200,6 +1157,12 @@ async function executeEditSubmission(supplierId: number) {
     updatePayload,
   );
   if (updateError) throw new Error(updateError.info);
+
+  await syncDoctorLocations(
+    supplierId,
+    doctorForm.selectedLocationIds,
+    currentAvailabilities.value,
+  );
 
   const specialtyCodeToIdMap = new Map<string, number>();
   const detail = editSupplierDetail.value;
@@ -1376,6 +1339,69 @@ async function persistAllPackages(
   }
 }
 
+async function linkLocationsToSupplier(
+  supplierId: number,
+  locationIds: number[],
+) {
+  for (const locationId of locationIds) {
+    await createAvailability({
+      supplier_id: supplierId,
+      location_id: locationId,
+      weekday: "Monday",
+      from_hour: "08:00",
+      to_hour: "12:00",
+    });
+  }
+}
+
+async function syncDoctorLocations(
+  supplierId: number,
+  selectedLocationIds: number[],
+  availabilities: IAvailability[],
+) {
+  const currentLocationIds = availabilities.map((a) => a.location.id);
+
+  const locationsToCreate = selectedLocationIds.filter(
+    (id) => !currentLocationIds.includes(id),
+  );
+
+  const locationsToRemove = currentLocationIds.filter(
+    (id) => !selectedLocationIds.includes(id),
+  );
+
+  const locationsToUpdate = availabilities.filter((a) =>
+    selectedLocationIds.includes(a.location.id),
+  );
+
+  for (const locationId of locationsToCreate) {
+    await createAvailability({
+      supplier_id: supplierId,
+      location_id: locationId,
+      weekday: "Monday",
+      from_hour: "08:00",
+      to_hour: "12:00",
+    });
+  }
+
+  for (const availability of locationsToUpdate) {
+    await updateAvailability(availability.id, {
+      weekday: availability.weekday,
+      from_hour: availability.from_hour,
+      to_hour: availability.to_hour,
+    });
+  }
+
+  for (const locationId of locationsToRemove) {
+    const availability = availabilities.find(
+      (a) => a.location.id === locationId,
+    );
+
+    if (availability) {
+      await deleteAvailability(availability.id);
+    }
+  }
+}
+
 async function createProductForPackage(
   supplierId: number,
   pack: PackFormItem,
@@ -1384,7 +1410,7 @@ async function createProductForPackage(
     const productName = pack.product_name?.trim() || pack.procedure_code;
     const generatedCode = generateCodeFromName(productName);
     const fatherCode =
-      MEDICAL_TYPE_SPECIALTY_MAP[doctorForm.medicalTypeCode] ??
+      MEDICAL_TYPE_SPECIALTY_TYPE_MAP[doctorForm.medicalTypeCode] ??
       doctorForm.medicalTypeCode;
 
     const payload: ICreateUdcRequest = {
@@ -1436,6 +1462,18 @@ async function loadSupplierForEditing(supplierId: number) {
     }
 
     editSupplierDetail.value = data;
+
+    const { data: availData, error: availError } =
+      await getAvailabilitiesBySupplier(supplierId);
+    if (!availError && availData) {
+      currentAvailabilities.value = availData;
+    } else {
+      logger.warn("No se pudieron cargar las availabilities", {
+        error: availError,
+      });
+      currentAvailabilities.value = [];
+    }
+
     await populateFormFromDetail(data);
     populatePacksFromDetail(data);
   } catch (err) {
@@ -1462,25 +1500,10 @@ async function populateFormFromDetail(detail: ISupplierDetail) {
   }));
 
   if (doctorForm.medicalTypeCode) {
-    const fatherCode = MEDICAL_TYPE_SPECIALTY_MAP[doctorForm.medicalTypeCode];
+    const fatherCode =
+      MEDICAL_TYPE_SPECIALTY_TYPE_MAP[doctorForm.medicalTypeCode];
     if (fatherCode) {
       await fetchSpecialtiesByFatherCode(fatherCode);
-    }
-
-    if (
-      doctorForm.medicalTypeCode === "ODONTOLOGY" &&
-      specialtiesCatalog.value.length === 0
-    ) {
-      await fetchSpecialtiesByType("ODONTOLOGY_SPECIALTY");
-    }
-
-    if (doctorForm.medicalTypeCode === "ODONTOLOGY") {
-      const exists = specialtiesCatalog.value.some(
-        (s) => s.code === ODONTOLOGY_FALLBACK.code,
-      );
-      if (!exists) {
-        specialtiesCatalog.value.push(ODONTOLOGY_FALLBACK);
-      }
     }
   }
 
@@ -1585,11 +1608,13 @@ async function fetchUdcByType(
 
 async function fetchSpecialtiesByFatherCode(fatherCode: string) {
   isLoadingSpecialties.value = true;
+
   try {
     const { data, error } = await getAllUdcs(
       { father_code: fatherCode } as Partial<IUdcParams>,
       false,
     );
+
     if (error) {
       logger.error("Failed to fetch specialties", {
         fatherCode,
@@ -1597,27 +1622,10 @@ async function fetchSpecialtiesByFatherCode(fatherCode: string) {
       });
       return;
     }
-    specialtiesCatalog.value = data ?? [];
-  } finally {
-    isLoadingSpecialties.value = false;
-  }
-}
 
-async function fetchSpecialtiesByType(type: string) {
-  isLoadingSpecialties.value = true;
-  try {
-    const { data, error } = await getAllUdcs(
-      { type } as Partial<IUdcParams>,
-      false,
+    specialtiesCatalog.value = (data ?? []).filter((udc) =>
+      udc.type.endsWith("_SPECIALTY"),
     );
-    if (error) {
-      logger.error("Failed to fetch specialties by type", {
-        type,
-        info: error.info,
-      });
-      return;
-    }
-    specialtiesCatalog.value = data ?? [];
   } finally {
     isLoadingSpecialties.value = false;
   }
