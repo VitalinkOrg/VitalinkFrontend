@@ -247,14 +247,14 @@ function isValidImageUrl(url: string): boolean {
   }
 }
 
-function handleLogout() {
+async function handleLogout() {
   try {
-    logout();
+    await logout();
 
     announceText.value = "Sesión cerrada correctamente. Redirigiendo...";
 
     setTimeout(() => {
-      if (route.path !== "/") router.push("/auth/login");
+      router.push("/auth/login");
     }, 500);
   } catch (error) {
     console.error("Error durante el logout:", error);
