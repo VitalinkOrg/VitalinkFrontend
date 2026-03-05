@@ -64,7 +64,7 @@ export const useLocation = () => {
   const createLocation = (payload: ILocationCreationRequest) =>
     executeRequest<ILocation>("createLocation", "location/add", {
       method: "POST",
-      body: JSON.stringify(payload),
+      body: payload,
     });
 
   const updateLocation = (
@@ -73,7 +73,7 @@ export const useLocation = () => {
   ) =>
     executeRequest<ILocation>("updateLocation", "location/edit", {
       method: "PUT",
-      body: JSON.stringify(payload),
+      body: payload,
       query: { id: locationId },
     });
 

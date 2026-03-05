@@ -122,16 +122,21 @@ export const useAuth = () => {
     });
 
   const logout = async () => {
-    const result = await executeRequest<null>("logout", "auth/logout", {
-      method: "POST",
-      headers: getAuthHeaders(),
-    });
+    try {
+      const headers = getAuthHeaders();
 
-    clearTokens();
-    clearAuthState();
-    clearUserInfo();
-
-    return result;
+      await executeRequest<null>("logout", "auth/logout", {
+        method: "POST",
+        headers: headers,
+      });
+    } catch (error) {
+      logger.error("Cierre de sesión local o el token ya no existía.");
+    } finally {
+      console.log("Finally: Limpiando estado local");
+      clearTokens();
+      clearAuthState();
+      clearUserInfo();
+    }
   };
 
   return {
