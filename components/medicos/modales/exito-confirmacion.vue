@@ -7,9 +7,9 @@
     @close="handleCloseModal"
   >
     <div class="success-confirmation__content">
-      <h2 class="success-confirmation__content-title">Felicitaciones!</h2>
+      <h2 class="success-confirmation__content-title">Muchas Gracias!</h2>
       <p class="success-confirmation__description">
-        Acabas de confirmar la cita de valoración para tu paciente.
+        Acabas de concretar la cita de valoración de tu paciente
       </p>
 
       <div class="success-confirmation__table-wrapper">
@@ -58,7 +58,7 @@
 import type { TablaBaseRow } from "~/components/medicos/tabla-detalles-cita.vue";
 import { useFormat } from "~/composables/useFormat";
 
-const { formatDate, formatTime } = useFormat();
+const { formatDate, formatTime, formatCurrency } = useFormat();
 
 const { isOpen, closeModal, getSharedData } = useMedicalModalManager();
 
@@ -115,13 +115,13 @@ const appointmentRowsWithData = computed((): TablaBaseRow[] | undefined => {
     },
     {
       key: "costo-servicio",
-      header: "Costo del servicio:",
-      value: "A confirmar en la cita",
+      header: "Costo del servicio cotizado:",
+      value: formatCurrency(appointment.price_procedure, { decimalPlaces: 0 }),
     },
     {
       key: "fecha-solicitud",
       header: "Fecha de la solicitud:",
-      value: formatDate(appointment.application_date, "short"),
+      value: "Por confirmar",
     },
     {
       key: "tipo-reserva",

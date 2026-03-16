@@ -33,7 +33,7 @@
               Fecha de la cita:
             </td>
             <td class="successful-reservation__table--value">
-              {{ formatDate(selectedDay ?? "") }}
+              {{ displaySelectedDate }}
             </td>
           </tr>
           <tr class="successful-reservation__table--row">
@@ -41,7 +41,7 @@
               Hora de la cita:
             </td>
             <td class="successful-reservation__table--value">
-              {{ formatTime(selectedHour ?? "", "hs") }}
+              {{ displaySelectedHour }}
             </td>
           </tr>
           <tr>
@@ -134,7 +134,7 @@ interface Props {
   customerPhone?: string;
   selectedProcedureId?: number;
   services?: ISupplierService[];
-  selectedPackage?: IPackage;
+  selectedPackage: IPackage;
 }
 
 interface Emits {
@@ -145,14 +145,8 @@ interface Emits {
 const props = defineProps<Props>();
 const emit = defineEmits<Emits>();
 
-console.log(props.selectedPackage);
-
-const valoracionCost = computed<number>(() => {
-  return (props.selectedPackage as any)?.valoracion_cost ?? 0;
-});
-
 const discountPrice = computed<number>(() => {
-  return (props.selectedPackage as any)?.discount_price ?? 0;
+  return (props.selectedPackage as IPackage)?.discount;
 });
 
 const hasVitalinkDiscount = computed<boolean>(() => {
@@ -160,11 +154,24 @@ const hasVitalinkDiscount = computed<boolean>(() => {
 });
 
 const formattedValoracionCost = computed<string>(() => {
-  return formatCurrency(valoracionCost.value, { decimalPlaces: 0 });
+  if (!props.selectedPackage.product.value2) return "—";
+  return formatCurrency(props.selectedPackage.product.value2, {
+    decimalPlaces: 0,
+  });
 });
 
 const formattedDiscountPrice = computed<string>(() => {
   return formatCurrency(discountPrice.value, { decimalPlaces: 0 });
+});
+
+const displaySelectedHour = computed(() => {
+  if (props.selectedHour) return formatTime(props.selectedHour ?? "", "hs");
+  else return "—";
+});
+
+const displaySelectedDate = computed(() => {
+  if (props.selectedDay) return formatTime(props.selectedHour ?? "", "hs");
+  else return "—";
 });
 
 const handleCloseModal = () => {
@@ -182,7 +189,7 @@ const handleNavigation = () => {
 const getSelectedProcedureName = computed(() => {
   try {
     if (!props.services || !props.selectedProcedureId) {
-      return "N/A";
+      return "—";
     }
     const allProcedures = props.services.flatMap(
       (service) => service.procedures || [],
@@ -190,10 +197,10 @@ const getSelectedProcedureName = computed(() => {
     const procedure = allProcedures.find(
       (procedure) => procedure.procedure?.id === props.selectedProcedureId,
     );
-    return procedure?.procedure?.name || "N/A";
+    return procedure?.procedure?.name || "—";
   } catch (error) {
     console.error("Error getting procedure name:", error);
-    return "N/A";
+    return "—";
   }
 });
 </script>

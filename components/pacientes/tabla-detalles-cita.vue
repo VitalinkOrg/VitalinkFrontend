@@ -380,9 +380,14 @@ const downloadProforma = async () => {
     if (!props.appointment.proforma_file_code)
       throw new Error("No proforma file code");
 
+    console.log(props.appointment);
+    console.log("PERSONAL_DOCUMENT__SUPPLIER__6__DOC__1332026170947");
+
     const { data, error } = await getDocumentByCode(
-      props.appointment.proforma_file_code,
+      "PERSONAL_DOCUMENT__SUPPLIER__6__DOC__1332026170947",
     );
+
+    console.log("[data]", data);
 
     if (data?.url) {
       const link = document.createElement("a");

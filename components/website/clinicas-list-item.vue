@@ -33,7 +33,7 @@ const closePackagesModal = () => {
   <div class="clinic-section">
     <div class="clinic-list-grid">
       <WebsiteTarjetaMedico
-        :medico="clinica"
+        :supplier="clinica"
         :queryParams="{
           procedure_code: searchProcedureCode,
           specialty_code: searchSpecialtyCode,
@@ -117,13 +117,14 @@ const closePackagesModal = () => {
 
 <style lang="scss" scoped>
 .clinic-section {
-  margin-top: 1rem;
+  display: flex;
+  height: 100%;
 }
 
 .clinic-list-grid {
   display: grid;
-  grid-template-columns: 1fr;
-  gap: 16px;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  align-items: stretch;
 
   @include respond-to(sm) {
     gap: 20px;

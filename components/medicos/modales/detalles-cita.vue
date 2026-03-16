@@ -508,14 +508,14 @@ const detailRows = computed((): TablaBaseRow[] => {
     {
       key: "fecha",
       header: "Fecha de la cita:",
-      value: apt.appointment_date ? formatDate(apt.appointment_date) : "-",
+      value: apt.appointment_date ? formatDate(apt.appointment_date) : "—",
     },
     {
       key: "hora",
       header: "Hora de la cita:",
       value: apt.appointment_hour
         ? formatTime(apt.appointment_hour, "hs")
-        : "-",
+        : "—",
       isEndRow: true,
     },
     {
@@ -707,19 +707,17 @@ watch(isModalOpen, (open) => {
   }
 
   &__scheduling {
+    flex: 1;
+    min-width: 0;
     display: flex;
     flex-direction: column;
-    gap: 0.75rem;
-    padding: 0.5rem 0;
+    gap: 0.5rem;
   }
 
   &__scheduling-fields {
     display: flex;
+    flex-direction: column;
     gap: 1rem;
-
-    @media (max-width: 30rem) {
-      flex-direction: column;
-    }
   }
 
   &__scheduling-field {
@@ -734,6 +732,7 @@ watch(isModalOpen, (open) => {
     font-weight: 500;
     font-size: 0.8125rem;
     color: $color-text-secondary;
+    margin-bottom: 0.125rem;
   }
 
   &__reminder {

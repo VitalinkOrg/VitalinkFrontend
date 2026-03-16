@@ -249,6 +249,7 @@ const form = reactive({
   diagnostic: "",
   priceProcedure: "",
   proformaFileName: null as string | null,
+  proformaCode: "",
 });
 
 const snapshot = reactive({
@@ -256,6 +257,7 @@ const snapshot = reactive({
   diagnostic: "",
   priceProcedure: "",
   proformaFileName: null as string | null,
+  proformaCode: "",
 });
 
 const proformaFile = ref<File | null>(null);
@@ -319,35 +321,35 @@ const detailRows = computed((): TablaBaseRow[] | undefined => {
     {
       key: "tipo-servicio",
       header: "Tipo de servicio:",
-      value: apt.appointment_type?.name ?? "-",
+      value: apt.appointment_type?.name ?? "—",
     },
     {
       key: "fecha",
       header: "Fecha de la cita:",
-      value: apt.appointment_date ? formatDate(apt.appointment_date) : "-",
+      value: apt.appointment_date ? formatDate(apt.appointment_date) : "—",
     },
     {
       key: "hora",
       header: "Hora de la cita:",
       value: apt.appointment_hour
         ? formatTime(apt.appointment_hour, "hs")
-        : "-",
+        : "—",
     },
     {
       key: "paciente",
       header: "Paciente:",
-      value: apt.customer?.name ?? "-",
+      value: apt.customer?.name ?? "—",
       isEndRow: true,
     },
     {
       key: "procedimiento",
       header: "Procedimiento:",
-      value: apt.package?.procedure?.name ?? "-",
+      value: apt.package?.procedure?.name ?? "—",
     },
     {
       key: "motivo",
       header: "Motivo:",
-      value: apt.user_description ?? "-",
+      value: apt.user_description ?? "—",
     },
     {
       key: "costo",
@@ -362,7 +364,7 @@ const detailRows = computed((): TablaBaseRow[] | undefined => {
     {
       key: "estado-cita",
       header: "Estado de la cita:",
-      value: apt.appointment_status?.value1 ?? "-",
+      value: apt.appointment_status?.value1 ?? "—",
       isEndRow: true,
     },
     {
@@ -396,6 +398,7 @@ const initializeForm = () => {
   form.diagnostic = apt.diagnostic ?? "";
   form.priceProcedure = apt.price_procedure ?? "";
   form.proformaFileName = apt.proforma_file_code ?? null;
+  form.proformaCode = apt.proforma_file_code ?? "";
 
   snapshot.recommendation = form.recommendation;
   snapshot.diagnostic = form.diagnostic;
@@ -501,6 +504,22 @@ function getUserId(): string {
 const uploadProformaDocument = async (): Promise<string | null> => {
   if (!proformaFile.value) return null;
 
+  const payload = {
+    file: proformaFile.value,
+    fields: {
+      title: proformaFile.value.name,
+      type: "DOC",
+      description: "Proforma de procedimiento médico",
+      id_for_table: "6",
+      table: "",
+      action_type: "PERSONAL_DOCUMENT",
+      user_id: getUserId(),
+      is_public: 0,
+    },
+  };
+
+  logger.debug("[PROFORMA PAYLOAD]", payload);
+
   try {
     const { data, error } = await addDocument({
       file: proformaFile.value,
@@ -508,9 +527,9 @@ const uploadProformaDocument = async (): Promise<string | null> => {
         title: proformaFile.value.name,
         type: "DOC",
         description: "Proforma de procedimiento médico",
-        id_for_table: "5",
+        id_for_table: "6",
         table: "",
-        action_type: "PRIVATE_CONTRACT",
+        action_type: "PERSONAL_DOCUMENT",
         user_id: getUserId(),
         is_public: 0,
       },
@@ -523,7 +542,12 @@ const uploadProformaDocument = async (): Promise<string | null> => {
       return null;
     }
 
-    return data?.code ?? null;
+    if (data) {
+      logger.debug("[PROFORMA PAYLOAD]", { data });
+      return data?.code;
+    }
+
+    return null;
   } catch (err) {
     logger.error("Unexpected error uploading proforma", {
       error: err instanceof Error ? err.message : String(err),
@@ -552,6 +576,7 @@ const saveChanges = async () => {
   proformaError.value = "";
 
   try {
+    console.log("[proformaCode]", apt.proforma_file_code);
     let proformaCode = apt.proforma_file_code ?? "";
 
     if (proformaFile.value) {
@@ -562,6 +587,8 @@ const saveChanges = async () => {
           "Error al cargar el documento. Intenta nuevamente.";
         return;
       }
+
+      console.log("[uploadedCode]", uploadedCode);
 
       proformaCode = uploadedCode;
     }
@@ -604,8 +631,22 @@ const saveChanges = async () => {
   }
 };
 
-const openValorationConfirmation = () => {
+const openValorationConfirmation = async () => {
   if (!appointment.value) return;
+
+  let proformaCode = form.proformaCode;
+
+  if (proformaFile.value && !proformaCode) {
+    const uploadedCode = await uploadProformaDocument();
+
+    if (!uploadedCode) {
+      toast.error("Error al cargar la proforma. Intente nuevamente.");
+      return;
+    }
+
+    proformaCode = uploadedCode;
+    form.proformaCode = uploadedCode;
+  }
 
   openModal("confirmValoration", {
     appointment: appointment.value,
@@ -613,6 +654,7 @@ const openValorationConfirmation = () => {
     diagnostic: form.diagnostic,
     proformaFileName: form.proformaFileName,
     priceProcedure: form.priceProcedure,
+    proformaCode,
   });
 };
 

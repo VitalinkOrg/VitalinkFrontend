@@ -1,43 +1,60 @@
 <template>
   <AtomsModalBase
-    :is-open="isModalOpen"
+    :is-open="isVisible"
     size="extra-small"
-    class="confirm-valoration"
+    class="valoration-confirmation"
     :close-on-backdrop="false"
-    @close="handleCloseModal"
+    role="alertdialog"
+    aria-labelledby="valoration-confirmation-title"
+    aria-describedby="valoration-confirmation-description"
+    @close="dismissModal"
   >
     <template #title>
-      <div class="confirm-valoration__title-icon">
+      <div class="valoration-confirmation__icon-wrapper" aria-hidden="true">
         <AtomsIconsTriangleAlertIcon />
       </div>
     </template>
 
-    <div class="confirm-valoration__content">
-      <h2 class="confirm-valoration__content-title">
+    <section class="valoration-confirmation__body">
+      <h2
+        id="valoration-confirmation-title"
+        class="valoration-confirmation__heading"
+      >
         ¿Está seguro de continuar?
       </h2>
-      <p class="confirm-valoration__description">
+      <p
+        id="valoration-confirmation-description"
+        class="valoration-confirmation__description"
+      >
         Con estos cambios el estado de la
         <strong>reserva de la cita pasará de:</strong> pendiente a
-        <strong>“Valorado”</strong>
+        <strong>"Valorado"</strong>
       </p>
-    </div>
+    </section>
 
     <template #footer>
-      <div class="confirm-valoration__actions">
+      <div
+        class="valoration-confirmation__actions"
+        role="group"
+        aria-label="Acciones de confirmación"
+      >
         <button
-          :disabled="isLoading"
-          class="confirm-valoration__button--outline"
-          @click="handleCloseModal"
+          type="button"
+          :disabled="isSubmitting"
+          class="valoration-confirmation__action valoration-confirmation__action--cancel"
+          @click="dismissModal"
         >
           No, volver
         </button>
         <button
-          :disabled="isLoading"
-          class="confirm-valoration__button--primary"
-          @click="handleConfirmValoration"
+          type="button"
+          :disabled="isSubmitting"
+          :aria-busy="isSubmitting"
+          class="valoration-confirmation__action valoration-confirmation__action--confirm"
+          @click="submitValoration"
         >
-          {{ isLoading ? "Procesando..." : "Continuar" }}
+          <span v-if="isSubmitting">Procesando...</span>
+          <span v-else>Continuar</span>
         </button>
       </div>
     </template>
@@ -47,89 +64,122 @@
 <script lang="ts" setup>
 import { useAppointment } from "@/composables/api";
 
-interface SharedData {
+interface ValorationSharedData {
   appointment: IAppointment;
   priceProcedure: string;
   recommendation: string;
   diagnostic: string;
+  proformaCode: string;
 }
 
 const refreshAppointments = inject<() => Promise<void>>("refreshAppointments");
 
+const logger = useLogger("ValorationConfirmation");
+const toast = useToast();
+
 const { isOpen, closeModal, getSharedData, openModal } =
   useMedicalModalManager();
 
-const modalData = computed(() =>
-  getSharedData<SharedData>("confirmValoration"),
-);
-
-const sharedData = computed(() => ({
-  appointment: modalData.value.appointment,
-  priceProcedure: modalData.value.priceProcedure,
-  recommendation: modalData.value.recommendation,
-  diagnostic: modalData.value.diagnostic,
-}));
-
-const isModalOpen = computed(() => isOpen.confirmValoration);
-
 const { uploadProforma } = useAppointment();
 
-const isLoading = ref<boolean>(false);
+const isSubmitting = ref(false);
 
-const handleCloseModal = () => {
+const isVisible = computed(() => isOpen.confirmValoration);
+
+const modalPayload = computed(() =>
+  getSharedData<ValorationSharedData>("confirmValoration"),
+);
+
+const hasRequiredFields = computed(() => {
+  const { priceProcedure, recommendation, diagnostic } = modalPayload.value;
+  return Boolean(priceProcedure && recommendation && diagnostic);
+});
+
+function dismissModal(): void {
   closeModal("confirmValoration");
-};
+}
 
-const handleConfirmValoration = async () => {
-  if (
-    !sharedData.value.priceProcedure ||
-    !sharedData.value.recommendation ||
-    !sharedData.value.diagnostic
-  ) {
+function buildProformaPayload(
+  data: ValorationSharedData,
+): IUploadProformaRequest {
+  console.log("[PAYLOAD]", {
+    price_procedure: data.priceProcedure,
+    recommendation_post_appointment: data.recommendation,
+    diagnostic: data.diagnostic,
+    appointment_result_code: "FIT_FOR_PROCEDURE",
+    proforma_file_code: data.proformaCode,
+  });
+  return {
+    price_procedure: data.priceProcedure,
+    recommendation_post_appointment: data.recommendation,
+    diagnostic: data.diagnostic,
+    appointment_result_code: "FIT_FOR_PROCEDURE",
+    proforma_file_code: data.proformaCode,
+  };
+}
+
+function transitionToSuccessModal(appointment: IAppointment): void {
+  dismissModal();
+  closeModal("detallesValoracion");
+  openModal("exitoConfirmacion", { appointment });
+}
+
+async function submitValoration(): Promise<void> {
+  if (!hasRequiredFields.value) {
+    toast.warning("Complete todos los campos requeridos antes de continuar.");
     return;
   }
 
-  const payload = {
-    price_procedure: sharedData.value.priceProcedure,
-    recommendation_post_appointment: sharedData.value.recommendation,
-    diagnostic: sharedData.value.diagnostic,
-    appointment_result_code: "FIT_FOR_PROCEDURE",
-    proforma_file_code: "PERSONAL_DOCUMENT____6__DOC__652025134811",
-  };
+  const currentData = modalPayload.value;
+
+  if (!currentData.appointment) {
+    logger.error("No se encontró la cita asociada a la valoración.");
+    toast.error("No se encontró la cita. Intente nuevamente.");
+    return;
+  }
+
+  const payload = buildProformaPayload(currentData);
+
+  isSubmitting.value = true;
 
   try {
-    if (!sharedData.value.appointment) throw new Error("Appointment not found");
-
-    isLoading.value = true;
     const { data, error } = await uploadProforma(
-      sharedData.value.appointment.id,
+      currentData.appointment.id,
       payload,
     );
 
-    if (data) {
-      await refreshAppointments?.();
-      handleCloseModal();
-      closeModal("detallesValoracion");
-      openModal("exitoConfirmacion", {
-        appointment: sharedData.value.appointment,
+    if (error) {
+      logger.error("Error al subir la proforma.", {
+        appointmentId: currentData.appointment.id,
+        error,
       });
-      handleCloseModal();
+      toast.error(
+        "Ocurrió un error al procesar la valoración. Intente nuevamente.",
+      );
+      return;
     }
 
-    if (error) {
-      console.error("Error:", error);
+    if (data) {
+      await refreshAppointments?.();
+      transitionToSuccessModal(currentData.appointment);
     }
-  } catch (error) {
-    console.error(error);
+  } catch (exception) {
+    const errorMessage =
+      exception instanceof Error ? exception.message : String(exception);
+
+    logger.error("Excepción inesperada al confirmar la valoración.", {
+      message: errorMessage,
+    });
+    toast.error("Ocurrió un error inesperado. Intente nuevamente.");
   } finally {
-    isLoading.value = false;
+    isSubmitting.value = false;
   }
-};
+}
 </script>
 
 <style lang="scss" scoped>
-.confirm-valoration {
-  &__title-icon {
+.valoration-confirmation {
+  &__icon-wrapper {
     display: flex;
     justify-content: center;
     align-items: center;
@@ -144,11 +194,11 @@ const handleConfirmValoration = async () => {
     }
   }
 
-  &__content {
-    padding: 1.25rem 1.5rem 0 1.5rem;
+  &__body {
+    padding: 1.25rem 1.5rem 0;
   }
 
-  &__content-title {
+  &__heading {
     @include label-base;
     font-weight: 600;
     font-size: 1.25rem;
@@ -165,18 +215,20 @@ const handleConfirmValoration = async () => {
   }
 
   &__actions {
-    width: 100%;
     display: flex;
     gap: 0.75rem;
+    width: 100%;
   }
 
-  &__button {
-    &--outline {
+  &__action {
+    width: 100%;
+
+    &--cancel {
       @include outline-button;
       width: 100%;
     }
 
-    &--primary {
+    &--confirm {
       @include primary-button;
       width: 100%;
     }

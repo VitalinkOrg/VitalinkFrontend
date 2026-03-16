@@ -524,7 +524,7 @@
                     </tr>
                     <tr>
                       <td><strong>Costo del servicio:</strong></td>
-                      <td>₡18000</td>
+                      <td>{{}}</td>
                     </tr>
                   </tbody>
                 </table>
@@ -611,7 +611,9 @@
                       </div>
                       <div class="detail-item">
                         <span class="detail-label">Monto a Pagar:</span>
-                        <span class="detail-value">₡18000</span>
+                        <span class="detail-value">{{
+                          selectedPackage.product.value2
+                        }}</span>
                       </div>
                     </div>
                     <div class="row mt-4">

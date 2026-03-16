@@ -50,11 +50,11 @@ const props = defineProps<Props>();
 const { formatCurrency } = useFormat();
 
 const SERVICE_BASE_COST = 18000;
-const FALLBACK_LABEL = "N/A";
+const FALLBACK_LABEL = "—";
 
 const specialtyName = computed<string>(() => {
   if (!props.services?.length || !props.selectedSpecialtyId) {
-    return FALLBACK_LABEL;
+    return "Cita de Valoración";
   }
 
   const matchedService = props.services.find(
@@ -81,7 +81,9 @@ const procedureName = computed<string>(() => {
 });
 
 const formattedServiceCost = computed(() =>
-  formatCurrency(SERVICE_BASE_COST, { decimalPlaces: 0 }),
+  formatCurrency(props.selectedPackage?.product.value2 ?? SERVICE_BASE_COST, {
+    decimalPlaces: 0,
+  }),
 );
 
 const formattedDiscountPrice = computed(() =>

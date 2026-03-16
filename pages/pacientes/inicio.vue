@@ -265,7 +265,7 @@ onMounted(async () => {
                     class="cards-grid__item"
                   >
                     <WebsiteTarjetaMedico
-                      :medico="medico"
+                      :supplier="medico"
                       @toggle-favorite="() => {}"
                       @show-packages="handleSelectDoctor"
                     />
@@ -327,7 +327,7 @@ onMounted(async () => {
                     class="cards-grid__item"
                   >
                     <WebsiteTarjetaMedico
-                      :medico="medico"
+                      :supplier="medico"
                       @toggle-favorite="() => {}"
                       @show-packages="handleSelectDoctor"
                     />

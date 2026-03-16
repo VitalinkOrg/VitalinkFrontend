@@ -74,9 +74,10 @@ export const usePackage = () => {
       query: { id: packageId },
     });
 
-  const getAllPackages = () =>
+  const getAllPackages = (supplierId?: number) =>
     executeRequest<IPackage[]>("getAllPackages", "package/get_all", {
       method: "GET",
+      query: { supplier_id: supplierId },
     });
 
   const getPackageById = (packageId: number) =>

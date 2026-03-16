@@ -102,6 +102,7 @@
     :customer-phone="alternativePhoneNumber ?? phoneNumber"
     :selected-procedure-id="selectedProcedureId"
     :services="services"
+    :selected-package="selectedPackage"
     @close-modal="closeSuccessModal"
   />
 
