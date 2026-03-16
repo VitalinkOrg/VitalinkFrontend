@@ -399,7 +399,7 @@ const toast = useToast();
 const logger = useLogger("MyPractitionersPage");
 const { getAllMainSuppliers, deleteSupplier } = useSupplier();
 const { getAllLocations, deleteLocation } = useLocation();
-const { getUserInfo } = useUserInfo();
+const { userInfo, getUserInfo } = useUserInfo();
 
 const activeTab = ref<PanelTab>("doctors");
 
@@ -525,6 +525,13 @@ async function refreshDoctorsList(): Promise<void> {
     }
 
     const currentUser = getUserInfo();
+
+    if (!currentUser?.id) {
+      logger.error("Current user info is not available");
+      toast.error("No se pudo obtener la información del usuario");
+      return;
+    }
+
     allDoctors.value = (data ?? []).filter(
       (supplier) => supplier.legal_representative?.id === currentUser.id,
     );
@@ -642,7 +649,44 @@ async function executeHospitalDeletion(): Promise<void> {
   }
 }
 
-onMounted(() => {
+function waitForUserInfo(
+  userInfo: Readonly<Ref<any>>,
+  timeoutMs = 5000,
+): Promise<any> {
+  return new Promise((resolve, reject) => {
+    if (userInfo.value?.id) {
+      resolve(userInfo.value);
+      return;
+    }
+
+    const timer = setTimeout(() => {
+      stop();
+      reject(new Error("Timeout waiting for user info"));
+    }, timeoutMs);
+
+    const stop = watch(
+      userInfo,
+      (val) => {
+        if (val?.id) {
+          clearTimeout(timer);
+          stop();
+          resolve(val);
+        }
+      },
+      { immediate: true },
+    );
+  });
+}
+
+onMounted(async () => {
+  try {
+    await waitForUserInfo(userInfo);
+  } catch {
+    logger.error("User info never became available");
+    toast.error("No se pudo obtener la información del usuario");
+    return;
+  }
+
   refreshDoctorsList();
   refreshHospitalsList();
 });
