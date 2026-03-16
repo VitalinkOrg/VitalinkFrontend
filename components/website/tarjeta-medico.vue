@@ -1,185 +1,232 @@
 <template>
-  <div v-if="supplier" class="medico-card">
+  <article v-if="supplier" class="supplier-card">
     <NuxtLink
       :to="{
         path: `/perfiles/doctor/${supplier.id}`,
         query: queryParams,
       }"
-      class="medico-card__link"
+      class="supplier-card__link"
+      :aria-label="`Ver perfil de ${supplier.name}`"
     >
-      <div class="medico-card__body">
-        <div class="medico-card__top">
-          <div class="medico-card__profile">
+      <div class="supplier-card__body">
+        <header class="supplier-card__header">
+          <div class="supplier-card__profile">
             <img
-              :src="
-                supplier.profile_picture_url || '/_nuxt/src/assets/picture.svg'
-              "
-              alt=""
-              class="medico-card__avatar"
+              :src="profileImageSource"
+              :alt="`Foto de perfil de ${supplier.name}`"
+              class="supplier-card__avatar"
+              loading="lazy"
             />
-            <div class="medico-card__score">
-              <p class="medico-card__rating">
-                {{ supplier.stars_by_supplier?.toFixed(1) || 0 }}
-              </p>
+            <div class="supplier-card__rating-badge" aria-label="Calificación">
+              <span class="supplier-card__rating-value">
+                {{ formattedRating }}
+              </span>
               <img
                 src="@/src/assets/star.svg"
-                alt="Calificación"
-                class="medico-card__star-icon"
+                alt=""
+                aria-hidden="true"
+                class="supplier-card__rating-star"
               />
             </div>
           </div>
 
-          <div class="medico-card__info">
-            <div class="medico-card__name-container">
-              <p class="medico-card__name">
+          <div class="supplier-card__details">
+            <div class="supplier-card__title-row">
+              <h3 class="supplier-card__name">
                 {{ supplier.name }}
-              </p>
-              <div>
-                <button
-                  class="medico-card__favorite-button"
-                  @click.prevent.stop="toggleFavorite"
-                >
-                  <AtomsIconsBookmarkIcon class="medico-card__favorite-icon" />
-                </button>
-              </div>
+              </h3>
+              <button
+                class="supplier-card__bookmark-button"
+                :aria-label="`Guardar a ${supplier.name} en favoritos`"
+                @click.prevent.stop="handleToggleFavorite"
+              >
+                <AtomsIconsBookmarkIcon class="supplier-card__bookmark-icon" />
+              </button>
             </div>
 
-            <div class="medico-card__detail">
+            <div class="supplier-card__meta">
               <img
                 src="@/src/assets/doctor-element.svg"
-                alt="Especialidad"
-                class="medico-card__icon"
+                alt=""
+                aria-hidden="true"
+                class="supplier-card__meta-icon"
               />
-              <p class="medico-card__description">
+              <p class="supplier-card__specialty">
                 {{ supplier.description }}
               </p>
             </div>
 
-            <div class="medico-card__location">
+            <div class="supplier-card__meta">
               <img
                 src="@/src/assets/marker.svg"
-                alt="Ubicaciones"
-                class="medico-card__icon"
+                alt=""
+                aria-hidden="true"
+                class="supplier-card__meta-icon"
               />
-              <p class="medico-card__location-text">
+              <p class="supplier-card__location">
                 {{ supplier.location_number }}
-                {{
-                  supplier.location_number === 1
-                    ? "Hospital"
-                    : "Hospitales diferentes"
-                }}
+                {{ locationLabel }}
               </p>
             </div>
           </div>
-        </div>
+        </header>
 
-        <div class="medico-card__availability">
-          <p class="medico-card__availability-label">Disponibilidad</p>
-          <div class="medico-card__availability-item">
+        <section
+          class="supplier-card__availability"
+          aria-label="Disponibilidad"
+        >
+          <p class="supplier-card__availability-title">Disponibilidad</p>
+          <div class="supplier-card__availability-entry">
             <img
               src="@/src/assets/calendar.svg"
-              alt="Fecha"
-              class="medico-card__availability-icon"
+              alt=""
+              aria-hidden="true"
+              class="supplier-card__availability-icon"
             />
-            <p class="medico-card__availability-date">
+            <time class="supplier-card__availability-date">
               {{ supplier.date_availability }}
-            </p>
+            </time>
           </div>
-          <div class="medico-card__availability-item">
+          <div class="supplier-card__availability-entry">
             <img
               src="@/src/assets/clock.svg"
-              alt="Hora"
-              class="medico-card__availability-icon"
+              alt=""
+              aria-hidden="true"
+              class="supplier-card__availability-icon"
             />
-            <p class="medico-card__availability-time">
+            <time class="supplier-card__availability-time">
               {{ supplier.hour_availability }}
-            </p>
+            </time>
           </div>
-        </div>
+        </section>
 
-        <div class="medico-card__tags">
-          <span
-            v-for="service in supplier.services_names"
-            :key="service"
-            class="medico-card__tag"
+        <ul
+          class="supplier-card__service-list"
+          aria-label="Servicios ofrecidos"
+        >
+          <li
+            v-for="serviceName in supplier.services_names"
+            :key="serviceName"
+            class="supplier-card__service-tag"
           >
-            {{ service }}
-          </span>
-        </div>
+            {{ serviceName }}
+          </li>
+        </ul>
 
-        <div class="medico-card__footer">
-          <div class="medico-card__price">
-            <p
-              v-if="costOfAssessmentAppointmentsFrom"
-              class="medico-card__price-value"
-            >
-              {{
-                formatCurrency(costOfAssessmentAppointmentsFrom, {
-                  decimalPlaces: 0,
-                })
-              }}
-            </p>
-            <p
-              v-else
-              class="medico-card__price-value medico-card__price-value--consult"
-            >
+        <footer class="supplier-card__footer">
+          <div class="supplier-card__pricing" aria-label="Precio de valoración">
+            <div v-if="hasLoadedPricing" class="supplier-card__pricing-amounts">
+              <p class="supplier-card__pricing-original">
+                <span class="sr-only">Precio original: </span>
+                {{ formattedOriginalPrice }}
+              </p>
+              <p
+                v-if="formattedDiscountedPrice"
+                class="supplier-card__pricing-discounted"
+              >
+                <span class="sr-only">Precio con descuento: </span>
+                {{ formattedDiscountedPrice }}
+              </p>
+            </div>
+            <p v-else class="supplier-card__pricing-inquiry">
               Precio a consultar
             </p>
 
-            <p class="medico-card__price-description">
-              {{
-                costOfAssessmentAppointmentsFrom
-                  ? "costo citas de valoración desde"
-                  : "valoración inicial"
-              }}
+            <p class="supplier-card__pricing-caption">
+              {{ pricingCaption }}
             </p>
           </div>
 
           <button
-            class="medico-card__packages-button"
-            @click.prevent.stop="getDoctorData"
+            class="supplier-card__action-button"
+            :aria-label="`Ver paquetes y citas de valoración de ${supplier.name}`"
+            @click.prevent.stop="handleShowPackages"
           >
-            Ver paquetes y citas de valoración
-            <AtomsIconsChevronRightIcon class="medico-card__arrow-icon" />
+            <span class="supplier-card__action-label">
+              Ver paquetes y citas de valoración
+            </span>
+            <AtomsIconsChevronRightIcon class="supplier-card__action-arrow" />
           </button>
-        </div>
+        </footer>
       </div>
     </NuxtLink>
-  </div>
+  </article>
 </template>
 
 <script setup lang="ts">
 import { usePackage } from "@/composables/api";
 import type { LocationQueryRaw } from "vue-router";
 
-const props = defineProps<{
+interface Props {
   supplier: ISupplierMain;
   queryParams?: LocationQueryRaw;
-}>();
+}
+
+interface Emits {
+  (event: "toggle-favorite", doctorId: ISupplierMain["id"]): void;
+  (event: "show-packages", payload: { selectedSupplier: ISupplierMain }): void;
+}
+
+const props = defineProps<Props>();
+const emit = defineEmits<Emits>();
 
 const { getAllPackages } = usePackage();
 const toast = useToast();
 const logger = useLogger();
-
-const costOfAssessmentAppointmentsFrom = ref<string | null>(null);
-
-const emit = defineEmits<{
-  (e: "toggle-favorite", doctorId: ISupplierMain["id"]): void;
-  (e: "show-packages", payload: { selectedSupplier: ISupplierMain }): void;
-}>();
-
 const { formatCurrency } = useFormat();
 
-const toggleFavorite = (): void => {
+const originalPrice = ref<string | null>(null);
+const discountedPrice = ref<number | null>(null);
+
+const profileImageSource = computed<string>(
+  () => props.supplier.profile_picture_url || "/_nuxt/src/assets/picture.svg",
+);
+
+const formattedRating = computed<string>(
+  () => props.supplier.stars_by_supplier?.toFixed(1) ?? "0.0",
+);
+
+const locationLabel = computed<string>(() =>
+  props.supplier.location_number === 1 ? "Hospital" : "Hospitales diferentes",
+);
+
+const hasLoadedPricing = computed<boolean>(() => originalPrice.value !== null);
+
+const formattedOriginalPrice = computed<string>(() => {
+  if (!originalPrice.value) return "";
+  return formatCurrency(originalPrice.value, { decimalPlaces: 0 });
+});
+
+const formattedDiscountedPrice = computed<string | null>(() => {
+  if (discountedPrice.value == null) return null;
+  return formatCurrency(discountedPrice.value, { decimalPlaces: 0 });
+});
+
+const pricingCaption = computed<string>(() =>
+  hasLoadedPricing.value
+    ? "costo citas de valoración desde"
+    : "valoración inicial",
+);
+
+function handleToggleFavorite(): void {
   emit("toggle-favorite", props.supplier.id);
-};
+}
 
-const getDoctorData = (): void => {
+function handleShowPackages(): void {
   emit("show-packages", { selectedSupplier: props.supplier });
-};
+}
 
-async function executeGetAllPackagesBySupplierId() {
+function findCheapestPackage(packages: IPackage[]): IPackage {
+  return packages.reduce((cheapest, current) => {
+    const currentValue = parseFloat(current.product.value1 ?? "0");
+    const cheapestValue = parseFloat(cheapest.product.value1 ?? "0");
+    return currentValue < cheapestValue ? current : cheapest;
+  });
+}
+
+async function fetchSupplierPackages(): Promise<void> {
   const supplierId = props.supplier.id;
+
   if (!supplierId) {
     toast.error("ID del proveedor no encontrado");
     return;
@@ -189,43 +236,45 @@ async function executeGetAllPackagesBySupplierId() {
     const { data, error } = await getAllPackages(supplierId);
 
     if (error || !data) {
-      const errorMessage =
-        error?.info || "Error desconocido al obtener paquetes";
-      logger.error("Failed to fetch packages", { info: errorMessage });
-      toast.error(errorMessage);
+      const detail = error?.info || "Error desconocido al obtener paquetes";
+      logger.error("Failed to fetch supplier packages", { info: detail });
+      toast.error(detail);
       return;
     }
 
     if (data.length === 0) {
-      logger.debug("No packages found for this supplier");
+      logger.debug("No packages available for supplier", { supplierId });
       return;
     }
 
-    logger.debug("[PACKAGES]", { data });
+    logger.debug("[SupplierCard] Packages loaded", { count: data.length });
 
-    const lowestProductValue2 = data.reduce((minPkg, currentPkg) => {
-      const currentPrice = parseFloat(currentPkg.product.value1 || "0");
-      const minPrice = parseFloat(minPkg.product.value1 || "0");
-
-      return currentPrice < minPrice ? currentPkg : minPkg;
-    }).product.value2;
-
-    costOfAssessmentAppointmentsFrom.value = lowestProductValue2;
-  } catch (err) {
-    logger.error("Unexpected error in executeGetAllPackagesBySupplierId", {
-      error: err,
-    });
+    const cheapest = findCheapestPackage(data);
+    originalPrice.value = cheapest.product.value2 ?? null;
+    discountedPrice.value = cheapest.discount ?? null;
+  } catch (error) {
+    logger.error("Unexpected error fetching supplier packages", { error });
     toast.error("Error inesperado al cargar los paquetes");
   }
 }
 
-onMounted(() => {
-  executeGetAllPackagesBySupplierId();
-});
+onMounted(fetchSupplierPackages);
 </script>
 
 <style lang="scss" scoped>
-.medico-card {
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.supplier-card {
   display: flex;
   flex-direction: column;
   background-color: #ffffff;
@@ -244,7 +293,21 @@ onMounted(() => {
     padding: 20px;
   }
 
-  &__top {
+  &__link {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    text-decoration: none;
+    color: inherit;
+  }
+
+  &__body {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+  }
+
+  &__header {
     display: flex;
     gap: 15px;
 
@@ -273,19 +336,18 @@ onMounted(() => {
     }
 
     @include respond-to(md) {
-      width: 67.08px;
-      height: 66.97px;
+      width: 67px;
+      height: 67px;
     }
   }
 
-  &__score {
+  &__rating-badge {
     display: flex;
     align-items: center;
     justify-content: center;
     background-color: #3541b4;
     padding: 4px 8px;
     gap: 3px;
-    opacity: 1;
     border-radius: 16px;
 
     @include respond-to(sm) {
@@ -299,14 +361,11 @@ onMounted(() => {
     }
   }
 
-  &__rating {
-    margin: 0;
+  &__rating-value {
     font-family: $font-family-main;
     font-weight: 600;
-    font-style: Semi Bold;
     font-size: 12px;
     line-height: 1.2;
-    letter-spacing: 0;
     color: #ffffff;
 
     @include respond-to(sm) {
@@ -319,7 +378,7 @@ onMounted(() => {
     }
   }
 
-  &__star-icon {
+  &__rating-star {
     width: 12px;
     height: 12px;
 
@@ -329,12 +388,12 @@ onMounted(() => {
     }
   }
 
-  &__info {
+  &__details {
     width: 100%;
     min-width: 0;
   }
 
-  &__name-container {
+  &__title-row {
     display: flex;
     justify-content: space-between;
     align-items: flex-start;
@@ -344,11 +403,11 @@ onMounted(() => {
   &__name {
     @include label-base;
     font-weight: 600;
-    font-style: SemiBold;
     font-size: 17px;
     line-height: 1.2;
     color: #19213d;
     word-break: break-word;
+    margin: 0;
 
     @include respond-to(sm) {
       font-size: 19px;
@@ -360,7 +419,7 @@ onMounted(() => {
     }
   }
 
-  &__favorite-button {
+  &__bookmark-button {
     @include button-base;
     color: #3541b4;
     padding: 0;
@@ -378,15 +437,15 @@ onMounted(() => {
       height: 100%;
     }
 
-    &:hover {
-      .medico-card__favorite-icon {
+    &:hover,
+    &:focus-visible {
+      .supplier-card__bookmark-icon {
         color: rgba(53, 65, 180, 0.8);
       }
     }
   }
 
-  &__location,
-  &__detail {
+  &__meta {
     display: flex;
     align-items: flex-start;
     gap: 8px;
@@ -399,7 +458,7 @@ onMounted(() => {
     }
   }
 
-  &__icon {
+  &__meta-icon {
     width: 24px;
     height: 24px;
     padding: 5px;
@@ -415,13 +474,12 @@ onMounted(() => {
     }
   }
 
-  &__location-text,
-  &__description {
+  &__specialty,
+  &__location {
     @include label-base;
     font-weight: 300;
     font-size: 14px;
     line-height: 1.3;
-    letter-spacing: 0;
     color: #6d758f;
     word-break: break-word;
 
@@ -448,7 +506,7 @@ onMounted(() => {
     }
   }
 
-  &__availability-label {
+  &__availability-title {
     @include label-base;
     font-weight: 500;
     font-size: 12px;
@@ -461,7 +519,7 @@ onMounted(() => {
     }
   }
 
-  &__availability-item {
+  &__availability-entry {
     display: flex;
     align-items: center;
     gap: 8px;
@@ -496,25 +554,14 @@ onMounted(() => {
     }
   }
 
-  &__link {
-    display: flex;
-    flex-direction: column;
-    height: 100%;
-    text-decoration: none;
-  }
-
-  &__body {
-    display: flex;
-    flex-direction: column;
-    flex: 1;
-  }
-
-  &__tags {
+  &__service-list {
     display: flex;
     flex-wrap: wrap;
     gap: 5px;
     margin-top: 15px;
     margin-bottom: auto;
+    list-style: none;
+    padding: 0;
 
     @include respond-to(md) {
       gap: 6.3px;
@@ -522,24 +569,21 @@ onMounted(() => {
     }
   }
 
-  &__tag {
+  &__service-tag {
     display: flex;
     padding: 6px 10px;
     gap: 8px;
-    opacity: 1;
     border-radius: 50px;
     background-color: #ebecf7;
     color: #3541b4;
     font-weight: 600;
-    font-style: SemiBold;
     font-size: 11px;
     line-height: 100%;
-    letter-spacing: 0;
 
     @include respond-to(md) {
       padding: 8.4px 12.6px;
       gap: 10.5px;
-      border-radius: 105.02px;
+      border-radius: 105px;
       font-size: 12.6px;
     }
   }
@@ -562,7 +606,7 @@ onMounted(() => {
     }
   }
 
-  &__price {
+  &__pricing {
     display: flex;
     flex-direction: column;
     gap: 3px;
@@ -572,7 +616,27 @@ onMounted(() => {
     }
   }
 
-  &__price-value {
+  &__pricing-amounts {
+    display: flex;
+    align-items: baseline;
+    gap: 0.75rem;
+  }
+
+  &__pricing-original {
+    @include label-base;
+    font-weight: 700;
+    font-size: 16px;
+    line-height: 1.2;
+    color: #6d758f;
+    text-decoration: line-through;
+
+    @include respond-to(md) {
+      font-size: 18.9px;
+      line-height: 21px;
+    }
+  }
+
+  &__pricing-discounted {
     @include label-base;
     font-weight: 700;
     font-size: 16px;
@@ -585,13 +649,24 @@ onMounted(() => {
     }
   }
 
-  &__price-description {
+  &__pricing-inquiry {
+    @include label-base;
+    font-weight: 700;
+    font-size: 16px;
+    line-height: 1.2;
+    color: #353e5c;
+
+    @include respond-to(md) {
+      font-size: 18.9px;
+      line-height: 21px;
+    }
+  }
+
+  &__pricing-caption {
     @include label-base;
     font-weight: 300;
     font-size: 12px;
     line-height: 1.2;
-    letter-spacing: 0;
-    vertical-align: middle;
     color: #6d758f;
 
     @include respond-to(md) {
@@ -600,7 +675,7 @@ onMounted(() => {
     }
   }
 
-  &__packages-button {
+  &__action-button {
     @include button-base;
     display: flex;
     align-items: center;
@@ -629,7 +704,8 @@ onMounted(() => {
       gap: 10.5px;
     }
 
-    &:hover {
+    &:hover,
+    &:focus-visible {
       text-decoration: underline;
 
       @include respond-to-max(sm) {
@@ -639,7 +715,7 @@ onMounted(() => {
     }
   }
 
-  &__arrow-icon {
+  &__action-arrow {
     width: 16px;
     height: 16px;
 

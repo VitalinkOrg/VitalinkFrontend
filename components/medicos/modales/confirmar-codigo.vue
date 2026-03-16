@@ -2,55 +2,67 @@
   <AtomsModalBase
     :is-open="isVisible"
     size="extra-small"
-    class="credit-confirmation"
+    class="code-redemption-dialog"
     role="alertdialog"
-    aria-labelledby="credit-confirmation-title"
-    aria-describedby="credit-confirmation-description"
-    @close="dismiss"
+    aria-labelledby="code-redemption-dialog__title"
+    aria-describedby="code-redemption-dialog__description"
+    @close="handleDismiss"
   >
-    <div class="credit-confirmation__body">
-      <h2 id="credit-confirmation-title" class="credit-confirmation__heading">
+    <div class="code-redemption-dialog__body">
+      <h2
+        id="code-redemption-dialog__title"
+        class="code-redemption-dialog__heading"
+      >
         Confirmar uso de código
       </h2>
 
       <p
-        id="credit-confirmation-description"
-        class="credit-confirmation__description"
+        id="code-redemption-dialog__description"
+        class="code-redemption-dialog__message"
       >
         ¿Desea confirmar el canje del código válido por un crédito de
-        <strong class="credit-confirmation__amount">
-          {{ formatCurrency(approvedAmount, { decimalPlaces: 0 }) }} </strong
+        <strong class="code-redemption-dialog__amount">
+          {{ formatCurrency(creditAmount, { decimalPlaces: 0 }) }} </strong
         >?
       </p>
 
-      <div
-        v-if="errorFeedback"
-        class="credit-confirmation__alert"
-        role="alert"
-        aria-live="assertive"
-      >
-        {{ errorFeedback }}
-      </div>
+      <Transition name="fade">
+        <div
+          v-if="redemptionError"
+          class="code-redemption-dialog__alert"
+          role="alert"
+          aria-live="assertive"
+        >
+          {{ redemptionError }}
+        </div>
+      </Transition>
     </div>
 
     <template #footer>
-      <div class="credit-confirmation__actions">
+      <div
+        class="code-redemption-dialog__actions"
+        role="group"
+        aria-label="Acciones de confirmación"
+      >
         <button
-          class="credit-confirmation__action credit-confirmation__action--secondary"
-          :disabled="isProcessing"
+          type="button"
+          class="code-redemption-dialog__action code-redemption-dialog__action--cancel"
+          :disabled="isSubmitting"
           aria-label="Cancelar confirmación"
-          @click="dismiss"
+          @click="handleDismiss"
         >
           No
         </button>
         <button
-          class="credit-confirmation__action credit-confirmation__action--primary"
-          :disabled="isProcessing"
-          :aria-busy="isProcessing"
+          type="button"
+          class="code-redemption-dialog__action code-redemption-dialog__action--confirm"
+          :disabled="isSubmitting"
+          :aria-busy="isSubmitting"
           aria-label="Confirmar uso de código"
-          @click="confirmCreditUsage"
+          @click="handleConfirmRedemption"
         >
-          {{ isProcessing ? "Procesando..." : "Sí" }}
+          <template v-if="isSubmitting">Procesando...</template>
+          <template v-else>Sí</template>
         </button>
       </div>
     </template>
@@ -59,90 +71,115 @@
 
 <script lang="ts" setup>
 import { useAppointmentCredit } from "@/composables/api";
+import { useLogger } from "@/composables/useLogger";
 import { useMedicalModalManager } from "@/composables/useMedicalModalManager";
 
-interface CreditConfirmationPayload {
+interface CodeRedemptionPayload {
   creditId: number;
   creditAmount: number;
   onSuccess?: () => void;
 }
 
 const MODAL_KEY = "confirmarCodigo" as const;
+const PARENT_MODAL_KEY = "detallesCita" as const;
+
+const ERROR_MESSAGES = {
+  missingCredit: "No se encontró el crédito a confirmar.",
+  updateFailed: "Error al confirmar el uso del crédito.",
+  unexpected: "Error inesperado al confirmar el crédito. Intente nuevamente.",
+} as const;
 
 const { isOpen, closeModal, getSharedData } = useMedicalModalManager();
 const { updateAppointmentCredit } = useAppointmentCredit();
 const { formatCurrency } = useFormat();
 const toast = useToast();
+const logger = useLogger("CodeRedemptionDialog");
 
 const refreshAppointments = inject<() => Promise<void>>("refreshAppointments");
 
 const isVisible = computed(() => isOpen[MODAL_KEY]);
 
-const sharedPayload = computed(() =>
-  getSharedData<CreditConfirmationPayload>(MODAL_KEY),
-);
+const payload = computed(() => getSharedData<CodeRedemptionPayload>(MODAL_KEY));
 
-const creditId = computed(() => sharedPayload.value?.creditId ?? null);
-const approvedAmount = computed(() => sharedPayload.value?.creditAmount ?? 0);
+const targetCreditId = computed(() => payload.value?.creditId ?? null);
+const creditAmount = computed(() => payload.value?.creditAmount ?? 0);
 
-const isProcessing = ref(false);
-const errorFeedback = ref("");
+const isSubmitting = ref(false);
+const redemptionError = ref("");
 
-function resetInternalState(): void {
-  isProcessing.value = false;
-  errorFeedback.value = "";
+function clearInternalState(): void {
+  isSubmitting.value = false;
+  redemptionError.value = "";
 }
 
-function dismiss(): void {
-  if (isProcessing.value) return;
+function handleDismiss(): void {
+  if (isSubmitting.value) return;
 
   closeModal(MODAL_KEY);
-  resetInternalState();
+  clearInternalState();
 }
 
-async function confirmCreditUsage(): Promise<void> {
-  errorFeedback.value = "";
+function closeAllRelatedModals(): void {
+  closeModal(MODAL_KEY);
+  closeModal(PARENT_MODAL_KEY);
+  clearInternalState();
+}
 
-  if (!creditId.value) {
-    errorFeedback.value = "No se encontró el crédito a confirmar.";
+function setRedemptionError(message: string): void {
+  redemptionError.value = message;
+}
+
+async function handleConfirmRedemption(): Promise<void> {
+  setRedemptionError("");
+
+  if (!targetCreditId.value) {
+    setRedemptionError(ERROR_MESSAGES.missingCredit);
+    logger.warn("Attempted redemption without a valid credit ID");
     return;
   }
 
-  isProcessing.value = true;
+  isSubmitting.value = true;
 
   try {
     const { error } = await updateAppointmentCredit(
       { already_been_used: 1 },
-      creditId.value,
+      targetCreditId.value,
     );
 
     if (error) {
-      errorFeedback.value =
-        error.info || "Error al confirmar el uso del crédito.";
+      const serverMessage = error.info || ERROR_MESSAGES.updateFailed;
+      setRedemptionError(serverMessage);
+      logger.error("Credit redemption API error", {
+        creditId: targetCreditId.value,
+        serverInfo: error.info,
+      });
       return;
     }
 
     await refreshAppointments?.();
-    sharedPayload.value?.onSuccess?.();
+    payload.value?.onSuccess?.();
     toast.success("Código confirmado exitosamente.");
-    dismiss();
-  } catch {
-    errorFeedback.value =
-      "Error inesperado al confirmar el crédito. Intente nuevamente.";
+    closeAllRelatedModals();
+  } catch (thrown: unknown) {
+    setRedemptionError(ERROR_MESSAGES.unexpected);
+    logger.error("Unhandled exception during credit redemption", {
+      creditId: targetCreditId.value,
+      error: thrown instanceof Error ? thrown.message : String(thrown),
+    });
   } finally {
-    isProcessing.value = false;
+    isSubmitting.value = false;
   }
 }
 
 watch(isVisible, (opened) => {
   if (!opened) {
-    resetInternalState();
+    clearInternalState();
   }
 });
 </script>
 
 <style lang="scss" scoped>
-.credit-confirmation {
+.code-redemption-dialog {
   &__body {
     padding: 1.5rem;
     display: flex;
@@ -159,7 +196,7 @@ watch(isVisible, (opened) => {
     margin: 0;
   }
 
-  &__description {
+  &__message {
     @include label-base;
     font-weight: 500;
     font-size: 0.875rem;
@@ -195,7 +232,7 @@ watch(isVisible, (opened) => {
   &__action {
     flex: 1;
 
-    &--secondary {
+    &--cancel {
       @include outline-button;
 
       &:disabled {
@@ -204,7 +241,7 @@ watch(isVisible, (opened) => {
       }
     }
 
-    &--primary {
+    &--confirm {
       @include primary-button;
 
       &:disabled {
@@ -213,5 +250,15 @@ watch(isVisible, (opened) => {
       }
     }
   }
+}
+
+.fade-enter-active,
+.fade-leave-active {
+  transition: opacity 0.2s ease;
+}
+
+.fade-enter-from,
+.fade-leave-to {
+  opacity: 0;
 }
 </style>
