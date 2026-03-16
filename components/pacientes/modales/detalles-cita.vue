@@ -283,9 +283,16 @@ const serviceCostLabel = computed(() =>
 const serviceCostValue = computed(() => {
   const useProcedurePrice =
     isProcedureType.value || isValorationCompleted.value;
+
   const amount = useProcedurePrice
     ? props.appointment.price_procedure
-    : props.appointment.price_valoration_appointment;
+    : props.appointment.package?.discount ||
+      props.appointment.package?.product?.value2;
+
+  if (amount === null || amount === undefined) {
+    return "Precio a consultar";
+  }
+
   return formatCurrency(amount, { decimalPlaces: 0 });
 });
 
@@ -310,14 +317,14 @@ const tableRows = computed((): TablaBaseRow[] => {
       {
         key: "appointment-date",
         header: "Fecha de la cita:",
-        value: formatDate(appt.application_date),
+        value: appt.appointment_date ? formatDate(appt.appointment_date) : "—",
       },
       {
         key: "appointment-time",
         header: "Hora de la cita:",
         value: appt.appointment_hour
           ? formatTime(appt.appointment_hour, "hs")
-          : "-",
+          : "—",
         isEndRow: true,
       },
     );
@@ -473,6 +480,8 @@ const handleDownloadProforma = async () => {
   try {
     const { data, error } = await getDocumentByCode(fileCode);
 
+    console.log({ data });
+
     if (error) {
       showToast(error.info || "Error al obtener la proforma", "error");
       return;
@@ -483,13 +492,24 @@ const handleDownloadProforma = async () => {
       return;
     }
 
+    const response = await fetch(data.url);
+
+    if (!response.ok) {
+      showToast("Error al descargar el archivo", "error");
+      return;
+    }
+
+    const blob = await response.blob();
+    const blobUrl = URL.createObjectURL(blob);
+
     const anchor = document.createElement("a");
-    anchor.href = data.url;
-    anchor.target = "_blank";
-    anchor.rel = "noopener noreferrer";
+    anchor.href = blobUrl;
+    anchor.download = data.name || `proforma-${fileCode}.pdf`;
     document.body.appendChild(anchor);
     anchor.click();
     document.body.removeChild(anchor);
+
+    URL.revokeObjectURL(blobUrl);
   } catch {
     showToast("Error inesperado al descargar la proforma", "error");
   } finally {
@@ -507,15 +527,16 @@ const handleDownloadProforma = async () => {
     :footer-class="isCancelled ? 'padding-0' : 'footer-border-top'"
     @close="handleCloseDetail"
   >
+    <template #title>
+      <h2 id="detail-modal-title" class="appointment-detail__title">
+        {{ modalTitle }}
+      </h2>
+    </template>
     <div
       class="appointment-detail__body"
       role="region"
       aria-labelledby="detail-modal-title"
     >
-      <h2 id="detail-modal-title" class="appointment-detail__title">
-        {{ modalTitle }}
-      </h2>
-
       <MedicosTablaDetallesCita :rows="tableRows">
         <template #data-status>
           <span

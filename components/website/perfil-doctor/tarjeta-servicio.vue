@@ -221,17 +221,6 @@ function closeModal(): void {
               {{ packagePrice }}
             </p>
 
-            <p class="service-card__monthly">
-              Cuotas mensuales desde ₡{{ calculateMonthlyPayment(pkg) }}
-            </p>
-
-            <p v-if="hasDiscount" class="service-card__discount">
-              Precio original
-              <span class="service-card__discount-value">{{
-                originalPrice
-              }}</span>
-            </p>
-
             <p class="service-card__disclaimer">
               Los precios pueden variar según el diagnóstico del médico.
             </p>

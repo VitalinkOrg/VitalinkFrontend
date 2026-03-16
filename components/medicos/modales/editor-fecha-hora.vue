@@ -354,6 +354,16 @@ const handleSave = async () => {
   const apt = appointment.value;
   if (!apt) return;
 
+  if (statusCode.value === "PENDING_PROCEDURE") {
+    closeModal("editorFechaHora");
+    openModal("confirmacionReserva", {
+      appointment: apt,
+      scheduledDate: selectedDate.value,
+      scheduledTime: formatTimeForApi(selectedTime.value),
+    });
+    return;
+  }
+
   isSaving.value = true;
   apiError.value = "";
 

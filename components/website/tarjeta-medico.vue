@@ -1,8 +1,8 @@
 <template>
-  <div class="medico-card">
+  <div v-if="supplier" class="medico-card">
     <NuxtLink
       :to="{
-        path: `/perfiles/doctor/${medico.id}`,
+        path: `/perfiles/doctor/${supplier.id}`,
         query: queryParams,
       }"
       class="medico-card__link"
@@ -12,14 +12,14 @@
           <div class="medico-card__profile">
             <img
               :src="
-                medico.profile_picture_url || '/_nuxt/src/assets/picture.svg'
+                supplier.profile_picture_url || '/_nuxt/src/assets/picture.svg'
               "
               alt=""
               class="medico-card__avatar"
             />
             <div class="medico-card__score">
               <p class="medico-card__rating">
-                {{ medico.stars_by_supplier?.toFixed(1) || 0 }}
+                {{ supplier.stars_by_supplier?.toFixed(1) || 0 }}
               </p>
               <img
                 src="@/src/assets/star.svg"
@@ -32,22 +32,14 @@
           <div class="medico-card__info">
             <div class="medico-card__name-container">
               <p class="medico-card__name">
-                {{ medico.name }}
+                {{ supplier.name }}
               </p>
               <div>
                 <button
                   class="medico-card__favorite-button"
-                  :class="{ 'is-favorite': medico.is_favorite }"
                   @click.prevent.stop="toggleFavorite"
                 >
-                  <AtomsIconsBookmarkFilledIcon
-                    v-if="medico.is_favorite"
-                    class="medico-card__favorite-icon"
-                  />
-                  <AtomsIconsBookmarkIcon
-                    v-else
-                    class="medico-card__favorite-icon"
-                  />
+                  <AtomsIconsBookmarkIcon class="medico-card__favorite-icon" />
                 </button>
               </div>
             </div>
@@ -59,7 +51,7 @@
                 class="medico-card__icon"
               />
               <p class="medico-card__description">
-                {{ medico.description }}
+                {{ supplier.description }}
               </p>
             </div>
 
@@ -70,9 +62,9 @@
                 class="medico-card__icon"
               />
               <p class="medico-card__location-text">
-                {{ medico.location_number }}
+                {{ supplier.location_number }}
                 {{
-                  medico.location_number === 1
+                  supplier.location_number === 1
                     ? "Hospital"
                     : "Hospitales diferentes"
                 }}
@@ -90,7 +82,7 @@
               class="medico-card__availability-icon"
             />
             <p class="medico-card__availability-date">
-              {{ medico.date_availability }}
+              {{ supplier.date_availability }}
             </p>
           </div>
           <div class="medico-card__availability-item">
@@ -100,14 +92,14 @@
               class="medico-card__availability-icon"
             />
             <p class="medico-card__availability-time">
-              {{ medico.hour_availability }}
+              {{ supplier.hour_availability }}
             </p>
           </div>
         </div>
 
         <div class="medico-card__tags">
           <span
-            v-for="service in medico.services_names"
+            v-for="service in supplier.services_names"
             :key="service"
             class="medico-card__tag"
           >
@@ -117,15 +109,29 @@
 
         <div class="medico-card__footer">
           <div class="medico-card__price">
-            <p class="medico-card__price-value">
+            <p
+              v-if="costOfAssessmentAppointmentsFrom"
+              class="medico-card__price-value"
+            >
               {{
-                formatCurrency(displayPrice, {
+                formatCurrency(costOfAssessmentAppointmentsFrom, {
                   decimalPlaces: 0,
                 })
               }}
             </p>
+            <p
+              v-else
+              class="medico-card__price-value medico-card__price-value--consult"
+            >
+              Precio a consultar
+            </p>
+
             <p class="medico-card__price-description">
-              {{ priceDescription }}
+              {{
+                costOfAssessmentAppointmentsFrom
+                  ? "costo citas de valoración desde"
+                  : "valoración inicial"
+              }}
             </p>
           </div>
 
@@ -133,7 +139,7 @@
             class="medico-card__packages-button"
             @click.prevent.stop="getDoctorData"
           >
-            Ver paquetes
+            Ver paquetes y citas de valoración
             <AtomsIconsChevronRightIcon class="medico-card__arrow-icon" />
           </button>
         </div>
@@ -142,53 +148,92 @@
   </div>
 </template>
 
-<script setup>
-const props = defineProps({
-  medico: {
-    type: Object,
-    required: true,
-  },
-  queryParams: Object,
-});
+<script setup lang="ts">
+import { usePackage } from "@/composables/api";
+import type { LocationQueryRaw } from "vue-router";
 
-console.log(props.medico);
+const props = defineProps<{
+  supplier: ISupplierMain;
+  queryParams?: LocationQueryRaw;
+}>();
 
-const emit = defineEmits(["toggle-favorite", "show-packages"]);
+const { getAllPackages } = usePackage();
+const toast = useToast();
+const logger = useLogger();
 
-const route = useRoute();
+const costOfAssessmentAppointmentsFrom = ref<string | null>(null);
+
+const emit = defineEmits<{
+  (e: "toggle-favorite", doctorId: ISupplierMain["id"]): void;
+  (e: "show-packages", payload: { selectedSupplier: ISupplierMain }): void;
+}>();
 
 const { formatCurrency } = useFormat();
 
-const searchProcedureCode = computed(() => route.query.procedure_code);
+const toggleFavorite = (): void => {
+  emit("toggle-favorite", props.supplier.id);
+};
 
-const displayPrice = computed(() => {
-  return props.medico.search_reference_price;
-});
+const getDoctorData = (): void => {
+  emit("show-packages", { selectedSupplier: props.supplier });
+};
 
-const priceDescription = computed(() => {
-  if (searchProcedureCode.value) {
-    return "Cita de Valoración";
-  } else {
-    return "Costo Cita de Valoración";
+async function executeGetAllPackagesBySupplierId() {
+  const supplierId = props.supplier.id;
+  if (!supplierId) {
+    toast.error("ID del proveedor no encontrado");
+    return;
   }
+
+  try {
+    const { data, error } = await getAllPackages(supplierId);
+
+    if (error || !data) {
+      const errorMessage =
+        error?.info || "Error desconocido al obtener paquetes";
+      logger.error("Failed to fetch packages", { info: errorMessage });
+      toast.error(errorMessage);
+      return;
+    }
+
+    if (data.length === 0) {
+      logger.debug("No packages found for this supplier");
+      return;
+    }
+
+    logger.debug("[PACKAGES]", { data });
+
+    const lowestProductValue2 = data.reduce((minPkg, currentPkg) => {
+      const currentPrice = parseFloat(currentPkg.product.value1 || "0");
+      const minPrice = parseFloat(minPkg.product.value1 || "0");
+
+      return currentPrice < minPrice ? currentPkg : minPkg;
+    }).product.value2;
+
+    costOfAssessmentAppointmentsFrom.value = lowestProductValue2;
+  } catch (err) {
+    logger.error("Unexpected error in executeGetAllPackagesBySupplierId", {
+      error: err,
+    });
+    toast.error("Error inesperado al cargar los paquetes");
+  }
+}
+
+onMounted(() => {
+  executeGetAllPackagesBySupplierId();
 });
-
-const toggleFavorite = () => {
-  emit("toggle-favorite", props.medico.id);
-};
-
-const getDoctorData = () => {
-  emit("show-packages", { selectedSupplier: props.medico });
-};
 </script>
 
 <style lang="scss" scoped>
 .medico-card {
+  display: flex;
+  flex-direction: column;
   background-color: #ffffff;
   border: 1px solid #f1f3f7;
   border-radius: 16px;
   padding: 15px;
   max-width: 420px;
+  height: 100%;
 
   @include respond-to(sm) {
     border-radius: 20px;
@@ -451,11 +496,25 @@ const getDoctorData = () => {
     }
   }
 
+  &__link {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    text-decoration: none;
+  }
+
+  &__body {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+  }
+
   &__tags {
     display: flex;
     flex-wrap: wrap;
     gap: 5px;
     margin-top: 15px;
+    margin-bottom: auto;
 
     @include respond-to(md) {
       gap: 6.3px;
@@ -555,6 +614,7 @@ const getDoctorData = () => {
     padding: 8px 16px;
     border: 1px solid #3541b4;
     border-radius: 8px;
+    text-align: left;
 
     @include respond-to(sm) {
       padding: 0;

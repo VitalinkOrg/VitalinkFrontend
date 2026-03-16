@@ -91,11 +91,7 @@
           <tr>
             <td class="payment-successes-modal__table--label">Monto Pagado:</td>
             <td class="payment-successes-modal__table--value">
-              {{
-                appointment.appointment_type.code === "VALORATION_APPOINTMENT"
-                  ? formatCurrency(18000)
-                  : formatCurrency(appointment.price_procedure)
-              }}
+              {{ displayPrice }}
             </td>
           </tr>
         </tbody>
@@ -134,6 +130,17 @@ interface Emits {
 
 const props = defineProps<Props>();
 const emit = defineEmits<Emits>();
+
+const displayPrice = computed(() => {
+  const isValoration =
+    props.appointment?.appointment_type?.code === "VALORATION_APPOINTMENT";
+
+  const amount = isValoration
+    ? props.appointment?.package?.product?.value2
+    : props.appointment?.price_procedure;
+
+  return formatCurrency(amount ?? 0, { decimalPlaces: 0 });
+});
 
 const isModalOpen = computed({
   get: () => props.isOpen,

@@ -1,43 +1,56 @@
 <template>
   <AtomsModalBase
-    :is-open="isModalOpen"
+    :is-open="isVisible"
     size="extra-small"
-    class="confirmar-codigo"
-    @close="handleCloseModal"
+    class="credit-confirmation"
+    role="alertdialog"
+    aria-labelledby="credit-confirmation-title"
+    aria-describedby="credit-confirmation-description"
+    @close="dismiss"
   >
-    <div class="confirmar-codigo__content">
-      <h2 class="confirmar-codigo__title">Confirmar uso de código</h2>
+    <div class="credit-confirmation__body">
+      <h2 id="credit-confirmation-title" class="credit-confirmation__heading">
+        Confirmar uso de código
+      </h2>
 
-      <p class="confirmar-codigo__message">
+      <p
+        id="credit-confirmation-description"
+        class="credit-confirmation__description"
+      >
         ¿Desea confirmar el canje del código válido por un crédito de
-        <strong class="confirmar-codigo__amount">{{
-          formatCurrency(creditAmount, { decimalPlaces: 0 })
-        }}</strong
+        <strong class="credit-confirmation__amount">
+          {{ formatCurrency(approvedAmount, { decimalPlaces: 0 }) }} </strong
         >?
       </p>
 
-      <div v-if="errorMessage" class="confirmar-codigo__error">
-        {{ errorMessage }}
+      <div
+        v-if="errorFeedback"
+        class="credit-confirmation__alert"
+        role="alert"
+        aria-live="assertive"
+      >
+        {{ errorFeedback }}
       </div>
     </div>
 
     <template #footer>
-      <div class="confirmar-codigo__actions">
+      <div class="credit-confirmation__actions">
         <button
-          class="confirmar-codigo__button confirmar-codigo__button--outline"
-          @click="handleCloseModal"
-          :disabled="isLoading"
+          class="credit-confirmation__action credit-confirmation__action--secondary"
+          :disabled="isProcessing"
           aria-label="Cancelar confirmación"
+          @click="dismiss"
         >
           No
         </button>
         <button
-          class="confirmar-codigo__button confirmar-codigo__button--primary"
-          @click="handleConfirm"
-          :disabled="isLoading"
+          class="credit-confirmation__action credit-confirmation__action--primary"
+          :disabled="isProcessing"
+          :aria-busy="isProcessing"
           aria-label="Confirmar uso de código"
+          @click="confirmCreditUsage"
         >
-          {{ isLoading ? "Procesando..." : "Sí" }}
+          {{ isProcessing ? "Procesando..." : "Sí" }}
         </button>
       </div>
     </template>
@@ -48,93 +61,96 @@
 import { useAppointmentCredit } from "@/composables/api";
 import { useMedicalModalManager } from "@/composables/useMedicalModalManager";
 
-interface ModalData {
+interface CreditConfirmationPayload {
   creditId: number;
   creditAmount: number;
   onSuccess?: () => void;
 }
 
+const MODAL_KEY = "confirmarCodigo" as const;
+
 const { isOpen, closeModal, getSharedData } = useMedicalModalManager();
 const { updateAppointmentCredit } = useAppointmentCredit();
 const { formatCurrency } = useFormat();
+const toast = useToast();
 
 const refreshAppointments = inject<() => Promise<void>>("refreshAppointments");
 
-const isModalOpen = computed(() => isOpen.confirmarCodigo);
+const isVisible = computed(() => isOpen[MODAL_KEY]);
 
-const modalData = computed(() => getSharedData<ModalData>("confirmarCodigo"));
+const sharedPayload = computed(() =>
+  getSharedData<CreditConfirmationPayload>(MODAL_KEY),
+);
 
-const creditId = computed(() => modalData.value?.creditId ?? null);
-const creditAmount = computed(() => modalData.value?.creditAmount ?? 0);
+const creditId = computed(() => sharedPayload.value?.creditId ?? null);
+const approvedAmount = computed(() => sharedPayload.value?.creditAmount ?? 0);
 
-const isLoading = ref<boolean>(false);
-const errorMessage = ref<string>("");
+const isProcessing = ref(false);
+const errorFeedback = ref("");
 
-const handleCloseModal = () => {
-  if (!isLoading.value) {
-    closeModal("confirmarCodigo");
-    resetState();
-  }
-};
+function resetInternalState(): void {
+  isProcessing.value = false;
+  errorFeedback.value = "";
+}
 
-const resetState = () => {
-  isLoading.value = false;
-  errorMessage.value = "";
-};
+function dismiss(): void {
+  if (isProcessing.value) return;
 
-const handleConfirm = async () => {
-  errorMessage.value = "";
+  closeModal(MODAL_KEY);
+  resetInternalState();
+}
+
+async function confirmCreditUsage(): Promise<void> {
+  errorFeedback.value = "";
 
   if (!creditId.value) {
-    errorMessage.value = "No se encontró el crédito a confirmar";
+    errorFeedback.value = "No se encontró el crédito a confirmar.";
     return;
   }
 
+  isProcessing.value = true;
+
   try {
-    isLoading.value = true;
+    const { error } = await updateAppointmentCredit(
+      { already_been_used: 1 },
+      creditId.value,
+    );
 
-    const payload = {
-      already_been_used: 1,
-    };
-
-    const api = updateAppointmentCredit(payload, creditId.value);
-    await api.request();
-
-    if (api.error && api.error.value) {
-      throw new Error(api.error.value.info);
+    if (error) {
+      errorFeedback.value =
+        error.info || "Error al confirmar el uso del crédito.";
+      return;
     }
 
     await refreshAppointments?.();
-
-    modalData.value?.onSuccess?.();
-
-    handleCloseModal();
-  } catch (err: any) {
-    errorMessage.value =
-      "Error al confirmar el uso del crédito. Intente nuevamente.";
-    console.error("Error confirming credit usage:", err);
+    sharedPayload.value?.onSuccess?.();
+    toast.success("Código confirmado exitosamente.");
+    dismiss();
+  } catch {
+    errorFeedback.value =
+      "Error inesperado al confirmar el crédito. Intente nuevamente.";
   } finally {
-    isLoading.value = false;
+    isProcessing.value = false;
   }
-};
+}
 
-watch(isModalOpen, (newValue) => {
-  if (!newValue) {
-    resetState();
+watch(isVisible, (opened) => {
+  if (!opened) {
+    resetInternalState();
   }
 });
 </script>
 
 <style lang="scss" scoped>
-.confirmar-codigo {
-  &__content {
+.credit-confirmation {
+  &__body {
     padding: 1.5rem;
     display: flex;
     flex-direction: column;
     gap: 1rem;
   }
 
-  &__title {
+  &__heading {
     @include label-base;
     font-weight: 600;
     font-size: 1.5rem;
@@ -143,7 +159,7 @@ watch(isModalOpen, (newValue) => {
     margin: 0;
   }
 
-  &__message {
+  &__description {
     @include label-base;
     font-weight: 500;
     font-size: 0.875rem;
@@ -157,7 +173,7 @@ watch(isModalOpen, (newValue) => {
     color: $color-foreground;
   }
 
-  &__error {
+  &__alert {
     @include label-base;
     color: #dc2626;
     font-size: 0.875rem;
@@ -176,10 +192,11 @@ watch(isModalOpen, (newValue) => {
     gap: 0.75rem;
   }
 
-  &__button {
-    &--outline {
+  &__action {
+    flex: 1;
+
+    &--secondary {
       @include outline-button;
-      flex: 1;
 
       &:disabled {
         opacity: 0.6;
@@ -189,7 +206,6 @@ watch(isModalOpen, (newValue) => {
 
     &--primary {
       @include primary-button;
-      flex: 1;
 
       &:disabled {
         opacity: 0.6;
