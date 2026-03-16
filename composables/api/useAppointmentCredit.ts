@@ -1,12 +1,6 @@
 import { useLogger } from "@/composables/useLogger";
 import useApi from "./useApi";
 
-interface AppointmentCreditPayload {
-  appointment?: number;
-  already_been_used?: number;
-  credit_status?: string;
-}
-
 export const useAppointmentCredit = () => {
   const { getToken } = useAuthToken();
   const logger = useLogger("useAppointment");
@@ -95,7 +89,7 @@ export const useAppointmentCredit = () => {
       "appointmentcredit/edit",
       {
         method: "PUT",
-        body: JSON.stringify(payload),
+        body: payload,
         query: { id: appointmentId },
       },
     );
