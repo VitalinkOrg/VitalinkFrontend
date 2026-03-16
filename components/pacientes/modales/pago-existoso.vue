@@ -136,7 +136,9 @@ const displayPrice = computed(() => {
     props.appointment?.appointment_type?.code === "VALORATION_APPOINTMENT";
 
   const amount = isValoration
-    ? props.appointment?.package?.product?.value2
+    ? props.appointment.package.discount
+      ? props.appointment.package.discount
+      : Number(props.appointment?.package?.product?.value2)
     : props.appointment?.price_procedure;
 
   return formatCurrency(amount ?? 0, { decimalPlaces: 0 });
