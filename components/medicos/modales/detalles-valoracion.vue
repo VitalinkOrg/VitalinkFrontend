@@ -653,7 +653,7 @@ const openValorationConfirmation = async () => {
     recommendation: form.recommendation,
     diagnostic: form.diagnostic,
     proformaFileName: form.proformaFileName,
-    priceProcedure: form.priceProcedure,
+    priceProcedure: Number(form.priceProcedure),
     proformaCode,
   });
 };

@@ -128,14 +128,8 @@
                 >
                   Precio Vitalink
                 </dt>
-                <dd
-                  class="service-card__valoracion-vitalink"
-                  :class="{
-                    'service-card__valoracion-vitalink--inactive':
-                      !hasVitalinkDiscount,
-                  }"
-                >
-                  {{ hasVitalinkDiscount ? formattedDiscountPrice : "—" }}
+                <dd class="service-card__valoracion-vitalink">
+                  {{ displayDiscountPrice }}
                 </dd>
               </div>
             </dl>
@@ -255,6 +249,17 @@ const productDisplayName = computed(() => {
   const code = props.pack?.product_code;
   if (!code) return "";
   return resolveUdcName(props.productos, code) || code;
+});
+
+const displayDiscountPrice = computed(() => {
+  console.log(props);
+  const rawValue = Number(props.pack?.product_valoration_price ?? 0);
+
+  if (hasVitalinkDiscount.value) {
+    return formattedDiscountPrice.value;
+  }
+
+  return formatCurrency(rawValue);
 });
 
 const formattedReferencePrice = computed(() =>

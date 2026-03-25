@@ -182,7 +182,7 @@
                   class="reservation-form__table-cell reservation-form__table-cell--bold reservation-form__table-cell--amount"
                 >
                   {{
-                    formatCurrency(selectedPackage.discount, {
+                    formatCurrency(displayFinalPrice, {
                       decimalPlaces: 0,
                     })
                   }}
@@ -236,6 +236,15 @@ const setUserDescription = (event: Event) => {
     | "someoneElse";
   emit("set-user-description", description);
 };
+
+const displayFinalPrice = computed(() => {
+  const { product, discount } = props.selectedPackage;
+
+  if (discount === 0) {
+    return Number(product.value2);
+  }
+  return discount;
+});
 
 const toggleAlternativeNumber = (event: Event): void => {
   const isChecked = (event.target as HTMLInputElement).checked;

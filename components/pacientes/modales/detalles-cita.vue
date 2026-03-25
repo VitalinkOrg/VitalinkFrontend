@@ -281,15 +281,22 @@ const serviceCostLabel = computed(() =>
 );
 
 const serviceCostValue = computed(() => {
-  const useProcedurePrice =
-    isProcedureType.value || isValorationCompleted.value;
+  const { appointment } = props;
 
-  const amount = useProcedurePrice
-    ? props.appointment.price_procedure
-    : props.appointment.package?.discount ||
-      props.appointment.package?.product?.value2;
+  const isProcedurePrice = isProcedureType.value || isValorationCompleted.value;
 
-  if (amount === null || amount === undefined) {
+  let amount;
+
+  if (isProcedurePrice) {
+    amount = appointment.price_procedure;
+  } else {
+    const discount = Number(appointment.package?.discount);
+    const basePrice = appointment.package?.product?.value2;
+
+    amount = discount || basePrice;
+  }
+
+  if (amount === null || amount === undefined || amount === "") {
     return "Precio a consultar";
   }
 
@@ -316,12 +323,18 @@ const tableRows = computed((): TablaBaseRow[] => {
     rows.push(
       {
         key: "appointment-date",
-        header: "Fecha de la cita:",
+        header:
+          appt.appointment_type.code === "PROCEDURE_APPOINTMENT"
+            ? "Fecha:"
+            : "Fechade la cita:",
         value: appt.appointment_date ? formatDate(appt.appointment_date) : "—",
       },
       {
         key: "appointment-time",
-        header: "Hora de la cita:",
+        header:
+          appt.appointment_type.code === "PROCEDURE_APPOINTMENT"
+            ? "Hora:"
+            : "Hora de la cita:",
         value: appt.appointment_hour
           ? formatTime(appt.appointment_hour, "hs")
           : "—",
