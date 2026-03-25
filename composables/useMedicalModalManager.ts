@@ -1,5 +1,4 @@
 import { reactive, readonly, ref, type Ref } from "vue";
-import type { Appointment } from "~/types/test-index";
 
 const modalNames = [
   "anularCita",
@@ -25,7 +24,7 @@ export type ModalName = (typeof modalNames)[number];
 export interface ModalManager {
   isOpen: Readonly<Record<ModalName, boolean>>;
   sharedData: Readonly<Ref<Record<string, any>>>;
-  appointment: Ref<Appointment | undefined>;
+  appointment: Ref<IAppointment | undefined>;
   refreshAppointments: Ref<(() => Promise<void>) | null>;
   openModal: (name: ModalName, data?: any) => void;
   closeModal: (name: ModalName) => void;
@@ -33,7 +32,7 @@ export interface ModalManager {
   getSharedData: <T = any>(key: string) => T;
   setSharedData: (key: string, value: any) => void;
   clearSharedData: () => void;
-  setAppointment: (appointment: Appointment) => void;
+  setAppointment: (appointment: IAppointment) => void;
   setRefreshAppointments: (fn: (() => Promise<void>) | null) => void;
 }
 
@@ -48,7 +47,7 @@ const modalState = reactive<Record<ModalName, boolean>>(
 );
 
 const sharedData = ref<Record<string, any>>({});
-const appointment = ref<Appointment>();
+const appointment = ref<IAppointment>();
 const refreshAppointments = ref<(() => Promise<void>) | null>(null);
 
 export function useMedicalModalManager(): ModalManager {
@@ -82,7 +81,7 @@ export function useMedicalModalManager(): ModalManager {
     sharedData.value = {};
   };
 
-  const setAppointment = (newAppointment: Appointment): void => {
+  const setAppointment = (newAppointment: IAppointment): void => {
     appointment.value = newAppointment;
   };
 

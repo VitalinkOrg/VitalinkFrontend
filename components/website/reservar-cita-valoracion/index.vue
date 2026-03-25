@@ -231,6 +231,9 @@ const handleConfirmReservation = async () => {
     phone_number_external_user:
       alternativePhoneNumber.value ?? phoneNumber.value,
     procedure_id: props.selectedProcedureId,
+    price_valoration_appointment:
+      Number(props.selectedPackage.product.value2) -
+      props.selectedPackage.discount,
   };
 
   try {

@@ -195,6 +195,11 @@ const displaySubtotal = computed(() =>
 );
 
 const displayDiscount = computed(() => {
+  if (props.appointment.appointment_type.code === "PROCEDURE_APPOINTMENT") {
+    return formatCurrency(0, {
+      decimalPlaces: 0,
+    });
+  }
   const value = formatCurrency(props.appointment.package.discount, {
     decimalPlaces: 0,
   });

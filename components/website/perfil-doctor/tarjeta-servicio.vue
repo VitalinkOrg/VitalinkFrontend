@@ -102,6 +102,16 @@ const formattedDiscountPrice = computed<string>(() =>
   safeCurrencyFormat(discountPrice.value),
 );
 
+const displayDiscountPrice = computed(() => {
+  const rawValue = Number(props.pkg?.product?.value2 ?? 0);
+
+  if (hasVitalinkDiscount.value) {
+    return formattedDiscountPrice.value;
+  }
+
+  return safeCurrencyFormat(rawValue);
+});
+
 const effectiveValoracionPrice = computed<number>(() =>
   hasVitalinkDiscount.value ? discountPrice.value : valoracionCost.value,
 );
@@ -145,29 +155,15 @@ const customerInfo = computed<CustomerSummary>(() => ({
 }));
 
 function safeCurrencyFormat(value: number): string {
+  if (!value || isNaN(value)) {
+    console.warn("safeCurrencyFormat recibió un valor no válido:", value);
+  }
+
   try {
-    return formatCurrency(value);
+    return formatCurrency(value, { decimalPlaces: 0 });
   } catch {
     return "₡0.00";
   }
-}
-
-function calculateMonthlyPayment(pkg: IPackage): string {
-  const rawValue =
-    pkg?.discount && pkg.product?.value2
-      ? pkg.product.value2
-      : pkg?.product?.value1;
-
-  if (!rawValue) return "0";
-
-  const price = parseFloat(rawValue);
-  if (isNaN(price) || price <= 0) return "0";
-
-  const MONTHS = 12;
-  const INTEREST_RATE = 1.1;
-  const monthly = (price / MONTHS) * INTEREST_RATE;
-
-  return Math.round(monthly).toLocaleString("es-CR");
 }
 
 function resolveServiceLabel(serviceCode: string): string {
@@ -292,14 +288,8 @@ function closeModal(): void {
                 >
                   Precio Vitalink
                 </dt>
-                <dd
-                  class="service-card__valoracion-vitalink"
-                  :class="{
-                    'service-card__valoracion-vitalink--inactive':
-                      !hasVitalinkDiscount,
-                  }"
-                >
-                  {{ hasVitalinkDiscount ? formattedDiscountPrice : "—" }}
+                <dd class="service-card__valoracion-vitalink">
+                  {{ displayDiscountPrice }}
                 </dd>
               </div>
             </dl>

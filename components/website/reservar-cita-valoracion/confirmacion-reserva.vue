@@ -87,7 +87,11 @@ const formattedServiceCost = computed(() =>
 );
 
 const formattedDiscountPrice = computed(() =>
-  formatCurrency(props.selectedPackage?.discount ?? 0, { decimalPlaces: 0 }),
+  formatCurrency(
+    props.selectedPackage?.discount ||
+      Number(props.selectedPackage?.product.value2),
+    { decimalPlaces: 0 },
+  ),
 );
 
 const appointmentSummaryRows = computed<TablaBaseRow[]>(() => [

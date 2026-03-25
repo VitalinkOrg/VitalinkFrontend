@@ -6,7 +6,7 @@
     @close="closeModal"
   >
     <template #title>
-      <h2 class="payment-successes-modal__header">Reservar una Cita</h2>
+      <h2 class="payment-successes-modal__header">Detalle del pago</h2>
     </template>
     <div class="payment-successes-modal__content">
       <div>
@@ -31,7 +31,7 @@
               Tipo de servicio:
             </td>
             <td class="payment-successes-modal__table--value">
-              Cita de valoración
+              {{ serviceType }}
             </td>
           </tr>
           <tr>
@@ -132,17 +132,31 @@ const props = defineProps<Props>();
 const emit = defineEmits<Emits>();
 
 const displayPrice = computed(() => {
+  const { appointment } = props;
+
   const isValoration =
-    props.appointment?.appointment_type?.code === "VALORATION_APPOINTMENT";
+    appointment?.appointment_type?.code === "VALORATION_APPOINTMENT";
+  const pkg = appointment?.package;
 
-  const amount = isValoration
-    ? props.appointment.package.discount
-      ? props.appointment.package.discount
-      : Number(props.appointment?.package?.product?.value2)
-    : props.appointment?.price_procedure;
+  let amount;
 
-  return formatCurrency(amount ?? 0, { decimalPlaces: 0 });
+  if (isValoration) {
+    amount = Number(pkg?.product?.value2) - pkg?.discount;
+  } else {
+    amount = appointment?.price_procedure;
+  }
+
+  return formatCurrency(Number(amount ?? 0), { decimalPlaces: 0 });
 });
+
+const serviceType = computed(() =>
+  normalizeAppointmentTypeCode(props.appointment.appointment_type.code),
+);
+
+function normalizeAppointmentTypeCode(code: string) {
+  if (code === "VALORATION_APPOINTMENT") return "Cita de Valoración";
+  else if (code === "PROCEDURE_APPOINTMENT") return "Procedimiento";
+}
 
 const isModalOpen = computed({
   get: () => props.isOpen,

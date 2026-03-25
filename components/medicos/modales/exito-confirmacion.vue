@@ -63,10 +63,13 @@ const { formatDate, formatTime, formatCurrency } = useFormat();
 const { isOpen, closeModal, getSharedData } = useMedicalModalManager();
 
 const modalData = computed(() =>
-  getSharedData<{ appointment: IAppointment }>("exitoConfirmacion"),
+  getSharedData<{ appointment: IAppointment; priceProcedure: number }>(
+    "exitoConfirmacion",
+  ),
 );
 
 const currentAppointment = computed(() => modalData.value?.appointment);
+const priceProcedure = computed(() => modalData.value?.priceProcedure);
 
 const isModalOpen = computed(() => isOpen.exitoConfirmacion);
 
@@ -116,7 +119,7 @@ const appointmentRowsWithData = computed((): TablaBaseRow[] | undefined => {
     {
       key: "costo-servicio",
       header: "Costo del servicio cotizado:",
-      value: formatCurrency(appointment.price_procedure, { decimalPlaces: 0 }),
+      value: formatCurrency(priceProcedure.value, { decimalPlaces: 0 }),
     },
     {
       key: "fecha-solicitud",

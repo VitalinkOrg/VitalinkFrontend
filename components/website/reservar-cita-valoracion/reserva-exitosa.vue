@@ -89,7 +89,7 @@
             <td
               class="successful-reservation__table--value successful-reservation__table--discount"
             >
-              {{ hasVitalinkDiscount ? formattedDiscountPrice : "—" }}
+              {{ displayDiscountPrice }}
             </td>
           </tr>
         </tbody>
@@ -160,10 +160,6 @@ const formattedValoracionCost = computed<string>(() => {
   });
 });
 
-const formattedDiscountPrice = computed<string>(() => {
-  return formatCurrency(discountPrice.value, { decimalPlaces: 0 });
-});
-
 const displaySelectedHour = computed(() => {
   if (props.selectedHour) return formatTime(props.selectedHour ?? "", "hs");
   else return "—";
@@ -172,6 +168,15 @@ const displaySelectedHour = computed(() => {
 const displaySelectedDate = computed(() => {
   if (props.selectedDay) return formatTime(props.selectedHour ?? "", "hs");
   else return "—";
+});
+
+const displayDiscountPrice = computed(() => {
+  if (hasVitalinkDiscount.value)
+    return formatCurrency(discountPrice.value, { decimalPlaces: 0 });
+  else
+    return formatCurrency(Number(props.selectedPackage.product.value2), {
+      decimalPlaces: 0,
+    });
 });
 
 const handleCloseModal = () => {

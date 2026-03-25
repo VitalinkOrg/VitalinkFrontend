@@ -1,3 +1,5 @@
+// components\medicos\modales\confirmacion-valoracion.vue
+
 <template>
   <AtomsModalBase
     :is-open="isVisible"
@@ -103,7 +105,7 @@ function buildProformaPayload(
   data: ValorationSharedData,
 ): IUploadProformaRequest {
   console.log("[PAYLOAD]", {
-    price_procedure: data.priceProcedure,
+    price_procedure: data.priceProcedure, // 1250000
     recommendation_post_appointment: data.recommendation,
     diagnostic: data.diagnostic,
     appointment_result_code: "FIT_FOR_PROCEDURE",
@@ -118,10 +120,13 @@ function buildProformaPayload(
   };
 }
 
-function transitionToSuccessModal(appointment: IAppointment): void {
+function transitionToSuccessModal(data: ValorationSharedData): void {
   dismissModal();
   closeModal("detallesValoracion");
-  openModal("exitoConfirmacion", { appointment });
+  openModal("exitoConfirmacion", {
+    appointment: data.appointment,
+    priceProcedure: data.priceProcedure,
+  });
 }
 
 async function submitValoration(): Promise<void> {
@@ -161,7 +166,7 @@ async function submitValoration(): Promise<void> {
 
     if (data) {
       await refreshAppointments?.();
-      transitionToSuccessModal(currentData.appointment);
+      transitionToSuccessModal(currentData);
     }
   } catch (exception) {
     const errorMessage =
