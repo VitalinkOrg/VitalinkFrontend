@@ -81,7 +81,7 @@ export const usePackage = () => {
     });
 
   const getPackageById = (packageId: number) =>
-    executeRequest<IPackage>("getPackageById", "package/", {
+    executeRequest<IPackage>("getPackageById", "package/get", {
       method: "GET",
       query: { id: packageId },
     });
