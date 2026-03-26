@@ -10,23 +10,12 @@
     <article
       v-else
       class="service-card"
-      :class="{ 'service-card--king': isKingPackage }"
       :aria-label="`Previsualización: ${procedureDisplayName}`"
     >
       <div class="service-card__inner">
         <header class="service-card__header">
-          <span v-if="isKingPackage" aria-hidden="true">
-            <img
-              src="@/src/assets/crown.svg"
-              alt=""
-              class="service-card__header-crown"
-            />
-          </span>
           <h3 class="service-card__header-title">
             {{ procedureDisplayName }}
-            <span v-if="isKingPackage" class="visually-hidden">
-              — Paquete recomendado
-            </span>
           </h3>
         </header>
 
@@ -43,17 +32,6 @@
             <p class="service-card__price">
               <span class="visually-hidden">Precio: </span>
               {{ formattedReferencePrice }}
-            </p>
-
-            <p class="service-card__monthly">
-              Cuotas mensuales desde {{ formattedMonthlyInstallment }}
-            </p>
-
-            <p v-if="hasVitalinkDiscount" class="service-card__discount">
-              Precio original
-              <span class="service-card__discount-value">
-                {{ formattedReferencePrice }}
-              </span>
             </p>
 
             <p class="service-card__disclaimer">
@@ -166,7 +144,6 @@ interface PackData {
 
 interface Props {
   pack: PackData;
-  isKingPackage?: boolean;
   productos?: IUdc[];
   procedures?: IUdc[];
   specialties?: IUdc[];
@@ -174,7 +151,6 @@ interface Props {
 }
 
 const props = withDefaults(defineProps<Props>(), {
-  isKingPackage: false,
   productos: () => [],
   procedures: () => [],
   specialties: () => [],
@@ -344,14 +320,6 @@ const includedServiceNames = computed<string[]>(() => {
     box-shadow: 0 4px 16px 0 rgba(0, 0, 0, 0.1);
   }
 
-  &--king {
-    border: 2px solid $color-primary;
-
-    .service-card__header {
-      color: $color-primary;
-    }
-  }
-
   &__inner {
     display: flex;
     flex-direction: column;
@@ -379,13 +347,6 @@ const includedServiceNames = computed<string[]>(() => {
       display: flex;
       align-items: center;
     }
-  }
-
-  &__header-crown {
-    width: 24px;
-    height: 24px;
-    flex-shrink: 0;
-    object-fit: contain;
   }
 
   &__header-title {

@@ -621,7 +621,8 @@ const toast = useToast();
 const { getAllUdcs, createUdc, updateUdc } = useUdc();
 const { createSupplier, updateSupplier, getSupplierById } = useSupplier();
 const { createMultipleSpecialtiesBySupplier } = useSpecialtyBySupplier();
-const { createPackage, updatePackage, deletePackage } = usePackage();
+const { createPackage, updatePackage, deletePackage, getPackageById } =
+  usePackage();
 const { getAllLocations } = useLocation();
 const { getUserInfo } = useUserInfo();
 const { addDocument } = useDocuments();
@@ -658,6 +659,7 @@ const assessmentDetailsMap = ref<Map<string, string>>(new Map());
 
 const editSupplierDetail = ref<ISupplierDetail | null>(null);
 const existingPackageIds = ref<number[]>([]);
+const deletedPackageIds = ref<Set<number>>(new Set());
 
 const packsList = ref<PackFormItem[]>([createEmptyPack()]);
 
@@ -872,7 +874,11 @@ async function openModal() {
 
   await fetchAllDropdownData();
 
-  if (isEditMode.value && props.selectedSupplierForEdit?.id) {
+  if (
+    isEditMode.value &&
+    props.selectedSupplierForEdit?.id &&
+    !editSupplierDetail.value
+  ) {
     await loadSupplierForEditing(props.selectedSupplierForEdit.id);
   }
 }
@@ -1164,38 +1170,99 @@ async function executeEditSubmission(supplierId: number) {
     currentAvailabilities.value,
   );
 
-  const specialtyCodeToIdMap = new Map<string, number>();
-  const detail = editSupplierDetail.value;
+  let specialtyCodeToIdMap = new Map<string, number>();
 
-  if (detail?.services) {
+  const detail = editSupplierDetail.value;
+  if (detail?.services?.length) {
     for (const svc of detail.services) {
       specialtyCodeToIdMap.set(svc.medical_specialty.code, svc.id);
     }
+    logger.debug("Mapa desde editSupplierDetail", {
+      map: Object.fromEntries(specialtyCodeToIdMap),
+    });
   }
 
-  logger.debug("Mapa specialty_code → service_id desde editSupplierDetail", {
-    map: Object.fromEntries(specialtyCodeToIdMap),
-  });
+  if (specialtyCodeToIdMap.size === 0) {
+    logger.warn(
+      "specialtyCodeToIdMap vacío, recargando detalle del supplier...",
+    );
+    await delay(1000);
+
+    const { data: freshDetail, error: freshError } =
+      await getSupplierById(supplierId);
+
+    if (!freshError && freshDetail?.services?.length) {
+      editSupplierDetail.value = freshDetail;
+      for (const svc of freshDetail.services) {
+        specialtyCodeToIdMap.set(svc.medical_specialty.code, svc.id);
+      }
+      logger.debug("Mapa reconstruido desde API", {
+        map: Object.fromEntries(specialtyCodeToIdMap),
+      });
+    }
+  }
+
+  if (
+    specialtyCodeToIdMap.size === 0 &&
+    doctorForm.selectedSpecialties.length > 0
+  ) {
+    logger.warn("Especialidades no encontradas en el supplier, creándolas...");
+
+    const specialtyPayloads: ICreateSpecialtyBySupplierRequest[] =
+      doctorForm.selectedSpecialties.map((s) => ({
+        supplier_id: supplierId,
+        medical_specialty_code: s.code,
+      }));
+
+    const { data: specData, error: specError } =
+      await createMultipleSpecialtiesBySupplier(specialtyPayloads);
+
+    if (specError) {
+      logger.error("Error al crear especialidades en fallback", {
+        info: specError.info,
+      });
+    }
+
+    if (specData) {
+      specialtyCodeToIdMap = buildSpecialtyMapFromResponse(specData);
+      logger.debug("Mapa construido desde createMultiple", {
+        map: Object.fromEntries(specialtyCodeToIdMap),
+      });
+    }
+
+    if (specialtyCodeToIdMap.size > 0) {
+      await delay(1000);
+    }
+  }
 
   if (specialtyCodeToIdMap.size === 0) {
     throw new Error(
-      "No se pudieron obtener los IDs de specialty_by_supplier desde el detalle del médico.",
+      "No se pudieron obtener los IDs de specialty_by_supplier. " +
+        "Verifica que las especialidades estén correctamente asignadas e intenta nuevamente.",
     );
   }
 
   const currentPackIds = new Set(
     packsList.value.filter((p) => p.id !== undefined).map((p) => p.id!),
   );
+
+  logger.debug("Comparación de packs para eliminación", {
+    existentes: JSON.parse(JSON.stringify(existingPackageIds.value)),
+    actuales: [...currentPackIds],
+    aEliminar: existingPackageIds.value.filter((id) => !currentPackIds.has(id)),
+  });
+
   for (const pkgId of existingPackageIds.value) {
     if (!currentPackIds.has(pkgId)) {
       logger.debug("Eliminando package removido por usuario", { pkgId });
       const { error: delErr } = await deletePackage(pkgId);
       if (delErr) {
-        logger.warn("Error al eliminar package", {
-          packageId: pkgId,
-          info: delErr.info,
-        });
+        throw new Error(
+          `No se pudo eliminar el pack #${pkgId}: ${delErr.info}`,
+        );
       }
+      deletedPackageIds.value.add(pkgId);
+      logger.debug("Package eliminado exitosamente", { pkgId });
       await delay(500);
     }
   }
@@ -1205,9 +1272,13 @@ async function executeEditSubmission(supplierId: number) {
     const specialtyId = specialtyCodeToIdMap.get(pack.specialty_code) ?? 0;
 
     if (specialtyId === 0) {
-      throw new Error(
-        `No se encontró el specialty_by_supplier ID para "${pack.specialty_code}".`,
+      logger.warn(
+        `No se encontró specialty_by_supplier_id para "${pack.specialty_code}", omitiendo pack ${i + 1}`,
       );
+      toast.warning(
+        `No se pudo asociar la especialidad del pack ${i + 1}. Verifique la configuración.`,
+      );
+      continue;
     }
 
     if (pack.id) {
@@ -1257,6 +1328,7 @@ async function executeEditSubmission(supplierId: number) {
         continue;
       }
       await delay(1000);
+
       const packagePayload: IPackageCreationRequest = {
         specialty_id: specialtyId,
         procedure_code: pack.procedure_code,
@@ -1453,6 +1525,8 @@ async function loadSupplierForEditing(supplierId: number) {
   isLoadingInitialData.value = true;
 
   try {
+    let detail: ISupplierDetail | null = null;
+
     const { data, error } = await getSupplierById(supplierId);
 
     if (error || !data) {
@@ -1461,10 +1535,45 @@ async function loadSupplierForEditing(supplierId: number) {
       return;
     }
 
-    editSupplierDetail.value = data;
+    detail = data;
+
+    if (!detail.services || detail.services.length === 0) {
+      logger.warn("Supplier cargado sin services, reintentando en 2s...", {
+        supplierId,
+      });
+      await delay(2000);
+
+      const { data: retryData, error: retryError } =
+        await getSupplierById(supplierId);
+
+      if (retryError || !retryData) {
+        logger.error("Reintento fallido al cargar supplier", {
+          info: retryError?.info,
+        });
+        toast.error(
+          "No se pudieron cargar los servicios del médico. Intente nuevamente.",
+        );
+        handleModalClose();
+        return;
+      }
+
+      detail = retryData;
+
+      if (!detail.services || detail.services.length === 0) {
+        logger.warn("Supplier sigue sin services después del reintento", {
+          supplierId,
+        });
+        toast.warning(
+          "El médico no tiene especialidades asignadas aún. Se crearán al guardar.",
+        );
+      }
+    }
+
+    editSupplierDetail.value = detail;
 
     const { data: availData, error: availError } =
       await getAvailabilitiesBySupplier(supplierId);
+
     if (!availError && availData) {
       currentAvailabilities.value = availData;
     } else {
@@ -1474,8 +1583,8 @@ async function loadSupplierForEditing(supplierId: number) {
       currentAvailabilities.value = [];
     }
 
-    await populateFormFromDetail(data);
-    populatePacksFromDetail(data);
+    await populateFormFromDetail(detail);
+    populatePacksFromDetail(detail);
   } catch (err) {
     logger.error("Failed to load supplier", {
       error: err instanceof Error ? err.message : "Unknown",
@@ -1494,17 +1603,23 @@ async function populateFormFromDetail(detail: ISupplierDetail) {
   doctorForm.medicalEnrollmentCode = detail.num_medical_enrollment ?? "";
   doctorForm.medicalTypeCode = (detail.medical_type as IUdc | null)?.code ?? "";
 
-  doctorForm.selectedSpecialties = (detail.services ?? []).map((svc) => ({
-    code: svc.medical_specialty.code,
-    name: svc.medical_specialty.name,
-  }));
-
   if (doctorForm.medicalTypeCode) {
     const fatherCode =
-      MEDICAL_TYPE_SPECIALTY_TYPE_MAP[doctorForm.medicalTypeCode];
-    if (fatherCode) {
-      await fetchSpecialtiesByFatherCode(fatherCode);
-    }
+      MEDICAL_TYPE_SPECIALTY_TYPE_MAP[doctorForm.medicalTypeCode] ??
+      doctorForm.medicalTypeCode;
+    await fetchSpecialtiesByFatherCode(fatherCode);
+  }
+
+  if (detail.services?.length) {
+    doctorForm.selectedSpecialties = detail.services.map((svc) => ({
+      code: svc.medical_specialty.code,
+      name: svc.medical_specialty.name,
+    }));
+  } else {
+    doctorForm.selectedSpecialties = [];
+    logger.warn(
+      "Detail sin services, especialidades quedan vacías para selección manual",
+    );
   }
 
   if (detail.locations?.length > 0) {
@@ -1512,13 +1627,20 @@ async function populateFormFromDetail(detail: ISupplierDetail) {
   }
 }
 
-function populatePacksFromDetail(detail: ISupplierDetail) {
+async function populatePacksFromDetail(detail: ISupplierDetail) {
   const extracted: PackFormItem[] = [];
   const ids: number[] = [];
 
   for (const service of detail.services ?? []) {
     for (const proc of service.procedures ?? []) {
       for (const pkg of proc.packages ?? []) {
+        const { error } = await getPackageById(pkg.id);
+
+        if (error) {
+          logger.debug("Package no encontrado, omitiendo", { pkgId: pkg.id });
+          continue;
+        }
+
         ids.push(pkg.id);
 
         const servicesOffer = pkg.services_offer as IServicesOffer | undefined;
@@ -1542,7 +1664,10 @@ function populatePacksFromDetail(detail: ISupplierDetail) {
     }
   }
 
-  existingPackageIds.value = ids;
+  existingPackageIds.value = [...ids];
+  logger.debug("Snapshot de package IDs originales", {
+    ids: existingPackageIds.value,
+  });
   packsList.value = extracted.length > 0 ? extracted : [createEmptyPack()];
 }
 
@@ -1677,10 +1802,10 @@ async function fetchPreviewCatalogData() {
 }
 
 watch(
-  () => props.selectedSupplierForEdit,
-  (newSupplier) => {
-    if (isEditMode.value && newSupplier?.id && isModalVisible.value) {
-      loadSupplierForEditing(newSupplier.id as number);
+  () => props.selectedSupplierForEdit?.id,
+  (newId, oldId) => {
+    if (newId && newId !== oldId) {
+      editSupplierDetail.value = null;
     }
   },
 );
