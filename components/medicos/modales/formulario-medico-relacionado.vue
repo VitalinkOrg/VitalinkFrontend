@@ -1500,19 +1500,49 @@ async function createProductForPackage(
 
     const { data: createdUdc, error: udcError } = await createUdc(payload);
 
-    if (udcError || !createdUdc) {
-      logger.error("Error al crear producto para package", {
-        info: udcError?.info,
+    if (!udcError && createdUdc) {
+      logger.debug("Producto creado exitosamente", {
+        code: createdUdc.code,
+        name: createdUdc.name,
       });
-      return "";
+      return createdUdc.code;
     }
 
-    logger.debug("Producto creado exitosamente", {
-      code: createdUdc.code,
-      name: createdUdc.name,
+    logger.warn("createUdc falló, buscando UDC existente por code", {
+      code: generatedCode,
+      error: udcError?.info,
     });
 
-    return createdUdc.code;
+    const { data: existingUdcs, error: searchError } = await getAllUdcs(
+      {
+        type: "MEDICAL_PRODUCT",
+        code: generatedCode,
+      } as Partial<IUdcParams>,
+      false,
+    );
+
+    if (!searchError && existingUdcs && existingUdcs.length > 0) {
+      const existing = existingUdcs[0];
+      logger.debug("UDC existente encontrado, reutilizando", {
+        code: existing.code,
+        name: existing.name,
+        id: existing.id,
+      });
+
+      await updateUdc(existing.id, {
+        name: productName,
+        value1: String(pack.reference_price ?? 0),
+        value2: String(pack.product_valoration_price ?? 0),
+      });
+
+      return existing.code;
+    }
+
+    logger.error("No se pudo crear ni encontrar el producto", {
+      code: generatedCode,
+      searchError: searchError?.info,
+    });
+    return "";
   } catch (err) {
     logger.error("Error inesperado al crear producto", {
       error: err instanceof Error ? err.message : "Desconocido",
