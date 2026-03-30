@@ -204,10 +204,7 @@ const sortColumn = ref(props.defaultSortColumn);
 const sortDirection = ref<"asc" | "desc">(props.defaultSortDirection);
 const currentPage = ref(1);
 
-const headingId = computed(() => {
-  const randomId = Math.random().toString(36).substring(2, 11);
-  return `table-heading-${randomId}`;
-});
+const headingId = `table-heading-${Math.random().toString(36).substring(2, 11)}`;
 
 const handleSort = (columnKey: string) => {
   if (sortColumn.value === columnKey) {
@@ -261,7 +258,27 @@ const getSortValue = (item: TableItem, columnKey: string): any => {
 };
 
 const sortedItems = computed(() => {
-  return props.items;
+  if (!sortColumn.value) return props.items;
+
+  return [...props.items].sort((a, b) => {
+    const aVal = getSortValue(a, sortColumn.value);
+    const bVal = getSortValue(b, sortColumn.value);
+
+    if (aVal === bVal) return 0;
+    if (aVal === null || aVal === undefined || aVal === "") return 1;
+    if (bVal === null || bVal === undefined || bVal === "") return -1;
+
+    let comparison = 0;
+    if (aVal instanceof Date && bVal instanceof Date) {
+      comparison = aVal.getTime() - bVal.getTime();
+    } else if (typeof aVal === "number" && typeof bVal === "number") {
+      comparison = aVal - bVal;
+    } else {
+      comparison = String(aVal).localeCompare(String(bVal));
+    }
+
+    return sortDirection.value === "asc" ? comparison : -comparison;
+  });
 });
 
 const totalItems = computed(() => sortedItems.value.length);
