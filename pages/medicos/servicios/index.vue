@@ -1,4 +1,11 @@
 <script lang="ts" setup>
+useSeoMeta({
+  title: "Mis Servicios — Vitalink",
+  description: "Administra los servicios y procedimientos que ofreces como proveedor de salud.",
+  ogTitle: "Mis Servicios — Vitalink",
+  ogDescription: "Administra los servicios y procedimientos que ofreces como proveedor de salud.",
+});
+
 import { jwtDecode } from "jwt-decode";
 import { onMounted, ref } from "vue";
 import { useSupplier } from "~/composables/api";

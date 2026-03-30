@@ -23,15 +23,15 @@
 
     <template #cell-appointment_date="{ value }">
       <time
-        v-if="isValidValue(value)"
-        class="patient-table__text"
-        :datetime="toISODate(value)"
+        :datetime="value ? formatDate(value) : '-'"
+        class="patient-table__datetime"
       >
-        {{ formatDisplayDate(value) }}
+        {{ value ? formatDate(value) : "-" }}
+        <span class="patient-table__time">
+          a las
+          {{ value ? formatTime(value) : "-" }}
+        </span>
       </time>
-      <span v-else class="patient-table__text patient-table__text--empty">
-        —
-      </span>
     </template>
 
     <template #cell-appointment_hour="{ value }">
@@ -206,9 +206,17 @@ import { useAppointmentSummary } from "~/composables/useAppointmentSummary";
 import { useModalController } from "~/composables/useModalController";
 import type { TableColumn } from "../ui/appointment-table-base.vue";
 
+const { formatDate, formatTime } = useFormat();
+
 const NON_CANCELLABLE_STATUSES: ReadonlySet<string> = new Set([
   "CONCRETED_APPOINTMENT",
   "CANCEL_APPOINTMENT",
+]);
+
+const PROCEDURE_CONFIRMED_STATUSES: ReadonlySet<string> = new Set([
+  "CONFIRM_PROCEDURE",
+  "WAITING_PROCEDURE",
+  "CONCRETED_APPOINTMENT",
 ]);
 
 const TABLE_COLUMNS: TableColumn[] = [
@@ -227,12 +235,6 @@ const TABLE_COLUMNS: TableColumn[] = [
     key: "appointment_hour",
     label: "Hora",
     width: "7.5rem",
-  },
-  {
-    key: "procedure",
-    label: "Procedimiento",
-    width: "11.25rem",
-    sortField: "package.procedure.name",
   },
   {
     key: "appointment_qr_code",
@@ -319,6 +321,11 @@ function toISODate(value: string | Date | null | undefined): string {
   } catch {
     return "";
   }
+}
+
+function isProcedureConfirmed(appointment: IAppointment): boolean {
+  const code = appointment.appointment_status?.code;
+  return !!code && PROCEDURE_CONFIRMED_STATUSES.has(code);
 }
 
 function isCancellable(appointment: IAppointment): boolean {
@@ -410,6 +417,20 @@ onBeforeUnmount(() => {
 
   &__actions {
     position: relative;
+  }
+
+  &__datetime {
+    font-family: $font-family-main;
+    font-weight: 300;
+    font-size: 12px;
+    color: #19213d;
+    line-height: 20px;
+  }
+
+  &__time {
+    display: block;
+    color: #6d758f;
+    font-size: 11px;
   }
 
   &__actions-trigger {

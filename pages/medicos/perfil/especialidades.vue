@@ -1,4 +1,11 @@
 <script setup lang="ts">
+useSeoMeta({
+  title: "Especialidades y Procedimientos — Vitalink",
+  description: "Administra tus especialidades médicas y procedimientos disponibles en tu perfil.",
+  ogTitle: "Especialidades y Procedimientos — Vitalink",
+  ogDescription: "Administra tus especialidades médicas y procedimientos disponibles en tu perfil.",
+});
+
 import { useUdc } from "@/composables/api";
 import { useSpecialtyBySupplier } from "~/composables/api/useSpecialtyBySupplier";
 

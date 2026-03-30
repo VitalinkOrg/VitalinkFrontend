@@ -1,4 +1,11 @@
 <script setup>
+useSeoMeta({
+  title: "Mi Perfil — Vitalink Seguros",
+  description: "Edita tu información de perfil como socio financiero en Vitalink.",
+  ogTitle: "Mi Perfil — Vitalink Seguros",
+  ogDescription: "Edita tu información de perfil como socio financiero en Vitalink.",
+});
+
 definePageMeta({
   middleware: ["auth-doctors-hospitals"],
 });

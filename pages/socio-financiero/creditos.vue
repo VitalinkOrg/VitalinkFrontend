@@ -1,4 +1,11 @@
 <script lang="ts" setup>
+useSeoMeta({
+  title: "Créditos y Aprobaciones — Vitalink",
+  description: "Gestiona los créditos y autorizaciones de citas médicas de tus asegurados.",
+  ogTitle: "Créditos y Aprobaciones — Vitalink",
+  ogDescription: "Gestiona los créditos y autorizaciones de citas médicas de tus asegurados.",
+});
+
 import { useAppointmentCredit } from "@/composables/api";
 import { jsPDF } from "jspdf";
 import "jspdf-autotable";

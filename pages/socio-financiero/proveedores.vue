@@ -1,4 +1,11 @@
 <script setup>
+useSeoMeta({
+  title: "Mis Proveedores — Vitalink",
+  description: "Consulta y gestiona tu red de proveedores médicos favoritos en Vitalink.",
+  ogTitle: "Mis Proveedores — Vitalink",
+  ogDescription: "Consulta y gestiona tu red de proveedores médicos favoritos en Vitalink.",
+});
+
 definePageMeta({
   middleware: ["auth-insurances"],
 });

@@ -1,4 +1,11 @@
 <script setup lang="ts">
+useSeoMeta({
+  title: "Notificaciones — Vitalink",
+  description: "Configura tus preferencias de notificaciones en Vitalink.",
+  ogTitle: "Notificaciones — Vitalink",
+  ogDescription: "Configura tus preferencias de notificaciones en Vitalink.",
+});
+
 import { onMounted, ref, watch } from "vue";
 
 definePageMeta({

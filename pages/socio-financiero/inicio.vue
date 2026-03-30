@@ -1,4 +1,11 @@
 <script lang="ts" setup>
+useSeoMeta({
+  title: "Panel Financiero — Vitalink",
+  description: "Monitorea las métricas y actividad de tu cartera de asegurados en Vitalink.",
+  ogTitle: "Panel Financiero — Vitalink",
+  ogDescription: "Monitorea las métricas y actividad de tu cartera de asegurados en Vitalink.",
+});
+
 import { useAppointmentCredit } from "@/composables/api";
 import {
   ArcElement,

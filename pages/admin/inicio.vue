@@ -1,4 +1,11 @@
 <script setup>
+useSeoMeta({
+  title: "Panel de Administración — Vitalink",
+  description: "Gestiona estadísticas y operaciones del sistema desde el panel de administración.",
+  ogTitle: "Panel de Administración — Vitalink",
+  ogDescription: "Gestiona estadísticas y operaciones del sistema desde el panel de administración.",
+});
+
 import { Bar, Doughnut, Line } from "vue-chartjs";
 import {
   Chart as ChartJS,

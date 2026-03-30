@@ -1,4 +1,11 @@
 <script setup>
+useSeoMeta({
+  title: "Privacidad y Seguridad — Vitalink Seguros",
+  description: "Actualiza tu correo y contraseña de acceso a tu cuenta de socio financiero.",
+  ogTitle: "Privacidad y Seguridad — Vitalink Seguros",
+  ogDescription: "Actualiza tu correo y contraseña de acceso a tu cuenta de socio financiero.",
+});
+
 definePageMeta({
   middleware: ["auth-pacientes"],
 });

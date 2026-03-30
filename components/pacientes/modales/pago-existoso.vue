@@ -69,7 +69,12 @@
               Telefono contacto:
             </td>
             <td class="payment-successes-modal__table--value">
-              {{ appointment.customer.phone_number }}
+              {{
+                formatPhone(
+                  appointment.phone_number_external_user ??
+                    appointment.customer.phone_number,
+                )
+              }}
             </td>
           </tr>
           <tr>
@@ -99,8 +104,12 @@
     </div>
     <template #footer>
       <div class="payment-successes-modal__footer">
-        <button class="payment-successes-modal__button--outline">
-          Descargar Comprobante
+        <button
+          class="payment-successes-modal__button--outline"
+          :disabled="isGeneratingPdf"
+          @click="downloadReceipt"
+        >
+          {{ isGeneratingPdf ? "Generando..." : "Descargar Comprobante" }}
         </button>
         <button
           class="payment-successes-modal__button--primary"
@@ -114,9 +123,11 @@
 </template>
 
 <script lang="ts" setup>
+import jsPDF from "jspdf";
+import autoTable from "jspdf-autotable";
 import { useFormat } from "~/composables/useFormat";
 
-const { formatCurrency } = useFormat();
+const { formatCurrency, formatPhone } = useFormat();
 
 interface Props {
   appointment: IAppointment;
@@ -172,6 +183,100 @@ const closeModal = (): void => {
   emit("close-modal", "payAppointment");
   emit("close-modal", "appointmentDetails");
 };
+
+const isGeneratingPdf = ref(false);
+
+async function downloadReceipt() {
+  isGeneratingPdf.value = true;
+
+  try {
+    const { appointment } = props;
+    const doc = new jsPDF();
+
+    const primaryColor: [number, number, number] = [3, 152, 85];
+    const headerBg: [number, number, number] = [236, 253, 243];
+
+    doc.setFillColor(...headerBg);
+    doc.rect(0, 0, 210, 40, "F");
+
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(20);
+    doc.setTextColor(...primaryColor);
+    doc.text("Comprobante de Pago", 105, 18, { align: "center" });
+
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(10);
+    doc.setTextColor(100, 100, 100);
+    doc.text("¡Pago Exitoso y Cita Confirmada!", 105, 28, { align: "center" });
+
+    const issuedDate = new Date().toLocaleDateString("es-CO", {
+      year: "numeric",
+      month: "long",
+      day: "numeric",
+    });
+    doc.setFontSize(9);
+    doc.text(`Emitido el: ${issuedDate}`, 105, 36, { align: "center" });
+
+    const appointmentDate = new Date(
+      appointment.application_date,
+    ).toLocaleDateString("es-CO", {
+      weekday: "long",
+      year: "numeric",
+      month: "long",
+      day: "numeric",
+    });
+
+    const phone =
+      appointment.phone_number_external_user ?? appointment.customer.phone_number;
+
+    autoTable(doc, {
+      startY: 50,
+      head: [["Detalle", "Información"]],
+      body: [
+        ["Tipo de servicio", serviceType.value ?? "—"],
+        ["Fecha de la cita", appointmentDate],
+        ["Hora de la cita", appointment.appointment_hour ?? "—"],
+        ["Paciente titular", appointment.customer.name ?? "—"],
+        ["Teléfono de contacto", formatPhone(phone) ?? "—"],
+        ["Personal médico", appointment.supplier?.name ?? "—"],
+        ["Procedimiento", appointment.package?.procedure?.name ?? "—"],
+        ["Monto pagado", displayPrice.value],
+      ],
+      headStyles: {
+        fillColor: primaryColor,
+        textColor: [255, 255, 255],
+        fontStyle: "bold",
+        fontSize: 10,
+      },
+      bodyStyles: { fontSize: 10 },
+      alternateRowStyles: { fillColor: [248, 250, 255] },
+      columnStyles: {
+        0: { fontStyle: "bold", cellWidth: 70, textColor: [80, 80, 100] },
+        1: { cellWidth: "auto" },
+      },
+      margin: { left: 14, right: 14 },
+    });
+
+    const finalY = (doc as any).lastAutoTable.finalY + 16;
+    doc.setDrawColor(...primaryColor);
+    doc.setLineWidth(0.5);
+    doc.line(14, finalY, 196, finalY);
+
+    doc.setFont("helvetica", "italic");
+    doc.setFontSize(9);
+    doc.setTextColor(150, 150, 150);
+    doc.text("Vitalink — Plataforma de salud digital", 105, finalY + 8, {
+      align: "center",
+    });
+
+    const patientSlug = appointment.customer.name
+      ?.toLowerCase()
+      .replace(/\s+/g, "-");
+    doc.save(`comprobante-pago-${patientSlug}-${Date.now()}.pdf`);
+  } finally {
+    isGeneratingPdf.value = false;
+  }
+}
 </script>
 
 <style lang="scss" scoped>

@@ -95,6 +95,7 @@
 
 <script lang="ts" setup>
 import { useAppointment } from "@/composables/api";
+import { useFormat } from "@/composables/useFormat";
 import { useLogger } from "@/composables/useLogger";
 import { useMedicalModalManager } from "@/composables/useMedicalModalManager";
 
@@ -108,6 +109,7 @@ const refreshAppointments = inject<() => Promise<void>>("refreshAppointments");
 
 const logger = useLogger("ConfirmacionReserva");
 const toast = useToast();
+const { formatDate, formatTime } = useFormat();
 
 const { isOpen, closeModal, getSharedData, openModal } =
   useMedicalModalManager();
@@ -130,6 +132,18 @@ const appointment = computed(() => modalData.value?.appointment);
 const scheduledDate = computed(() => modalData.value?.scheduledDate ?? null);
 
 const scheduledTime = computed(() => modalData.value?.scheduledTime ?? "");
+
+const hasScheduledDateTime = computed(
+  () => scheduledDate.value !== null && scheduledTime.value !== "",
+);
+
+const formattedScheduledDate = computed(() =>
+  scheduledDate.value ? formatDate(scheduledDate.value, "full") : "",
+);
+
+const formattedScheduledTime = computed(() =>
+  scheduledTime.value ? formatTime(scheduledTime.value, "hs") : "",
+);
 
 const statusCode = computed(
   () => appointment.value?.appointment_status?.code ?? "",
@@ -301,6 +315,24 @@ const executeConfirmProcedure = async () => {
   isProcessing.value = true;
 
   try {
+    if (scheduledDate.value && scheduledTime.value) {
+      const { error: updateError } = await updateAppointment(apt.id, {
+        appointment_date: formatDateForApi(scheduledDate.value),
+        appointment_hour: scheduledTime.value,
+      });
+
+      if (updateError) {
+        logger.error("Failed to update procedure schedule", {
+          appointmentId: apt.id,
+          error: updateError.info,
+        });
+        toast.error(
+          "No se pudo actualizar la fecha y hora de la cita. Intenta de nuevo.",
+        );
+        return;
+      }
+    }
+
     const { error } = await confirmProcedure(apt.id);
 
     if (error) {
@@ -415,6 +447,36 @@ const handleClose = () => {
     line-height: 1.5rem;
     color: $color-text-secondary;
     margin: 0;
+  }
+
+  &__schedule {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    padding: 0.75rem 1rem;
+    background-color: #f8f9fc;
+    border-radius: 0.5rem;
+    border: 1px solid #e4e7ec;
+  }
+
+  &__schedule-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  &__schedule-label {
+    @include label-base;
+    font-weight: 500;
+    font-size: 0.875rem;
+    color: $color-text-secondary;
+  }
+
+  &__schedule-value {
+    @include label-base;
+    font-weight: 600;
+    font-size: 0.875rem;
+    color: $color-foreground;
   }
 
   &__warning {

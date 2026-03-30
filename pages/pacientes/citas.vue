@@ -5,6 +5,13 @@ import { useToast } from "@/composables/useToast";
 import { jsPDF } from "jspdf";
 import { computed, onBeforeUnmount, onMounted, provide, ref } from "vue";
 
+useSeoMeta({
+  title: "Mis Citas — Vitalink",
+  description: "Gestiona tus citas médicas en Vitalink.",
+  ogTitle: "Mis Citas — Vitalink",
+  ogDescription: "Consulta y gestiona tus citas médicas.",
+});
+
 definePageMeta({
   middleware: "auth-pacientes",
 });
@@ -303,6 +310,21 @@ function downloadAppointmentsSummary(): void {
       if (appt.package) {
         addField("Procedimiento", appt.package.procedure?.name ?? "");
         addField("Producto", appt.package.product?.name ?? "");
+      }
+
+      const procedureConfirmedStatuses = new Set([
+        "CONFIRM_PROCEDURE",
+        "WAITING_PROCEDURE",
+        "CONCRETED_APPOINTMENT",
+      ]);
+      if (procedureConfirmedStatuses.has(appt.appointment_status?.code ?? "")) {
+        const procedureDateStr = [
+          formatDate(appt.appointment_date),
+          appt.appointment_hour,
+        ]
+          .filter(Boolean)
+          .join(" ");
+        addField("Fecha del procedimiento", procedureDateStr || "N/A");
       }
 
       addField("Estado", appt.appointment_status?.value1 ?? "");

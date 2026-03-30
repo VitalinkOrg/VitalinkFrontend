@@ -1,4 +1,11 @@
 <script lang="ts" setup>
+useSeoMeta({
+  title: "Mi Cuenta — Vitalink",
+  description: "Edita tu información personal y datos de contacto en Vitalink.",
+  ogTitle: "Mi Cuenta — Vitalink",
+  ogDescription: "Edita tu información personal y datos de contacto en Vitalink.",
+});
+
 import type { DropdownItem } from "@/components/ui/dropdown-base.vue";
 import { onClickOutside } from "@vueuse/core";
 import type { UserInformation } from "~/types/test-index";

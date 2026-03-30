@@ -10,23 +10,28 @@ interface ReportColumn {
 const REPORT_COLUMNS: readonly ReportColumn[] = [
   {
     header: "Paciente",
-    width: 40,
+    width: 35,
     extractor: (a) => a.customer?.name ?? "N/A",
   },
   {
+    header: "Médico",
+    width: 35,
+    extractor: (a) => a.supplier?.name ?? "N/A",
+  },
+  {
     header: "Fecha",
-    width: 30,
+    width: 25,
     extractor: (a) => String(a.appointment_date ?? "N/A"),
   },
-  { header: "Hora", width: 25, extractor: (a) => a.appointment_hour ?? "" },
+  { header: "Hora", width: 20, extractor: (a) => a.appointment_hour ?? "" },
   {
     header: "Servicio",
-    width: 45,
+    width: 40,
     extractor: (a) => a.package?.product?.name ?? "N/A",
   },
   {
     header: "Tipo",
-    width: 25,
+    width: 20,
     extractor: (a) => a.appointment_type?.name ?? "N/A",
   },
   {

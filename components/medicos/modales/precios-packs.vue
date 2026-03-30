@@ -155,6 +155,7 @@
             searchable
             :aria-labelledby="`label-services-${packIndex}`"
             @update:model-value="pendingServiceCode = $event as string"
+            clearable
           />
           <button
             type="button"

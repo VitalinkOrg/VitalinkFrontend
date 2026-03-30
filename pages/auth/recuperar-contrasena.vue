@@ -103,6 +103,13 @@
 </template>
 
 <script lang="ts" setup>
+useSeoMeta({
+  title: "Recuperar Contraseña — Vitalink",
+  description: "Restablece tu contraseña de acceso a Vitalink mediante tu correo electrónico.",
+  ogTitle: "Recuperar Contraseña — Vitalink",
+  ogDescription: "Restablece tu contraseña de acceso a Vitalink mediante tu correo electrónico.",
+});
+
 import { useAuth } from "@/composables/api";
 
 const { forgotPassword } = useAuth();

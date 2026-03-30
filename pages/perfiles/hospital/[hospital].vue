@@ -1,4 +1,11 @@
 <script setup>
+useSeoMeta({
+  title: "Perfil del Hospital — Vitalink",
+  description: "Conoce los servicios, especialistas y ubicación del hospital en Vitalink.",
+  ogTitle: "Perfil del Hospital — Vitalink",
+  ogDescription: "Conoce los servicios, especialistas y ubicación del hospital en Vitalink.",
+});
+
 const config = useRuntimeConfig();
 const route = useRoute();
 

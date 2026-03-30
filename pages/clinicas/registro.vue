@@ -280,6 +280,13 @@
 </template>
 
 <script setup>
+useSeoMeta({
+  title: "Registro de Clínica — Vitalink",
+  description: "Registra tu clínica u hospital en la plataforma de salud Vitalink.",
+  ogTitle: "Registro de Clínica — Vitalink",
+  ogDescription: "Registra tu clínica u hospital en la plataforma de salud Vitalink.",
+});
+
 definePageMeta({
   middleware: ["auth-login"],
 });

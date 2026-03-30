@@ -190,6 +190,13 @@
 </template>
 
 <script lang="ts" setup>
+useSeoMeta({
+  title: "Cambiar Contraseña — Vitalink",
+  description: "Actualiza tu contraseña de acceso a Vitalink de forma segura.",
+  ogTitle: "Cambiar Contraseña — Vitalink",
+  ogDescription: "Actualiza tu contraseña de acceso a Vitalink de forma segura.",
+});
+
 import { useAuth } from "@/composables/api";
 
 const route = useRoute();

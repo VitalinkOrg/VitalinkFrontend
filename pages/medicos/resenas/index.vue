@@ -1,4 +1,11 @@
 <script setup>
+useSeoMeta({
+  title: "Mis Reseñas — Vitalink",
+  description: "Consulta las valoraciones y opiniones de tus pacientes en Vitalink.",
+  ogTitle: "Mis Reseñas — Vitalink",
+  ogDescription: "Consulta las valoraciones y opiniones de tus pacientes en Vitalink.",
+});
+
 definePageMeta({
   middleware: ["auth-doctors-hospitals"],
 });

@@ -1,4 +1,11 @@
 <script lang="ts" setup>
+useSeoMeta({
+  title: "Seguimiento de Citas — Vitalink",
+  description: "Gestiona tus citas médicas en Vitalink.",
+  ogTitle: "Seguimiento de Citas — Vitalink",
+  ogDescription: "Consulta y gestiona tus citas médicas.",
+});
+
 definePageMeta({
   middleware: ["auth-doctors-hospitals"],
 });

@@ -1,4 +1,11 @@
 <script setup lang="ts">
+useSeoMeta({
+  title: "Eliminar Cuenta — Vitalink",
+  description: "Solicita la eliminación permanente de tu cuenta de paciente en Vitalink.",
+  ogTitle: "Eliminar Cuenta — Vitalink",
+  ogDescription: "Solicita la eliminación permanente de tu cuenta de paciente en Vitalink.",
+});
+
 import { useAuth } from "@/composables/api";
 
 definePageMeta({
