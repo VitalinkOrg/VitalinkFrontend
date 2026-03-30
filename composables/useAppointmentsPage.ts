@@ -55,6 +55,7 @@ function matchesSearchQuery(appointment: IAppointment, query: string): boolean {
   const normalizedQuery = query.toLowerCase();
   const searchableFields = [
     appointment.customer?.name,
+    appointment.supplier?.name,
     appointment.package?.product?.name,
     appointment.appointment_type?.name,
     appointment.appointment_status?.value1,

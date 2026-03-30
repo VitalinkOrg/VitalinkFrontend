@@ -1,6 +1,12 @@
 import { jsPDF } from "jspdf";
 import autoTable from "jspdf-autotable";
 
+const PROCEDURE_CONFIRMED_STATUSES = new Set([
+  "CONFIRM_PROCEDURE",
+  "WAITING_PROCEDURE",
+  "CONCRETED_APPOINTMENT",
+]);
+
 interface AppointmentSummary {
   qrCode: string;
   patientName: string;
@@ -8,6 +14,7 @@ interface AppointmentSummary {
   date: string;
   time: string;
   procedure: string;
+  procedureDate: string | null;
   status: string;
   reservationType: string;
   cost: string;
@@ -34,6 +41,12 @@ function extractSummary(appointment: IAppointment): AppointmentSummary {
   const isValoration =
     appointment.appointment_type?.code === "VALORATION_APPOINTMENT";
 
+  const statusCode = appointment.appointment_status?.code ?? "";
+  const procedureConfirmed = PROCEDURE_CONFIRMED_STATUSES.has(statusCode);
+  const procedureDate = procedureConfirmed
+    ? `${formatSafeDate(appointment.appointment_date)}${appointment.appointment_hour ? ` ${appointment.appointment_hour}` : ""}`
+    : null;
+
   return {
     qrCode: appointment.appointment_qr_code ?? "N/A",
     patientName: appointment.customer?.name ?? "N/A",
@@ -41,6 +54,7 @@ function extractSummary(appointment: IAppointment): AppointmentSummary {
     date: formatSafeDate(appointment.appointment_date),
     time: appointment.appointment_hour ?? "N/A",
     procedure: appointment.package?.procedure?.name ?? "N/A",
+    procedureDate,
     status: appointment.appointment_status?.value1 ?? "N/A",
     reservationType: appointment.reservation_type?.name ?? "N/A",
     cost: isValoration
@@ -100,6 +114,9 @@ function buildLocalPdf(summary: AppointmentSummary): jsPDF {
   writeLine("Fecha", summary.date);
   writeLine("Hora", summary.time);
   writeLine("Procedimiento", summary.procedure);
+  if (summary.procedureDate) {
+    writeLine("Fecha del procedimiento", summary.procedureDate);
+  }
   writeLine("Tipo de Reserva", summary.reservationType);
   y += 4;
 
