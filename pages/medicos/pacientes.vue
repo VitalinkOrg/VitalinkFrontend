@@ -1,4 +1,11 @@
 <script lang="ts" setup>
+useSeoMeta({
+  title: "Mis Pacientes — Vitalink",
+  description: "Consulta y gestiona tu lista de pacientes.",
+  ogTitle: "Mis Pacientes — Vitalink",
+  ogDescription: "Consulta y gestiona tu lista de pacientes.",
+});
+
 import { jsPDF } from "jspdf";
 import "jspdf-autotable";
 import { ref } from "vue";

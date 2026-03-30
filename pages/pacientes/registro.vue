@@ -102,6 +102,13 @@
 </template>
 
 <script lang="ts" setup>
+useSeoMeta({
+  title: "Crear Cuenta — Vitalink",
+  description: "Regístrate como paciente y accede a todos los servicios de Vitalink.",
+  ogTitle: "Crear Cuenta — Vitalink",
+  ogDescription: "Regístrate como paciente y accede a todos los servicios de Vitalink.",
+});
+
 import RegisterWithIdCardWizard from "@/components/pacientes/registro/asistente-registro-cedula.vue";
 import RegisterWithEmailForm from "@/components/pacientes/registro/formulario-registro-correo.vue";
 import RegisterOptionSelector from "@/components/pacientes/registro/selector-opcion-registro.vue";

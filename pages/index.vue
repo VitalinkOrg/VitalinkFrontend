@@ -157,6 +157,13 @@
 </template>
 
 <script setup lang="ts">
+useSeoMeta({
+  title: "Vitalink — Tu plataforma de salud",
+  description: "Encuentra médicos, agenda citas y gestiona tu salud en un solo lugar.",
+  ogTitle: "Vitalink — Tu plataforma de salud",
+  ogDescription: "Encuentra médicos, agenda citas y gestiona tu salud en un solo lugar.",
+});
+
 const scrollToBusqueda = () => {
   const element = document.getElementById("home");
   if (element) {

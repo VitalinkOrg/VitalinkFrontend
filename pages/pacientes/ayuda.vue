@@ -1,4 +1,11 @@
 <script lang="ts" setup>
+useSeoMeta({
+  title: "Ayuda y Soporte — Vitalink",
+  description: "Resuelve tus dudas y contacta al equipo de soporte de Vitalink.",
+  ogTitle: "Ayuda y Soporte — Vitalink",
+  ogDescription: "Resuelve tus dudas y contacta al equipo de soporte de Vitalink.",
+});
+
 const open = ref<boolean>(false);
 const tab = ref<number>(1);
 const claimSentRef = ref<any>(null);

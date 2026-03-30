@@ -101,6 +101,13 @@
 </template>
 
 <script lang="ts" setup>
+useSeoMeta({
+  title: "Iniciar Sesión — Vitalink",
+  description: "Accede a tu cuenta de paciente en Vitalink.",
+  ogTitle: "Iniciar Sesión — Vitalink",
+  ogDescription: "Accede a tu cuenta de paciente en Vitalink.",
+});
+
 import { useAuth, useSupplier } from "@/composables/api";
 import { jwtDecode } from "jwt-decode";
 

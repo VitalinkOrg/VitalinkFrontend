@@ -1,4 +1,11 @@
 <script setup lang="ts">
+useSeoMeta({
+  title: "Educación y Experiencia — Vitalink",
+  description: "Edita tu formación académica, experiencia profesional e idiomas en tu perfil médico.",
+  ogTitle: "Educación y Experiencia — Vitalink",
+  ogDescription: "Edita tu formación académica, experiencia profesional e idiomas en tu perfil médico.",
+});
+
 interface Education {
   id?: number;
   degree: string;

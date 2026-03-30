@@ -150,6 +150,13 @@
 </template>
 
 <script lang="ts" setup>
+useSeoMeta({
+  title: "Iniciar Sesión — Vitalink",
+  description: "Accede a tu cuenta de Vitalink.",
+  ogTitle: "Iniciar Sesión — Vitalink",
+  ogDescription: "Accede a tu cuenta de Vitalink.",
+});
+
 import { useAuth } from "@/composables/api";
 import { useLoginForm } from "@/composables/useLoginForm";
 import { useToast } from "@/composables/useToast";

@@ -1,4 +1,11 @@
 <script setup>
+useSeoMeta({
+  title: "Eliminar Cuenta — Vitalink Seguros",
+  description: "Solicita la eliminación permanente de tu cuenta de socio financiero en Vitalink.",
+  ogTitle: "Eliminar Cuenta — Vitalink Seguros",
+  ogDescription: "Solicita la eliminación permanente de tu cuenta de socio financiero en Vitalink.",
+});
+
 definePageMeta({
   middleware: ["auth-pacientes"],
 });

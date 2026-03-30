@@ -1,5 +1,5 @@
 <template>
-  <NuxtLayout name="web">
+  <NuxtLayout name="socio-autenticacion">
     <main class="insurance-register">
       <img
         src="@/src/assets/background-pattern.svg"
@@ -38,6 +38,15 @@
 </template>
 
 <script lang="ts" setup>
+useSeoMeta({
+  title: "Registro de Socio Financiero — Vitalink",
+  description:
+    "Regístrate como socio financiero en la plataforma de salud Vitalink.",
+  ogTitle: "Registro de Socio Financiero — Vitalink",
+  ogDescription:
+    "Regístrate como socio financiero en la plataforma de salud Vitalink.",
+});
+
 definePageMeta({
   middleware: ["auth-login"],
 });

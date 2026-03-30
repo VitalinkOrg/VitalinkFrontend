@@ -105,6 +105,13 @@
 </template>
 
 <script setup lang="ts">
+useSeoMeta({
+  title: "Comprobante de Pago — Vitalink",
+  description: "Verifica el estado y detalles de tu transacción médica en Vitalink.",
+  ogTitle: "Comprobante de Pago — Vitalink",
+  ogDescription: "Verifica el estado y detalles de tu transacción médica en Vitalink.",
+});
+
 import { onMounted, onUnmounted, ref } from "vue";
 import { useRoute } from "vue-router";
 

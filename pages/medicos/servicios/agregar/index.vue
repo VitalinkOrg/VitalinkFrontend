@@ -1,4 +1,11 @@
 <script lang="ts" setup>
+useSeoMeta({
+  title: "Agregar Servicio — Vitalink",
+  description: "Añade nuevos servicios médicos a tu perfil profesional en Vitalink.",
+  ogTitle: "Agregar Servicio — Vitalink",
+  ogDescription: "Añade nuevos servicios médicos a tu perfil profesional en Vitalink.",
+});
+
 import { useUdc } from "~/composables/api";
 import type { IUdc } from "~/types/test-index";
 

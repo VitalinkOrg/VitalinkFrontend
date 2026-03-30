@@ -1,4 +1,11 @@
 <script setup>
+useSeoMeta({
+  title: "Mis Vauchers — Vitalink",
+  description: "Consulta y utiliza tus vales y descuentos disponibles en Vitalink.",
+  ogTitle: "Mis Vauchers — Vitalink",
+  ogDescription: "Consulta y utiliza tus vales y descuentos disponibles en Vitalink.",
+});
+
 import { ref } from "vue";
 import { useRefreshToken } from "#imports";
 definePageMeta({

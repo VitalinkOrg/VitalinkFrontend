@@ -1,4 +1,11 @@
 <script lang="ts" setup>
+useSeoMeta({
+  title: "Buscar Médicos — Vitalink",
+  description: "Encuentra médicos y especialistas cerca de ti en Vitalink.",
+  ogTitle: "Buscar Médicos — Vitalink",
+  ogDescription: "Encuentra médicos y especialistas cerca de ti en Vitalink.",
+});
+
 import { useSupplier, useUdc } from "@/composables/api";
 import { useLogger } from "@/composables/useLogger";
 import { useToast } from "@/composables/useToast";

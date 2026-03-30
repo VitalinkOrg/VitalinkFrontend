@@ -1,6 +1,13 @@
 <script lang="ts" setup>
-import { Bar } from "vue-chartjs";
+useSeoMeta({
+  title: "Panel Médico — Vitalink",
+  description: "Consulta tus estadísticas y gestiona tu actividad médica en Vitalink.",
+  ogTitle: "Panel Médico — Vitalink",
+  ogDescription: "Consulta tus estadísticas y gestiona tu actividad médica en Vitalink.",
+});
+
 import { useDashboardCharts } from "@/composables/useDashboardCharts";
+import { Bar } from "vue-chartjs";
 
 definePageMeta({
   middleware: ["auth-doctors-hospitals"],
@@ -301,7 +308,9 @@ onUnmounted(() => {
             <div class="history-panel__body">
               <MedicosCitasTable
                 v-if="hasAppointments"
-                :appointments="JSON.parse(JSON.stringify(state.allAppointments))"
+                :appointments="
+                  JSON.parse(JSON.stringify(state.allAppointments))
+                "
                 :use-dropdown="false"
                 aria-label="Tabla de historial de citas"
               />

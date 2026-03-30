@@ -22,6 +22,13 @@
 </template>
 
 <script lang="ts" setup>
+useSeoMeta({
+  title: "Registro Médico — Vitalink",
+  description: "Regístrate como proveedor de salud en la plataforma Vitalink.",
+  ogTitle: "Registro Médico — Vitalink",
+  ogDescription: "Regístrate como proveedor de salud en la plataforma Vitalink.",
+});
+
 import { useAuth, useDocuments } from "@/composables/api";
 import { useFormat } from "@/composables/useFormat";
 import { useLogger } from "@/composables/useLogger";

@@ -382,6 +382,13 @@
 </template>
 
 <script lang="ts" setup>
+useSeoMeta({
+  title: "Mis Médicos — Vitalink",
+  description: "Gestiona el equipo de médicos y especialistas de tu institución en Vitalink.",
+  ogTitle: "Mis Médicos — Vitalink",
+  ogDescription: "Gestiona el equipo de médicos y especialistas de tu institución en Vitalink.",
+});
+
 import { useLocation } from "@/composables/api/useLocation";
 import { useSupplier } from "@/composables/api/useSupplier";
 import { useLogger } from "@/composables/useLogger";

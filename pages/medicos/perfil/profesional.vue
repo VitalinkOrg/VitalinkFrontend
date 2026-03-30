@@ -1,4 +1,11 @@
 <script setup lang="ts">
+useSeoMeta({
+  title: "Perfil Profesional — Vitalink",
+  description: "Actualiza tu información profesional y datos de contacto en Vitalink.",
+  ogTitle: "Perfil Profesional — Vitalink",
+  ogDescription: "Actualiza tu información profesional y datos de contacto en Vitalink.",
+});
+
 import { useDocuments } from "~/composables/api/useDocuments";
 import { useSupplier } from "~/composables/api/useSupplier";
 

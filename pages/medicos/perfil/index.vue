@@ -1,4 +1,11 @@
 <script lang="ts" setup>
+useSeoMeta({
+  title: "Mi Perfil Médico — Vitalink",
+  description: "Edita la información principal de tu perfil como proveedor de salud en Vitalink.",
+  ogTitle: "Mi Perfil Médico — Vitalink",
+  ogDescription: "Edita la información principal de tu perfil como proveedor de salud en Vitalink.",
+});
+
 import type { DropdownItem } from "@/components/ui/dropdown-base.vue";
 import { useSupplier } from "@/composables/api";
 import { onClickOutside } from "@vueuse/core";

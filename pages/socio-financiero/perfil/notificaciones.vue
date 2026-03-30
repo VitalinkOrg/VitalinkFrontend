@@ -1,4 +1,11 @@
 <script setup>
+useSeoMeta({
+  title: "Notificaciones — Vitalink Seguros",
+  description: "Configura tus preferencias de notificaciones como socio financiero en Vitalink.",
+  ogTitle: "Notificaciones — Vitalink Seguros",
+  ogDescription: "Configura tus preferencias de notificaciones como socio financiero en Vitalink.",
+});
+
 definePageMeta({
   middleware: ["auth-pacientes"],
 });

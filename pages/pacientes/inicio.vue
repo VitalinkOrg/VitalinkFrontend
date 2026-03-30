@@ -1,4 +1,11 @@
 <script lang="ts" setup>
+useSeoMeta({
+  title: "Inicio — Vitalink",
+  description: "Explora especialidades médicas y gestiona tu salud desde tu panel personal.",
+  ogTitle: "Inicio — Vitalink",
+  ogDescription: "Explora especialidades médicas y gestiona tu salud desde tu panel personal.",
+});
+
 definePageMeta({
   middleware: ["auth-pacientes"],
 });

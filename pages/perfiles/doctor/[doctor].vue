@@ -1,4 +1,11 @@
 <script lang="ts" setup>
+useSeoMeta({
+  title: "Perfil del Médico — Vitalink",
+  description: "Consulta la información, especialidades y disponibilidad del médico en Vitalink.",
+  ogTitle: "Perfil del Médico — Vitalink",
+  ogDescription: "Consulta la información, especialidades y disponibilidad del médico en Vitalink.",
+});
+
 import { useSupplier } from "@/composables/api";
 
 definePageMeta({
