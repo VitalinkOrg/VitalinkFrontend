@@ -268,7 +268,7 @@
       >
         <template v-if="isPendingConfirmation">
           <button
-            v-if="appointment.appointment_status.code === 'PENDING_PROCEDURE'"
+            v-if="appointment.appointment_status.code === 'CONFIRM_PROCEDURE'"
             class="details-modal__action details-modal__action--outline details-modal__action--full"
             @click="openReschedule"
           >
@@ -557,7 +557,7 @@ const detailRows = computed((): TablaBaseRow[] => {
     },
   ];
 
-  if (isPendingValoration.value) {
+  if (isPendingValoration.value || statusCode.value === "PENDING_PROCEDURE") {
     rows.push({
       key: "programar-cita",
       header: "Programar cita:",
@@ -629,7 +629,10 @@ const openReservationConfirmation = () => {
     appointment: appointment.value,
   };
 
-  if (isPendingValoration.value && hasScheduleCompleted.value) {
+  const isSchedulingStatus =
+    isPendingValoration.value || statusCode.value === "PENDING_PROCEDURE";
+
+  if (isSchedulingStatus && hasScheduleCompleted.value) {
     payload.scheduledDate = scheduledDate.value;
     payload.scheduledTime = scheduledTime.value;
   }

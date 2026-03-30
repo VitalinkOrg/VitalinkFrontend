@@ -1313,6 +1313,11 @@ async function executeEditSubmission(supplierId: number) {
       logger.debug(`Payload updatePackage (pack ${i + 1}):`, {
         packUpdatePayload,
       });
+
+      logger.debug(`Services offer del pack ${i + 1}:`, {
+        services_offer: pack.services_offer,
+        raw: JSON.parse(JSON.stringify(pack.services_offer)),
+      });
       const { error: updErr } = await updatePackage(pack.id, packUpdatePayload);
       if (updErr) {
         logger.warn(`Error al actualizar pack ${i + 1}`, {

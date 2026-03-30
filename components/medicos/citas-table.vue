@@ -59,6 +59,12 @@
         </span>
       </template>
 
+      <template #cell-doctor_name="{ item }">
+        <span class="appointments-table__doctor-name">
+          {{ item.supplier?.name ?? "—" }}
+        </span>
+      </template>
+
       <template #cell-appointment_date="{ item }">
         <div v-if="item.appointment_date && item.appointment_hour">
           <time
@@ -393,8 +399,14 @@ const dynamicColumns = computed<TableColumn[]>(() => {
     {
       key: "patient_name",
       label: "Nombre del paciente",
-      width: props.useDropdown ? "160px" : "200px",
+      width: props.useDropdown ? "150px" : "180px",
       sortField: "customer.name",
+    },
+    {
+      key: "doctor_name",
+      label: "Médico",
+      width: props.useDropdown ? "140px" : "160px",
+      sortField: "supplier.name",
     },
     {
       key: "appointment_date",
@@ -404,7 +416,7 @@ const dynamicColumns = computed<TableColumn[]>(() => {
     {
       key: "procedure_name",
       label: "Procedimiento",
-      width: props.useDropdown ? "150px" : "200px",
+      width: props.useDropdown ? "140px" : "180px",
       sortField: "package.procedure.name",
     },
   );
@@ -541,6 +553,7 @@ const downloadSummary = (appointment: IAppointment): void => {
   };
 
   addField("Paciente", appointment.customer.name);
+  addField("Médico", appointment.supplier?.name || "N/A");
   addField("Tipo de Reserva", appointment.reservation_type.name);
   addField(
     "Fecha de la cita",
@@ -613,6 +626,7 @@ watch(
 
 .appointments-table {
   &__patient-name,
+  &__doctor-name,
   &__procedure,
   &__reservation-type,
   &__datetime {

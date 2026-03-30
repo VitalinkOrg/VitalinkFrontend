@@ -6,96 +6,13 @@
     header-class="header-border-bottom"
     footer-class="footer-border-top"
   >
-    <div class="schedule-procedure-modal__content">
+    <template #title>
       <h2 class="schedule-procedure-modal__title">
         Reservar Procedimiento Médico
       </h2>
-
-      <MedicosTablaDetallesCita :rows="tableRows">
-        <template #data-appointment-date>
-          <div class="schedule-procedure-modal__dropdown dropdown">
-            <button
-              class="schedule-procedure-modal__dropdown-button dropdown-toggle"
-              type="button"
-              id="dateDropdown"
-              data-bs-toggle="dropdown"
-              data-bs-auto-close="true"
-              aria-expanded="false"
-              :disabled="isLoading"
-            >
-              <AtomsIconsCalendarIcon />
-              <span>{{ selectedDate || "Seleccionar fecha" }}</span>
-              <svg
-                class="schedule-procedure-modal__dropdown-arrow"
-                viewBox="0 0 20 20"
-                fill="currentColor"
-              >
-                <path
-                  fill-rule="evenodd"
-                  d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0-1.414z"
-                  clip-rule="evenodd"
-                />
-              </svg>
-            </button>
-            <ul
-              class="dropdown-menu schedule-procedure-modal__dropdown-menu"
-              aria-labelledby="dateDropdown"
-            >
-              <li v-for="date in availableDates" :key="date">
-                <a
-                  class="schedule-procedure-modal__dropdown-item"
-                  href="#"
-                  @click.prevent="selectDate(date)"
-                >
-                  {{ formatDisplayDate(date) }}
-                </a>
-              </li>
-            </ul>
-          </div>
-        </template>
-
-        <template #data-appointment-time>
-          <div class="schedule-procedure-modal__dropdown dropdown">
-            <button
-              class="schedule-procedure-modal__dropdown-button dropdown-toggle"
-              type="button"
-              id="timeDropdown"
-              data-bs-toggle="dropdown"
-              data-bs-auto-close="true"
-              aria-expanded="false"
-              :disabled="!selectedDate || isLoading"
-            >
-              <AtomsIconsClockIcon />
-              <span>{{ selectedTime || "Seleccionar hora" }}</span>
-              <svg
-                class="schedule-procedure-modal__dropdown-arrow"
-                viewBox="0 0 20 20"
-                fill="currentColor"
-              >
-                <path
-                  fill-rule="evenodd"
-                  d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0-1.414z"
-                  clip-rule="evenodd"
-                />
-              </svg>
-            </button>
-            <ul
-              class="dropdown-menu schedule-procedure-modal__dropdown-menu"
-              aria-labelledby="timeDropdown"
-            >
-              <li v-for="time in availableTimes" :key="time">
-                <a
-                  class="schedule-procedure-modal__dropdown-item"
-                  href="#"
-                  @click.prevent="selectTime(time)"
-                >
-                  {{ time }}
-                </a>
-              </li>
-            </ul>
-          </div>
-        </template>
-      </MedicosTablaDetallesCita>
+    </template>
+    <div class="schedule-procedure-modal__content">
+      <MedicosTablaDetallesCita :rows="tableRows" />
     </div>
     <template #footer>
       <div class="schedule-procedure-modal__footer">
@@ -109,7 +26,7 @@
         <button
           class="schedule-procedure-modal__button--primary"
           @click="handleConfirmReservation"
-          :disabled="!selectedDate || !selectedTime || isLoading"
+          :disabled="isLoading"
         >
           <span v-if="!isLoading">Confirmar reserva</span>
           <span v-else class="schedule-procedure-modal__loading">
@@ -256,19 +173,6 @@ const tableRows = computed((): TablaBaseRow[] => {
     );
   }
 
-  rows.push(
-    {
-      key: "appointment-date",
-      header: "Fecha de la cita:",
-      value: "",
-    },
-    {
-      key: "appointment-time",
-      header: "Hora de la cita:",
-      value: "",
-    },
-  );
-
   return rows;
 });
 
@@ -321,10 +225,6 @@ const selectTime = (time: string) => {
 };
 
 const handleConfirmReservation = async () => {
-  if (!selectedDate.value || !selectedTime.value) {
-    return;
-  }
-
   isLoading.value = true;
 
   try {
@@ -340,8 +240,8 @@ const handleConfirmReservation = async () => {
           id: props.appointment.id,
         },
         body: {
-          proposed_date: selectedDate.value,
-          proposed_time: selectedTime.value,
+          proposed_date: null,
+          proposed_time: null,
         },
       },
     );
@@ -388,7 +288,6 @@ watch(
     font-size: 1.125rem;
     line-height: 1.75rem;
     color: $color-foreground;
-    margin-bottom: 1.5rem;
   }
 
   &__dropdown {
