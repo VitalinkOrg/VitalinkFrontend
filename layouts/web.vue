@@ -1,6 +1,6 @@
 <template>
   <WebsiteNavbar v-if="!isAuthenticated" />
-  <PacientesNav v-else="isAuthenticated" />
+  <PacientesNav v-else />
   <slot />
   <UiNotificationToast />
   <WebsiteFooter />
@@ -9,11 +9,6 @@
 
 <script lang="ts" setup>
 const { authenticated } = useAuthState();
-const { getUserInfo } = useUserInfo();
 
-const isAuthenticated = computed(() => {
-  const userInfo = getUserInfo();
-
-  return userInfo && authenticated.value;
-});
+const isAuthenticated = computed(() => authenticated.value);
 </script>
