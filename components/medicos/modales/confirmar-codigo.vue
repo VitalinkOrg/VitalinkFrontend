@@ -89,7 +89,8 @@ const ERROR_MESSAGES = {
   unexpected: "Error inesperado al confirmar el crédito. Intente nuevamente.",
 } as const;
 
-const { isOpen, closeModal, getSharedData } = useMedicalModalManager();
+const { isOpen, closeModal, getSharedData, setSharedData } =
+  useMedicalModalManager();
 const { updateAppointmentCredit } = useAppointmentCredit();
 const { formatCurrency } = useFormat();
 const toast = useToast();
@@ -121,7 +122,6 @@ function handleDismiss(): void {
 
 function closeAllRelatedModals(): void {
   closeModal(MODAL_KEY);
-  closeModal(PARENT_MODAL_KEY);
   clearInternalState();
 }
 
@@ -154,6 +154,21 @@ async function handleConfirmRedemption(): Promise<void> {
         serverInfo: error.info,
       });
       return;
+    }
+
+    const detallesData =
+      getSharedData<{ appointment: IAppointment }>(PARENT_MODAL_KEY);
+    if (detallesData?.appointment?.appointment_credit) {
+      setSharedData(PARENT_MODAL_KEY, {
+        ...detallesData,
+        appointment: {
+          ...detallesData.appointment,
+          appointment_credit: {
+            ...detallesData.appointment.appointment_credit,
+            already_been_used: 1,
+          },
+        },
+      });
     }
 
     await refreshAppointments?.();

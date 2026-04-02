@@ -181,8 +181,9 @@ const isCreditApproved = computed(() => {
 
 const balanceDue = computed(() => {
   if (isValoration.value) {
-    return Number(props.appointment.price_valoration_appointment);
+    return Number(props.appointment.package.discount ?? 0);
   }
+
   return Number(props.appointment.price_procedure) - approvedCreditAmount.value;
 });
 
@@ -196,14 +197,15 @@ const displaySubtotal = computed(() =>
 
 const displayDiscount = computed(() => {
   if (props.appointment.appointment_type.code === "PROCEDURE_APPOINTMENT") {
-    return formatCurrency(0, {
-      decimalPlaces: 0,
-    });
+    return formatCurrency(0, { decimalPlaces: 0 });
   }
-  const value = formatCurrency(props.appointment.package.discount, {
-    decimalPlaces: 0,
-  });
-  return value || "-";
+
+  const value2 = Number(props.appointment.package.product.value2 ?? 0);
+  const vitalink = Number(props.appointment.package.discount ?? 0);
+
+  const discount = value2 - vitalink;
+
+  return formatCurrency(discount, { decimalPlaces: 0 });
 });
 
 const displayCreditAmount = computed(() =>

@@ -238,12 +238,9 @@ const setUserDescription = (event: Event) => {
 };
 
 const displayFinalPrice = computed(() => {
-  const { product, discount } = props.selectedPackage;
+  const { discount } = props.selectedPackage;
 
-  if (discount === 0) {
-    return Number(product.value2);
-  }
-  return discount;
+  return Number(discount ?? 0);
 });
 
 const toggleAlternativeNumber = (event: Event): void => {

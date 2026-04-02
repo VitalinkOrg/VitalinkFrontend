@@ -72,7 +72,7 @@
 
         <template #data-validacion-credito>
           <div
-            v-if="!isCreditAlreadyUsed"
+            v-if="!isCreditAlreadyUsed && !isCreditConfirmed"
             class="credit-validation"
             role="group"
             aria-labelledby="credit-validation-heading"

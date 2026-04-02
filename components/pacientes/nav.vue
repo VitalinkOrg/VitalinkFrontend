@@ -109,29 +109,6 @@ const hiddenDropdownItems = computed(
 const customDropdownUrls = computed(
   () => DROPDOWN_CONFIG[currentRole.value]?.urls || {},
 );
-
-onMounted(() => {
-  checkSession();
-});
-
-function isTokenExpired(token: string): boolean {
-  try {
-    const payload = JSON.parse(atob(token.split(".")[1]));
-    return payload.exp * 1000 < Date.now();
-  } catch {
-    return true;
-  }
-}
-
-function checkSession() {
-  const token = getToken();
-
-  if (!token || isTokenExpired(token)) {
-    const loginPath = getLogin();
-    logout();
-    navigateTo(loginPath);
-  }
-}
 </script>
 
 <style lang="scss" scoped>

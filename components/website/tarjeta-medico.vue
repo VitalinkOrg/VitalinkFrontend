@@ -216,14 +216,6 @@ function handleShowPackages(): void {
   emit("show-packages", { selectedSupplier: props.supplier });
 }
 
-function findCheapestPackage(packages: IPackage[]): IPackage {
-  return packages.reduce((cheapest, current) => {
-    const currentValue = parseFloat(current.product.value1 ?? "0");
-    const cheapestValue = parseFloat(cheapest.product.value1 ?? "0");
-    return currentValue < cheapestValue ? current : cheapest;
-  });
-}
-
 async function fetchSupplierPackages(): Promise<void> {
   const supplierId = props.supplier.id;
 
@@ -247,11 +239,39 @@ async function fetchSupplierPackages(): Promise<void> {
       return;
     }
 
-    logger.debug("[SupplierCard] Packages loaded", { count: data.length });
+    const citas = data
+      .map((p) => parseFloat(p.product.value2 ?? "0"))
+      .filter((v) => v > 0);
 
-    const cheapest = findCheapestPackage(data);
-    originalPrice.value = cheapest.product.value2 ?? null;
-    discountedPrice.value = cheapest.discount ?? null;
+    const vitalinks = data
+      .map((p) => parseFloat(String(p.discount ?? 0)))
+      .filter((v) => v > 0);
+
+    const minCita = citas.length ? Math.min(...citas) : null;
+    const minVitalink = vitalinks.length ? Math.min(...vitalinks) : null;
+
+    if (!minCita && !minVitalink) {
+      originalPrice.value = null;
+      discountedPrice.value = null;
+      return;
+    }
+
+    if (minCita && (!minVitalink || minCita < minVitalink)) {
+      originalPrice.value = String(minCita);
+      discountedPrice.value = null;
+      return;
+    }
+
+    if (minCita && minVitalink && minVitalink < minCita) {
+      originalPrice.value = String(minCita);
+      discountedPrice.value = minVitalink;
+      return;
+    }
+
+    if (minVitalink) {
+      originalPrice.value = null;
+      discountedPrice.value = minVitalink;
+    }
   } catch (error) {
     logger.error("Unexpected error fetching supplier packages", { error });
     toast.error("Error inesperado al cargar los paquetes");
