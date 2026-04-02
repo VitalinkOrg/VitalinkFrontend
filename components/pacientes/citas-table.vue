@@ -21,22 +21,16 @@
       </span>
     </template>
 
-    <template #cell-appointment_date="{ value }">
+    <template #cell-appointment_date="{ item }">
       <time
-        :datetime="value ? formatDate(value) : '-'"
+        v-if="item.appointment_date !== null && item.appointment_hour !== null"
         class="patient-table__datetime"
       >
-        {{ value ? formatDate(value) : "-" }}
-        <span class="patient-table__time">
-          a las
-          {{ value ? formatTime(value) : "-" }}
-        </span>
-      </time>
-    </template>
+        {{ formatDate(item.appointment_date) }}
 
-    <template #cell-appointment_hour="{ value }">
-      <time v-if="isValidValue(value)" class="patient-table__text">
-        {{ value }}
+        <span class="patient-table__time">
+          a las {{ formatTime(item.appointment_hour) }}
+        </span>
       </time>
       <span v-else class="patient-table__text patient-table__text--empty">
         —
@@ -228,12 +222,7 @@ const TABLE_COLUMNS: TableColumn[] = [
   },
   {
     key: "appointment_date",
-    label: "Fecha de cita",
-    width: "7.5rem",
-  },
-  {
-    key: "appointment_hour",
-    label: "Hora",
+    label: "Fecha y Hora",
     width: "7.5rem",
   },
   {
