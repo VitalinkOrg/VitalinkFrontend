@@ -159,15 +159,7 @@
                 <td
                   class="reservation-form__table-cell reservation-form__table-cell--amount"
                 >
-                  {{
-                    formatCurrency(
-                      Number(selectedPackage.product.value2) -
-                        selectedPackage.discount,
-                      {
-                        decimalPlaces: 0,
-                      },
-                    )
-                  }}
+                  {{ displayDiscount }}
                 </td>
               </tr>
               <tr
@@ -238,9 +230,25 @@ const setUserDescription = (event: Event) => {
 };
 
 const displayFinalPrice = computed(() => {
-  const { discount } = props.selectedPackage;
+  const { discount, product } = props.selectedPackage;
+
+  if (discount === 0) {
+    return product.value2 ?? 0;
+  }
 
   return Number(discount ?? 0);
+});
+
+const displayDiscount = computed(() => {
+  const { discount, product } = props.selectedPackage;
+
+  if (discount === 0) {
+    return formatCurrency(0, { decimalPlaces: 0 });
+  }
+
+  return formatCurrency(Number(product.value2 ?? 0) - Number(discount ?? 0), {
+    decimalPlaces: 0,
+  });
 });
 
 const toggleAlternativeNumber = (event: Event): void => {

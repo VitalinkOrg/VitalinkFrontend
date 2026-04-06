@@ -152,7 +152,7 @@ const displayPrice = computed(() => {
   let amount;
 
   if (isValoration) {
-    amount = Number(pkg?.product?.value2) - pkg?.discount;
+    amount = pkg?.discount > 0 ? pkg?.discount : Number(pkg?.product?.value2);
   } else {
     amount = appointment?.price_procedure;
   }
@@ -227,7 +227,8 @@ async function downloadReceipt() {
     });
 
     const phone =
-      appointment.phone_number_external_user ?? appointment.customer.phone_number;
+      appointment.phone_number_external_user ??
+      appointment.customer.phone_number;
 
     autoTable(doc, {
       startY: 50,
@@ -240,7 +241,7 @@ async function downloadReceipt() {
         ["Teléfono de contacto", formatPhone(phone) ?? "—"],
         ["Personal médico", appointment.supplier?.name ?? "—"],
         ["Procedimiento", appointment.package?.procedure?.name ?? "—"],
-        ["Monto pagado", displayPrice.value],
+        ["Monto pagado", displayPrice.value.replace("₡", "CRC ")],
       ],
       headStyles: {
         fillColor: primaryColor,
