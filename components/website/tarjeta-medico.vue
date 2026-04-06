@@ -116,7 +116,13 @@
         <footer class="supplier-card__footer">
           <div class="supplier-card__pricing" aria-label="Precio de valoración">
             <div v-if="hasLoadedPricing" class="supplier-card__pricing-amounts">
-              <p class="supplier-card__pricing-original">
+              <p
+                class="supplier-card__pricing-original"
+                :class="{
+                  'supplier-card__pricing-original--line-through':
+                    hasDiscountedPrice,
+                }"
+              >
                 <span class="sr-only">Precio original: </span>
                 {{ formattedOriginalPrice }}
               </p>
@@ -191,6 +197,13 @@ const locationLabel = computed<string>(() =>
 );
 
 const hasLoadedPricing = computed<boolean>(() => originalPrice.value !== null);
+
+const hasDiscountedPrice = computed<boolean>(
+  () =>
+    discountedPrice.value !== null &&
+    parseFloat(String(discountedPrice.value)) <
+      parseFloat(String(originalPrice.value)),
+);
 
 const formattedOriginalPrice = computed<string>(() => {
   if (!originalPrice.value) return "";
@@ -647,8 +660,12 @@ onMounted(fetchSupplierPackages);
     font-weight: 700;
     font-size: 16px;
     line-height: 1.2;
-    color: #6d758f;
-    text-decoration: line-through;
+    color: $color-foreground;
+
+    &--line-through {
+      text-decoration: line-through;
+      color: #6d758f;
+    }
 
     @include respond-to(md) {
       font-size: 18.9px;
@@ -661,7 +678,7 @@ onMounted(fetchSupplierPackages);
     font-weight: 700;
     font-size: 16px;
     line-height: 1.2;
-    color: #353e5c;
+    color: $color-foreground;
 
     @include respond-to(md) {
       font-size: 18.9px;

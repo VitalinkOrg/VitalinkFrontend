@@ -180,11 +180,17 @@ const isCreditApproved = computed(() => {
 });
 
 const balanceDue = computed(() => {
-  if (isValoration.value) {
-    return Number(props.appointment.package.discount ?? 0);
+  if (!isValoration.value) {
+    return (
+      Number(props.appointment.price_procedure) - approvedCreditAmount.value
+    );
   }
 
-  return Number(props.appointment.price_procedure) - approvedCreditAmount.value;
+  if (Number(props.appointment.package.discount) === 0) {
+    return Number(props.appointment.package.product.value2);
+  }
+
+  return Number(props.appointment.package.discount ?? 0);
 });
 
 const canProceedWithPayment = computed(
@@ -202,6 +208,8 @@ const displayDiscount = computed(() => {
 
   const value2 = Number(props.appointment.package.product.value2 ?? 0);
   const vitalink = Number(props.appointment.package.discount ?? 0);
+
+  if (vitalink === 0) return formatCurrency(0, { decimalPlaces: 0 });
 
   const discount = value2 - vitalink;
 
