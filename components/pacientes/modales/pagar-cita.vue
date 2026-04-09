@@ -1,130 +1,109 @@
 <template>
   <AtomsModalBase
-    :is-open="isModalVisible"
+    :is-open="isModalOpen"
     title="Pagar Cita"
     size="large"
     :show-close-button="false"
-    @close="handleDismiss"
+    @close="handleCloseModal('payAppointment')"
   >
     <template #title>
-      <AtomsIconsCreditCardIcon
-        size="24"
-        class="pay-appointment__header-icon"
-        aria-hidden="true"
-      />
+      <AtomsIconsCreditCardIcon size="24" class="pay-appointment-modal__icon" />
     </template>
 
-    <section
-      class="pay-appointment"
-      role="dialog"
-      aria-labelledby="pay-appointment-title"
-      aria-describedby="pay-appointment-description"
-    >
-      <header class="pay-appointment__header">
-        <h2 id="pay-appointment-title" class="pay-appointment__title">
-          Detalles del pago
-        </h2>
-        <p
-          id="pay-appointment-description"
-          class="pay-appointment__description"
-        >
-          Confirma los datos de tu cita médica y procede al pago de forma
-          segura.
+    <div class="pay-appointment-modal__content">
+      <div v-if="!showIframe">
+        <div class="d-flex flex-column">
+          <h5 class="pay-appointment-modal__content__title">
+            Detalles del pago
+          </h5>
+        </div>
+
+        <p class="pay-appointment-modal__content__subtext">
+          Procederás al pago de tu cita médica de forma segura a través de
+          Cybersource.
         </p>
-      </header>
 
-      <h3 class="pay-appointment__section-title">Resumen de pago</h3>
+        <p class="pay-appointment-modal__content__payment-summary">
+          Resumen de pago
+        </p>
+        <table class="pay-appointment-modal__table">
+          <tbody>
+            <tr class="pay-appointment-modal__table--row">
+              <td class="pay-appointment-modal__table--header">Subtotal:</td>
+              <td class="pay-appointment-modal__table--cell">
+                {{ formatCurrency(Number(calculateSubtotal())) }}
+              </td>
+            </tr>
+            <tr class="pay-appointment-modal__table--row">
+              <td class="pay-appointment-modal__table--header">Descuento:</td>
+              <td class="pay-appointment-modal__table--cell">-</td>
+            </tr>
+            <tr
+              class="pay-appointment-modal__table--row"
+              v-if="hasCreditAmount()"
+            >
+              <td class="pay-appointment-modal__table--header">
+                Monto del crédito:
+              </td>
+              <td class="pay-appointment-modal__table--cell">
+                -{{ formatCurrency(Number(getCreditAmount())) }}
+              </td>
+            </tr>
+            <tr class="total">
+              <td class="pay-appointment-modal__table--header">
+                Saldo a pagar:
+              </td>
+              <td class="pay-appointment-modal__table--cell">
+                {{ formatCurrency(Number(balanceToPay(appointment))) }}
+              </td>
+            </tr>
+          </tbody>
+        </table>
 
-      <table
-        class="pay-appointment__summary"
-        aria-label="Desglose del monto a pagar"
-      >
-        <tbody>
-          <tr class="pay-appointment__summary-row">
-            <th scope="row" class="pay-appointment__summary-label">
-              Subtotal:
-            </th>
-            <td class="pay-appointment__summary-value">
-              {{ displaySubtotal }}
-            </td>
-          </tr>
-
-          <tr class="pay-appointment__summary-row">
-            <th scope="row" class="pay-appointment__summary-label">
-              Descuento:
-            </th>
-            <td class="pay-appointment__summary-value">
-              {{ displayDiscount }}
-            </td>
-          </tr>
-
-          <tr v-if="isCreditApproved" class="pay-appointment__summary-row">
-            <th scope="row" class="pay-appointment__summary-label">
-              Monto del crédito:
-            </th>
-            <td class="pay-appointment__summary-value">
-              -{{ displayCreditAmount }}
-            </td>
-          </tr>
-
-          <tr
-            class="pay-appointment__summary-row pay-appointment__summary-row--total"
+        <div class="pay-appointment-modal__buttons">
+          <button
+            type="button"
+            class="pay-appointment-modal__button--outline"
+            :disabled="isLoading"
+            @click="handleCloseModal('payAppointment')"
           >
-            <th scope="row" class="pay-appointment__summary-label">
-              Saldo a pagar:
-            </th>
-            <td class="pay-appointment__summary-value">
-              {{ displayBalanceDue }}
-            </td>
-          </tr>
-        </tbody>
-      </table>
-
-      <div
-        v-if="errorMessage"
-        class="pay-appointment__alert"
-        role="alert"
-        aria-live="assertive"
-      >
-        <p class="pay-appointment__alert-text">{{ errorMessage }}</p>
-        <button
-          type="button"
-          class="pay-appointment__alert-action"
-          @click="clearError"
-        >
-          Cerrar
-        </button>
+            Atrás
+          </button>
+          <button
+            class="pay-appointment-modal__button--primary"
+            @click="initiatePayment"
+          >
+            <span v-if="!isLoading">Continuar al pago</span>
+            <span v-else class="pay-appointment-modal__loading">
+              <span class="pay-appointment-modal__spinner"></span>
+              Cargando...
+            </span>
+          </button>
+        </div>
       </div>
 
-      <nav
-        class="pay-appointment__actions"
-        role="group"
-        aria-label="Acciones de pago"
-      >
-        <button
-          type="button"
-          class="pay-appointment__button pay-appointment__button--secondary"
-          :disabled="isSubmitting"
-          @click="handleDismiss"
-        >
-          Atrás
-        </button>
+      <div v-else class="pay-appointment-modal__iframe-container">
+        <iframe
+          ref="paymentIframe"
+          :src="iframeUrl"
+          class="pay-appointment-modal__iframe"
+          frameborder="0"
+          allow="payment"
+          sandbox="allow-same-origin allow-scripts allow-forms allow-top-navigation allow-top-navigation-by-user-activation allow-popups allow-popups-to-escape-sandbox allow-modals"
+        ></iframe>
+      </div>
 
+      <div v-if="errorMessage" class="pay-appointment-modal__error-container">
+        <p class="pay-appointment-modal__error">{{ errorMessage }}</p>
         <button
-          type="button"
-          class="pay-appointment__button pay-appointment__button--primary"
-          :disabled="isSubmitting || !canProceedWithPayment"
-          :aria-busy="isSubmitting"
-          @click="handleConfirmPayment"
+          v-if="showIframe && !isLoading"
+          class="pay-appointment-modal__retry-button"
+          @click="resetAndRetry"
         >
-          <span v-if="!isSubmitting">Confirmar pago</span>
-          <span v-else class="pay-appointment__loader" aria-live="polite">
-            <span class="pay-appointment__loader-spinner" aria-hidden="true" />
-            Procesando...
-          </span>
+          Intentar nuevamente
         </button>
-      </nav>
-    </section>
+      </div>
+    </div>
   </AtomsModalBase>
 </template>
 
@@ -134,211 +113,352 @@ interface Props {
   isOpen: boolean;
 }
 
-interface Emits {
-  (event: "open-modal", modalName: ModalName, payload?: unknown): void;
-  (event: "close-modal", modalName: ModalName): void;
-  (event: "refresh"): void;
+interface PaymentResultMessage {
+  type: "PAYMENT_RESULT";
+  status: "success" | "declined" | "error" | "canceled";
+  reference: string;
+  timestamp: string;
 }
 
-const CREDIT_APPROVED_STATUSES = new Set(["APPROVED", "APPROVED_PERCENTAGE"]);
-
-const VALORATION_TYPE_CODE = "VALORATION_APPOINTMENT";
+interface Emits {
+  (e: "open-modal", modalName: ModalName, data?: any): void;
+  (e: "close-modal", modalName: ModalName): void;
+  (e: "refresh"): void;
+}
 
 const props = defineProps<Props>();
 const emit = defineEmits<Emits>();
 
 const config = useRuntimeConfig();
 const { getToken } = useAuthToken();
-const { formatCurrency } = useFormat();
-const logger = useLogger("PayAppointmentModal");
-const toast = useToast();
 const refreshAppointments = inject<() => Promise<void>>("refreshAppointments");
 
-const isSubmitting = ref(false);
+const isModalOpen = computed(() => props.isOpen);
+const isLoading = ref(false);
+const showIframe = ref(false);
+const iframeUrl = ref("");
 const errorMessage = ref("");
+const paymentIframe = ref<HTMLIFrameElement | null>(null);
+const currentReference = ref("");
+const messageListenerActive = ref(false);
 
-const isModalVisible = computed(() => props.isOpen);
+const formatCurrency = (amount: number) => {
+  return new Intl.NumberFormat("es-CR", {
+    style: "currency",
+    currency: "CRC",
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 0,
+  }).format(amount);
+};
 
-const isValoration = computed(
-  () => props.appointment.appointment_type.code === VALORATION_TYPE_CODE,
-);
-
-const subtotal = computed(() =>
-  isValoration.value
-    ? Number(props.appointment.package.product.value2)
-    : Number(props.appointment.price_procedure),
-);
-
-const approvedCreditAmount = computed(
-  () => Number(props.appointment.appointment_credit?.approved_amount) || 0,
-);
-
-const isCreditApproved = computed(() => {
-  if (isValoration.value) return false;
-  const statusCode = props.appointment.appointment_credit?.credit_status.code;
-  return statusCode ? CREDIT_APPROVED_STATUSES.has(statusCode) : false;
-});
-
-const balanceDue = computed(() => {
-  if (!isValoration.value) {
-    return (
-      Number(props.appointment.price_procedure) - approvedCreditAmount.value
+const parseJWT = (token: string): any => {
+  try {
+    const base64Url = token.split(".")[1];
+    const base64 = base64Url.replace(/-/g, "+").replace(/_/g, "/");
+    const jsonPayload = decodeURIComponent(
+      atob(base64)
+        .split("")
+        .map((c) => "%" + ("00" + c.charCodeAt(0).toString(16)).slice(-2))
+        .join(""),
     );
+    return JSON.parse(jsonPayload);
+  } catch (error) {
+    console.error("[Payment] Error parsing JWT:", error);
+    return null;
+  }
+};
+
+const getUserId = (): string => {
+  const token = getToken();
+  if (!token) {
+    throw new Error("No hay token de autenticación");
   }
 
-  if (Number(props.appointment.package.discount) === 0) {
-    return Number(props.appointment.package.product.value2);
+  const payload = parseJWT(token);
+  if (!payload) {
+    throw new Error("Token inválido");
   }
 
-  return Number(props.appointment.package.discount ?? 0);
-});
-
-const canProceedWithPayment = computed(
-  () => balanceDue.value > 0 && Number.isFinite(balanceDue.value),
-);
-
-const displaySubtotal = computed(() =>
-  formatCurrency(subtotal.value, { decimalPlaces: 0 }),
-);
-
-const displayDiscount = computed(() => {
-  if (props.appointment.appointment_type.code === "PROCEDURE_APPOINTMENT") {
-    return formatCurrency(0, { decimalPlaces: 0 });
+  const userId = payload.userId || payload.sub || payload.id;
+  if (!userId) {
+    throw new Error("No se pudo obtener el ID del usuario");
   }
 
-  const value2 = Number(props.appointment.package.product.value2 ?? 0);
-  const vitalink = Number(props.appointment.package.discount ?? 0);
+  return userId;
+};
 
-  if (vitalink === 0) return formatCurrency(0, { decimalPlaces: 0 });
+const calculateSubtotal = () => {
+  return props.appointment.appointment_type.code === "VALORATION_APPOINTMENT"
+    ? props.appointment.price_valoration_appointment
+    : props.appointment.price_procedure;
+};
 
-  const discount = value2 - vitalink;
+const hasCreditAmount = () => {
+  if (props.appointment.appointment_type.code === "VALORATION_APPOINTMENT") {
+    return false;
+  }
 
-  return formatCurrency(discount, { decimalPlaces: 0 });
-});
+  const creditStatus = props.appointment.appointment_credit?.credit_status.code;
+  return creditStatus === "APPROVED" || creditStatus === "APPROVED_PERCENTAGE";
+};
 
-const displayCreditAmount = computed(() =>
-  formatCurrency(approvedCreditAmount.value, { decimalPlaces: 0 }),
-);
+const getCreditAmount = () => {
+  return props.appointment.appointment_credit?.approved_amount || 0;
+};
 
-const displayBalanceDue = computed(() =>
-  formatCurrency(balanceDue.value, { decimalPlaces: 0 }),
-);
+const balanceToPay = (appointment: IAppointment) => {
+  if (appointment.appointment_type.code === "VALORATION_APPOINTMENT") {
+    return appointment.price_valoration_appointment;
+  }
+  return (
+    Number(appointment.price_procedure) -
+    Number(appointment.appointment_credit?.approved_amount ?? 0)
+  );
+};
 
-function resolveEndpoint(): string {
-  return isValoration.value
-    ? "/appointment/success_payment_valoration_appointment"
-    : "/appointment/success_payment_procedure";
-}
+const canProceedToPayment = () => {
+  const amount = balanceToPay(props.appointment);
+  return Number(amount) > 0 && Number.isFinite(Number(amount));
+};
 
-function clearError(): void {
-  errorMessage.value = "";
-}
+const handleOpenModal = (modalName: ModalName, data?: any): void => {
+  emit("open-modal", modalName, data);
+};
 
-function emitOpenModal(modalName: ModalName, payload?: unknown): void {
-  emit("open-modal", modalName, payload);
-}
+const handleCloseModal = (modalName: ModalName): void => {
+  if (!isLoading.value) {
+    cleanupMessageListener();
+    emit("close-modal", modalName);
+  }
+};
 
-function emitCloseModal(modalName: ModalName): void {
-  emit("close-modal", modalName);
-}
+const initiatePayment = async () => {
+  try {
+    errorMessage.value = "";
+    isLoading.value = true;
 
-function handleDismiss(): void {
-  if (isSubmitting.value) return;
-  clearError();
-  emitCloseModal("payAppointment");
-}
+    const userId = getUserId();
+    const amount = balanceToPay(props.appointment);
+    const appointmentId = props.appointment.id;
 
-async function handleConfirmPayment(): Promise<void> {
-  if (!canProceedWithPayment.value) {
-    errorMessage.value = "El monto a pagar no es válido.";
+    if (!canProceedToPayment()) {
+      throw new Error("Monto inválido para el pago");
+    }
+
+    const baseUrl = config.public.API_BASE_URL;
+    if (!baseUrl) {
+      throw new Error("Configuración de API no disponible");
+    }
+
+    const params = new URLSearchParams({
+      userId: userId.toString(),
+      appointmentId: appointmentId.toString(),
+      amount: amount.toString(),
+    });
+
+    iframeUrl.value = `${baseUrl}/payment/go?${params.toString()}`;
+
+    console.log("[Payment] Iniciando pago", {
+      userId,
+      appointmentId,
+      amount,
+      url: iframeUrl.value,
+    });
+
+    showIframe.value = true;
+    isLoading.value = false;
+
+    await nextTick();
+    setupMessageListener();
+  } catch (error: any) {
+    console.error("[Payment] Error al iniciar:", error);
+    errorMessage.value = error.message || "Error al iniciar el proceso de pago";
+    isLoading.value = false;
+    showIframe.value = false;
+  }
+};
+
+const setupMessageListener = () => {
+  if (messageListenerActive.value) {
+    console.log("[Payment] Listener ya está activo");
     return;
   }
 
-  try {
-    isSubmitting.value = true;
-    clearError();
+  console.log("[Payment] Configurando listener de mensajes");
+  window.addEventListener("message", handleIframeMessage);
+  messageListenerActive.value = true;
 
-    await submitPaymentUpdate();
+  if (paymentIframe.value) {
+    paymentIframe.value.onload = () => {
+      console.log("[Payment] Iframe cargado exitosamente");
+    };
+
+    paymentIframe.value.onerror = (error) => {
+      console.error("[Payment] Error en iframe:", error);
+      errorMessage.value = "Error al cargar el formulario de pago";
+      isLoading.value = false;
+    };
+  }
+};
+
+const cleanupMessageListener = () => {
+  if (messageListenerActive.value) {
+    console.log("[Payment] Limpiando listener de mensajes");
+    window.removeEventListener("message", handleIframeMessage);
+    messageListenerActive.value = false;
+  }
+};
+
+const handleIframeMessage = (event: MessageEvent) => {
+  console.log("[Payment] Mensaje recibido del iframe");
+  console.log("[Payment] Origen:", event.origin);
+  console.log("[Payment] Data:", event.data);
+
+  if (!event.data || typeof event.data !== "object") {
+    console.log("[Payment] Ignorando mensaje - no es objeto válido");
+    return;
+  }
+
+  const message = event.data as PaymentResultMessage;
+
+  if (message.type !== "PAYMENT_RESULT") {
+    console.log("[Payment] Ignorando mensaje - tipo:", message.type);
+    return;
+  }
+
+  console.log("[Payment] Mensaje de pago válido:", message);
+
+  currentReference.value = message.reference;
+
+  handlePaymentResult(message.status, message.reference);
+};
+
+const handlePaymentResult = (
+  status: "success" | "declined" | "error" | "canceled",
+  reference: string,
+) => {
+  console.log(`[Payment] Procesando resultado: ${status}`);
+  console.log("[Payment] Referencia:", reference);
+
+  switch (status) {
+    case "success":
+      handleSuccessfulPayment(reference);
+      break;
+
+    case "declined":
+      errorMessage.value =
+        "El pago fue rechazado. Por favor, verifica tus datos e intenta nuevamente.";
+      isLoading.value = false;
+      break;
+
+    case "canceled":
+      errorMessage.value = "Pago cancelado";
+      isLoading.value = false;
+      break;
+
+    case "error":
+    default:
+      errorMessage.value =
+        "Error al procesar el pago. Por favor, intenta nuevamente.";
+      isLoading.value = false;
+      break;
+  }
+};
+
+const handleSuccessfulPayment = async (reference: string) => {
+  try {
+    isLoading.value = true;
+    errorMessage.value = "";
+
+    console.log("[Payment] Procesando pago exitoso:", reference);
+
+    const amountPaid = balanceToPay(props.appointment);
+
+    const appointmentType =
+      props.appointment.appointment_type.code === "VALORATION_APPOINTMENT"
+        ? "VALORATION_APPOINTMENT"
+        : "PROCEDURE";
+
+    const endpoint =
+      appointmentType === "VALORATION_APPOINTMENT"
+        ? "/appointment/success_payment"
+        : "/appointment/success_payment_procedure";
+
+    const fullUrl = `${config.public.API_BASE_URL}${endpoint}`;
+
+    console.log("[Payment] Llamando a:", fullUrl);
+
+    const { data, error } = await useFetch(fullUrl, {
+      method: "PUT",
+      headers: {
+        Authorization: getToken() ?? "",
+        "Content-Type": "application/json",
+      },
+      params: {
+        id: props.appointment.id,
+      },
+      body: {
+        payment_method_code: "CREDIT_CARD",
+        transaction_reference: reference,
+      },
+    });
+
+    if (error.value) {
+      console.error("[Payment] Error en API:", error.value);
+      throw new Error(
+        error.value.data?.message || "Error al actualizar la cita",
+      );
+    }
+
+    console.log("[Payment] Pago actualizado exitosamente");
 
     if (refreshAppointments) {
       await refreshAppointments();
     }
 
-    emitCloseModal("appointmentDetails");
-    emitCloseModal("payAppointment");
-    emitOpenModal("successfulPayment", {
-      amountPaid: balanceDue.value,
+    handleCloseModal("appointmentDetails");
+    handleCloseModal("payAppointment");
+    handleOpenModal("successfulPayment", {
+      amountPaid,
+      reference,
     });
-
-    toast.success("Pago realizado exitosamente.");
-  } catch (error: unknown) {
-    const fallback = "Ocurrió un error inesperado. Intenta nuevamente.";
-    errorMessage.value = error instanceof Error ? error.message : fallback;
-
-    logger.error("Error al confirmar el pago", {
-      appointmentId: props.appointment.id,
-      error: errorMessage.value,
-    });
+  } catch (error: any) {
+    console.error("[Payment] Error al actualizar cita:", error);
+    errorMessage.value = `El pago fue exitoso pero hubo un error al actualizar la cita. Contacta a soporte con la referencia: ${reference}`;
   } finally {
-    isSubmitting.value = false;
+    isLoading.value = false;
   }
-}
+};
 
-async function submitPaymentUpdate(): Promise<void> {
-  const token = getToken();
-  if (!token) {
-    throw new Error("Tu sesión ha expirado. Inicia sesión nuevamente.");
-  }
+const resetPaymentState = () => {
+  showIframe.value = false;
+  currentReference.value = "";
+  iframeUrl.value = "";
+  isLoading.value = false;
+  cleanupMessageListener();
+};
 
-  const baseUrl = config.public.API_BASE_URL;
-  if (!baseUrl) {
-    throw new Error("No se pudo conectar con el servidor.");
-  }
+const resetAndRetry = () => {
+  resetPaymentState();
+  errorMessage.value = "";
+  initiatePayment();
+};
 
-  const endpoint = resolveEndpoint();
-  const url = `${baseUrl}${endpoint}`;
+onUnmounted(() => {
+  cleanupMessageListener();
+});
 
-  const { error } = await useFetch(url, {
-    method: "PUT",
-    headers: {
-      Authorization: token,
-      "Content-Type": "application/json",
-    },
-    params: { id: props.appointment.id },
-    body: {
-      payment_method_code: "CREDIT_CARD",
-    },
-  });
-
-  if (error.value) {
-    const serverDetail = (error.value as any).data?.message;
-    throw new Error(
-      serverDetail || "No se pudo procesar el pago. Intenta nuevamente.",
-    );
-  }
-
-  logger.info("Pago actualizado exitosamente", {
-    appointmentId: props.appointment.id,
-    amount: balanceDue.value,
-  });
-}
-
-watch(isModalVisible, (open) => {
-  if (!open) {
-    isSubmitting.value = false;
-    clearError();
+watch(isModalOpen, (newValue) => {
+  if (!newValue) {
+    resetPaymentState();
+    errorMessage.value = "";
   }
 });
 </script>
 
 <style lang="scss" scoped>
-.pay-appointment {
-  display: flex;
-  flex-direction: column;
-  padding: 1.5rem;
-  gap: 1.25rem;
-
-  &__header-icon {
+.pay-appointment-modal {
+  &__icon {
     width: 3rem;
     height: 3rem;
     border-radius: 50%;
@@ -347,95 +467,156 @@ watch(isModalVisible, (open) => {
     color: $color-primary;
   }
 
-  &__header {
+  &__content {
     display: flex;
     flex-direction: column;
+    padding: 1.5rem;
+    gap: 1.25rem;
+
+    &__title {
+      @include label-base;
+      font-weight: 600;
+      font-size: 1.125rem;
+      line-height: 1.75rem;
+      color: #101828;
+    }
+
+    &__subtext {
+      @include label-base;
+      font-family: Montserrat;
+      font-weight: 400;
+      font-size: 0.875rem;
+      line-height: 1.25rem;
+      color: $color-text-muted;
+    }
+
+    &__payment-summary {
+      @include label-base;
+      font-weight: 700;
+      font-size: 0.875rem;
+      line-height: 1.25rem;
+      color: #353e5c;
+      margin-top: 1rem;
+    }
   }
 
-  &__title {
-    @include label-base;
-    font-weight: 600;
-    font-size: 1.125rem;
-    line-height: 1.75rem;
-    color: #101828;
-    margin: 0;
+  &__iframe-container {
+    position: relative;
+    width: 100%;
+    height: 650px;
+    min-height: 650px;
+    border-radius: 0.5rem;
+    overflow: hidden;
   }
 
-  &__description {
-    @include label-base;
-    font-family: Montserrat, sans-serif;
-    font-weight: 400;
-    font-size: 0.875rem;
-    line-height: 1.25rem;
-    color: $color-text-muted;
-    margin-top: 0.25rem;
+  &__iframe {
+    width: 100%;
+    height: 100%;
+    border: none;
+    border-radius: 0.5rem;
   }
 
-  &__section-title {
-    @include label-base;
-    font-weight: 700;
-    font-size: 0.875rem;
-    line-height: 1.25rem;
-    color: #353e5c;
-    margin-top: 1rem;
-    margin-bottom: 0;
+  &__loading {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
   }
 
-  &__summary {
+  &__spinner {
+    width: 1rem;
+    height: 1rem;
+    border: 0.125rem solid rgba(155, 81, 224, 0.2);
+    border-top: 0.125rem solid $color-primary;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+  }
+
+  &__table {
     width: 100%;
     border-collapse: collapse;
     margin-top: 1rem;
-  }
 
-  &__summary-row {
-    td,
-    th {
-      padding: 0.625rem 0;
-      border-bottom: 1px solid #f3f4f6;
+    &--row {
+      &:not(.total) {
+        td {
+          padding: 0.625rem 0;
+          border-bottom: 1px solid #f3f4f6;
+        }
+      }
+
+      &.total {
+        border-top: 2px solid #e4e7ec;
+
+        td {
+          padding-top: 1rem;
+          padding-bottom: 0.5rem;
+          font-weight: 700;
+        }
+      }
     }
 
-    &--total {
-      border-top: 2px solid #e4e7ec;
+    &--header {
+      font-family: $font-family-main;
+      font-weight: 400;
+      font-size: 0.875rem;
+      line-height: 1.25rem;
+      color: $color-text-secondary;
+      vertical-align: middle;
+    }
 
-      td,
-      th {
-        padding-top: 1rem;
-        padding-bottom: 0.5rem;
-        font-weight: 700;
-        border-bottom: none;
+    &--cell {
+      font-family: $font-family-main;
+      font-weight: 600;
+      font-size: 0.875rem;
+      line-height: 1.25rem;
+      text-align: right;
+      vertical-align: middle;
+      color: $color-foreground;
+    }
+  }
+
+  &__buttons {
+    display: flex;
+    justify-content: space-between;
+    gap: 0.75rem;
+    margin-top: 1.5rem;
+  }
+
+  &__button {
+    &--outline {
+      @include outline-button;
+      flex: 1;
+      padding: 0.625rem 1.125rem;
+      font-size: 0.9375rem;
+
+      &:disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
+      }
+    }
+
+    &--primary {
+      @include primary-button;
+      flex: 1;
+      padding: 0.625rem 1.125rem;
+      font-size: 0.9375rem;
+
+      &:disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
       }
     }
   }
 
-  &__summary-label {
-    font-family: $font-family-main;
-    font-weight: 400;
-    font-size: 0.875rem;
-    line-height: 1.25rem;
-    color: $color-text-secondary;
-    vertical-align: middle;
-    text-align: left;
-  }
-
-  &__summary-value {
-    font-family: $font-family-main;
-    font-weight: 600;
-    font-size: 0.875rem;
-    line-height: 1.25rem;
-    text-align: right;
-    vertical-align: middle;
-    color: $color-foreground;
-  }
-
-  &__alert {
+  &__error-container {
+    margin-top: 1rem;
     display: flex;
     flex-direction: column;
-    align-items: center;
     gap: 0.75rem;
-    margin-top: 0.5rem;
+    align-items: center;
   }
 
-  &__alert-text {
+  &__error {
     color: $color-error;
     font-size: 0.875rem;
     font-weight: 500;
@@ -448,77 +629,38 @@ watch(isModalVisible, (open) => {
     width: 100%;
   }
 
-  &__alert-action {
+  &__retry-button {
     @include outline-button;
-    flex: initial;
-    padding: 0.375rem 1rem;
-    font-size: 0.8125rem;
-    color: $color-error;
-    border-color: rgba(239, 68, 68, 0.3);
+    padding: 0.5rem 1.25rem;
+    font-size: 0.875rem;
+    color: $color-primary;
+    border-color: $color-primary;
 
     &:hover {
-      background: rgba(239, 68, 68, 0.05);
+      background: rgba(155, 81, 224, 0.05);
     }
-  }
-
-  &__actions {
-    display: flex;
-    justify-content: space-between;
-    gap: 0.75rem;
-    margin-top: 1.5rem;
-  }
-
-  &__button {
-    flex: 1;
-    padding: 0.625rem 1.125rem;
-    font-size: 0.9375rem;
-    cursor: pointer;
-    transition: opacity 0.2s ease;
-
-    &:disabled {
-      opacity: 0.6;
-      cursor: not-allowed;
-    }
-
-    &--primary {
-      @include primary-button;
-    }
-
-    &--secondary {
-      @include outline-button;
-    }
-  }
-
-  &__loader {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 0.5rem;
-  }
-
-  &__loader-spinner {
-    display: inline-block;
-    width: 1rem;
-    height: 1rem;
-    border: 0.125rem solid rgba(155, 81, 224, 0.2);
-    border-top-color: $color-primary;
-    border-radius: 50%;
-    animation: pay-appointment-spin 1s linear infinite;
   }
 }
 
-@keyframes pay-appointment-spin {
-  from {
+@keyframes spin {
+  0% {
     transform: rotate(0deg);
   }
-  to {
+  100% {
     transform: rotate(360deg);
   }
 }
 
 @media (max-width: 768px) {
-  .pay-appointment {
-    padding: 1rem;
+  .pay-appointment-modal {
+    &__iframe-container {
+      height: 550px;
+      min-height: 550px;
+    }
+
+    &__content {
+      padding: 1rem;
+    }
   }
 }
 </style>
