@@ -118,6 +118,28 @@
         </span>
       </div>
 
+      <div class="registration-field-group">
+        <label class="registration-label">
+          Asociación Solidarista
+          <span aria-hidden="true">*</span>
+        </label>
+        <UiDropdownBase
+          v-model="solidaristaAssociation"
+          :items="financeEntityItems"
+          placeholder="Selecciona tu asociación"
+          searchable
+          clearable
+        />
+        <span
+          v-if="errors.solidarista"
+          id="solidarista-error"
+          class="registration-error"
+          role="alert"
+        >
+          {{ errors.solidarista }}
+        </span>
+      </div>
+
       <fieldset class="registration-options-group" aria-required="true">
         <legend class="sr-only">Aceptación de términos y políticas</legend>
 
@@ -255,28 +277,57 @@
 
 <script lang="ts" setup>
 import { useRuntimeConfig } from "#app";
-import { reactive, ref } from "vue";
+import { useFinanceEntity } from "@/composables/api";
+import { useLogger } from "@/composables/useLogger";
 import { useRouter } from "vue-router";
+
+const { getAllFinanceEntities } = useFinanceEntity();
+const logger = useLogger("formulario-registro-correo");
 
 const name = ref("");
 const email = ref("");
 const password = ref("");
+const solidaristaAssociation = ref("");
 const showPassword = ref(false);
 const acceptedTerms = ref(false);
 const acceptedPrivacy = ref(false);
 const isSubmitting = ref(false);
 const statusMessage = ref("");
+const financeEntities = ref<IUdc[]>([]);
+
+const financeEntityItems = computed(() => {
+  const items = financeEntities.value.map((e) => ({
+    value: e.id,
+    label: e.name,
+  }));
+  logger.debug("financeEntityItems computed", { items });
+  return items;
+});
 
 const errors = reactive({
   name: "",
   email: "",
   password: "",
+  solidarista: "",
   terms: "",
   privacy: "",
 });
 
 const config = useRuntimeConfig();
 const router = useRouter();
+
+async function executeGetAllFinanceEntities() {
+  try {
+    const entitiesResponse = await getAllFinanceEntities();
+    financeEntities.value = entitiesResponse.data ?? [];
+    logger.debug("Entidades financieras obtenidas", {
+      count: financeEntities.value.length,
+      entities: financeEntities.value,
+    });
+  } catch (error) {
+    logger.error("Error al obtener entidades financieras", { error });
+  }
+}
 
 const validateName = () => {
   if (!name.value.trim()) {
@@ -318,6 +369,20 @@ const validatePassword = () => {
   return true;
 };
 
+const validateSolidarista = () => {
+  if (!solidaristaAssociation.value) {
+    errors.solidarista = "Debes seleccionar tu Asociación Solidarista";
+    return false;
+  }
+  errors.solidarista = "";
+  return true;
+};
+
+watch(solidaristaAssociation, (val) => {
+  logger.debug("solidaristaAssociation changed", { val, type: typeof val });
+  if (val) errors.solidarista = "";
+});
+
 const validateTerms = () => {
   if (!acceptedTerms.value) {
     errors.terms = "Debes aceptar los Términos y Condiciones";
@@ -340,6 +405,7 @@ const validateForm = () => {
   const isNameValid = validateName();
   const isEmailValid = validateEmail();
   const isPasswordValid = validatePassword();
+  const isSolidaristaValid = validateSolidarista();
   const areTermsValid = validateTerms();
   const isPrivacyValid = validatePrivacy();
 
@@ -347,12 +413,18 @@ const validateForm = () => {
     isNameValid &&
     isEmailValid &&
     isPasswordValid &&
+    isSolidaristaValid &&
     areTermsValid &&
     isPrivacyValid
   );
 };
 
 const handleSubmit = async () => {
+  logger.debug("handleSubmit called", {
+    solidaristaAssociation: solidaristaAssociation.value,
+    solidaristaType: typeof solidaristaAssociation.value,
+  });
+
   if (!validateForm()) {
     statusMessage.value = "Por favor corrige los errores en el formulario";
     return;
@@ -361,19 +433,23 @@ const handleSubmit = async () => {
   isSubmitting.value = true;
   statusMessage.value = "Procesando tu registro...";
 
+  const payload = {
+    name: name.value,
+    email: email.value,
+    password: password.value,
+    role_code: "CUSTOMER",
+    accepted_terms: true,
+    accepted_privacy: true,
+    finance_entity: solidaristaAssociation.value,
+  };
+  logger.debug("Register payload", { payload });
+
   try {
     const { data, error } = await useFetch(
       config.public.API_BASE_URL + "/auth/register",
       {
         method: "POST",
-        body: {
-          name: name.value,
-          email: email.value,
-          password: password.value,
-          role_code: "CUSTOMER",
-          accepted_terms: true,
-          accepted_privacy: true,
-        },
+        body: payload,
       },
     );
 
@@ -403,6 +479,10 @@ const loginWithGoogle = () => {
 const loginWithApple = () => {
   statusMessage.value = "Iniciando registro con Apple...";
 };
+
+onMounted(() => {
+  executeGetAllFinanceEntities();
+});
 </script>
 
 <style lang="scss" scoped>

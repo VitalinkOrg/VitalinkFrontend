@@ -5,6 +5,7 @@ export { useAuth } from "./useAuth";
 export { useAvailability } from "./useAvailability";
 export { useDocuments } from "./useDocuments";
 export { useErrorHandler } from "./useErrorHandler";
+export { useFinanceEntity } from "./useFinanceEntity";
 export { usePackage } from "./usePackage";
 export { useSupplier } from "./useSupplier";
 export { useUdc } from "./useUdc";

@@ -625,7 +625,7 @@ const handleDownloadProforma = async () => {
           Información de métodos de Pago:
         </p>
 
-        <div class="appointment-detail__payment-option">
+        <!-- <div class="appointment-detail__payment-option">
           <AtomsIconsCircleCheckBigIcon
             size="12"
             class="appointment-detail__payment-option-icon"
@@ -639,7 +639,7 @@ const handleDownloadProforma = async () => {
               Paga ahora de forma segura con tu tarjeta.
             </p>
           </div>
-        </div>
+        </div> -->
 
         <div class="appointment-detail__payment-option">
           <AtomsIconsCircleCheckBigIcon

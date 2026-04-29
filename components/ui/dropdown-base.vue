@@ -41,214 +41,380 @@ const props = withDefaults(defineProps<Props>(), {
 
 const emit = defineEmits<Emits>();
 
-const dropdownRef = ref<HTMLElement>();
-const menuRef = ref<HTMLElement>();
-const searchInputRef = ref<HTMLInputElement>();
+const rootRef = ref<HTMLElement>();
+const triggerRef = ref<HTMLButtonElement>();
+const searchRef = ref<HTMLInputElement>();
+const listRef = ref<HTMLUListElement>();
+
 const isOpen = ref(false);
-const searchText = ref("");
-const menuPosition = ref({ top: 0, left: 0, width: 0 });
+const query = ref("");
+const activeIndex = ref(-1);
+const menuPos = ref({ top: 0, left: 0, width: 0 });
 
-const selectedItem = computed(() => {
-  return props.items.find((item) => item.value === props.modelValue);
+const uid = Math.random().toString(36).slice(2, 9);
+const triggerId = `db-trigger-${uid}`;
+const listId = `db-list-${uid}`;
+
+const selectedItem = computed(() =>
+  props.items.find((item) => item.value === props.modelValue),
+);
+
+const displayLabel = computed(() => {
+  if (props.searchable && isOpen.value) return query.value;
+  return selectedItem.value?.label ?? props.placeholder;
 });
 
-const displayText = computed(() => {
-  if (props.searchable && isOpen.value) {
-    return searchText.value;
-  }
-  return selectedItem.value?.label || props.placeholder;
+const visibleItems = computed(() => {
+  if (!props.searchable || !query.value.trim()) return props.items;
+  const q = query.value.toLowerCase();
+  return props.items.filter((i) => i.label.toLowerCase().includes(q));
 });
 
-const filteredItems = computed(() => {
-  if (!props.searchable || !searchText.value.trim()) {
-    return props.items;
+const canInteract = computed(() => !props.disabled && !props.loading);
+
+const showClear = computed(
+  () => props.clearable && props.modelValue !== undefined && !props.disabled,
+);
+
+const activeOptionId = computed(() =>
+  activeIndex.value >= 0 && activeIndex.value < visibleItems.value.length
+    ? `${listId}-opt-${activeIndex.value}`
+    : undefined,
+);
+
+const firstEnabledIdx = computed(() =>
+  visibleItems.value.findIndex((i) => !i.disabled),
+);
+
+const lastEnabledIdx = computed(() => {
+  for (let i = visibleItems.value.length - 1; i >= 0; i--) {
+    if (!visibleItems.value[i].disabled) return i;
   }
-  return props.items.filter((item) =>
-    item.label.toLowerCase().includes(searchText.value.toLowerCase()),
+  return -1;
+});
+
+function nextEnabled(from: number, step: 1 | -1): number {
+  const items = visibleItems.value;
+  for (let i = from + step; i >= 0 && i < items.length; i += step) {
+    if (!items[i].disabled) return i;
+  }
+  return from;
+}
+
+function refreshMenuPos() {
+  if (!rootRef.value) return;
+  const r = rootRef.value.getBoundingClientRect();
+  menuPos.value = { top: r.bottom, left: r.left, width: r.width };
+}
+
+function scrollActiveIntoView() {
+  if (!listRef.value || !activeOptionId.value) return;
+  listRef.value
+    .querySelector<HTMLElement>(`#${CSS.escape(activeOptionId.value)}`)
+    ?.scrollIntoView({ block: "nearest" });
+}
+
+function returnFocus() {
+  nextTick(() =>
+    (props.searchable ? searchRef.value : triggerRef.value)?.focus(),
   );
-});
+}
 
-const canOpen = computed(() => {
-  return !props.disabled && !props.loading;
-});
+function open() {
+  if (!canInteract.value) return;
+  refreshMenuPos();
+  isOpen.value = true;
 
-const showClearButton = computed(() => {
-  return props.clearable && props.modelValue !== undefined && !props.disabled;
-});
+  const selIdx = visibleItems.value.findIndex(
+    (i) => i.value === props.modelValue,
+  );
+  activeIndex.value = selIdx >= 0 ? selIdx : firstEnabledIdx.value;
 
-const updateMenuPosition = () => {
-  if (!dropdownRef.value) return;
+  nextTick(() => {
+    if (props.searchable) searchRef.value?.focus();
+    else listRef.value?.focus();
+    scrollActiveIntoView();
+  });
+}
 
-  const rect = dropdownRef.value.getBoundingClientRect();
-  const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
-  const scrollLeft = window.pageXOffset || document.documentElement.scrollLeft;
-
-  menuPosition.value = {
-    top: rect.bottom + scrollTop,
-    left: rect.left + scrollLeft,
-    width: rect.width,
-  };
-};
-
-const toggleDropdown = () => {
-  if (!canOpen.value) return;
-
-  isOpen.value = !isOpen.value;
-
-  if (isOpen.value) {
-    updateMenuPosition();
-    if (props.searchable) {
-      nextTick(() => {
-        searchInputRef.value?.focus();
-      });
-    }
+function close(label?: string) {
+  isOpen.value = false;
+  activeIndex.value = -1;
+  if (props.searchable) {
+    query.value = label !== undefined ? label : (selectedItem.value?.label ?? "");
   }
-};
+}
 
-const selectItem = (item: DropdownItem) => {
+function closeWithFocus(label?: string) {
+  close(label);
+  returnFocus();
+}
+
+function toggle() {
+  isOpen.value ? closeWithFocus() : open();
+}
+
+function select(item: DropdownItem) {
   if (item.disabled) return;
-
   emit("update:modelValue", item.value);
   emit("select", item);
-  closeDropdown();
-};
+  closeWithFocus(item.label);
+}
 
-const clearSelection = (event: Event) => {
-  event.stopPropagation();
+function clear(e: MouseEvent) {
+  e.stopPropagation();
   emit("update:modelValue", undefined);
   emit("clear");
-  searchText.value = "";
-};
+  query.value = "";
+}
 
-const closeDropdown = () => {
-  isOpen.value = false;
-  if (props.searchable) {
-    searchText.value = selectedItem.value?.label || "";
+function onTriggerKeydown(e: KeyboardEvent) {
+  if (!canInteract.value) return;
+  switch (e.key) {
+    case "Enter":
+    case " ":
+      e.preventDefault();
+      toggle();
+      break;
+    case "ArrowDown":
+      e.preventDefault();
+      if (isOpen.value) {
+        activeIndex.value = nextEnabled(activeIndex.value, 1);
+        scrollActiveIntoView();
+      } else {
+        open();
+      }
+      break;
+    case "ArrowUp":
+      e.preventDefault();
+      if (isOpen.value) {
+        activeIndex.value = nextEnabled(activeIndex.value, -1);
+        scrollActiveIntoView();
+      } else {
+        open();
+      }
+      break;
+    case "Escape":
+      e.preventDefault();
+      if (isOpen.value) closeWithFocus();
+      break;
+    case "Tab":
+      if (isOpen.value) close();
+      break;
   }
-};
+}
 
-const handleSearchInput = () => {
+function onListKeydown(e: KeyboardEvent) {
+  switch (e.key) {
+    case "ArrowDown":
+      e.preventDefault();
+      activeIndex.value = nextEnabled(activeIndex.value, 1);
+      scrollActiveIntoView();
+      break;
+    case "ArrowUp":
+      e.preventDefault();
+      activeIndex.value = nextEnabled(activeIndex.value, -1);
+      scrollActiveIntoView();
+      break;
+    case "Home":
+      e.preventDefault();
+      activeIndex.value = firstEnabledIdx.value;
+      scrollActiveIntoView();
+      break;
+    case "End":
+      e.preventDefault();
+      activeIndex.value = lastEnabledIdx.value;
+      scrollActiveIntoView();
+      break;
+    case "Enter":
+    case " ":
+      e.preventDefault();
+      if (activeIndex.value >= 0) select(visibleItems.value[activeIndex.value]);
+      break;
+    case "Escape":
+      e.preventDefault();
+      closeWithFocus();
+      break;
+    case "Tab":
+      e.preventDefault();
+      if (e.shiftKey) {
+        activeIndex.value = nextEnabled(activeIndex.value, -1);
+      } else {
+        activeIndex.value = nextEnabled(activeIndex.value, 1);
+      }
+      scrollActiveIntoView();
+      break;
+  }
+}
+
+function onSearchKeydown(e: KeyboardEvent) {
+  switch (e.key) {
+    case "ArrowDown":
+      e.preventDefault();
+      if (isOpen.value) {
+        activeIndex.value = nextEnabled(activeIndex.value, 1);
+        scrollActiveIntoView();
+      } else {
+        open();
+      }
+      break;
+    case "ArrowUp":
+      e.preventDefault();
+      if (isOpen.value) {
+        activeIndex.value = nextEnabled(activeIndex.value, -1);
+        scrollActiveIntoView();
+      }
+      break;
+    case "Enter":
+      e.preventDefault();
+      if (isOpen.value && activeIndex.value >= 0)
+        select(visibleItems.value[activeIndex.value]);
+      break;
+    case "Escape":
+      e.preventDefault();
+      closeWithFocus();
+      break;
+    case "Tab":
+      if (isOpen.value) {
+        e.preventDefault();
+        if (e.shiftKey) {
+          activeIndex.value = nextEnabled(activeIndex.value, -1);
+        } else {
+          activeIndex.value = nextEnabled(activeIndex.value, 1);
+        }
+        scrollActiveIntoView();
+      }
+      break;
+  }
+}
+
+function onSearchInput() {
   if (!isOpen.value) {
     isOpen.value = true;
-    updateMenuPosition();
+    refreshMenuPos();
   }
-};
+  nextTick(() => {
+    activeIndex.value = firstEnabledIdx.value;
+  });
+}
 
-const handleInputClick = (event: Event) => {
-  if (props.searchable) {
-    event.stopPropagation();
-    if (!isOpen.value && canOpen.value) {
-      isOpen.value = true;
-      updateMenuPosition();
-    }
-  }
-};
+function onScrollOrResize() {
+  if (isOpen.value) refreshMenuPos();
+}
 
-const handleScroll = () => {
-  if (isOpen.value) {
-    updateMenuPosition();
+watch(isOpen, (opened) => {
+  if (opened) {
+    window.addEventListener("scroll", onScrollOrResize, true);
+    window.addEventListener("resize", onScrollOrResize);
+  } else {
+    window.removeEventListener("scroll", onScrollOrResize, true);
+    window.removeEventListener("resize", onScrollOrResize);
   }
-};
-
-const handleResize = () => {
-  if (isOpen.value) {
-    updateMenuPosition();
-  }
-};
+});
 
 watch(
   () => props.modelValue,
   () => {
-    if (props.searchable) {
-      searchText.value = selectedItem.value?.label || "";
-    }
+    if (props.searchable) query.value = selectedItem.value?.label ?? "";
   },
 );
 
-watch(isOpen, (newValue) => {
-  if (newValue) {
-    window.addEventListener("scroll", handleScroll, true);
-    window.addEventListener("resize", handleResize);
-  } else {
-    window.removeEventListener("scroll", handleScroll, true);
-    window.removeEventListener("resize", handleResize);
-  }
-});
-
 onMounted(() => {
-  if (props.searchable) {
-    searchText.value = selectedItem.value?.label || "";
-  }
+  if (props.searchable) query.value = selectedItem.value?.label ?? "";
 });
 
 onBeforeUnmount(() => {
-  window.removeEventListener("scroll", handleScroll, true);
-  window.removeEventListener("resize", handleResize);
+  window.removeEventListener("scroll", onScrollOrResize, true);
+  window.removeEventListener("resize", onScrollOrResize);
 });
 
-onClickOutside(dropdownRef, (event) => {
-  if (menuRef.value && !menuRef.value.contains(event.target as Node)) {
-    closeDropdown();
-  }
-});
+onClickOutside(rootRef, () => {
+  if (isOpen.value) close();
+}, { ignore: [listRef] });
 </script>
 
 <template>
   <div
-    ref="dropdownRef"
-    class="dropdown"
-    :class="[
-      `dropdown--${size}`,
-      `dropdown--${variant}`,
-      { 'dropdown--disabled': disabled },
-    ]"
+    ref="rootRef"
+    class="db"
+    :class="[`db--${size}`, `db--${variant}`, { 'db--disabled': disabled }]"
   >
     <div
-      class="dropdown__toggle"
+      class="db__field"
       :class="{
-        'dropdown__toggle--active': isOpen,
-        'dropdown__toggle--disabled': disabled,
-        'dropdown__toggle--loading': loading,
-        'dropdown__toggle--error': error,
-        'dropdown__toggle--searchable': searchable,
+        'db__field--open': isOpen,
+        'db__field--disabled': disabled,
+        'db__field--loading': loading,
+        'db__field--error': error,
       }"
-      @click="toggleDropdown"
     >
-      <div v-if="$slots.icon" class="dropdown__icon">
-        <slot name="icon" />
-      </div>
+      <button
+        v-if="!searchable"
+        :id="triggerId"
+        ref="triggerRef"
+        type="button"
+        class="db__trigger"
+        aria-haspopup="listbox"
+        :aria-expanded="isOpen"
+        :aria-controls="listId"
+        :disabled="disabled || loading"
+        @click="toggle"
+        @keydown="onTriggerKeydown"
+      >
+        <span v-if="$slots.icon" class="db__icon" aria-hidden="true">
+          <slot name="icon" />
+        </span>
+        <span
+          class="db__label"
+          :class="{ 'db__label--placeholder': !modelValue }"
+        >
+          {{ displayLabel }}
+        </span>
+      </button>
 
-      <div class="dropdown__content">
+      <div
+        v-else
+        class="db__trigger db__trigger--combobox"
+        @click="!isOpen && canInteract && open()"
+      >
+        <span v-if="$slots.icon" class="db__icon" aria-hidden="true">
+          <slot name="icon" />
+        </span>
         <input
-          v-if="searchable"
-          ref="searchInputRef"
-          v-model="searchText"
+          :id="triggerId"
+          ref="searchRef"
+          v-model="query"
           type="text"
-          class="dropdown__search-input"
+          class="db__search"
+          role="combobox"
+          :aria-expanded="isOpen"
+          :aria-controls="listId"
+          aria-haspopup="listbox"
+          aria-autocomplete="list"
+          :aria-activedescendant="activeOptionId"
           :placeholder="!modelValue ? placeholder : ''"
           :disabled="disabled"
-          @input="handleSearchInput"
-          @click="handleInputClick"
+          @input="onSearchInput"
+          @keydown="onSearchKeydown"
         />
-
-        <span
-          v-else
-          class="dropdown__text"
-          :class="{ 'dropdown__text--placeholder': !modelValue }"
-        >
-          {{ displayText }}
-        </span>
       </div>
 
-      <div class="dropdown__actions">
+      <div class="db__suffix">
         <button
-          v-if="showClearButton"
+          v-if="showClear"
           type="button"
-          class="dropdown__clear-button"
-          @click="clearSelection"
+          class="db__clear"
+          aria-label="Limpiar selección"
+          @click="clear"
         >
           <slot name="clear-icon">
-            <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+            <svg
+              width="16"
+              height="16"
+              viewBox="0 0 16 16"
+              fill="none"
+              aria-hidden="true"
+            >
               <path
                 d="M12 4L4 12M4 4l8 8"
                 stroke="currentColor"
@@ -260,14 +426,9 @@ onClickOutside(dropdownRef, (event) => {
           </slot>
         </button>
 
-        <div v-if="loading" class="dropdown__loading">
+        <span v-if="loading" class="db__spinner-wrap" aria-hidden="true">
           <slot name="loading-icon">
-            <svg
-              class="dropdown__loading-spinner"
-              width="16"
-              height="16"
-              viewBox="0 0 16 16"
-            >
+            <svg class="db__spinner" width="16" height="16" viewBox="0 0 16 16">
               <circle
                 cx="8"
                 cy="8"
@@ -288,11 +449,12 @@ onClickOutside(dropdownRef, (event) => {
               </circle>
             </svg>
           </slot>
-        </div>
+        </span>
 
-        <div
-          class="dropdown__arrow"
-          :class="{ 'dropdown__arrow--rotated': isOpen }"
+        <span
+          class="db__chevron"
+          :class="{ 'db__chevron--open': isOpen }"
+          aria-hidden="true"
         >
           <slot name="arrow">
             <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
@@ -305,40 +467,58 @@ onClickOutside(dropdownRef, (event) => {
               />
             </svg>
           </slot>
-        </div>
+        </span>
       </div>
     </div>
 
     <Teleport to="body">
-      <div
+      <ul
         v-if="isOpen"
-        ref="menuRef"
-        class="dropdown__menu dropdown__menu--open"
+        :id="listId"
+        ref="listRef"
+        role="listbox"
+        class="db__list"
+        :class="`db__list--${size}`"
+        :aria-labelledby="triggerId"
+        :aria-activedescendant="activeOptionId"
+        tabindex="-1"
         :style="{
-          top: `${menuPosition.top}px`,
-          left: `${menuPosition.left}px`,
-          width: `${menuPosition.width}px`,
+          top: `${menuPos.top}px`,
+          left: `${menuPos.left}px`,
+          width: `${menuPos.width}px`,
         }"
+        @keydown="onListKeydown"
       >
-        <div v-if="filteredItems.length === 0" class="dropdown__no-results">
-          {{ noResultsText }}
-        </div>
-
-        <button
-          v-for="item in filteredItems"
-          :key="item.value"
-          type="button"
-          class="dropdown__item"
-          :class="{
-            'dropdown__item--active': modelValue === item.value,
-            'dropdown__item--disabled': item.disabled,
-          }"
-          :disabled="item.disabled"
-          @click="selectItem(item)"
+        <li
+          v-if="visibleItems.length === 0"
+          role="presentation"
+          class="db__empty"
         >
-          <span class="dropdown__item-text">{{ item.label }}</span>
+          {{ noResultsText }}
+        </li>
 
-          <div v-if="modelValue === item.value" class="dropdown__item-check">
+        <li
+          v-for="(item, index) in visibleItems"
+          :id="`${listId}-opt-${index}`"
+          :key="item.value"
+          role="option"
+          class="db__option"
+          :class="{
+            'db__option--selected': modelValue === item.value,
+            'db__option--disabled': item.disabled,
+            'db__option--active': activeIndex === index,
+          }"
+          :aria-selected="modelValue === item.value"
+          :aria-disabled="item.disabled ?? false"
+          @click="select(item)"
+          @mouseenter="!item.disabled && (activeIndex = index)"
+        >
+          <span class="db__option-label">{{ item.label }}</span>
+          <span
+            v-if="modelValue === item.value"
+            class="db__option-check"
+            aria-hidden="true"
+          >
             <slot name="check-icon">
               <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
                 <path
@@ -350,18 +530,34 @@ onClickOutside(dropdownRef, (event) => {
                 />
               </svg>
             </slot>
-          </div>
-        </button>
-      </div>
+          </span>
+        </li>
+      </ul>
     </Teleport>
   </div>
 </template>
 
 <style lang="scss" scoped>
-.dropdown {
+:global(:root) {
+  --db-primary: #3541b4;
+  --db-primary-ring: rgba(53, 65, 180, 0.2);
+  --db-border: #d0d5dd;
+  --db-border-hover: #98a2b3;
+  --db-bg: #ffffff;
+  --db-bg-disabled: #f9fafb;
+  --db-text: #374151;
+  --db-text-muted: #9ca3af;
+  --db-text-disabled: #98a2b3;
+  --db-option-hover: #f9fafb;
+  --db-option-active: #f3f4f6;
+  --db-radius: 0.5rem;
+  --db-shadow: 0 0.625rem 1.25rem -0.1875rem rgba(0, 0, 0, 0.1),
+    0 0.25rem 0.375rem -0.125rem rgba(0, 0, 0, 0.05);
+}
+
+.db {
   position: relative;
   width: 100%;
-  margin: 0;
 
   &--disabled {
     opacity: 0.6;
@@ -369,284 +565,329 @@ onClickOutside(dropdownRef, (event) => {
   }
 
   &--sm {
-    .dropdown__toggle {
+    .db__field {
       min-height: 2.5rem;
-      padding: 0.5rem 0.75rem;
       font-size: 0.875rem;
       line-height: 1.25rem;
     }
-
-    .dropdown__text,
-    .dropdown__search-input {
+    .db__trigger {
+      padding: 0.5rem 0 0.5rem 0.75rem;
+      font-size: 0.875rem;
+      line-height: 1.25rem;
+    }
+    .db__search {
       font-size: 0.875rem;
       line-height: 1.25rem;
     }
   }
 
   &--md {
-    .dropdown__toggle {
+    .db__field {
       min-height: 3rem;
-      padding: 0.75rem 1rem;
       font-size: 1rem;
       line-height: 1.5rem;
     }
-
-    .dropdown__text,
-    .dropdown__search-input {
+    .db__trigger {
+      padding: 0.75rem 0 0.75rem 1rem;
+      font-size: 1rem;
+      line-height: 1.5rem;
+    }
+    .db__search {
       font-size: 1rem;
       line-height: 1.5rem;
     }
   }
 
   &--lg {
-    .dropdown__toggle {
+    .db__field {
       min-height: 3.5rem;
-      padding: 1rem 1.25rem;
       font-size: 1.125rem;
       line-height: 1.75rem;
     }
-
-    .dropdown__text,
-    .dropdown__search-input {
+    .db__trigger {
+      padding: 1rem 0 1rem 1.25rem;
+      font-size: 1.125rem;
+      line-height: 1.75rem;
+    }
+    .db__search {
       font-size: 1.125rem;
       line-height: 1.75rem;
     }
   }
 
   &--outline {
-    .dropdown__toggle {
+    .db__field {
       background: transparent;
-      border: 0.125rem solid $color-primary;
+      border: 2px solid var(--db-primary);
 
-      &:hover:not(.dropdown__toggle--disabled) {
-        border-color: #6941c6;
+      &:hover:not(.db__field--disabled) {
+        border-color: #2a3490;
       }
     }
   }
 
   &--filled {
-    .dropdown__toggle {
-      background: $color-primary;
+    .db__field {
+      background: var(--db-primary);
+      border-color: var(--db-primary);
+
+      &:focus-within {
+        box-shadow: 0 0 0 4px rgba(255, 255, 255, 0.25);
+      }
+
+      &:hover:not(.db__field--disabled) {
+        background: #2a3490;
+        border-color: #2a3490;
+      }
+    }
+
+    .db__trigger,
+    .db__label,
+    .db__search {
       color: #ffffff;
-      border: 1px solid $color-primary;
+    }
 
-      .dropdown__text--placeholder {
-        color: rgba(255, 255, 255, 0.7);
-      }
+    .db__label--placeholder,
+    .db__search::placeholder {
+      color: rgba(255, 255, 255, 0.65);
+    }
 
-      .dropdown__text,
-      .dropdown__search-input {
+    .db__icon,
+    .db__chevron,
+    .db__spinner-wrap {
+      color: rgba(255, 255, 255, 0.8);
+    }
+
+    .db__clear {
+      color: rgba(255, 255, 255, 0.8);
+
+      &:hover {
+        background: rgba(255, 255, 255, 0.15);
         color: #ffffff;
-
-        &::placeholder {
-          color: rgba(255, 255, 255, 0.7);
-        }
-      }
-
-      .dropdown__icon,
-      .dropdown__arrow,
-      .dropdown__clear-button {
-        color: #ffffff;
-      }
-
-      &:hover:not(.dropdown__toggle--disabled) {
-        background: #6941c6;
-        border-color: #6941c6;
       }
     }
   }
 
-  &__toggle {
-    width: 100%;
-    min-height: 3rem;
-    padding: 0.75rem 1rem;
+  &__field {
     display: flex;
     align-items: center;
-    gap: 0.5rem;
-    background: #ffffff;
-    border: 1px solid #d0d5dd;
-    border-radius: 0.5rem;
-    cursor: pointer;
-    transition: all 0.2s ease;
-    position: relative;
+    width: 100%;
+    background: var(--db-bg);
+    border: 1px solid var(--db-border);
+    border-radius: var(--db-radius);
+    transition:
+      border-color 0.2s ease,
+      box-shadow 0.2s ease;
+    overflow: hidden;
 
-    &:hover:not(&--disabled) {
-      border-color: #98a2b3;
+    &:hover:not(.db__field--disabled) {
+      border-color: var(--db-border-hover);
     }
 
     &:focus-within {
       outline: none;
-      border-color: #3541b4;
+      border-color: var(--db-primary);
       box-shadow:
-        0 0 0 4px rgba(53, 65, 180, 0.2),
+        0 0 0 4px var(--db-primary-ring),
         0 0 1.05px rgba(53, 65, 180, 0.4),
         0 1.05px 2.1px rgba(50, 50, 71, 0.1);
     }
 
-    &--active {
-      border-color: $color-primary;
+    &:has(:focus-visible) {
+      outline: 2px solid var(--db-primary);
+      outline-offset: 2px;
+    }
+
+    &--open {
+      border-color: var(--db-primary);
     }
 
     &--disabled {
-      background-color: #f9fafb;
-      border-color: #d0d5dd;
-      color: #98a2b3;
+      background: var(--db-bg-disabled);
+      border-color: var(--db-border);
+      color: var(--db-text-disabled);
       cursor: not-allowed;
 
       &:hover {
-        border-color: #d0d5dd;
+        border-color: var(--db-border);
       }
-    }
-
-    &--loading {
-      pointer-events: none;
     }
 
     &--error {
       border-color: #dc3545;
 
-      &:hover,
       &:focus-within {
         border-color: #dc3545;
+        box-shadow: 0 0 0 4px rgba(220, 53, 69, 0.2);
       }
+    }
+  }
+
+  &__trigger {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    border: none;
+    background: transparent;
+    cursor: pointer;
+    text-align: left;
+    font-family: inherit;
+    font-size: inherit;
+    line-height: inherit;
+    color: var(--db-text);
+
+    &:focus {
+      outline: none;
+    }
+    &:disabled {
+      cursor: not-allowed;
+    }
+    &--combobox {
+      cursor: text;
     }
   }
 
   &__icon {
     flex-shrink: 0;
-    color: #9ca3af;
     display: flex;
     align-items: center;
     justify-content: center;
     width: 1.25rem;
     height: 1.25rem;
+    color: var(--db-text-muted);
   }
 
-  &__content {
+  &__label {
     flex: 1;
     min-width: 0;
-    margin-right: 0.5rem;
+    display: block;
+    text-align: left;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    color: var(--db-text);
+
+    &--placeholder {
+      color: var(--db-text-muted);
+    }
   }
 
-  &__search-input {
-    width: 100%;
+  &__search {
+    flex: 1;
+    min-width: 0;
     border: none;
     outline: none;
     background: transparent;
-    color: #374151;
-    font-size: 1rem;
-    line-height: 1.5rem;
+    color: var(--db-text);
     font-family: inherit;
     padding: 0;
     margin: 0;
 
     &::placeholder {
-      color: #9ca3af;
+      color: var(--db-text-muted);
     }
-
     &:disabled {
-      color: #98a2b3;
+      color: var(--db-text-disabled);
       cursor: not-allowed;
     }
   }
 
-  &__text {
-    display: block;
-    font-size: 1rem;
-    line-height: 1.5rem;
-    color: #374151;
-    text-align: left;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-
-    &--placeholder {
-      color: #9ca3af;
-    }
-  }
-
-  &__actions {
+  &__suffix {
     display: flex;
     align-items: center;
     gap: 0.25rem;
+    padding: 0 0.75rem;
     flex-shrink: 0;
   }
 
-  &__clear-button {
+  &__clear {
+    display: flex;
+    align-items: center;
+    justify-content: center;
     width: 1.5rem;
     height: 1.5rem;
     border: none;
     background: transparent;
-    color: #9ca3af;
+    color: var(--db-text-muted);
     cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
     border-radius: 0.25rem;
-    transition: all 0.2s ease;
     padding: 0;
+    transition:
+      background-color 0.15s ease,
+      color 0.15s ease;
 
     &:hover {
-      background-color: #f3f4f6;
-      color: #374151;
+      background: #f3f4f6;
+      color: var(--db-text);
     }
-
-    &:focus {
-      outline: 2px solid $color-primary;
+    &:focus-visible {
+      outline: 2px solid var(--db-primary);
       outline-offset: 2px;
     }
   }
 
-  &__arrow {
-    width: 1.25rem;
-    height: 1.25rem;
-    color: #9ca3af;
-    transition: transform 0.2s ease;
+  &__spinner-wrap {
     display: flex;
     align-items: center;
     justify-content: center;
+    width: 1.25rem;
+    height: 1.25rem;
+    color: var(--db-primary);
+  }
+
+  &__spinner {
+    animation: db-spin 1s linear infinite;
+  }
+
+  &__chevron {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 1.25rem;
+    height: 1.25rem;
+    color: var(--db-text-muted);
+    transition: transform 0.2s ease;
     pointer-events: none;
 
-    &--rotated {
+    &--open {
       transform: rotate(180deg);
     }
   }
 
-  &__loading {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 1.25rem;
-    height: 1.25rem;
-  }
-
-  &__loading-spinner {
-    color: $color-primary;
-    animation: dropdown-spin 1s linear infinite;
-  }
-
-  &__menu {
+  &__list {
     position: fixed;
     z-index: 9999;
-    background: #ffffff;
-    border: 1px solid #d0d5dd;
-    border-radius: 0.5rem;
-    box-shadow:
-      0 0.625rem 1.25rem -0.1875rem rgba(0, 0, 0, 0.1),
-      0 0.25rem 0.375rem -0.125rem rgba(0, 0, 0, 0.05);
+    list-style: none;
+    margin: 0.25rem 0 0;
+    padding: 0;
+    background: var(--db-bg);
+    border: 1px solid var(--db-border);
+    border-radius: var(--db-radius);
+    box-shadow: var(--db-shadow);
     max-height: 16rem;
     overflow-y: auto;
-    margin-top: 0.25rem;
+    outline: none;
+
+    &--sm .db__option {
+      padding: 0.5rem 0.75rem;
+      font-size: 0.875rem;
+      line-height: 1.25rem;
+    }
+    &--lg .db__option {
+      padding: 1rem 1.25rem;
+      font-size: 1.125rem;
+      line-height: 1.75rem;
+    }
 
     &::-webkit-scrollbar {
       width: 0.5rem;
     }
-
     &::-webkit-scrollbar-track {
       background: #f1f5f9;
-      border-radius: 0.5rem;
+      border-radius: var(--db-radius);
     }
-
     &::-webkit-scrollbar-thumb {
       background: #cbd5e1;
       border-radius: 0.25rem;
@@ -657,90 +898,87 @@ onClickOutside(dropdownRef, (event) => {
     }
   }
 
-  &__no-results {
+  &__empty {
     padding: 1rem;
     font-size: 0.875rem;
-    color: #9ca3af;
+    line-height: 1.25rem;
+    color: var(--db-text-muted);
     font-style: italic;
     text-align: center;
   }
 
-  &__item {
-    width: 100%;
-    padding: 0.75rem 1rem;
-    text-align: left;
-    border: none;
-    background: transparent;
-    cursor: pointer;
-    font-size: 1rem;
-    line-height: 1.5rem;
-    color: #374151;
-    transition: background-color 0.15s ease;
+  &__option {
     display: flex;
     align-items: center;
     justify-content: space-between;
     gap: 0.5rem;
-    font-family: inherit;
-
-    &:hover:not(&--disabled) {
-      background-color: #f9fafb;
-    }
-
-    &:focus {
-      outline: none;
-      background-color: #f3f4f6;
-    }
-
-    &--active {
-      background-color: #f9fafb;
-      color: #374151;
-      font-weight: 500;
-    }
-
-    &--disabled {
-      color: #98a2b3;
-      cursor: not-allowed;
-      opacity: 0.5;
-
-      &:hover {
-        background-color: transparent;
-      }
-    }
+    padding: 0.75rem 1rem;
+    font-size: 1rem;
+    line-height: 1.5rem;
+    color: var(--db-text);
+    cursor: pointer;
+    user-select: none;
+    border: 2px solid transparent;
+    border-radius: 10px;
+    transition:
+      background-color 0.15s ease,
+      border-color 0.15s ease;
 
     &:first-child {
-      border-top-left-radius: calc(0.5rem - 2px);
-      border-top-right-radius: calc(0.5rem - 2px);
+      border-top-left-radius: calc(var(--db-radius) - 1px);
+      border-top-right-radius: calc(var(--db-radius) - 1px);
     }
 
     &:last-child {
-      border-bottom-left-radius: calc(0.5rem - 2px);
-      border-bottom-right-radius: calc(0.5rem - 2px);
+      border-bottom-left-radius: calc(var(--db-radius) - 1px);
+      border-bottom-right-radius: calc(var(--db-radius) - 1px);
+    }
+
+    &:hover:not(&--disabled) {
+      background: var(--db-option-hover);
+    }
+
+    &--active:not(&--disabled) {
+      background: var(--db-option-active);
+    }
+
+    &--selected {
+      background: #eef0fa;
+      color: #2a3490;
+      font-weight: 600;
+      padding-left: calc(1rem - 3px);
+
+      &:hover {
+        background: #eef0fa;
+      }
+    }
+
+    &--disabled {
+      color: var(--db-text-disabled);
+      cursor: not-allowed;
+      opacity: 0.5;
     }
   }
 
-  &__item-text {
+  &__option-label {
     flex: 1;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
-    text-align: left;
   }
 
-  &__item-check {
-    color: $color-primary;
+  &__option-check {
     flex-shrink: 0;
     display: flex;
     align-items: center;
     justify-content: center;
     width: 1rem;
     height: 1rem;
+    color: var(--db-primary);
   }
 }
 
-@keyframes dropdown-spin {
-  from {
-    transform: rotate(0deg);
-  }
+@keyframes db-spin {
   to {
     transform: rotate(360deg);
   }
