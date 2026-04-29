@@ -7,6 +7,7 @@
         aria-live="polite"
         aria-atomic="false"
       >
+        <!-- TODO: re-enable back button when option selector is restored
         <div v-if="signupOption === 'email'" class="signup-back-button">
           <button
             type="button"
@@ -21,6 +22,7 @@
             />
           </button>
         </div>
+        -->
 
         <div class="signup-header">
           <h1
@@ -52,6 +54,7 @@
           <RegisterWithEmailForm />
         </section>
 
+        <!-- TODO: re-enable cédula registration when ready
         <section
           v-else-if="signupOption === 'idCard'"
           class="signup-section signup-section--form-idcard"
@@ -59,6 +62,7 @@
         >
           <RegisterWithIdCardWizard @back-to-selector="handleBackToSelector" />
         </section>
+        -->
       </div>
 
       <div
@@ -109,12 +113,13 @@ useSeoMeta({
   ogDescription: "Regístrate como paciente y accede a todos los servicios de Vitalink.",
 });
 
-import RegisterWithIdCardWizard from "@/components/pacientes/registro/asistente-registro-cedula.vue";
+// TODO: re-enable when cédula registration is restored
+// import RegisterWithIdCardWizard from "@/components/pacientes/registro/asistente-registro-cedula.vue";
 import RegisterWithEmailForm from "@/components/pacientes/registro/formulario-registro-correo.vue";
 import RegisterOptionSelector from "@/components/pacientes/registro/selector-opcion-registro.vue";
 import { nextTick, ref, watch } from "vue";
 
-const signupOption = ref<"email" | "idCard" | null>(null);
+const signupOption = ref<"email" | "idCard" | null>("email");
 const selectorRef = ref();
 const titleRef = ref<HTMLElement>();
 const statusMessage = ref("");
@@ -125,15 +130,17 @@ const continueSignup = () => {
   statusMessage.value = `Mostrando formulario de registro por ${option === "idCard" ? "cédula" : "correo electrónico"}`;
 };
 
-const handleBack = () => {
-  signupOption.value = null;
-  statusMessage.value = "Volviendo a opciones de registro";
-};
+// TODO: re-enable when option selector is restored
+// const handleBack = () => {
+//   signupOption.value = null;
+//   statusMessage.value = "Volviendo a opciones de registro";
+// };
 
-const handleBackToSelector = () => {
-  signupOption.value = null;
-  statusMessage.value = "Volviendo a opciones de registro";
-};
+// TODO: re-enable when cédula registration is restored
+// const handleBackToSelector = () => {
+//   signupOption.value = null;
+//   statusMessage.value = "Volviendo a opciones de registro";
+// };
 
 watch(signupOption, async () => {
   await nextTick();
