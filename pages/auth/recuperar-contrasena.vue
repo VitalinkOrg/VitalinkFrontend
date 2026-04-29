@@ -2,7 +2,9 @@
   <NuxtLayout name="pacientes-autenticacion">
     <div class="auth-content">
       <div class="auth-header">
-        <h1 class="auth-header__title">Recuperar contraseña</h1>
+        <h1 id="recover-heading" class="auth-header__title">
+          Recuperar contraseña
+        </h1>
         <p v-if="!isSuccess" class="auth-header__subtitle">
           Ingresa tu correo electrónico y te enviaremos instrucciones para
           restablecer tu contraseña
@@ -10,7 +12,11 @@
       </div>
 
       <div v-if="!isSuccess" class="auth-form">
-        <form @submit.prevent="handleSubmit" novalidate>
+        <form
+          @submit.prevent="handleSubmit"
+          novalidate
+          aria-labelledby="recover-heading"
+        >
           <div class="form-group">
             <label for="email" class="form-group__label">
               Correo Electrónico
@@ -30,23 +36,41 @@
               id="email"
               autocomplete="email"
               required
+              aria-required="true"
+              :aria-invalid="touched.email && (!email.trim() || !isEmailValid)"
+              :aria-describedby="
+                touched.email && !email.trim()
+                  ? 'email-error-required'
+                  : touched.email && email.trim() && !isEmailValid
+                    ? 'email-error-invalid'
+                    : undefined
+              "
             />
             <small
               v-if="touched.email && !email.trim()"
+              id="email-error-required"
               class="form-group__error-message"
+              role="alert"
             >
               El correo electrónico es requerido
             </small>
             <small
               v-else-if="touched.email && email.trim() && !isEmailValid"
+              id="email-error-invalid"
               class="form-group__error-message"
+              role="alert"
             >
               Ingresa un correo electrónico válido (ej: usuario@ejemplo.com)
             </small>
           </div>
 
-          <div v-if="errorMessage" class="form-error">
-            <AtomsIconsAlertCircleIcon size="20" />
+          <div
+            v-if="errorMessage"
+            class="form-error"
+            role="alert"
+            aria-live="assertive"
+          >
+            <AtomsIconsAlertCircleIcon size="20" aria-hidden="true" />
             <span>{{ errorMessage }}</span>
           </div>
 
@@ -54,8 +78,9 @@
             type="submit"
             class="form-submit-button"
             :disabled="!isFormValid || isLoading"
+            :aria-busy="isLoading"
           >
-            <span v-if="isLoading" class="spinner"></span>
+            <span v-if="isLoading" class="spinner" aria-hidden="true"></span>
             {{ isLoading ? "Enviando..." : "Enviar instrucciones" }}
           </button>
         </form>
@@ -70,11 +95,19 @@
         </div>
       </div>
 
-      <div v-else class="success-message">
-        <div class="success-message__icon">
+      <div
+        v-else
+        class="success-message"
+        role="status"
+        aria-live="polite"
+        aria-labelledby="success-heading"
+      >
+        <div class="success-message__icon" aria-hidden="true">
           <AtomsIconsCheckIcon size="32" />
         </div>
-        <h2 class="success-message__title">¡Instrucciones enviadas!</h2>
+        <h2 id="success-heading" class="success-message__title">
+          ¡Instrucciones enviadas!
+        </h2>
         <p class="success-message__description">
           Hemos enviado las instrucciones para restablecer tu contraseña a
           <strong>{{ email }}</strong
@@ -105,14 +138,18 @@
 <script lang="ts" setup>
 useSeoMeta({
   title: "Recuperar Contraseña — Vitalink",
-  description: "Restablece tu contraseña de acceso a Vitalink mediante tu correo electrónico.",
+  description:
+    "Restablece tu contraseña de acceso a Vitalink mediante tu correo electrónico.",
   ogTitle: "Recuperar Contraseña — Vitalink",
-  ogDescription: "Restablece tu contraseña de acceso a Vitalink mediante tu correo electrónico.",
+  ogDescription:
+    "Restablece tu contraseña de acceso a Vitalink mediante tu correo electrónico.",
 });
 
 import { useAuth } from "@/composables/api";
+import { useToast } from "@/composables/useToast";
 
 const { forgotPassword } = useAuth();
+const toast = useToast();
 
 const email = ref<string>("");
 const isLoading = ref<boolean>(false);
@@ -153,32 +190,25 @@ const handleSubmit = async () => {
     return;
   }
 
-  try {
-    isLoading.value = true;
-    errorMessage.value = "";
+  isLoading.value = true;
+  errorMessage.value = "";
 
-    const api = forgotPassword({ email: email.value });
-    await api.request();
+  const { error } = await forgotPassword({ email: email.value });
 
-    if (api.error.value) {
-      throw new Error(
-        typeof api.error.value === "string"
-          ? api.error.value
-          : "Error al enviar el correo de recuperación",
-      );
-    }
+  isLoading.value = false;
 
-    isSuccess.value = true;
-  } catch (error) {
-    if (error instanceof Error) {
-      errorMessage.value = error.message;
-    } else {
-      errorMessage.value =
-        "No se pudo enviar el correo de recuperación. Por favor, verifica que el correo electrónico sea correcto e intenta nuevamente.";
-    }
-  } finally {
-    isLoading.value = false;
+  if (error) {
+    const message =
+      error.info ||
+      error.status?.message ||
+      "No se pudo enviar el correo de recuperación. Por favor, verifica que el correo electrónico sea correcto e intenta nuevamente.";
+    errorMessage.value = message;
+    toast.error(message);
+    return;
   }
+
+  isSuccess.value = true;
+  toast.success("Instrucciones enviadas a tu correo electrónico.");
 };
 
 const resetForm = () => {
