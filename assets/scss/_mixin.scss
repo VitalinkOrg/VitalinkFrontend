@@ -268,6 +268,42 @@
   }
 }
 
+@mixin custom-checkbox {
+  appearance: none;
+  -webkit-appearance: none;
+  width: 18px;
+  height: 18px;
+  min-width: 18px;
+  border-radius: 4px;
+  border: 2px solid #c1c7d0;
+  margin: 0;
+  cursor: pointer;
+  position: relative;
+  flex-shrink: 0;
+  background-color: white;
+  transition:
+    border-color 0.15s,
+    background-color 0.15s;
+
+  &:checked {
+    border-color: $color-primary;
+    background-color: $color-primary;
+
+    &::after {
+      content: "";
+      position: absolute;
+      top: 1px;
+      left: 5px;
+      width: 5px;
+      height: 9px;
+      border: 2px solid white;
+      border-top: none;
+      border-left: none;
+      transform: rotate(45deg);
+    }
+  }
+}
+
 @mixin input-base {
   @include input-reset;
   border-radius: $border-radius-md;

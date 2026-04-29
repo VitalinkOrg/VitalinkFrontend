@@ -2,20 +2,51 @@
   <NuxtLayout name="pacientes-autenticacion">
     <div class="auth-content">
       <div class="auth-header">
-        <h1 class="auth-header__title">Cambiar contraseña</h1>
+        <h1 id="change-password-heading" class="auth-header__title">
+          Cambiar contraseña
+        </h1>
         <p v-if="!isSuccess" class="auth-header__subtitle">
           Ingresa tu nueva contraseña para restablecer el acceso a tu cuenta
         </p>
       </div>
 
-      <div v-if="!isSuccess" class="auth-form">
-        <form @submit.prevent="handleSubmit" novalidate>
+      <div
+        v-if="tokenError"
+        class="token-error"
+        role="alert"
+        aria-labelledby="token-error-heading"
+      >
+        <div class="token-error__icon" aria-hidden="true">
+          <AtomsIconsCircleXIcon size="32" />
+        </div>
+        <h2 id="token-error-heading" class="token-error__title">
+          Enlace inválido o expirado
+        </h2>
+        <p class="token-error__description">
+          El enlace de recuperación es inválido o ha expirado. Por favor,
+          solicita uno nuevo.
+        </p>
+        <NuxtLink to="/auth/recuperar-contrasena" class="token-error__button">
+          Solicitar nuevo enlace
+        </NuxtLink>
+      </div>
+
+      <div v-else-if="!isSuccess" class="auth-form">
+        <form
+          @submit.prevent="handleSubmit"
+          novalidate
+          aria-labelledby="change-password-heading"
+        >
           <div class="form-group">
             <label for="password" class="form-group__label">
               Nueva Contraseña
               <div class="tooltip-container">
-                <AtomsIconsInfoIcon size="16" class="tooltip-trigger" />
-                <div class="tooltip-content">
+                <AtomsIconsInfoIcon
+                  size="16"
+                  class="tooltip-trigger"
+                  aria-hidden="true"
+                />
+                <div class="tooltip-content" role="tooltip">
                   La contraseña debe tener al menos 8 caracteres
                 </div>
               </div>
@@ -35,6 +66,17 @@
                 id="password"
                 autocomplete="new-password"
                 required
+                aria-required="true"
+                :aria-invalid="
+                  touched.password && (!password || !isPasswordValid)
+                "
+                :aria-describedby="
+                  touched.password && !password
+                    ? 'password-error-required'
+                    : touched.password && password && !isPasswordValid
+                      ? 'password-error-invalid'
+                      : undefined
+                "
               />
               <button
                 type="button"
@@ -43,6 +85,7 @@
                 :aria-label="
                   showPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'
                 "
+                :disabled="isLoading"
               >
                 <AtomsIconsEyeIcon v-if="!showPassword" size="20" />
                 <AtomsIconsEyeOffIcon v-else size="20" />
@@ -50,13 +93,17 @@
             </div>
             <small
               v-if="touched.password && !password"
+              id="password-error-required"
               class="form-group__error-message"
+              role="alert"
             >
               La contraseña es requerida
             </small>
             <small
               v-else-if="touched.password && password && !isPasswordValid"
+              id="password-error-invalid"
               class="form-group__error-message"
+              role="alert"
             >
               La contraseña debe tener al menos 8 caracteres
             </small>
@@ -82,6 +129,18 @@
                 id="confirmPassword"
                 autocomplete="new-password"
                 required
+                aria-required="true"
+                :aria-invalid="
+                  touched.confirmPassword &&
+                  (!confirmPassword || passwordMismatch)
+                "
+                :aria-describedby="
+                  touched.confirmPassword && !confirmPassword
+                    ? 'confirm-error-required'
+                    : touched.confirmPassword && passwordMismatch
+                      ? 'confirm-error-mismatch'
+                      : undefined
+                "
               />
               <button
                 type="button"
@@ -92,6 +151,7 @@
                     ? 'Ocultar contraseña'
                     : 'Mostrar contraseña'
                 "
+                :disabled="isLoading"
               >
                 <AtomsIconsEyeIcon v-if="!showConfirmPassword" size="20" />
                 <AtomsIconsEyeOffIcon v-else size="20" />
@@ -99,61 +159,81 @@
             </div>
             <small
               v-if="touched.confirmPassword && !confirmPassword"
+              id="confirm-error-required"
               class="form-group__error-message"
+              role="alert"
             >
               Debes confirmar tu contraseña
             </small>
             <small
               v-else-if="touched.confirmPassword && passwordMismatch"
+              id="confirm-error-mismatch"
               class="form-group__error-message"
+              role="alert"
             >
               Las contraseñas no coinciden
             </small>
           </div>
 
-          <div class="password-requirements">
-            <p class="password-requirements__title">
+          <div
+            class="password-requirements"
+            aria-label="Requisitos de contraseña"
+          >
+            <p class="password-requirements__title" aria-hidden="true">
               La contraseña debe cumplir con:
             </p>
             <ul class="password-requirements__list">
               <li
                 class="password-requirements__item"
                 :class="{ 'is-valid': password.length >= 8 }"
+                :aria-label="`Mínimo 8 caracteres: ${password.length >= 8 ? 'cumplido' : 'pendiente'}`"
               >
-                <AtomsIconsCheckIcon v-if="password.length >= 8" size="16" />
-                <AtomsIconsXIcon v-else size="16" />
-                Mínimo 8 caracteres
+                <AtomsIconsCheckIcon
+                  v-if="password.length >= 8"
+                  size="16"
+                  aria-hidden="true"
+                />
+                <AtomsIconsXIcon v-else size="16" aria-hidden="true" />
+                <span aria-hidden="true">Mínimo 8 caracteres</span>
               </li>
               <li
                 class="password-requirements__item"
                 :class="{ 'is-valid': hasUpperCase }"
+                :aria-label="`Al menos una mayúscula: ${hasUpperCase ? 'cumplido' : 'pendiente'}`"
               >
-                <AtomsIconsCheckIcon v-if="hasUpperCase" size="16" />
-                <AtomsIconsXIcon v-else size="16" />
-                Al menos una mayúscula (recomendado)
+                <AtomsIconsCheckIcon
+                  v-if="hasUpperCase"
+                  size="16"
+                  aria-hidden="true"
+                />
+                <AtomsIconsXIcon v-else size="16" aria-hidden="true" />
+                <span aria-hidden="true"
+                  >Al menos una mayúscula (recomendado)</span
+                >
               </li>
               <li
                 class="password-requirements__item"
                 :class="{ 'is-valid': hasNumber }"
+                :aria-label="`Al menos un número: ${hasNumber ? 'cumplido' : 'pendiente'}`"
               >
-                <AtomsIconsCheckIcon v-if="hasNumber" size="16" />
-                <AtomsIconsXIcon v-else size="16" />
-                Al menos un número (recomendado)
+                <AtomsIconsCheckIcon
+                  v-if="hasNumber"
+                  size="16"
+                  aria-hidden="true"
+                />
+                <AtomsIconsXIcon v-else size="16" aria-hidden="true" />
+                <span aria-hidden="true">Al menos un número (recomendado)</span>
               </li>
             </ul>
-          </div>
-
-          <div v-if="errorMessage" class="form-error">
-            <AtomsIconsAlertCircleIcon size="20" />
-            <span>{{ errorMessage }}</span>
           </div>
 
           <button
             type="submit"
             class="form-submit-button"
             :disabled="!isFormValid || isLoading"
+            :aria-busy="isLoading"
           >
-            <span v-if="isLoading" class="spinner"></span>
+            <span v-if="isLoading" class="spinner" aria-hidden="true"></span>
             {{ isLoading ? "Cambiando contraseña..." : "Cambiar contraseña" }}
           </button>
         </form>
@@ -167,11 +247,17 @@
         </div>
       </div>
 
-      <div v-else class="success-message">
-        <div class="success-message__icon">
+      <div
+        v-else
+        class="success-message"
+        role="status"
+        aria-live="polite"
+        aria-labelledby="success-heading"
+      >
+        <div class="success-message__icon" aria-hidden="true">
           <AtomsIconsCheckIcon size="32" />
         </div>
-        <h2 class="success-message__title">
+        <h2 id="success-heading" class="success-message__title">
           ¡Contraseña cambiada exitosamente!
         </h2>
         <p class="success-message__description">
@@ -194,13 +280,16 @@ useSeoMeta({
   title: "Cambiar Contraseña — Vitalink",
   description: "Actualiza tu contraseña de acceso a Vitalink de forma segura.",
   ogTitle: "Cambiar Contraseña — Vitalink",
-  ogDescription: "Actualiza tu contraseña de acceso a Vitalink de forma segura.",
+  ogDescription:
+    "Actualiza tu contraseña de acceso a Vitalink de forma segura.",
 });
 
 import { useAuth } from "@/composables/api";
+import { useToast } from "@/composables/useToast";
 
 const route = useRoute();
 const { resetPassword, verifyForgotPasswordToken } = useAuth();
+const toast = useToast();
 
 const password = ref<string>("");
 const confirmPassword = ref<string>("");
@@ -208,47 +297,37 @@ const showPassword = ref<boolean>(false);
 const showConfirmPassword = ref<boolean>(false);
 const isLoading = ref<boolean>(false);
 const isSuccess = ref<boolean>(false);
-const errorMessage = ref<string>("");
 const isVerifyingToken = ref<boolean>(true);
+const tokenError = ref<boolean>(false);
 
 const touched = reactive({
   password: false,
   confirmPassword: false,
 });
 
-const token = computed(() => {
-  return (route.query.token as string) || "";
-});
+const token = computed(() => (route.params.token as string) || "");
 
-const isPasswordValid = computed(() => {
-  return password.value.length >= 8;
-});
+const isPasswordValid = computed(() => password.value.length >= 8);
 
-const hasUpperCase = computed(() => {
-  return /[A-Z]/.test(password.value);
-});
+const hasUpperCase = computed(() => /[A-Z]/.test(password.value));
 
-const hasNumber = computed(() => {
-  return /\d/.test(password.value);
-});
+const hasNumber = computed(() => /\d/.test(password.value));
 
-const passwordMismatch = computed(() => {
-  return (
+const passwordMismatch = computed(
+  () =>
     password.value.trim() !== "" &&
     password.value !== confirmPassword.value &&
-    confirmPassword.value !== ""
-  );
-});
+    confirmPassword.value !== "",
+);
 
-const isFormValid = computed(() => {
-  return (
+const isFormValid = computed(
+  () =>
     password.value.trim() !== "" &&
     confirmPassword.value.trim() !== "" &&
     isPasswordValid.value &&
     !passwordMismatch.value &&
-    token.value !== ""
-  );
-});
+    token.value !== "",
+);
 
 const markAllTouched = () => {
   Object.keys(touched).forEach((key) => {
@@ -258,32 +337,23 @@ const markAllTouched = () => {
 
 const verifyToken = async () => {
   if (!token.value) {
-    errorMessage.value =
-      "Token de recuperación no encontrado. Por favor, utiliza el enlace enviado a tu correo electrónico.";
     isVerifyingToken.value = false;
+    tokenError.value = true;
+    toast.error(
+      "Token de recuperación no encontrado. Por favor, utiliza el enlace enviado a tu correo electrónico.",
+    );
     return;
   }
 
-  try {
-    const api = verifyForgotPasswordToken(token.value);
-    await api.request();
+  const { data, error } = await verifyForgotPasswordToken(token.value);
 
-    if (api.error.value) {
-      throw new Error("Token inválido o expirado");
-    }
+  isVerifyingToken.value = false;
 
-    const response = api.response.value;
-    if (response && !response.data?.valid) {
-      throw new Error(response.data?.message || "Token inválido o expirado");
-    }
-
-    isVerifyingToken.value = false;
-  } catch (error) {
-    isVerifyingToken.value = false;
-    errorMessage.value =
-      error instanceof Error
-        ? error.message
-        : "Token de recuperación inválido o expirado. Por favor, solicita un nuevo enlace de recuperación.";
+  if (error || !data?.valid) {
+    tokenError.value = true;
+    toast.error(
+      "El enlace de recuperación es inválido o ha expirado. Por favor, solicita uno nuevo.",
+    );
   }
 };
 
@@ -295,43 +365,33 @@ const handleSubmit = async () => {
   }
 
   if (!token.value) {
-    errorMessage.value =
-      "Token de recuperación inválido o expirado. Por favor, solicita un nuevo enlace de recuperación.";
+    toast.error(
+      "Token de recuperación inválido o expirado. Por favor, solicita un nuevo enlace de recuperación.",
+    );
     return;
   }
 
-  try {
-    isLoading.value = true;
-    errorMessage.value = "";
+  isLoading.value = true;
 
-    const api = resetPassword(token.value, {
-      password: password.value,
-    });
-    await api.request();
+  const { error } = await resetPassword(token.value, {
+    password: password.value,
+  });
 
-    if (api.error.value) {
-      throw new Error(
-        typeof api.error.value === "string"
-          ? api.error.value
-          : "Error al cambiar la contraseña",
-      );
-    }
+  isLoading.value = false;
 
-    isSuccess.value = true;
-
-    setTimeout(() => {
-      navigateTo("/auth/login");
-    }, 3000);
-  } catch (error) {
-    if (error instanceof Error) {
-      errorMessage.value = error.message;
-    } else {
-      errorMessage.value =
-        "No se pudo cambiar la contraseña. Por favor, intenta nuevamente o solicita un nuevo enlace de recuperación.";
-    }
-  } finally {
-    isLoading.value = false;
+  if (error) {
+    toast.error(
+      "No se pudo cambiar la contraseña. Por favor, intenta nuevamente o solicita un nuevo enlace de recuperación.",
+    );
+    return;
   }
+
+  isSuccess.value = true;
+  toast.success("¡Contraseña cambiada exitosamente!");
+
+  setTimeout(() => {
+    navigateTo("/auth/login");
+  }, 3000);
 };
 
 onMounted(async () => {
@@ -450,6 +510,11 @@ onMounted(async () => {
     outline: 2px solid $color-primary;
     outline-offset: 2px;
   }
+
+  &:disabled {
+    cursor: not-allowed;
+    opacity: 0.4;
+  }
 }
 
 .tooltip-container {
@@ -566,19 +631,6 @@ onMounted(async () => {
   }
 }
 
-.form-error {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  padding: 0.75rem 1rem;
-  background-color: #fef2f2;
-  border: 1px solid #fecaca;
-  border-radius: 0.5rem;
-  color: #dc2626;
-  font-size: 0.875rem;
-  margin-top: 1rem;
-}
-
 .form-submit-button {
   @include primary-button;
   width: 100%;
@@ -630,6 +682,12 @@ onMounted(async () => {
     &:hover {
       text-decoration: underline;
       color: $color-primary-darkened-10;
+    }
+
+    &:focus-visible {
+      outline: 2px solid $color-primary;
+      outline-offset: 2px;
+      border-radius: 2px;
     }
   }
 }
@@ -687,6 +745,56 @@ onMounted(async () => {
     display: flex;
     align-items: center;
     justify-content: center;
+  }
+}
+
+.token-error {
+  text-align: center;
+  padding: 1rem 0;
+
+  &__icon {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    width: 4.5rem;
+    height: 4.5rem;
+    background: linear-gradient(135deg, #fee2e2 0%, #fecaca 100%);
+    border-radius: 50%;
+    margin: 0 auto 1.5rem;
+
+    svg {
+      color: #dc2626;
+    }
+  }
+
+  &__title {
+    @include label-base;
+    font-size: 1.75rem;
+    font-weight: 700;
+    color: $color-foreground;
+    margin-bottom: 1rem;
+
+    @media (max-width: 48rem) {
+      font-size: 1.5rem;
+    }
+  }
+
+  &__description {
+    @include text-base;
+    font-size: 1rem;
+    color: $color-text-muted;
+    line-height: 1.7;
+    margin: 0 0 2rem 0;
+  }
+
+  &__button {
+    @include primary-button;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding-left: 2rem;
+    padding-right: 2rem;
   }
 }
 </style>
