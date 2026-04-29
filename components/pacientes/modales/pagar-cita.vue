@@ -96,6 +96,16 @@
         </button>
       </div>
 
+      <div
+        class="pay-appointment__payment-notice"
+        role="alert"
+        aria-live="polite"
+      >
+        <p class="pay-appointment__payment-notice-text">
+          El pago debe realizarlo directamente con tu médico.
+        </p>
+      </div>
+
       <nav
         class="pay-appointment__actions"
         role="group"
@@ -117,7 +127,7 @@
           :aria-busy="isSubmitting"
           @click="handleConfirmPayment"
         >
-          <span v-if="!isSubmitting">Confirmar pago</span>
+          <span v-if="!isSubmitting">Continuar con tu reserva</span>
           <span v-else class="pay-appointment__loader" aria-live="polite">
             <span class="pay-appointment__loader-spinner" aria-hidden="true" />
             Procesando...
@@ -266,11 +276,11 @@ async function handleConfirmPayment(): Promise<void> {
 
     emitCloseModal("appointmentDetails");
     emitCloseModal("payAppointment");
-    emitOpenModal("successfulPayment", {
-      amountPaid: balanceDue.value,
-    });
+    /* emitOpenModal("successfulPayment", {
+       amountPaid: balanceDue.value,
+     });*/
 
-    toast.success("Pago realizado exitosamente.");
+    toast.success("Procesado exitosamente.");
   } catch (error: unknown) {
     const fallback = "Ocurrió un error inesperado. Intenta nuevamente.";
     errorMessage.value = error instanceof Error ? error.message : fallback;
@@ -306,7 +316,7 @@ async function submitPaymentUpdate(): Promise<void> {
     },
     params: { id: props.appointment.id },
     body: {
-      payment_method_code: "CREDIT_CARD",
+      payment_method_code: "ON_CONSULTATION",
     },
   });
 
@@ -459,6 +469,24 @@ watch(isModalVisible, (open) => {
     &:hover {
       background: rgba(239, 68, 68, 0.05);
     }
+  }
+
+  &__payment-notice {
+    background: rgba(239, 68, 68, 0.08);
+    border: 1px solid rgba(239, 68, 68, 0.3);
+    border-radius: 0.5rem;
+    padding: 0.875rem;
+    margin-top: 0.25rem;
+  }
+
+  &__payment-notice-text {
+    color: #dc2626;
+    font-family: $font-family-main;
+    font-weight: 600;
+    font-size: 0.875rem;
+    line-height: 1.4;
+    margin: 0;
+    text-align: center;
   }
 
   &__actions {
