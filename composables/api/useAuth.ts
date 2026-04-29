@@ -102,6 +102,11 @@ export const useAuth = () => {
       },
     );
 
+  const confirmationRegister = (token: string) =>
+    executeRequest("confirmationRegister", `confirmation_register/${token}`, {
+      method: "GET",
+    });
+
   // ─── Authenticated endpoints ───
 
   const getUserById = (userId: string, token?: string) => {
@@ -148,5 +153,6 @@ export const useAuth = () => {
     verifyForgotPasswordToken,
     resetPassword,
     logout,
+    confirmationRegister,
   };
 };
