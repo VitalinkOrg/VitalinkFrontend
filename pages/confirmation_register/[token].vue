@@ -1,55 +1,63 @@
 <template>
   <div class="auth-content">
-      <div v-if="isLoading" class="verification-state">
-        <div class="verification-state__spinner">
-          <span class="spinner spinner--large"></span>
-        </div>
-        <h1 class="verification-state__title">Verificando tu cuenta</h1>
-        <p class="verification-state__description">
-          Estamos confirmando tu registro, por favor espera un momento...
-        </p>
+    <div v-if="isLoading" class="verification-state">
+      <div class="verification-state__spinner">
+        <span class="spinner spinner--large"></span>
       </div>
+      <h1 class="verification-state__title">Verificando tu cuenta</h1>
+      <p class="verification-state__description">
+        Estamos confirmando tu registro, por favor espera un momento...
+      </p>
+    </div>
 
-      <div v-else-if="isSuccess" class="success-message">
-        <div class="success-message__icon">
-          <AtomsIconsCheckIcon size="32" />
-        </div>
-        <h1 class="success-message__title">¡Cuenta verificada!</h1>
-        <p class="success-message__description">
-          Tu cuenta ha sido confirmada exitosamente. Ya puedes iniciar sesión y
-          comenzar a usar Vitalink.
-        </p>
-        <p class="success-message__note">
-          Serás redirigido al inicio de sesión automáticamente en unos segundos.
-        </p>
-        <div class="success-message__actions">
-          <NuxtLink to="/pacientes/login" class="success-message__button">
-            Ir a iniciar sesión
-          </NuxtLink>
-        </div>
+    <div v-else-if="isSuccess && isPendingApproval" class="pending-message">
+      <div class="pending-message__icon">
+        <AtomsIconsCheckIcon size="32" />
       </div>
+      <h1 class="pending-message__title">¡Correo verificado!</h1>
+      <p class="pending-message__description">
+        Tu dirección de correo ha sido confirmada. Espera que Vitalink confirme
+        tu registro antes de poder acceder a tu cuenta.
+      </p>
+      <p class="pending-message__note">
+        Recibirás una notificación cuando tu cuenta haya sido aprobada.
+      </p>
+    </div>
 
-      <div v-else class="error-message">
-        <div class="error-message__icon">
-          <AtomsIconsCircleXIcon size="32" />
-        </div>
-        <h1 class="error-message__title">Verificación fallida</h1>
-        <p class="error-message__description">
-          {{ errorMessage }}
-        </p>
-        <div class="error-message__actions">
-          <NuxtLink to="/pacientes/registro" class="error-message__button">
-            Volver al registro
-          </NuxtLink>
-          <NuxtLink
-            to="/pacientes/login"
-            class="error-message__button-secondary"
-          >
-            Ir a iniciar sesión
-          </NuxtLink>
-        </div>
+    <div v-else-if="isSuccess" class="success-message">
+      <div class="success-message__icon">
+        <AtomsIconsCheckIcon size="32" />
+      </div>
+      <h1 class="success-message__title">¡Cuenta verificada!</h1>
+      <p class="success-message__description">
+        Tu cuenta ha sido confirmada exitosamente. Ya puedes iniciar sesión y
+        comenzar a usar Vitalink.
+      </p>
+      <div class="success-message__actions">
+        <NuxtLink to="/pacientes/login" class="success-message__button">
+          Ir a iniciar sesión
+        </NuxtLink>
       </div>
     </div>
+
+    <div v-else class="error-message">
+      <div class="error-message__icon">
+        <AtomsIconsCircleXIcon size="32" />
+      </div>
+      <h1 class="error-message__title">Verificación fallida</h1>
+      <p class="error-message__description">
+        {{ errorMessage }}
+      </p>
+      <div class="error-message__actions">
+        <NuxtLink to="/pacientes/registro" class="error-message__button">
+          Volver al registro
+        </NuxtLink>
+        <NuxtLink to="/pacientes/login" class="error-message__button-secondary">
+          Ir a iniciar sesión
+        </NuxtLink>
+      </div>
+    </div>
+  </div>
 </template>
 
 <script lang="ts" setup>
@@ -61,6 +69,8 @@ useSeoMeta({
 });
 
 import { useAuth } from "@/composables/api";
+import { decodeJWT } from "@/utils/jwt";
+import { UserRole } from "@/types/auth";
 
 const route = useRoute();
 const { confirmationRegister } = useAuth();
@@ -72,6 +82,15 @@ const errorMessage = ref<string>(
 );
 
 const token = computed(() => (route.params.token as string) || "");
+
+const isPendingApproval = computed(() => {
+  if (!token.value) return false;
+  const payload = decodeJWT(token.value);
+  return (
+    payload?.role === UserRole.LEGAL_REPRESENTATIVE ||
+    payload?.role === UserRole.FINANCE_ENTITY
+  );
+});
 
 onMounted(async () => {
   if (!token.value) {
@@ -93,10 +112,6 @@ onMounted(async () => {
 
   isSuccess.value = true;
   isLoading.value = false;
-
-  setTimeout(() => {
-    navigateTo("/pacientes/login");
-  }, 4000);
 });
 </script>
 
@@ -161,6 +176,58 @@ onMounted(async () => {
 @keyframes spin {
   to {
     transform: rotate(360deg);
+  }
+}
+
+.pending-message {
+  text-align: center;
+  padding: 1rem 0;
+
+  &__icon {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    width: 4.5rem;
+    height: 4.5rem;
+    background: linear-gradient(135deg, #fef9c3 0%, #fde68a 100%);
+    border-radius: 50%;
+    margin: 0 auto 1.5rem;
+
+    svg {
+      color: #b45309;
+    }
+  }
+
+  &__title {
+    @include label-base;
+    font-size: 1.75rem;
+    font-weight: 700;
+    color: $color-foreground;
+    margin-bottom: 1rem;
+
+    @media (max-width: 48rem) {
+      font-size: 1.5rem;
+    }
+  }
+
+  &__description {
+    @include text-base;
+    font-size: 1rem;
+    color: $color-text-muted;
+    line-height: 1.7;
+    margin: 0 0 1rem 0;
+  }
+
+  &__note {
+    @include text-base;
+    font-size: 0.875rem;
+    color: $color-text-muted;
+    line-height: 1.5;
+    margin: 0;
+    padding: 1rem;
+    background-color: #fffbeb;
+    border-radius: 0.5rem;
+    border-left: 3px solid #f59e0b;
   }
 }
 

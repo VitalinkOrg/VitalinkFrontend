@@ -268,34 +268,6 @@
       </fieldset>
     </form>
 
-    <div
-      class="registration-social-login"
-      role="region"
-      aria-label="Opciones de registro social"
-    >
-      <p class="registration-social-login__label">
-        <span>O hacerlo con:</span>
-      </p>
-      <div class="registration-social-buttons">
-        <button
-          type="button"
-          class="registration-social-button registration-google-button"
-          aria-label="Registrarse con Google"
-          @click="loginWithGoogle"
-        >
-          <AtomsIconsGoogleIcon size="24" aria-hidden="true" />
-        </button>
-        <button
-          type="button"
-          class="registration-social-button registration-apple-button"
-          aria-label="Registrarse con Apple"
-          @click="loginWithApple"
-        >
-          <AtomsIconsAppleIcon size="24" aria-hidden="true" />
-        </button>
-      </div>
-    </div>
-
     <div class="registration-footer-actions">
       <p class="registration-already-account">
         <span>¿Ya tienes una cuenta?</span>
@@ -530,12 +502,9 @@ const handleSubmit = async () => {
     }
 
     if (data.value) {
-      await useFetch(config.public.API_BASE_URL + "/forgot_password", {
-        method: "POST",
-        body: { email: email.value },
-      });
-
-      toast.success("Registro exitoso. Revisa tu correo electrónico para verificar tu cuenta.");
+      toast.success(
+        "Registro exitoso. Revisa tu correo electrónico para verificar tu cuenta.",
+      );
     }
   } catch (error) {
     logger.error("Register exception", { error });

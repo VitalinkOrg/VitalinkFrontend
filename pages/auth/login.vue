@@ -106,21 +106,6 @@
             ¿Olvidaste tu contraseña?
           </NuxtLink>
         </div>
-
-        <div class="social-login">
-          <p class="social-login__divider" aria-hidden="true">
-            <span>O hacerlo con</span>
-          </p>
-          <button
-            type="button"
-            class="social-login__button"
-            aria-label="Ingresar con Google"
-            :disabled="isLoading"
-          >
-            <AtomsIconsGoogleIcon aria-hidden="true" />
-            <span>Ingresar con Google</span>
-          </button>
-        </div>
       </div>
 
       <div class="login-form__footer">
