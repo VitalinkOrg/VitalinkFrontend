@@ -54,23 +54,6 @@
             {{ passwordError }}
           </span>
         </div>
-
-        <div class="text-center d-flex flex-column">
-          <div class="social-login">
-            <p class="social-login__label" id="social-login-label">
-              <small>O hacerlo con:</small>
-            </p>
-            <button
-              type="button"
-              class="social-login__button"
-              aria-labelledby="social-login-label google-login-label"
-              :disabled="isLoading"
-            >
-              <AtomsIconsGoogleIcon />
-              <span id="google-login-label">Ingresar con Google</span>
-            </button>
-          </div>
-        </div>
       </div>
 
       <div class="login-form__footer">
@@ -108,16 +91,22 @@ useSeoMeta({
   ogDescription: "Accede a tu cuenta de paciente en Vitalink.",
 });
 
-import { useAuth, useSupplier } from "@/composables/api";
+import { useAuth } from "@/composables/api";
+import {
+  type DecodedToken,
+  type LoginResponse,
+  type UserRoleType,
+  ROLE_HOME_ROUTES,
+  ROLES_REQUIRING_PROFILE,
+} from "@/types/auth";
 import { jwtDecode } from "jwt-decode";
 
 definePageMeta({
   middleware: ["auth-login"],
 });
 
-const { login, fetchUserInfo, fetchHospitalInfo } = useAuth();
+const { login, getUserById } = useAuth();
 const { setUserInfo } = useUserInfo();
-const { fetchSupplier } = useSupplier();
 const { setRole, setAuthenticated } = useAuthState();
 const { setToken, setRefreshToken } = useAuthToken();
 const router = useRouter();
@@ -129,38 +118,26 @@ const isLoading = ref<boolean>(false);
 const emailError = ref<string>("");
 const passwordError = ref<string>("");
 
-interface DecodedToken {
-  id: string;
-  role: string;
-}
-
 const handleLogin = async () => {
   try {
     isLoading.value = true;
     clearErrors();
 
-    const formData = {
+    const { data, error } = await login({
       email: email.value,
-      username: "",
       password: password.value,
-    };
-
-    const api = login(formData);
-    await api.request();
-
-    const response = api.response.value;
-    const error = api.error.value;
+    });
 
     if (error) {
       handleLoginError(error);
       return;
     }
 
-    if (response?.data) {
-      await handleSuccessfulLogin(response.data);
+    if (data) {
+      await handleSuccessfulLogin(data as LoginResponse);
     }
-  } catch (error) {
-    console.error("Login error:", error);
+  } catch (err) {
+    console.error("Login error:", err);
   } finally {
     isLoading.value = false;
   }
@@ -171,8 +148,9 @@ const clearErrors = () => {
   passwordError.value = "";
 };
 
-const handleLoginError = (error: any) => {
-  const errorInfo = error.info || error.message || "Error al iniciar sesión";
+const handleLoginError = (error: IApiErrorResponse) => {
+  const errorInfo =
+    error.info || error.status?.message || "Error al iniciar sesión";
 
   if (errorInfo.toLowerCase().includes("password")) {
     passwordError.value = errorInfo;
@@ -186,96 +164,43 @@ const handleLoginError = (error: any) => {
   }
 };
 
-const handleSuccessfulLogin = async (data: any) => {
-  const accessToken = data.access_token;
-  const refreshToken = data.refresh_token;
+const handleSuccessfulLogin = async (data: LoginResponse) => {
+  const { access_token, refresh_token } = data;
 
-  setToken(accessToken);
-  setRefreshToken(refreshToken);
+  setToken(access_token);
+  setRefreshToken(refresh_token);
   setAuthenticated(true);
 
-  const decodedToken = jwtDecode<DecodedToken>(accessToken);
-  setRole(decodedToken.role);
+  const decoded = jwtDecode<DecodedToken>(access_token);
+  setRole(decoded.role);
 
-  await routeUserByRole(decodedToken, accessToken);
+  await loadUserProfile(decoded, access_token);
+  navigateToHome(decoded.role);
 };
 
-const routeUserByRole = async (decodedToken: DecodedToken, token: string) => {
-  const { id, role } = decodedToken;
+const loadUserProfile = async (decoded: DecodedToken, token: string) => {
+  if (!ROLES_REQUIRING_PROFILE.has(decoded.role)) {
+    setUserInfo(decoded);
+    return;
+  }
 
-  switch (role) {
-    case "CUSTOMER":
-      await getUserInfo(id, token);
-      break;
-    case "LEGAL_REPRESENTATIVE":
-      await getDoctorInfo(id, token);
-      break;
-    case "FINANCE_ENTITY":
-      await getFinanceEntityInfo(decodedToken);
-      break;
-    default:
-      await getHospitalInfo(token);
-      break;
+  const { data, error } = await getUserById(decoded.id, token);
+
+  if (error) {
+    console.error("Error al obtener perfil:", error);
+    return;
+  }
+
+  if (data) {
+    setUserInfo(data);
   }
 };
 
-const getUserInfo = async (userId: string, token: string) => {
-  try {
-    const api = fetchUserInfo(userId, token);
-    await api.request();
-
-    const response = api.response.value;
-    const error = api.error.value;
-
-    if (error) {
-      console.error("Error fetching user info:", error);
-      return;
-    }
-
-    if (response?.data) {
-      setUserInfo(response.data);
-      router.push("/pacientes/inicio");
-    }
-  } catch (err) {
-    console.error("Error en getUserInfo:", err);
+const navigateToHome = (role: UserRoleType) => {
+  const route = ROLE_HOME_ROUTES[role];
+  if (route) {
+    router.push(route);
   }
-};
-
-const getDoctorInfo = async (userId: string, token: string) => {
-  try {
-    const api = fetchUserInfo(userId, token);
-    await api.request();
-
-    const response = api.response.value;
-
-    if (response?.data) {
-      setUserInfo(response.data);
-      router.push("/medicos/inicio");
-    }
-  } catch (err) {
-    console.error("Error en getDoctorInfo:", err);
-  }
-};
-
-const getHospitalInfo = async (token: string) => {
-  try {
-    const api = fetchHospitalInfo(token);
-    await api.request();
-
-    const response = api.response.value;
-
-    if (response?.data) {
-      setUserInfo(response.data);
-      router.push("/medicos/inicio");
-    }
-  } catch (err) {
-    console.error("Error en getHospitalInfo:", err);
-  }
-};
-
-const getFinanceEntityInfo = async (decodedToken: DecodedToken) => {
-  setUserInfo(decodedToken);
-  router.push("/socio-financiero/inicio");
 };
 </script>
 

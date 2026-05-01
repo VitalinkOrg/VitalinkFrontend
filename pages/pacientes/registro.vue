@@ -53,16 +53,6 @@
         >
           <RegisterWithEmailForm />
         </section>
-
-        <!-- TODO: re-enable cédula registration when ready
-        <section
-          v-else-if="signupOption === 'idCard'"
-          class="signup-section signup-section--form-idcard"
-          aria-label="Formulario de registro con cédula"
-        >
-          <RegisterWithIdCardWizard @back-to-selector="handleBackToSelector" />
-        </section>
-        -->
       </div>
 
       <div
@@ -108,13 +98,13 @@
 <script lang="ts" setup>
 useSeoMeta({
   title: "Crear Cuenta — Vitalink",
-  description: "Regístrate como paciente y accede a todos los servicios de Vitalink.",
+  description:
+    "Regístrate como paciente y accede a todos los servicios de Vitalink.",
   ogTitle: "Crear Cuenta — Vitalink",
-  ogDescription: "Regístrate como paciente y accede a todos los servicios de Vitalink.",
+  ogDescription:
+    "Regístrate como paciente y accede a todos los servicios de Vitalink.",
 });
 
-// TODO: re-enable when cédula registration is restored
-// import RegisterWithIdCardWizard from "@/components/pacientes/registro/asistente-registro-cedula.vue";
 import RegisterWithEmailForm from "@/components/pacientes/registro/formulario-registro-correo.vue";
 import RegisterOptionSelector from "@/components/pacientes/registro/selector-opcion-registro.vue";
 import { nextTick, ref, watch } from "vue";
@@ -129,18 +119,6 @@ const continueSignup = () => {
   signupOption.value = option;
   statusMessage.value = `Mostrando formulario de registro por ${option === "idCard" ? "cédula" : "correo electrónico"}`;
 };
-
-// TODO: re-enable when option selector is restored
-// const handleBack = () => {
-//   signupOption.value = null;
-//   statusMessage.value = "Volviendo a opciones de registro";
-// };
-
-// TODO: re-enable when cédula registration is restored
-// const handleBackToSelector = () => {
-//   signupOption.value = null;
-//   statusMessage.value = "Volviendo a opciones de registro";
-// };
 
 watch(signupOption, async () => {
   await nextTick();

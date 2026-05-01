@@ -1,22 +1,49 @@
 <template>
   <NuxtLayout name="medicos-autenticacion">
     <section class="registration" aria-labelledby="registration-heading">
-      <HeaderRegistro />
+      <template v-if="!registrationComplete">
+        <HeaderRegistro />
 
-      <form
-        @submit.prevent="submitRegistration"
-        class="registration__form"
-        novalidate
-      >
-        <div class="registration__step">
-          <MedicosRegistroFormularioProveedorMedico
-            :form-data="representativeFormData"
-            :is-submitting="isSubmitting"
-            @update:form-data="representativeFormData = $event"
-            @submit="submitRegistration"
-          />
+        <form
+          @submit.prevent="submitRegistration"
+          class="registration__form"
+          novalidate
+        >
+          <div class="registration__step">
+            <MedicosRegistroFormularioProveedorMedico
+              :form-data="representativeFormData"
+              :is-submitting="isSubmitting"
+              @update:form-data="representativeFormData = $event"
+              @submit="submitRegistration"
+            />
+          </div>
+        </form>
+      </template>
+
+      <div v-else class="registration__confirmation">
+        <div class="confirmation-message">
+          <div class="confirmation-message__icon" aria-hidden="true">
+            <AtomsIconsCheckIcon size="32" />
+          </div>
+          <h1 class="confirmation-message__title">
+            ¡Registro completado!
+          </h1>
+          <p class="confirmation-message__description">
+            Tu cuenta ha sido creada exitosamente. Te hemos enviado un correo
+            electrónico a <strong>{{ representativeFormData.email }}</strong> con
+            un enlace para confirmar tu dirección.
+          </p>
+          <p class="confirmation-message__note">
+            Por favor revisa tu bandeja de entrada (y carpeta de spam) y sigue
+            las instrucciones del correo para activar tu cuenta.
+          </p>
+          <div class="confirmation-message__actions">
+            <NuxtLink to="/medicos/login" class="confirmation-message__button">
+              Ir a iniciar sesión
+            </NuxtLink>
+          </div>
         </div>
-      </form>
+      </div>
     </section>
   </NuxtLayout>
 </template>
@@ -29,22 +56,17 @@ useSeoMeta({
   ogDescription: "Regístrate como proveedor de salud en la plataforma Vitalink.",
 });
 
-import { useAuth, useDocuments } from "@/composables/api";
+import { useAuth } from "@/composables/api";
 import { useFormat } from "@/composables/useFormat";
 import { useLogger } from "@/composables/useLogger";
-import { getUserIdFromToken } from "@/utils/jwt";
 
-const { register, login, getUserById } = useAuth();
-const { addDocument } = useDocuments();
+const { register } = useAuth();
 const { convertCedulaForBackend } = useFormat();
-const { setAuthenticated, setRole } = useAuthState();
-const { setToken, setRefreshToken, getToken } = useAuthToken();
-const { setUserInfo } = useUserInfo();
 const toast = useToast();
-const router = useRouter();
 const logger = useLogger("RegistroMedico");
 
 const isSubmitting = ref(false);
+const registrationComplete = ref(false);
 
 const representativeFormData = ref<IRepresentativeRegisterRequest>({
   documentType: "",
@@ -69,224 +91,53 @@ const submitRegistration = async (): Promise<void> => {
   isSubmitting.value = true;
 
   try {
-    const representativeId = await registerRepresentative();
-    const { accessToken, userId } = await authenticateRepresentative();
-    const contractCode = await uploadContract(formData.contractFile);
-    await linkContractToUser(userId, contractCode);
+    const backendDocumentNumber = convertCedulaForBackend(
+      formData.documentNumber,
+      formData.documentType,
+    );
 
-    localStorage.setItem("onboarding", "true");
-    toast.success("¡Registro completado exitosamente!");
-    await router.push("/medicos/mis-medicos");
+    const { data, error } = await register({
+      card_id: backendDocumentNumber,
+      id_type: formData.documentType,
+      name: formData.fullName,
+      email: formData.email,
+      password: formData.password,
+      gender: "M",
+      role_code: "LEGAL_REPRESENTATIVE",
+      phone_number: formData.phone,
+      country_iso_code: "",
+      province: "",
+      city_name: "",
+      address: "",
+      postal_code: "",
+      birth_date: "",
+      profile_picture_url: "",
+    });
+
+    if (error) {
+      const isDuplicate =
+        error.status?.http_code === 409 ||
+        error.info?.toLowerCase().includes("duplicate entry") ||
+        error.info?.toLowerCase().includes("ya existe");
+
+      toast.error(
+        isDuplicate
+          ? "Este usuario ya está registrado. Por favor inicia sesión."
+          : error.info || "Error al registrar el representante legal.",
+      );
+      return;
+    }
+
+    logger.debug("Representative registered", { id: (data as any)?.id });
+    registrationComplete.value = true;
   } catch (error) {
-    handleRegistrationError(error);
+    logger.error("Registration failed", { error });
+    toast.error("Error en el registro. Intenta nuevamente.");
   } finally {
     isSubmitting.value = false;
   }
 };
 
-const registerRepresentative = async (): Promise<string> => {
-  const formData = representativeFormData.value;
-
-  const backendDocumentNumber = convertCedulaForBackend(
-    formData.documentNumber,
-    formData.documentType,
-  );
-
-  const { data, error } = await register({
-    card_id: backendDocumentNumber,
-    id_type: formData.documentType,
-    name: formData.fullName,
-    email: formData.email,
-    password: formData.password,
-    gender: "M",
-    role_code: "LEGAL_REPRESENTATIVE",
-    phone_number: formData.phone,
-    country_iso_code: "",
-    province: "",
-    city_name: "",
-    address: "",
-    postal_code: "",
-    birth_date: "",
-    profile_picture_url: "",
-  });
-
-  if (error) {
-    const isDuplicate =
-      error.status?.http_code === 409 ||
-      error.info?.toLowerCase().includes("duplicate entry") ||
-      error.info?.toLowerCase().includes("ya existe");
-
-    if (isDuplicate) {
-      throw createRegistrationError(
-        "Este usuario ya está registrado. Por favor inicia sesión.",
-        409,
-      );
-    }
-
-    throw createRegistrationError(
-      error.info || "Error al registrar el representante legal.",
-      error.status?.http_code,
-    );
-  }
-
-  const representativeId = (data as any)?.id;
-
-  if (!representativeId) {
-    throw createRegistrationError(
-      "No se pudo obtener el ID del representante legal.",
-      500,
-    );
-  }
-
-  logger.debug("Representative registered", { representativeId });
-  return representativeId;
-};
-
-const authenticateRepresentative = async (): Promise<{
-  accessToken: string;
-  userId: string;
-}> => {
-  const formData = representativeFormData.value;
-
-  const { data, error } = await login({
-    email: formData.email,
-    password: formData.password,
-  });
-
-  if (error || !data) {
-    throw createRegistrationError(
-      "No se pudo iniciar sesión automáticamente.",
-      error?.status?.http_code,
-    );
-  }
-
-  const { access_token, refresh_token } = data;
-
-  setAuthenticated(true);
-  setToken(access_token);
-  setRefreshToken(refresh_token);
-  setRole("LEGAL_REPRESENTATIVE");
-
-  const userId = getUserIdFromToken(access_token);
-
-  if (!userId) {
-    throw createRegistrationError(
-      "No se pudo obtener el ID del usuario del token.",
-      500,
-    );
-  }
-
-  await loadUserProfile(userId, access_token);
-
-  logger.debug("Representative authenticated", { userId });
-  return { accessToken: access_token, userId };
-};
-
-const loadUserProfile = async (
-  userId: string,
-  accessToken: string,
-): Promise<void> => {
-  const { data, error } = await getUserById(userId, accessToken);
-
-  if (data) {
-    setUserInfo(data);
-  } else if (error) {
-    logger.warn("Could not load user profile", { error: error.info });
-  }
-};
-
-const uploadContract = async (file: File): Promise<string> => {
-  const { data, error } = await addDocument({
-    file,
-    fields: {
-      title: file.name,
-      type: "DOC",
-      description: "Contrato cargado durante el registro médico",
-      id_for_table: "6",
-      table: "",
-      action_type: "PRIVATE_CONTRACT",
-      user_id: "",
-      is_public: 0,
-    },
-  });
-
-  if (error || !data) {
-    throw createRegistrationError(
-      error?.info || "Error al subir el contrato.",
-      error?.status?.http_code,
-    );
-  }
-
-  const contractCode = data.code;
-
-  if (!contractCode) {
-    throw createRegistrationError(
-      "No se pudo obtener el código del contrato.",
-      500,
-    );
-  }
-
-  logger.debug("Contract uploaded", { contractCode });
-  return contractCode;
-};
-
-const linkContractToUser = async (
-  userId: string,
-  contractCode: string,
-): Promise<void> => {
-  const config = useRuntimeConfig();
-  const token = getToken();
-
-  if (!token) {
-    throw createRegistrationError("Token de autenticación no disponible.", 401);
-  }
-
-  try {
-    await $fetch(`user/edit`, {
-      baseURL: `${config.public.API_BASE_URL}/`,
-      method: "PUT",
-      headers: { Authorization: token },
-      query: { id: userId },
-      body: { code_contract: contractCode },
-    });
-
-    logger.debug("Contract linked to user", { userId, contractCode });
-  } catch {
-    throw createRegistrationError(
-      "Error al vincular el contrato con el usuario.",
-      500,
-    );
-  }
-};
-
-interface RegistrationError {
-  message: string;
-  httpCode?: number;
-}
-
-const createRegistrationError = (
-  message: string,
-  httpCode?: number,
-): RegistrationError => ({
-  message,
-  httpCode,
-});
-
-const handleRegistrationError = (error: unknown): void => {
-  const registrationError = error as RegistrationError;
-  let errorMessage = "Error en el registro. Intenta nuevamente.";
-
-  if (registrationError?.message) {
-    errorMessage = registrationError.message;
-  }
-
-  logger.error("Registration failed", {
-    message: errorMessage,
-    httpCode: registrationError?.httpCode,
-  });
-
-  toast.error(errorMessage);
-};
 </script>
 
 <style lang="scss" scoped>
@@ -308,6 +159,73 @@ const handleRegistrationError = (error: unknown): void => {
     display: flex;
     flex-direction: column;
     width: 100%;
+  }
+
+  &__confirmation {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+}
+
+.confirmation-message {
+  text-align: center;
+  padding: 1rem 0;
+
+  &__icon {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    width: 4.5rem;
+    height: 4.5rem;
+    background: linear-gradient(135deg, #d3f2dd 0%, #a7e9ba 100%);
+    border-radius: 50%;
+    margin: 0 auto 1.5rem;
+
+    svg {
+      color: #0e7d3a;
+    }
+  }
+
+  &__title {
+    font-family: $font-family-main;
+    font-size: 1.75rem;
+    font-weight: 700;
+    color: $color-foreground;
+    margin-bottom: 1rem;
+  }
+
+  &__description {
+    font-family: $font-family-main;
+    font-size: 1rem;
+    color: $color-text-muted;
+    line-height: 1.7;
+    margin: 0 0 1rem 0;
+  }
+
+  &__note {
+    font-family: $font-family-main;
+    font-size: 0.875rem;
+    color: $color-text-secondary;
+    line-height: 1.5;
+    margin: 0 0 2rem 0;
+    padding: 1rem;
+    background-color: #fffbeb;
+    border-radius: 0.5rem;
+    border-left: 3px solid #f59e0b;
+  }
+
+  &__actions {
+    margin-top: 2rem;
+  }
+
+  &__button {
+    @include primary-button;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
   }
 }
 </style>
