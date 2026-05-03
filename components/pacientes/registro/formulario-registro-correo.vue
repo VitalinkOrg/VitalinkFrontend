@@ -150,7 +150,10 @@
               "
               :aria-pressed="showPassword"
             >
-              <span aria-hidden="true">{{ showPassword ? "👁️" : "👁️‍🗨️" }}</span>
+              <span aria-hidden="true">
+                <AtomsIconsEyeOffIcon v-if="showPassword" />
+                <AtomsIconsEyeIcon v-else
+              /></span>
             </button>
           </div>
           <small id="password-hint" class="registration-hint">

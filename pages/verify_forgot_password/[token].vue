@@ -10,28 +10,7 @@
         </p>
       </div>
 
-      <div
-        v-if="tokenError"
-        class="token-error"
-        role="alert"
-        aria-labelledby="token-error-heading"
-      >
-        <div class="token-error__icon" aria-hidden="true">
-          <AtomsIconsCircleXIcon size="32" />
-        </div>
-        <h2 id="token-error-heading" class="token-error__title">
-          Enlace inválido o expirado
-        </h2>
-        <p class="token-error__description">
-          El enlace de recuperación es inválido o ha expirado. Por favor,
-          solicita uno nuevo.
-        </p>
-        <NuxtLink to="/auth/recuperar-contrasena" class="token-error__button">
-          Solicitar nuevo enlace
-        </NuxtLink>
-      </div>
-
-      <div v-else-if="!isSuccess" class="auth-form">
+      <div v-if="!isSuccess" class="auth-form">
         <form
           @submit.prevent="handleSubmit"
           novalidate
@@ -288,7 +267,7 @@ import { useAuth } from "@/composables/api";
 import { useToast } from "@/composables/useToast";
 
 const route = useRoute();
-const { resetPassword, verifyForgotPasswordToken } = useAuth();
+const { resetPassword } = useAuth();
 const toast = useToast();
 
 const password = ref<string>("");
@@ -297,8 +276,6 @@ const showPassword = ref<boolean>(false);
 const showConfirmPassword = ref<boolean>(false);
 const isLoading = ref<boolean>(false);
 const isSuccess = ref<boolean>(false);
-const isVerifyingToken = ref<boolean>(true);
-const tokenError = ref<boolean>(false);
 
 const touched = reactive({
   password: false,
@@ -333,28 +310,6 @@ const markAllTouched = () => {
   Object.keys(touched).forEach((key) => {
     touched[key as keyof typeof touched] = true;
   });
-};
-
-const verifyToken = async () => {
-  if (!token.value) {
-    isVerifyingToken.value = false;
-    tokenError.value = true;
-    toast.error(
-      "Token de recuperación no encontrado. Por favor, utiliza el enlace enviado a tu correo electrónico.",
-    );
-    return;
-  }
-
-  const { data, error } = await verifyForgotPasswordToken(token.value);
-
-  isVerifyingToken.value = false;
-
-  if (error || !data?.valid) {
-    tokenError.value = true;
-    toast.error(
-      "El enlace de recuperación es inválido o ha expirado. Por favor, solicita uno nuevo.",
-    );
-  }
 };
 
 const handleSubmit = async () => {
@@ -394,9 +349,6 @@ const handleSubmit = async () => {
   }, 3000);
 };
 
-onMounted(async () => {
-  await verifyToken();
-});
 </script>
 
 <style lang="scss" scoped>
