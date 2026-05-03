@@ -34,7 +34,7 @@
         comenzar a usar Vitalink.
       </p>
       <div class="success-message__actions">
-        <NuxtLink to="/pacientes/login" class="success-message__button">
+        <NuxtLink to="/auth/login" class="success-message__button">
           Ir a iniciar sesión
         </NuxtLink>
       </div>
@@ -52,7 +52,7 @@
         <NuxtLink to="/pacientes/registro" class="error-message__button">
           Volver al registro
         </NuxtLink>
-        <NuxtLink to="/pacientes/login" class="error-message__button-secondary">
+        <NuxtLink to="/auth/login" class="error-message__button-secondary">
           Ir a iniciar sesión
         </NuxtLink>
       </div>
@@ -69,8 +69,8 @@ useSeoMeta({
 });
 
 import { useAuth } from "@/composables/api";
-import { decodeJWT } from "@/utils/jwt";
 import { UserRole } from "@/types/auth";
+import { decodeJWT } from "@/utils/jwt";
 
 const route = useRoute();
 const { confirmationRegister } = useAuth();
