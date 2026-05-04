@@ -9,14 +9,12 @@ useSeoMeta({
 import { useDocuments } from "~/composables/api/useDocuments";
 import { useSupplier } from "~/composables/api/useSupplier";
 
-const { getUserInfo } = useUserInfo();
 const { show: showToast } = useToast();
-const { updateSupplier, getSupplierById } = useSupplier();
+const { updateSupplier, getSupplierById, getAllSuppliers } = useSupplier();
 const { addDocument } = useDocuments();
 
-const userProfile = getUserInfo();
-
 const supplierData = ref<ISupplierDetail | null>(null);
+const supplierId = ref<number | null>(null);
 const profileDescription = ref("");
 const medicalEnrollmentNumber = ref("");
 const selectedProfileImage = ref<File | null>(null);
@@ -25,8 +23,6 @@ const profileImagePreview = ref<string | null>(null);
 const isSubmitting = ref(false);
 const isLoadingProfile = ref(true);
 const isUploadingImage = ref(false);
-
-const supplierId = computed(() => userProfile.value?.id);
 
 const isFormReady = computed(() => true);
 
@@ -47,14 +43,18 @@ const notify = (message: string, type: "success" | "error") => {
 };
 
 const fetchSupplierProfile = async () => {
-  if (!supplierId.value) {
-    isLoadingProfile.value = false;
-    return;
-  }
-
   isLoadingProfile.value = true;
 
   try {
+    const { data: suppliers, error: suppliersError } = await getAllSuppliers();
+
+    if (suppliersError || !suppliers?.length) {
+      notify(suppliersError?.info || "No se encontró el perfil del proveedor", "error");
+      return;
+    }
+
+    supplierId.value = suppliers[0].id;
+
     const { data, error } = await getSupplierById(supplierId.value);
 
     if (error) {
@@ -108,7 +108,7 @@ const handleImageSelection = (event: Event) => {
 };
 
 const uploadProfileImage = async (): Promise<string | null> => {
-  if (!selectedProfileImage.value || !userProfile.value?.id) return null;
+  if (!selectedProfileImage.value || !supplierId.value) return null;
 
   isUploadingImage.value = true;
 
@@ -116,13 +116,13 @@ const uploadProfileImage = async (): Promise<string | null> => {
     const { data, error } = await addDocument({
       file: selectedProfileImage.value,
       fields: {
-        title: `profile_picture_${userProfile.value.id}`,
+        title: `profile_picture_${supplierId.value}`,
         type: "IMG",
         description: "Foto de perfil profesional",
         id_for_table: String(supplierId.value),
         table: "supplier",
         action_type: "GENERAL_GALLERY",
-        user_id: String(userProfile.value.id),
+        user_id: String(supplierId.value),
         is_public: 1,
       },
     });

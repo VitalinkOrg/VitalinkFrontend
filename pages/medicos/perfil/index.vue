@@ -6,8 +6,7 @@ useSeoMeta({
   ogDescription: "Edita la información principal de tu perfil como proveedor de salud en Vitalink.",
 });
 
-import type { DropdownItem } from "@/components/ui/dropdown-base.vue";
-import { useSupplier } from "@/composables/api";
+import { useAuth } from "@/composables/api";
 import { onClickOutside } from "@vueuse/core";
 import { computed, onMounted, ref } from "vue";
 
@@ -15,9 +14,11 @@ definePageMeta({
   middleware: ["auth-doctors-hospitals"],
 });
 
-const { getUserInfo } = useUserInfo();
-const { updateHospital } = useSupplier();
-const { formatPhone } = useFormat();
+const { getUserInfo, setUserInfo } = useUserInfo();
+const { updateUser } = useAuth();
+const { show: showToast } = useToast();
+const logger = useLogger("DatosPersonales");
+const isSubmitting = ref(false);
 
 const firstName = ref("");
 const lastName = ref("");
@@ -86,13 +87,6 @@ const countryPhoneCodes: Record<string, string> = {
   PRI: "1",
 };
 
-const phoneCountryDropdownItems = computed<DropdownItem[]>(() => {
-  return countries.map((country) => ({
-    value: country.code,
-    label: country.code,
-    disabled: false,
-  }));
-});
 
 const currentPhoneCode = computed(() => {
   return countryPhoneCodes[phoneCountryCode.value] || "506";
@@ -106,12 +100,6 @@ const selectedCountry = computed(() => {
   return countries.find((country) => country.code === countryIsoCode.value);
 });
 
-const displayCountryText = computed(() => {
-  if (isCountryDropdownOpen.value) {
-    return countrySearchText.value;
-  }
-  return selectedCountry.value?.name || "Seleccionar país";
-});
 
 const filteredCountries = computed(() => {
   if (!countrySearchText.value.trim()) {
@@ -164,7 +152,7 @@ const initializeForm = () => {
 
   phoneNumber.value = userInfo.phone_number || "";
   phoneCountryCode.value = userInfo.country_iso_code || "CRC";
-  address.value = "";
+  address.value = userInfo.address || "";
   postalCode.value = userInfo.postal_code || "";
   cityName.value = userInfo.city_name || "";
   countryIsoCode.value = userInfo.country_iso_code || "";
@@ -203,25 +191,47 @@ onClickOutside(countryDropdownRef, () => {
 });
 
 const handleUpdateHospital = async () => {
+  const userInfo = getUserInfo();
+  const userId = userInfo?.id;
+
+  logger.debug("current user info", { userInfo });
+
+  if (!userId) {
+    showToast("No se encontró la información del usuario", "error");
+    return;
+  }
+
+  isSubmitting.value = true;
+
   try {
-    const payload = {
-      name: isJuridical.value
-        ? firstName.value.trim()
-        : `${firstName.value} ${lastName.value}`.trim(),
+    const payload: IUserUpdateRequest = {
+      first_name: firstName.value.trim(),
+      last_name: isJuridical.value ? undefined : lastName.value.trim(),
       phone_number: phoneNumber.value,
+      address: address.value,
       postal_code: postalCode.value,
       city_name: cityName.value,
       country_iso_code: countryIsoCode.value,
     };
 
-    const id = getUserInfo().id;
+    logger.debug("updateUser payload", { userId, payload });
 
-    const api = updateHospital(id, payload);
-    await api.request();
+    const { data, error } = await updateUser(userId, payload);
 
-    console.log("Hospital actualizado exitosamente");
+    if (error) {
+      showToast(error.info || "Error al actualizar el perfil", "error");
+      return;
+    }
+
+    if (data) {
+      setUserInfo({ ...getUserInfo(), ...data });
+    }
+
+    showToast("Perfil actualizado exitosamente", "success");
   } catch (error) {
-    console.log("Error updating hospital:", error);
+    showToast("Error inesperado al actualizar el perfil", "error");
+  } finally {
+    isSubmitting.value = false;
   }
 };
 </script>
@@ -230,8 +240,8 @@ const handleUpdateHospital = async () => {
   <NuxtLayout name="medicos-dashboard-perfil">
     <h4 class="profile-form__title">Datos Personales</h4>
     <form class="profile-form" @submit.prevent="handleUpdateHospital">
+      <!-- Row 1: Name fields -->
       <div class="profile-form__row profile-form__row--columns-2">
-        <!-- Campo único para razón social -->
         <div
           v-if="isJuridical"
           class="profile-form__field profile-form__field--full-width"
@@ -262,9 +272,7 @@ const handleUpdateHospital = async () => {
             />
           </div>
           <div class="profile-form__field">
-            <label for="apellido" class="profile-form__label">
-              Apellido (s)
-            </label>
+            <label for="apellido" class="profile-form__label">Apellido (s)</label>
             <input
               type="text"
               class="profile-form__input"
@@ -275,21 +283,28 @@ const handleUpdateHospital = async () => {
             />
           </div>
         </template>
+      </div>
 
+      <!-- Row 2: Phone + Address -->
+      <div class="profile-form__row profile-form__row--columns-2">
         <div class="profile-form__field">
           <label class="profile-form__label" for="telefono">
             Número de teléfono
           </label>
           <div class="profile-form__phone-group">
-            <UiDropdownBase
+            <select
               v-model="phoneCountryCode"
-              :items="phoneCountryDropdownItems"
-              :searchable="true"
-              :clearable="false"
-              placeholder="País"
-              no-results-text="No se encontraron países"
-              class="profile-form__phone-dropdown"
-            />
+              class="profile-form__phone-select"
+              aria-label="Código de país"
+            >
+              <option
+                v-for="country in countries"
+                :key="country.code"
+                :value="country.code"
+              >
+                {{ country.code }} (+{{ countryPhoneCodes[country.code] }})
+              </option>
+            </select>
             <input
               type="tel"
               :value="formattedPhone"
@@ -301,6 +316,7 @@ const handleUpdateHospital = async () => {
             />
           </div>
         </div>
+
         <div class="profile-form__field">
           <label for="direccion" class="profile-form__label">Dirección</label>
           <input
@@ -313,6 +329,8 @@ const handleUpdateHospital = async () => {
           />
         </div>
       </div>
+
+      <!-- Row 3: Postal Code + City + Country -->
       <div class="profile-form__row profile-form__row--columns-3">
         <div class="profile-form__field">
           <label class="profile-form__label" for="postal">Código Postal</label>
@@ -339,13 +357,10 @@ const handleUpdateHospital = async () => {
         </div>
         <div class="profile-form__field">
           <label class="profile-form__label" for="pais">País*</label>
-
           <div ref="countryDropdownRef" class="custom-dropdown">
             <div
               class="custom-dropdown__toggle"
-              :class="{
-                'custom-dropdown__toggle--active': isCountryDropdownOpen,
-              }"
+              :class="{ 'custom-dropdown__toggle--active': isCountryDropdownOpen }"
               @click="toggleCountryDropdown"
             >
               <input
@@ -357,12 +372,9 @@ const handleUpdateHospital = async () => {
                 @input="handleCountrySearchInput"
                 @click.stop="isCountryDropdownOpen = true"
               />
-
               <svg
                 class="custom-dropdown__arrow"
-                :class="{
-                  'custom-dropdown__arrow--rotated': isCountryDropdownOpen,
-                }"
+                :class="{ 'custom-dropdown__arrow--rotated': isCountryDropdownOpen }"
                 width="20"
                 height="20"
                 viewBox="0 0 20 20"
@@ -377,33 +389,22 @@ const handleUpdateHospital = async () => {
                 />
               </svg>
             </div>
-
             <div
               class="custom-dropdown__menu"
               :class="{ 'custom-dropdown__menu--open': isCountryDropdownOpen }"
             >
-              <div
-                v-if="filteredCountries.length === 0"
-                class="custom-dropdown__no-results"
-              >
+              <div v-if="filteredCountries.length === 0" class="custom-dropdown__no-results">
                 No se encontraron países
               </div>
-
               <button
                 v-for="country in filteredCountries"
                 :key="country.code"
                 type="button"
                 class="custom-dropdown__item"
-                :class="{
-                  'custom-dropdown__item--active':
-                    countryIsoCode === country.code,
-                }"
+                :class="{ 'custom-dropdown__item--active': countryIsoCode === country.code }"
                 @click="selectCountry(country.code)"
               >
-                <span class="custom-dropdown__item-text">{{
-                  country.name
-                }}</span>
-
+                <span class="custom-dropdown__item-text">{{ country.name }}</span>
                 <svg
                   v-if="countryIsoCode === country.code"
                   class="custom-dropdown__item-check"
@@ -429,8 +430,16 @@ const handleUpdateHospital = async () => {
         <button
           type="submit"
           class="profile-form__button profile-form__button--primary"
+          :disabled="isSubmitting"
+          :aria-busy="isSubmitting"
         >
-          Actualizar Perfil
+          <template v-if="isSubmitting">
+            <span class="profile-form__spinner" aria-hidden="true" />
+            Actualizando...
+          </template>
+          <template v-else>
+            Actualizar Perfil
+          </template>
         </button>
       </div>
     </form>
@@ -529,81 +538,34 @@ const handleUpdateHospital = async () => {
   &__phone-group {
     display: flex;
     align-items: stretch;
-    position: relative;
-    border-radius: 0.5rem;
-    transition: all 0.2s ease;
-
-    :deep(.dropdown__toggle) {
-      border-right: none;
-      border-top-right-radius: 0;
-      border-bottom-right-radius: 0;
-      height: 100%;
-      transition: all 0.2s ease;
-    }
-
-    .profile-form__phone-input {
-      border-left: none !important;
-      border-top-left-radius: 0 !important;
-      border-bottom-left-radius: 0 !important;
-      transition: all 0.2s ease;
-    }
 
     &:hover {
-      :deep(.dropdown__toggle) {
-        border-color: #98a2b3;
-        border-right: none;
-      }
-
+      .profile-form__phone-select,
       .profile-form__phone-input {
         border-color: #98a2b3;
-        border-left: none !important;
       }
     }
 
-    &:has(:deep(.dropdown__toggle:focus-within)) {
-      box-shadow:
-        0 0 0 4px rgba(53, 65, 180, 0.2),
-        0 0 1.05px rgba(53, 65, 180, 0.4),
-        0 1.05px 2.1px rgba(50, 50, 71, 0.1);
-
-      :deep(.dropdown__toggle) {
-        border-color: #3541b4;
-        border-right: none;
-        box-shadow: none;
-      }
-
-      .profile-form__phone-input {
-        border-color: #3541b4;
-        border-left: none !important;
-        box-shadow: none;
-        outline: none;
-      }
-    }
-
+    &:has(.profile-form__phone-select:focus),
     &:has(.profile-form__phone-input:focus) {
-      box-shadow:
-        0 0 0 4px rgba(53, 65, 180, 0.2),
-        0 0 1.05px rgba(53, 65, 180, 0.4),
-        0 1.05px 2.1px rgba(50, 50, 71, 0.1);
-
-      :deep(.dropdown__toggle) {
-        border-color: #3541b4;
-        border-right: none;
-        box-shadow: none;
-      }
-
+      .profile-form__phone-select,
       .profile-form__phone-input {
         border-color: #3541b4;
-        border-left: none !important;
         box-shadow: none;
         outline: none;
       }
     }
   }
 
-  &__phone-dropdown {
+  &__phone-select {
+    @include input-base;
     flex-shrink: 0;
-    width: 110px;
+    width: 130px;
+    border-right: none;
+    border-top-right-radius: 0;
+    border-bottom-right-radius: 0;
+    cursor: pointer;
+    padding-right: 0.5rem;
   }
 
   &__phone-input {
@@ -642,7 +604,30 @@ const handleUpdateHospital = async () => {
       @include respond-to-max(md) {
         width: 100%;
       }
+
+      &:disabled {
+        opacity: 0.7;
+        cursor: not-allowed;
+      }
     }
+  }
+
+  &__spinner {
+    display: inline-block;
+    width: 16px;
+    height: 16px;
+    border: 2px solid rgba(255, 255, 255, 0.3);
+    border-top-color: $white;
+    border-radius: 50%;
+    animation: rotate-spinner 0.6s linear infinite;
+    margin-right: 8px;
+    vertical-align: middle;
+  }
+}
+
+@keyframes rotate-spinner {
+  to {
+    transform: rotate(360deg);
   }
 }
 
