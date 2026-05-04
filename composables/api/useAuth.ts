@@ -119,6 +119,14 @@ export const useAuth = () => {
     });
   };
 
+  const updateUser = (userId: string, payload: IUserUpdateRequest) =>
+    executeRequest<IUser>("updateUser", "user/edit", {
+      method: "PUT",
+      headers: { ...getAuthHeaders(), "Content-Type": "application/json" },
+      query: { id: userId },
+      body: JSON.stringify(payload),
+    });
+
   const deleteUser = (userId: string) =>
     executeRequest<void>("deleteUser", "user/delete", {
       method: "DELETE",
@@ -148,6 +156,7 @@ export const useAuth = () => {
     register,
     login,
     getUserById,
+    updateUser,
     deleteUser,
     forgotPassword,
     verifyForgotPasswordToken,

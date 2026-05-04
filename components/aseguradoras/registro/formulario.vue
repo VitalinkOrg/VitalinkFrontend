@@ -10,71 +10,55 @@
 
           <div class="registration__row registration__row--two-columns">
             <div class="registration__field">
-              <label for="nombre" class="registration__label">Nombre</label>
-              <input
-                v-model="registerData.name"
-                type="text"
-                class="registration__input"
-                :class="{ 'registration__input--error': errors.name }"
-                placeholder="Escribe tu nombre"
-                id="nombre"
-                required
+              <label for="id_type" class="registration__label"
+                >Tipo de identificación</label
+              >
+              <UiDropdownBase
+                id="id_type"
+                :model-value="registerData.id_type"
+                :items="idTypeOptions"
+                :class="{ 'registration__input--error': errors.id_type }"
+                placeholder="Selecciona un tipo"
+                @update:model-value="registerData.id_type = $event as string"
               />
-              <span v-if="errors.name" class="registration__error">{{
-                errors.name
+              <span v-if="errors.id_type" class="registration__error">{{
+                errors.id_type
               }}</span>
             </div>
 
             <div class="registration__field">
-              <label for="telefono" class="registration__label"
-                >Número de teléfono</label
+              <label for="card_id" class="registration__label"
+                >Número de identificación</label
               >
               <input
-                v-model="registerData.phone_number"
-                type="tel"
-                class="registration__input"
-                :class="{ 'registration__input--error': errors.phone_number }"
-                placeholder="+1 (555) 000-0000"
-                id="telefono"
-                required
-              />
-              <span v-if="errors.phone_number" class="registration__error">{{
-                errors.phone_number
-              }}</span>
-            </div>
-
-            <div class="registration__field">
-              <label class="registration__label">Fecha de nacimiento</label>
-              <UiDatePicker
-                v-model="birthdateValue"
-                :min-date="minBirthdate"
-                :class="{ 'registration__input--error': errors.birthdate }"
-                placeholder="15/06/1996"
-                @update:model-value="handleBirthdateChange"
-                @confirm="handleBirthdateConfirm"
-              />
-              <span v-if="errors.birthdate" class="registration__error">{{
-                errors.birthdate
-              }}</span>
-            </div>
-
-            <div class="registration__field">
-              <label for="direccion" class="registration__label"
-                >Dirección</label
-              >
-              <input
-                v-model="registerData.address"
+                v-model="registerData.card_id"
                 type="text"
                 class="registration__input"
-                :class="{ 'registration__input--error': errors.address }"
-                placeholder="Dirección"
-                id="direccion"
+                :class="{ 'registration__input--error': errors.card_id }"
+                placeholder="Ej: 102220333"
+                id="card_id"
                 required
               />
-              <span v-if="errors.address" class="registration__error">{{
-                errors.address
+              <span v-if="errors.card_id" class="registration__error">{{
+                errors.card_id
               }}</span>
             </div>
+          </div>
+
+          <div class="registration__field">
+            <label for="nombre" class="registration__label">Nombre</label>
+            <input
+              v-model="registerData.name"
+              type="text"
+              class="registration__input"
+              :class="{ 'registration__input--error': errors.name }"
+              placeholder="Escribe tu nombre"
+              id="nombre"
+              required
+            />
+            <span v-if="errors.name" class="registration__error">{{
+              errors.name
+            }}</span>
           </div>
 
           <div class="registration__row registration__row--three-columns">
@@ -89,7 +73,6 @@
                 :class="{ 'registration__input--error': errors.postal_code }"
                 placeholder="000000"
                 id="codigo-postal"
-                required
               />
               <span v-if="errors.postal_code" class="registration__error">{{
                 errors.postal_code
@@ -97,35 +80,37 @@
             </div>
 
             <div class="registration__field">
-              <label for="ciudad" class="registration__label">Ciudad*</label>
+              <label for="ciudad" class="registration__label">Ciudad</label>
               <input
-                v-model="registerData.city"
+                v-model="registerData.city_name"
                 type="text"
                 class="registration__input"
-                :class="{ 'registration__input--error': errors.city }"
+                :class="{ 'registration__input--error': errors.city_name }"
                 placeholder="Ciudad"
                 id="ciudad"
-                required
               />
-              <span v-if="errors.city" class="registration__error">{{
-                errors.city
+              <span v-if="errors.city_name" class="registration__error">{{
+                errors.city_name
               }}</span>
             </div>
 
             <div class="registration__field">
-              <label for="pais" class="registration__label">País*</label>
+              <label for="pais" class="registration__label">País</label>
               <input
-                v-model="registerData.country"
+                v-model="registerData.country_iso_code"
                 type="text"
                 class="registration__input"
-                :class="{ 'registration__input--error': errors.country }"
-                placeholder="País"
+                :class="{
+                  'registration__input--error': errors.country_iso_code,
+                }"
+                placeholder="Ej: CR, US"
                 id="pais"
-                required
               />
-              <span v-if="errors.country" class="registration__error">{{
-                errors.country
-              }}</span>
+              <span
+                v-if="errors.country_iso_code"
+                class="registration__error"
+                >{{ errors.country_iso_code }}</span
+              >
             </div>
           </div>
         </fieldset>
@@ -196,22 +181,34 @@
           </div>
         </fieldset>
 
-        <button
-          type="submit"
-          class="registration__button registration__button--primary"
-          :disabled="isLoading"
-        >
-          Siguiente
-        </button>
+        <template v-if="!registered">
+          <button
+            type="submit"
+            class="registration__button registration__button--primary"
+            :disabled="isLoading"
+          >
+            Siguiente
+          </button>
 
-        <div class="registration__separator"></div>
+          <div class="registration__separator"></div>
 
-        <p class="registration__login-prompt">
-          <span class="registration__login-text">Ya tienes Cuenta? </span>
-          <NuxtLink href="/auth/login" class="registration__login-link">
-            Iniciar Sesión
-          </NuxtLink>
-        </p>
+          <p class="registration__login-prompt">
+            <span class="registration__login-text">Ya tienes Cuenta? </span>
+            <NuxtLink href="/auth/login" class="registration__login-link">
+              Iniciar Sesión
+            </NuxtLink>
+          </p>
+        </template>
+
+        <div v-else class="registration__success">
+          <p class="registration__success-title">
+            ¡Cuenta creada exitosamente!
+          </p>
+          <p class="registration__success-text">
+            Revisa tu correo electrónico y sigue las instrucciones para
+            verificar tu cuenta.
+          </p>
+        </div>
       </div>
     </form>
   </section>
@@ -221,74 +218,61 @@
 import { useInsuranceAuth } from "~/composables/api/useInsuranceAuth";
 
 const { registerInsurance } = useInsuranceAuth();
-const router = useRouter();
+const toast = useToast();
+
+const idTypeOptions = [
+  { value: "PHYSICAL_DNI", label: "Cédula física" },
+  { value: "JURIDICAL_DNI", label: "Cédula jurídica" },
+  { value: "DIMEX", label: "DIMEX" },
+  { value: "PASSPORT", label: "Pasaporte" },
+];
 
 const isLoading = ref<boolean>(false);
-interface InsuranceData extends IInsuranceRegisterRequest {
+const registered = ref<boolean>(false);
+
+interface RegisterFormData extends Omit<IRegisterRequest, "gender"> {
   passwordConfirmation: string;
 }
 
-const registerData = ref<InsuranceData>({
+const registerData = ref<RegisterFormData>({
+  card_id: "",
+  id_type: "",
   name: "",
-  phone_number: "",
-  birthdate: "",
-  address: "",
-  postal_code: "",
-  city: "",
-  country: "",
   email: "",
   password: "",
+  role_code: "FINANCE_ENTITY",
+  postal_code: "",
+  city_name: "",
+  country_iso_code: "",
   passwordConfirmation: "",
 });
 
 const errors = ref({
+  card_id: "",
+  id_type: "",
   name: "",
-  phone_number: "",
-  birthdate: "",
-  address: "",
-  postal_code: "",
-  city: "",
-  country: "",
   email: "",
   password: "",
+  postal_code: "",
+  city_name: "",
+  country_iso_code: "",
   passwordConfirmation: "",
 });
 
-const birthdateValue = ref<Date | null>(null);
-
-const minBirthdate = computed(() => {
-  const date = new Date();
-  date.setFullYear(date.getFullYear() - 120);
-  return date;
-});
-
-const handleBirthdateChange = (date: Date | null) => {
-  birthdateValue.value = date;
-  if (date) {
-    registerData.value.birthdate = date.toISOString().split("T")[0];
-    validateField("birthdate", registerData.value.birthdate);
-  } else {
-    registerData.value.birthdate = "";
-    validateField("birthdate", "");
-  }
-};
-
-const handleBirthdateConfirm = (date: Date | null) => {
-  console.log("Fecha confirmada:", date);
-};
-
-watch(
-  () => registerData.value.birthdate,
-  (newBirthdate) => {
-    if (newBirthdate && !birthdateValue.value) {
-      birthdateValue.value = new Date(newBirthdate);
-    }
-  },
-  { immediate: true },
-);
-
 const validateField = (field: string, value: string) => {
   switch (field) {
+    case "card_id":
+      errors.value.card_id = !value.trim()
+        ? "El número de identificación es obligatorio"
+        : "";
+      break;
+
+    case "id_type":
+      errors.value.id_type = !value
+        ? "El tipo de identificación es obligatorio"
+        : "";
+      break;
+
     case "name":
       if (!value.trim()) {
         errors.value.name = "El nombre es obligatorio";
@@ -296,81 +280,6 @@ const validateField = (field: string, value: string) => {
         errors.value.name = "El nombre debe tener al menos 2 caracteres";
       } else {
         errors.value.name = "";
-      }
-      break;
-
-    case "phone_number":
-      if (!value.trim()) {
-        errors.value.phone_number = "El número de teléfono es obligatorio";
-      } else if (!/^\+?[\d\s\-\(\)]+$/.test(value)) {
-        errors.value.phone_number = "Formato de teléfono inválido";
-      } else {
-        errors.value.phone_number = "";
-      }
-      break;
-
-    case "birthdate":
-      if (!value) {
-        errors.value.birthdate = "La fecha de nacimiento es obligatoria";
-      } else {
-        const birthDate = new Date(value);
-        const today = new Date();
-        const age = today.getFullYear() - birthDate.getFullYear();
-        const monthDiff = today.getMonth() - birthDate.getMonth();
-
-        const finalAge =
-          monthDiff < 0 ||
-          (monthDiff === 0 && today.getDate() < birthDate.getDate())
-            ? age - 1
-            : age;
-
-        if (finalAge < 18) {
-          errors.value.birthdate = "Debes ser mayor de 18 años";
-        } else if (finalAge > 120) {
-          errors.value.birthdate = "Fecha de nacimiento inválida";
-        } else {
-          errors.value.birthdate = "";
-        }
-      }
-      break;
-
-    case "address":
-      if (!value.trim()) {
-        errors.value.address = "La dirección es obligatoria";
-      } else if (value.trim().length < 10) {
-        errors.value.address = "La dirección debe tener al menos 10 caracteres";
-      } else {
-        errors.value.address = "";
-      }
-      break;
-
-    case "postal_code":
-      if (!value.trim()) {
-        errors.value.postal_code = "El código postal es obligatorio";
-      } else if (!/^\d{5,6}$/.test(value)) {
-        errors.value.postal_code = "El código postal debe tener 5 o 6 dígitos";
-      } else {
-        errors.value.postal_code = "";
-      }
-      break;
-
-    case "city":
-      if (!value.trim()) {
-        errors.value.city = "La ciudad es obligatoria";
-      } else if (value.trim().length < 2) {
-        errors.value.city = "La ciudad debe tener al menos 2 caracteres";
-      } else {
-        errors.value.city = "";
-      }
-      break;
-
-    case "country":
-      if (!value.trim()) {
-        errors.value.country = "El país es obligatorio";
-      } else if (value.trim().length < 2) {
-        errors.value.country = "El país debe tener al menos 2 caracteres";
-      } else {
-        errors.value.country = "";
       }
       break;
 
@@ -415,44 +324,53 @@ const handleRegister = async () => {
     errors.value[key as keyof typeof errors.value] = "";
   });
 
-  Object.keys(registerData.value).forEach((field) => {
+  const fieldsToValidate = [
+    "card_id",
+    "id_type",
+    "name",
+    "email",
+    "password",
+    "passwordConfirmation",
+  ];
+  fieldsToValidate.forEach((field) => {
     validateField(
       field,
-      registerData.value[field as keyof typeof registerData.value],
+      (registerData.value[
+        field as keyof typeof registerData.value
+      ] as string) ?? "",
     );
   });
 
-  const hasErrors = Object.values(errors.value).some((error) => error !== "");
-  if (hasErrors) {
-    return;
-  }
+  if (Object.values(errors.value).some((e) => e !== "")) return;
 
   isLoading.value = true;
 
-  await registerInsurance(registerData.value)
-    .request()
-    .then(() => {
-      localStorage.setItem("onboarding", "true");
-      router.push("/");
-    })
-    .catch((error) => {
-      console.error("Error en el registro:", error);
+  const { passwordConfirmation, ...rest } = registerData.value;
+  const payload: IRegisterRequest = { ...rest, gender: "O" };
+  const { request, error } = registerInsurance(payload);
 
-      if (error?.response?.data?.message) {
-        alert("Error: " + error.response.data.message);
-      } else if (error?.response?.status === 409) {
-        errors.value.email = "Este correo electrónico ya está registrado";
-      } else if (error?.response?.status === 422) {
-        alert("Por favor, verifica los datos ingresados");
-      } else {
-        alert(
-          "Ocurrió un error al crear la cuenta. Por favor, inténtalo de nuevo.",
-        );
-      }
-    })
-    .finally(() => {
-      isLoading.value = false;
+  await request();
+
+  isLoading.value = false;
+
+  if (error.value) {
+    console.error("[socio-financiero/registro] Registration failed:", {
+      payload,
+      error: error.value,
     });
+    const httpCode = error.value.status?.http_code;
+    if (httpCode === 409) {
+      errors.value.email = "Este correo electrónico ya está registrado";
+    } else {
+      toast.error(
+        error.value.info ||
+          "Ocurrió un error al crear la cuenta. Por favor, inténtalo de nuevo.",
+      );
+    }
+    return;
+  }
+
+  registered.value = true;
 };
 </script>
 
@@ -599,27 +517,27 @@ const handleRegister = async () => {
       color: #111827;
     }
   }
-}
 
-:deep(.date-picker__input-wrapper) {
-  &.registration__input--error {
-    .date-picker__input {
-      border-color: #dc2626;
-      box-shadow: 0 0 0 0.1875rem rgba(220, 38, 38, 0.1);
-    }
+  &__success {
+    padding: 1.5rem;
+    border-radius: 0.75rem;
+    background-color: #f0fdf4;
+    border: 1px solid #bbf7d0;
+    text-align: center;
   }
-}
 
-:deep(.date-picker__input-chevron) {
-  display: none;
-}
+  &__success-title {
+    font-weight: 600;
+    font-size: 1rem;
+    color: #15803d;
+    margin-bottom: 0.5rem;
+  }
 
-:deep(.date-picker__input-icon) {
-  left: auto;
-  right: 1.125rem;
-}
-
-:deep(.date-picker__input) {
-  padding: 0.9375rem 2.25rem 0.9375rem 1.0625rem;
+  &__success-text {
+    font-size: 0.875rem;
+    color: #166534;
+    line-height: 1.5;
+    margin: 0;
+  }
 }
 </style>

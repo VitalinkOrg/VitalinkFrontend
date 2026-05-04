@@ -8,11 +8,9 @@ useSeoMeta({
 
 import { useUdc } from "@/composables/api";
 import { useSpecialtyBySupplier } from "~/composables/api/useSpecialtyBySupplier";
+import { useSupplier } from "~/composables/api/useSupplier";
 
-const { getUserInfo } = useUserInfo();
 const { show: showToast } = useToast();
-
-const userProfile = getUserInfo();
 
 const {
   createSpecialtyBySupplier,
@@ -20,6 +18,7 @@ const {
   getAllSpecialtyBySupplier,
 } = useSpecialtyBySupplier();
 
+const { getAllSuppliers } = useSupplier();
 const { createUdc, deleteUdc, getAllUdcs } = useUdc();
 
 interface IdentifiableItem {
@@ -45,7 +44,7 @@ const isLoadingProcedures = ref(false);
 const specialtyInputRef = ref<HTMLInputElement | null>(null);
 const procedureInputRef = ref<HTMLInputElement | null>(null);
 
-const supplierId = computed(() => userProfile.value?.id);
+const supplierId = ref<number | null>(null);
 
 const toNormalizedCode = (value: string): string =>
   value.trim().toUpperCase().replace(/\s+/g, "_");
@@ -262,6 +261,14 @@ const confirmAndRemoveProcedure = async (procedure: IdentifiableItem) => {
 };
 
 onMounted(async () => {
+  const { data: suppliers, error } = await getAllSuppliers();
+
+  if (error || !suppliers?.length) {
+    notify(error?.info || "No se encontró el perfil del proveedor", "error");
+    return;
+  }
+
+  supplierId.value = suppliers[0].id;
   await Promise.all([fetchSpecialties(), fetchProcedures()]);
 });
 </script>
@@ -269,12 +276,12 @@ onMounted(async () => {
 <template>
   <NuxtLayout name="medicos-dashboard-perfil">
     <div
-      v-if="!userProfile"
+      v-if="!supplierId"
       class="profile-catalog__loading"
       role="status"
       aria-live="polite"
     >
-      Cargando información del usuario...
+      Cargando información del proveedor...
     </div>
 
     <div v-else class="profile-catalog" role="main">

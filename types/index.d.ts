@@ -401,6 +401,7 @@ interface IUser {
   country_iso_code: string;
   city_name: string | null;
   postal_code: string | null;
+  address: string | null;
   latitude: string | null;
   longitude: string | null;
   gender: string | null;
@@ -427,6 +428,7 @@ interface ICreateUserRequest {
   country_iso_code: string;
   city_name: string;
   postal_code: string;
+  address: string;
   latitude: number;
   longitude: number;
   language: string;
