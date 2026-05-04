@@ -25,20 +25,19 @@
           <div class="confirmation-message__icon" aria-hidden="true">
             <AtomsIconsCheckIcon size="32" />
           </div>
-          <h1 class="confirmation-message__title">
-            ¡Registro completado!
-          </h1>
+          <h1 class="confirmation-message__title">¡Registro completado!</h1>
           <p class="confirmation-message__description">
             Tu cuenta ha sido creada exitosamente. Te hemos enviado un correo
-            electrónico a <strong>{{ representativeFormData.email }}</strong> con
-            un enlace para confirmar tu dirección.
+            electrónico a
+            <strong>{{ representativeFormData.email }}</strong> con un enlace
+            para confirmar tu dirección.
           </p>
           <p class="confirmation-message__note">
             Por favor revisa tu bandeja de entrada (y carpeta de spam) y sigue
             las instrucciones del correo para activar tu cuenta.
           </p>
           <div class="confirmation-message__actions">
-            <NuxtLink to="/medicos/login" class="confirmation-message__button">
+            <NuxtLink to="/auth/login" class="confirmation-message__button">
               Ir a iniciar sesión
             </NuxtLink>
           </div>
@@ -53,7 +52,8 @@ useSeoMeta({
   title: "Registro Médico — Vitalink",
   description: "Regístrate como proveedor de salud en la plataforma Vitalink.",
   ogTitle: "Registro Médico — Vitalink",
-  ogDescription: "Regístrate como proveedor de salud en la plataforma Vitalink.",
+  ogDescription:
+    "Regístrate como proveedor de salud en la plataforma Vitalink.",
 });
 
 import { useAuth } from "@/composables/api";
@@ -137,7 +137,6 @@ const submitRegistration = async (): Promise<void> => {
     isSubmitting.value = false;
   }
 };
-
 </script>
 
 <style lang="scss" scoped>
