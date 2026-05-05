@@ -1,55 +1,53 @@
 <script setup lang="ts">
+import { useCertificationsExperience } from "~/composables/api/useCertificationsExperience";
+import { useLanguageSupplier } from "~/composables/api/useLanguageSupplier";
+import { useSupplier } from "~/composables/api/useSupplier";
+
 useSeoMeta({
   title: "Educación y Experiencia — Vitalink",
-  description: "Edita tu formación académica, experiencia profesional e idiomas en tu perfil médico.",
+  description:
+    "Edita tu formación académica, experiencia profesional e idiomas en tu perfil médico.",
   ogTitle: "Educación y Experiencia — Vitalink",
-  ogDescription: "Edita tu formación académica, experiencia profesional e idiomas en tu perfil médico.",
+  ogDescription:
+    "Edita tu formación académica, experiencia profesional e idiomas en tu perfil médico.",
 });
-
-interface Education {
-  id?: number;
-  degree: string;
-  university: string;
-  city: string;
-  country: string;
-  start_date: string;
-  end_date: string;
-  experience_type_code?: string;
-}
-
-interface Experience {
-  id?: number;
-  position: string;
-  hospital: string;
-  city: string;
-  country: string;
-  start_date: string;
-  end_date: string;
-  experience_type_code?: string;
-}
 
 interface Language {
   id?: number;
   language_code: string;
-  skill_level: string;
+  language_proficiency_code: LanguageProficiencyCode;
 }
 
-interface UserInfo {
-  degrees: Education[];
-  experiences: Experience[];
-  languages: Language[];
-  supplier_id?: number;
-}
+const {
+  getAllCertificationExperiences,
+  createCertificationExperience,
+  updateCertificationExperience,
+  deleteCertificationExperience,
+} = useCertificationsExperience();
+const {
+  getAllLanguageSuppliers,
+  createLanguageSupplier,
+  updateLanguageSupplier,
+  deleteLanguageSupplier,
+} = useLanguageSupplier();
+const { getAllSuppliers } = useSupplier();
 
-const { userInfo, getUserInfo } = useUserInfo();
-const config = useRuntimeConfig();
-const host = config.public.apiBase;
+const supplierId = ref<number | null>(null);
 
-const localUserInfo = ref<UserInfo>({
-  degrees: [],
-  experiences: [],
-  languages: [],
-});
+const degrees = ref<ICertificationExperience[]>([]);
+const experiences = ref<ICertificationExperience[]>([]);
+const languages = ref<Language[]>([]);
+const isLoadingData = ref(false);
+
+const EDUCATION_TYPES = new Set<ExperienceTypeCode>([
+  "EDUCATION",
+  "CERTIFICATION",
+  "AWARD_RECOGNITION",
+  "ACCREDITATION",
+  "SCIENTIFIC_PUBLICATION",
+  "CONFERENCE_PARTICIPATION",
+  "MEDICAL_RESEARCH",
+]);
 
 const languageOptions = [
   { value: "Inglés", label: "Inglés" },
@@ -59,47 +57,46 @@ const languageOptions = [
   { value: "Portugués", label: "Portugués" },
 ];
 
-const skillLevelOptions = [
-  { value: "Básico", label: "Básico" },
-  { value: "Intermedio", label: "Intermedio" },
-  { value: "Avanzado", label: "Avanzado" },
-  { value: "Nativo", label: "Nativo" },
-];
+const skillLevelOptions: { value: LanguageProficiencyCode; label: string }[] =
+  [
+    { value: "BASIC", label: "Básico" },
+    { value: "INTERMEDIATE", label: "Intermedio" },
+    { value: "ADVANCED", label: "Avanzado" },
+    { value: "NATIVE", label: "Nativo" },
+  ];
 
 const loadUserData = async () => {
-  const userData = getUserInfo();
-  if (userData?.supplier_id) {
-    try {
-      const educationResponse = await $fetch(
-        `${host}/certificationsexperience/get_all`,
-        {
-          params: {
-            supplier_id: userData.supplier_id,
-            experience_type_code: "EDUCATION",
-          },
-        }
-      );
-      localUserInfo.value.degrees = Array.isArray(educationResponse)
-        ? educationResponse
-        : [];
+  isLoadingData.value = true;
+  try {
+    const { data: suppliers, error: supplierError } = await getAllSuppliers();
 
-      const experienceResponse = await $fetch(
-        `${host}/certificationsexperience/get_all`,
-        {
-          params: {
-            supplier_id: userData.supplier_id,
-            experience_type_code: "EXPERIENCE",
-          },
-        }
-      );
-      localUserInfo.value.experiences = Array.isArray(experienceResponse)
-        ? experienceResponse
-        : [];
+    if (supplierError || !suppliers?.length) return;
 
-      localUserInfo.value.languages = [];
-    } catch (error) {
-      console.error("Error loading user data:", error);
-    }
+    supplierId.value = suppliers[0].id;
+
+    const [allCertificationsResult, languageResult] = await Promise.all([
+      getAllCertificationExperiences({ supplier_id: supplierId.value }),
+      getAllLanguageSuppliers(),
+    ]);
+
+    const raw = allCertificationsResult.data ?? [];
+    const all: ICertificationExperience[] = raw.map((c) => ({
+      ...c,
+      experience_type_code: c.experience_type?.code ?? c.experience_type_code,
+    }));
+    degrees.value = all.filter(
+      (c) => c.experience_type_code && EDUCATION_TYPES.has(c.experience_type_code),
+    );
+    experiences.value = all.filter(
+      (c) => c.experience_type_code === "EXPERIENCE",
+    );
+    languages.value = (languageResult.data ?? []).map((l) => ({
+      id: l.id,
+      language_code: l.language_code,
+      language_proficiency_code: l.language_proficiency_code,
+    }));
+  } finally {
+    isLoadingData.value = false;
   }
 };
 
@@ -111,27 +108,43 @@ const showEducationModal = ref(false);
 const showExperienceModal = ref(false);
 const showLanguageModal = ref(false);
 
-const newEducation = ref<Education>({
-  degree: "",
-  university: "",
-  city: "",
-  country: "",
+const educationTypeOptions: { value: ExperienceTypeCode; label: string }[] = [
+  { value: "EDUCATION", label: "Educación" },
+  { value: "CERTIFICATION", label: "Certificación" },
+  { value: "AWARD_RECOGNITION", label: "Premio o Reconocimiento" },
+  { value: "ACCREDITATION", label: "Acreditación" },
+  { value: "SCIENTIFIC_PUBLICATION", label: "Publicación Científica" },
+  { value: "CONFERENCE_PARTICIPATION", label: "Participación en Conferencia" },
+  { value: "MEDICAL_RESEARCH", label: "Investigación Médica" },
+];
+
+const emptyEducation = (): Partial<ICreateCertificationExperienceRequest> => ({
+  name: "",
+  company_name: "",
+  city_name: "",
+  country_iso_code: "",
+  start_date: "",
+  end_date: "",
+  experience_type_code: "EDUCATION",
+});
+
+const emptyExperience = (): Partial<ICreateCertificationExperienceRequest> => ({
+  name: "",
+  company_name: "",
+  city_name: "",
+  country_iso_code: "",
   start_date: "",
   end_date: "",
 });
 
-const newExperience = ref<Experience>({
-  position: "",
-  hospital: "",
-  city: "",
-  country: "",
-  start_date: "",
-  end_date: "",
-});
+const newEducation =
+  ref<Partial<ICreateCertificationExperienceRequest>>(emptyEducation());
+const newExperience =
+  ref<Partial<ICreateCertificationExperienceRequest>>(emptyExperience());
 
 const newLanguage = ref<Language>({
   language_code: "",
-  skill_level: "",
+  language_proficiency_code: "BASIC",
 });
 
 const editingId = ref<number | null>(null);
@@ -140,19 +153,12 @@ const isLoading = ref(false);
 const openEducationModal = (id: number | null = null) => {
   editingId.value = id;
   if (id) {
-    const degree = localUserInfo.value.degrees.find((d) => d.id === id);
+    const degree = degrees.value.find((d) => d.id === id);
     if (degree) {
       newEducation.value = { ...degree };
     }
   } else {
-    newEducation.value = {
-      degree: "",
-      university: "",
-      city: "",
-      country: "",
-      start_date: "",
-      end_date: "",
-    };
+    newEducation.value = emptyEducation();
   }
   showEducationModal.value = true;
 };
@@ -164,39 +170,38 @@ const closeEducationModal = () => {
 const saveEducation = async () => {
   isLoading.value = true;
   try {
-    const userData = getUserInfo();
-    const payload = {
-      ...newEducation.value,
-      experience_type_code: "EDUCATION",
-      supplier_id: userData?.supplier_id,
-    };
+    if (!supplierId.value) return;
 
     if (editingId.value) {
-      await $fetch(`${host}/certificationsexperience/edit`, {
-        method: "PUT",
-        params: { id: editingId.value },
-        body: payload,
-      });
-
-      const index = localUserInfo.value.degrees.findIndex(
-        (d) => d.id === editingId.value
+      const payload = stripEmpty(newEducation.value);
+      console.log("[saveEducation] update payload", payload);
+      const { error } = await updateCertificationExperience(
+        editingId.value,
+        payload,
       );
+      if (error) throw new Error(error.info);
+
+      const index = degrees.value.findIndex((d) => d.id === editingId.value);
       if (index !== -1) {
-        localUserInfo.value.degrees[index] = {
-          ...payload,
-          id: editingId.value,
+        degrees.value[index] = {
+          ...degrees.value[index],
+          ...newEducation.value,
         };
       }
     } else {
-      const response = await $fetch<Education>(
-        `${host}/certificationsexperience/add`,
-        {
-          method: "POST",
-          body: payload,
-        }
-      );
-
-      localUserInfo.value.degrees.push(response);
+      const payload = {
+        ...stripEmpty({
+          ...(newEducation.value as ICreateCertificationExperienceRequest),
+          supplier_id: supplierId.value,
+          experience_type_code:
+            newEducation.value.experience_type_code ?? "EDUCATION",
+        }),
+        url_document: newEducation.value.url_document ?? "",
+      };
+      console.log("[saveEducation] create payload", payload);
+      const { data, error } = await createCertificationExperience(payload);
+      if (error) throw new Error(error.info);
+      if (data) degrees.value.push(data);
     }
 
     showEducationModal.value = false;
@@ -213,14 +218,9 @@ const deleteEducation = async (id: number) => {
 
   isLoading.value = true;
   try {
-    await $fetch(`${host}/certificationsexperience/delete`, {
-      method: "DELETE",
-      params: { id },
-    });
-
-    localUserInfo.value.degrees = localUserInfo.value.degrees.filter(
-      (d) => d.id !== id
-    );
+    const { error } = await deleteCertificationExperience(id);
+    if (error) throw new Error(error.info);
+    degrees.value = degrees.value.filter((d) => d.id !== id);
   } catch (error) {
     console.error("Error deleting education:", error);
     alert("Error al eliminar la educación");
@@ -232,19 +232,12 @@ const deleteEducation = async (id: number) => {
 const openExperienceModal = (id: number | null = null) => {
   editingId.value = id;
   if (id) {
-    const exp = localUserInfo.value.experiences.find((e) => e.id === id);
+    const exp = experiences.value.find((e) => e.id === id);
     if (exp) {
       newExperience.value = { ...exp };
     }
   } else {
-    newExperience.value = {
-      position: "",
-      hospital: "",
-      city: "",
-      country: "",
-      start_date: "",
-      end_date: "",
-    };
+    newExperience.value = emptyExperience();
   }
   showExperienceModal.value = true;
 };
@@ -256,39 +249,39 @@ const closeExperienceModal = () => {
 const saveExperience = async () => {
   isLoading.value = true;
   try {
-    const userData = getUserInfo();
-    const payload = {
-      ...newExperience.value,
-      experience_type_code: "EXPERIENCE",
-      supplier_id: userData?.supplier_id,
-    };
+    if (!supplierId.value) return;
 
     if (editingId.value) {
-      await $fetch(`${host}/certificationsexperience/edit`, {
-        method: "PUT",
-        params: { id: editingId.value },
-        body: payload,
-      });
+      const payload = stripEmpty(newExperience.value);
+      console.log("[saveExperience] update payload", payload);
+      const { error } = await updateCertificationExperience(
+        editingId.value,
+        payload,
+      );
+      if (error) throw new Error(error.info);
 
-      const index = localUserInfo.value.experiences.findIndex(
-        (e) => e.id === editingId.value
+      const index = experiences.value.findIndex(
+        (e) => e.id === editingId.value,
       );
       if (index !== -1) {
-        localUserInfo.value.experiences[index] = {
-          ...payload,
-          id: editingId.value,
+        experiences.value[index] = {
+          ...experiences.value[index],
+          ...newExperience.value,
         };
       }
     } else {
-      const response = await $fetch<Experience>(
-        `${host}/certificationsexperience/add`,
-        {
-          method: "POST",
-          body: payload,
-        }
-      );
-
-      localUserInfo.value.experiences.push(response);
+      const payload = {
+        ...stripEmpty({
+          ...(newExperience.value as ICreateCertificationExperienceRequest),
+          supplier_id: supplierId.value,
+          experience_type_code: "EXPERIENCE",
+        }),
+        url_document: newExperience.value.url_document ?? "",
+      };
+      console.log("[saveExperience] create payload", payload);
+      const { data, error } = await createCertificationExperience(payload);
+      if (error) throw new Error(error.info);
+      if (data) experiences.value.push(data);
     }
 
     showExperienceModal.value = false;
@@ -305,14 +298,9 @@ const deleteExperience = async (id: number) => {
 
   isLoading.value = true;
   try {
-    await $fetch(`${host}/certificationsexperience/delete`, {
-      method: "DELETE",
-      params: { id },
-    });
-
-    localUserInfo.value.experiences = localUserInfo.value.experiences.filter(
-      (e) => e.id !== id
-    );
+    const { error } = await deleteCertificationExperience(id);
+    if (error) throw new Error(error.info);
+    experiences.value = experiences.value.filter((e) => e.id !== id);
   } catch (error) {
     console.error("Error deleting experience:", error);
     alert("Error al eliminar la experiencia");
@@ -324,14 +312,14 @@ const deleteExperience = async (id: number) => {
 const openLanguageModal = (id: number | null = null) => {
   editingId.value = id;
   if (id) {
-    const lang = localUserInfo.value.languages.find((l) => l.id === id);
+    const lang = languages.value.find((l) => l.id === id);
     if (lang) {
       newLanguage.value = { ...lang };
     }
   } else {
     newLanguage.value = {
       language_code: "",
-      skill_level: "",
+      language_proficiency_code: "BASIC",
     };
   }
   showLanguageModal.value = true;
@@ -341,38 +329,93 @@ const closeLanguageModal = () => {
   showLanguageModal.value = false;
 };
 
-const saveLanguage = async () => {
-  console.warn("Language API endpoint not yet implemented");
+const stripEmpty = <T extends object>(obj: T): T =>
+  Object.fromEntries(
+    Object.entries(obj).filter(([, v]) => v !== "" && v !== null && v !== undefined),
+  ) as T;
 
-  if (editingId.value) {
-    const index = localUserInfo.value.languages.findIndex(
-      (l) => l.id === editingId.value
-    );
-    if (index !== -1) {
-      localUserInfo.value.languages[index] = {
-        ...newLanguage.value,
-        id: editingId.value,
-      };
-    }
-  } else {
-    const newId =
-      Math.max(...localUserInfo.value.languages.map((l) => l.id || 0), 0) + 1;
-    localUserInfo.value.languages.push({ ...newLanguage.value, id: newId });
-  }
-
-  showLanguageModal.value = false;
+const experienceTypeLabel: Partial<Record<ExperienceTypeCode, string>> = {
+  EDUCATION: "Educación",
+  CERTIFICATION: "Certificación",
+  AWARD_RECOGNITION: "Premio o Reconocimiento",
+  ACCREDITATION: "Acreditación",
+  SCIENTIFIC_PUBLICATION: "Publicación Científica",
+  CONFERENCE_PARTICIPATION: "Participación en Conferencia",
+  MEDICAL_RESEARCH: "Investigación Médica",
 };
 
-const deleteLanguage = (id: number) => {
-  console.warn("Language API endpoint not yet implemented");
-  localUserInfo.value.languages = localUserInfo.value.languages.filter(
-    (l) => l.id !== id
-  );
+const proficiencyLabel: Record<LanguageProficiencyCode, string> = {
+  BASIC: "Básico",
+  INTERMEDIATE: "Intermedio",
+  ADVANCED: "Avanzado",
+  NATIVE: "Nativo",
+};
+
+const saveLanguage = async () => {
+  isLoading.value = true;
+  try {
+    if (!supplierId.value) return;
+
+    if (editingId.value) {
+      const { error } = await updateLanguageSupplier(editingId.value, {
+        supplier_id: supplierId.value,
+        language_code: newLanguage.value.language_code,
+        language_proficiency_code: newLanguage.value.language_proficiency_code,
+      });
+      if (error) throw new Error(error.info);
+
+      const index = languages.value.findIndex((l) => l.id === editingId.value);
+      if (index !== -1) {
+        languages.value[index] = { ...newLanguage.value, id: editingId.value };
+      }
+    } else {
+      const { data, error } = await createLanguageSupplier({
+        supplier_id: supplierId.value,
+        language_code: newLanguage.value.language_code,
+        language_proficiency_code: newLanguage.value.language_proficiency_code,
+      });
+      if (error) throw new Error(error.info);
+      if (data)
+        languages.value.push({
+          id: data.id,
+          language_code: data.language_code,
+          language_proficiency_code: data.language_proficiency_code,
+        });
+    }
+
+    showLanguageModal.value = false;
+  } catch (error) {
+    console.error("Error saving language:", error);
+    alert("Error al guardar el idioma");
+  } finally {
+    isLoading.value = false;
+  }
+};
+
+const deleteLanguage = async (id: number) => {
+  if (!confirm("¿Estás seguro de eliminar este idioma?")) return;
+
+  isLoading.value = true;
+  try {
+    const { error } = await deleteLanguageSupplier(id);
+    if (error) throw new Error(error.info);
+    languages.value = languages.value.filter((l) => l.id !== id);
+  } catch (error) {
+    console.error("Error deleting language:", error);
+    alert("Error al eliminar el idioma");
+  } finally {
+    isLoading.value = false;
+  }
 };
 </script>
 
 <template>
   <NuxtLayout name="medicos-dashboard-perfil">
+    <div v-if="isLoadingData" class="profile-loader">
+      <WebsitePerfilDoctorPantallaCarga />
+    </div>
+
+    <template v-else>
     <section class="profile-section">
       <div class="profile-section__header">
         <h4 class="profile-section__title">Educación o Estudios</h4>
@@ -388,26 +431,29 @@ const deleteLanguage = (id: number) => {
         </button>
       </div>
 
-      <div
-        v-if="localUserInfo.degrees && localUserInfo.degrees.length"
-        class="profile-section__list"
-      >
-        <div
-          v-for="degree in localUserInfo.degrees"
-          :key="degree.id"
-          class="profile-item"
-        >
+      <div v-if="degrees.length" class="profile-section__list">
+        <div v-for="degree in degrees" :key="degree.id" class="profile-item">
           <div class="profile-item__content">
             <p class="profile-item__date">
-              {{ new Date(degree.start_date).toLocaleDateString() }} -
-              {{ new Date(degree.end_date).toLocaleDateString() }}
+              {{ new Date(degree.start_date).toLocaleDateString() }}
+              <template v-if="degree.end_date">
+                - {{ new Date(degree.end_date).toLocaleDateString() }}</template
+              >
             </p>
-            <p class="profile-item__title">{{ degree.degree }}</p>
-            <p class="profile-item__subtitle">
-              {{ degree.university }}
+            <p class="profile-item__title">{{ degree.name }}</p>
+            <p class="profile-item__subtitle">{{ degree.company_name }}</p>
+            <p v-if="degree.experience_type_code" class="profile-item__type">
+              {{ experienceTypeLabel[degree.experience_type_code] }}
             </p>
-            <p class="profile-item__location">
-              {{ degree.city + ", " + degree.country }}
+            <p
+              v-if="degree.city_name || degree.country_iso_code"
+              class="profile-item__location"
+            >
+              {{
+                [degree.city_name, degree.country_iso_code]
+                  .filter(Boolean)
+                  .join(", ")
+              }}
             </p>
           </div>
           <div class="profile-item__actions">
@@ -420,7 +466,7 @@ const deleteLanguage = (id: number) => {
             </button>
             <button
               class="profile-item__action-button profile-item__action-button--delete"
-              @click="deleteEducation(degree.id!)"
+              @click="deleteEducation(degree.id)"
               :disabled="isLoading"
             >
               <AtomsIconsTrashIcon />
@@ -461,26 +507,33 @@ const deleteLanguage = (id: number) => {
         </button>
       </div>
 
-      <div
-        v-if="localUserInfo.experiences && localUserInfo.experiences.length"
-        class="profile-section__list"
-      >
+      <div v-if="experiences.length" class="profile-section__list">
         <div
-          v-for="experience in localUserInfo.experiences"
+          v-for="experience in experiences"
           :key="experience.id"
           class="profile-item"
         >
           <div class="profile-item__content">
             <p class="profile-item__date">
-              {{ new Date(experience.start_date).toLocaleDateString() }} -
-              {{ new Date(experience.end_date).toLocaleDateString() }}
+              {{ new Date(experience.start_date).toLocaleDateString() }}
+              <template v-if="experience.end_date">
+                -
+                {{
+                  new Date(experience.end_date).toLocaleDateString()
+                }}</template
+              >
             </p>
-            <p class="profile-item__title">
-              {{ experience.position }}
-            </p>
-            <p class="profile-item__subtitle">{{ experience.hospital }}</p>
-            <p class="profile-item__location">
-              {{ experience.city + ", " + experience.country }}
+            <p class="profile-item__title">{{ experience.name }}</p>
+            <p class="profile-item__subtitle">{{ experience.company_name }}</p>
+            <p
+              v-if="experience.city_name || experience.country_iso_code"
+              class="profile-item__location"
+            >
+              {{
+                [experience.city_name, experience.country_iso_code]
+                  .filter(Boolean)
+                  .join(", ")
+              }}
             </p>
           </div>
           <div class="profile-item__actions">
@@ -493,7 +546,7 @@ const deleteLanguage = (id: number) => {
             </button>
             <button
               class="profile-item__action-button profile-item__action-button--delete"
-              @click="deleteExperience(experience.id!)"
+              @click="deleteExperience(experience.id)"
               :disabled="isLoading"
             >
               <AtomsIconsTrashIcon />
@@ -534,12 +587,9 @@ const deleteLanguage = (id: number) => {
         </button>
       </div>
 
-      <div
-        v-if="localUserInfo.languages && localUserInfo.languages.length"
-        class="profile-section__list"
-      >
+      <div v-if="languages.length" class="profile-section__list">
         <div
-          v-for="language in localUserInfo.languages"
+          v-for="language in languages"
           :key="language.id"
           class="profile-language"
         >
@@ -548,7 +598,7 @@ const deleteLanguage = (id: number) => {
               language.language_code
             }}</span>
             <span class="profile-language__level">{{
-              language.skill_level
+              proficiencyLabel[language.language_proficiency_code]
             }}</span>
           </div>
           <div class="profile-language__actions">
@@ -599,9 +649,17 @@ const deleteLanguage = (id: number) => {
 
       <div class="modal-body">
         <div class="profile-form__group">
+          <label class="profile-form__label">Tipo</label>
+          <UiDropdownBase
+            v-model="newEducation.experience_type_code"
+            :items="educationTypeOptions"
+            :disabled="isLoading"
+          />
+        </div>
+        <div class="profile-form__group">
           <label class="profile-form__label">Título</label>
           <input
-            v-model="newEducation.degree"
+            v-model="newEducation.name"
             type="text"
             class="profile-form__input"
             :disabled="isLoading"
@@ -610,7 +668,7 @@ const deleteLanguage = (id: number) => {
         <div class="profile-form__group">
           <label class="profile-form__label">Institución</label>
           <input
-            v-model="newEducation.university"
+            v-model="newEducation.company_name"
             type="text"
             class="profile-form__input"
             :disabled="isLoading"
@@ -620,7 +678,7 @@ const deleteLanguage = (id: number) => {
           <div class="profile-form__col">
             <label class="profile-form__label">Ciudad</label>
             <input
-              v-model="newEducation.city"
+              v-model="newEducation.city_name"
               type="text"
               class="profile-form__input"
               :disabled="isLoading"
@@ -629,7 +687,7 @@ const deleteLanguage = (id: number) => {
           <div class="profile-form__col">
             <label class="profile-form__label">País</label>
             <input
-              v-model="newEducation.country"
+              v-model="newEducation.country_iso_code"
               type="text"
               class="profile-form__input"
               :disabled="isLoading"
@@ -692,7 +750,7 @@ const deleteLanguage = (id: number) => {
         <div class="profile-form__group">
           <label class="profile-form__label">Puesto</label>
           <input
-            v-model="newExperience.position"
+            v-model="newExperience.name"
             type="text"
             class="profile-form__input"
             :disabled="isLoading"
@@ -701,7 +759,7 @@ const deleteLanguage = (id: number) => {
         <div class="profile-form__group">
           <label class="profile-form__label">Hospital/Institución</label>
           <input
-            v-model="newExperience.hospital"
+            v-model="newExperience.company_name"
             type="text"
             class="profile-form__input"
             :disabled="isLoading"
@@ -711,7 +769,7 @@ const deleteLanguage = (id: number) => {
           <div class="profile-form__col">
             <label class="profile-form__label">Ciudad</label>
             <input
-              v-model="newExperience.city"
+              v-model="newExperience.city_name"
               type="text"
               class="profile-form__input"
               :disabled="isLoading"
@@ -720,7 +778,7 @@ const deleteLanguage = (id: number) => {
           <div class="profile-form__col">
             <label class="profile-form__label">País</label>
             <input
-              v-model="newExperience.country"
+              v-model="newExperience.country_iso_code"
               type="text"
               class="profile-form__input"
               :disabled="isLoading"
@@ -793,7 +851,7 @@ const deleteLanguage = (id: number) => {
         <div class="profile-form__group">
           <label class="profile-form__label">Nivel</label>
           <UiDropdownBase
-            v-model="newLanguage.skill_level"
+            v-model="newLanguage.language_proficiency_code"
             :items="skillLevelOptions"
             placeholder="Seleccionar nivel"
             clearable
@@ -818,6 +876,7 @@ const deleteLanguage = (id: number) => {
         </button>
       </template>
     </AtomsModalBase>
+    </template>
   </NuxtLayout>
 </template>
 
@@ -898,6 +957,16 @@ const deleteLanguage = (id: number) => {
     color: $color-text-muted;
     font-family: $font-family-main;
     font-size: 1rem;
+  }
+
+  &__type {
+    margin: 0.25rem 0 0;
+    font-size: 0.75rem;
+    font-weight: 500;
+    color: $color-primary;
+    font-family: $font-family-main;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
   }
 
   &__actions {

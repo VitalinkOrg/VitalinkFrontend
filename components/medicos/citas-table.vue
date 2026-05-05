@@ -740,9 +740,21 @@ watch(
       border: none;
       margin: auto;
       color: #353e5c;
+      min-width: 2.75rem;
+      min-height: 2.75rem;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: $border-radius-md;
+      cursor: pointer;
 
       &:hover {
         filter: brightness(0);
+      }
+
+      &:focus-visible {
+        outline: 2px solid $color-primary;
+        outline-offset: 2px;
       }
 
       svg {
@@ -776,14 +788,19 @@ watch(
     display: flex;
     align-items: center;
     justify-content: center;
-    width: 2rem;
-    height: 2rem;
+    min-width: 2.75rem;
+    min-height: 2.75rem;
+    width: 2.75rem;
+    height: 2.75rem;
     border: none;
     border-radius: 0.375rem;
     background: transparent;
     color: #6c757d;
     cursor: pointer;
-    transition: all 0.2s ease;
+
+    @media (prefers-reduced-motion: no-preference) {
+      transition: all 0.2s ease;
+    }
 
     &:hover {
       background-color: #f8f9fa;
@@ -863,32 +880,23 @@ watch(
   }
 
   &__empty-cta {
-    background: $color-primary;
-    color: $white;
-    border: none;
-    padding: 0.5rem 1rem;
-    border-radius: 0.375rem;
+    @include primary-button;
+    min-height: 2.75rem;
     font-size: 0.875rem;
-    cursor: pointer;
-    transition: background-color 0.2s ease;
+    padding: 0.5rem 1.25rem;
 
-    &:hover {
-      background: darken($color-primary, 10%);
-    }
-
-    &:focus-visible {
-      outline: 2px solid $color-primary;
-      outline-offset: 2px;
+    @media (prefers-reduced-motion: reduce) {
+      transition: none;
     }
   }
 }
 
-@media (max-width: 768px) {
+@include respond-to-max(md) {
   .appointments-table {
     &__empty-content {
       flex-direction: column;
       text-align: center;
-      gap: 1rem;
+      gap: $spacing-md;
     }
 
     &__empty-icon {

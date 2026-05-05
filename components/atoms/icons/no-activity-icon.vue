@@ -1,3 +1,13 @@
+<script lang="ts" setup>
+interface Props {
+  alt?: string;
+}
+
+withDefaults(defineProps<Props>(), {
+  alt: "",
+});
+</script>
+
 <template>
-  <img src="@/src/assets/img-icon-no-activity.svg" alt="No hay actividad">
+  <img src="@/assets/img-icon-no-activity.svg" :alt="alt" />
 </template>
