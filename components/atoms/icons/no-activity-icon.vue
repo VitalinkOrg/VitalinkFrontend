@@ -1,13 +1,14 @@
-<script lang="ts" setup>
-interface Props {
-  alt?: string;
-}
-
-withDefaults(defineProps<Props>(), {
-  alt: "",
-});
-</script>
-
 <template>
-  <img src="@/assets/img-icon-no-activity.svg" :alt="alt" />
+  <svg
+    xmlns="http://www.w3.org/2000/svg"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    stroke-width="1.5"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+  >
+    <circle cx="12" cy="12" r="10" />
+    <line x1="8" y1="12" x2="16" y2="12" />
+  </svg>
 </template>
