@@ -7,16 +7,9 @@ useSeoMeta({
 });
 
 import { useUdc } from "@/composables/api";
-import { useSpecialtyBySupplier } from "~/composables/api/useSpecialtyBySupplier";
 import { useSupplier } from "~/composables/api/useSupplier";
 
 const { show: showToast } = useToast();
-
-const {
-  createSpecialtyBySupplier,
-  deleteSpecialtyBySupplier,
-  getAllSpecialtyBySupplier,
-} = useSpecialtyBySupplier();
 
 const { getAllSuppliers } = useSupplier();
 const { createUdc, deleteUdc, getAllUdcs } = useUdc();
@@ -59,7 +52,7 @@ const fetchSpecialties = async () => {
   isLoadingSpecialties.value = true;
 
   try {
-    const { data, error } = await getAllSpecialtyBySupplier();
+    const { data, error } = await getAllUdcs({ supplier_id: supplierId.value!, type: "MEDICAL_SPECIALTY" }, true);
 
     if (error) {
       notify(error.info || "Error al cargar especialidades", "error");
@@ -69,10 +62,7 @@ const fetchSpecialties = async () => {
     if (data) {
       specialties.value = data.map((entry) => ({
         id: entry.id,
-        name:
-          entry.medical_specialty?.name ||
-          entry.medical_specialty?.code ||
-          "Sin nombre",
+        name: entry.name || entry.code || "Sin nombre",
       }));
     }
   } catch {
@@ -88,7 +78,7 @@ const fetchProcedures = async () => {
   isLoadingProcedures.value = true;
 
   try {
-    const { data, error } = await getAllUdcs({ type: "MEDICAL_PROCEDURE" });
+    const { data, error } = await getAllUdcs({ supplier_id: supplierId.value!, type: "MEDICAL_PROCEDURE" });
 
     if (error) {
       notify(error.info || "Error al cargar procedimientos", "error");
@@ -144,20 +134,31 @@ const submitSpecialty = async () => {
   isSpecialtySubmitting.value = true;
 
   try {
-    const { data, error } = await createSpecialtyBySupplier({
+    const { data, error } = await createUdc({
       supplier_id: supplierId.value,
-      medical_specialty_code: toNormalizedCode(trimmedName),
+      name: trimmedName,
+      code: toNormalizedCode(trimmedName),
+      type: "MEDICAL_SPECIALTY",
+      father_code: "",
+      description: "",
+      value1: "0",
+      value2: "0",
     });
 
     if (error) {
-      notify(error.info || "Error al agregar especialidad", "error");
+      const errorData = error.data as IApiErrorData | null;
+      if (errorData?.code === "ER_DUP_ENTRY") {
+        notify("Esta especialidad ya existe. Intente con un nombre diferente.", "error");
+      } else {
+        notify(error.info || "Error al agregar especialidad", "error");
+      }
       return;
     }
 
     if (data) {
       specialties.value.push({
         id: data.id,
-        name: data.medical_specialty?.name || trimmedName,
+        name: data.name || trimmedName,
       });
       notify("Especialidad agregada exitosamente", "success");
       dismissSpecialtyForm();
@@ -173,19 +174,17 @@ const confirmAndRemoveSpecialty = async (specialty: IdentifiableItem) => {
   if (!confirm(`¿Está seguro de eliminar "${specialty.name}"?`)) return;
 
   try {
-    const { data, error } = await deleteSpecialtyBySupplier(specialty.id);
+    const { data, error } = await deleteUdc(specialty.id);
 
     if (error) {
       notify(error.info || "Error al eliminar especialidad", "error");
       return;
     }
 
-    if (data !== undefined) {
-      specialties.value = specialties.value.filter(
-        (item) => item.id !== specialty.id,
-      );
-      notify("Especialidad eliminada exitosamente", "success");
-    }
+    specialties.value = specialties.value.filter(
+      (item) => item.id !== specialty.id,
+    );
+    notify("Especialidad eliminada exitosamente", "success");
   } catch {
     notify("Error inesperado al eliminar especialidad", "error");
   }
@@ -207,7 +206,7 @@ const submitProcedure = async () => {
   isProcedureSubmitting.value = true;
 
   try {
-    const { data, error } = await createUdc({
+    const payload = {
       supplier_id: supplierId.value,
       father_code: "",
       name: trimmedName,
@@ -216,10 +215,17 @@ const submitProcedure = async () => {
       value1: "0",
       value2: "0",
       code: toNormalizedCode(trimmedName),
-    });
+    };
+    console.log("[submitProcedure] payload", payload);
+    const { data, error } = await createUdc(payload);
 
     if (error) {
-      notify(error.info || "Error al agregar servicio", "error");
+      const errorData = error.data as IApiErrorData | null;
+      if (errorData?.code === "ER_DUP_ENTRY") {
+        notify("Este servicio ya existe. Intente con un nombre diferente.", "error");
+      } else {
+        notify(error.info || "Error al agregar servicio", "error");
+      }
       return;
     }
 
@@ -249,12 +255,10 @@ const confirmAndRemoveProcedure = async (procedure: IdentifiableItem) => {
       return;
     }
 
-    if (data !== undefined) {
-      procedures.value = procedures.value.filter(
-        (item) => item.id !== procedure.id,
-      );
-      notify("Servicio eliminado exitosamente", "success");
-    }
+    procedures.value = procedures.value.filter(
+      (item) => item.id !== procedure.id,
+    );
+    notify("Servicio eliminado exitosamente", "success");
   } catch {
     notify("Error inesperado al eliminar servicio", "error");
   }

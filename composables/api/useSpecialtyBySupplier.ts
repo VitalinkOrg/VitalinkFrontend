@@ -109,12 +109,13 @@ export const useSpecialtyBySupplier = () => {
       },
     );
 
-  const getAllSpecialtyBySupplier = () =>
+  const getAllSpecialtyBySupplier = (params?: { supplier_id?: number }) =>
     executeRequest<ISpecialtyBySupplier[]>(
       "getAllSpecialtyBySupplier",
       "specialtybysupplier/get_all",
       {
-        method: "POST",
+        method: "GET",
+        query: params,
       },
     );
 

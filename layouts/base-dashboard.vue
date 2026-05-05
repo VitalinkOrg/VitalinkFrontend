@@ -34,7 +34,16 @@ const { getUserInfo } = useUserInfo();
 
 const userInfo = getUserInfo() || {};
 
-const userProfilePicture = computed(() => userInfo.profile_picture_url ?? null);
+const userProfilePicture = computed(() => {
+  const url = userInfo.profile_picture_url;
+  if (!url) return null;
+  try {
+    new URL(url);
+    return url;
+  } catch {
+    return null;
+  }
+});
 const userMenuTrigger = ref<HTMLButtonElement>();
 
 const token = useCookie("token");

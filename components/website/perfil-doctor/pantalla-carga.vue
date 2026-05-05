@@ -1,13 +1,18 @@
 <template>
-  <div class="loading-container">
+  <div
+    class="loading-container"
+    role="status"
+    aria-live="polite"
+    aria-label="Cargando datos del panel médico"
+  >
     <div class="loading-wrapper">
-      <div class="loading-spinner">
+      <div class="loading-spinner" aria-hidden="true">
         <div class="spinner-ring"></div>
         <div class="spinner-ring"></div>
         <div class="spinner-ring"></div>
       </div>
       <div class="loading-content">
-        <h3 class="loading-title">Cargando datos</h3>
+        <p class="loading-title">Cargando datos</p>
         <p class="loading-description">Obteniendo información...</p>
       </div>
     </div>
@@ -22,7 +27,7 @@
   min-height: 60vh;
   width: 100%;
   background-color: #f8f8f8;
-  padding: 2rem;
+  padding: $spacing-xl;
 }
 
 .loading-wrapper {
@@ -30,19 +35,30 @@
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  background-color: #ffffff;
+  background-color: $white;
   border-radius: 24px;
   padding: 3rem 2rem;
-  box-shadow: 0px 20px 24px 0px #14253f0f;
-  box-shadow: 0px 0px 1px 0px #0c1a4b1a;
+  box-shadow:
+    0px 20px 24px 0px #14253f0f,
+    0px 0px 1px 0px #0c1a4b1a;
   min-width: 320px;
+
+  @include respond-to-max(sm) {
+    padding: $spacing-xl $spacing-lg;
+    min-width: 280px;
+  }
 }
 
 .loading-spinner {
   position: relative;
   width: 80px;
   height: 80px;
-  margin-bottom: 1.5rem;
+  margin-bottom: $spacing-lg;
+
+  @include respond-to-max(sm) {
+    width: 60px;
+    height: 60px;
+  }
 }
 
 .spinner-ring {
@@ -54,44 +70,71 @@
   border: 3px solid transparent;
   border-radius: 50%;
 
-  &:nth-child(1) {
-    border-top-color: #3541b4;
-    animation: spin 1.5s linear infinite;
+  @media (prefers-reduced-motion: no-preference) {
+    &:nth-child(1) {
+      border-top-color: $color-primary;
+      animation: spin 1.5s linear infinite;
+    }
+
+    &:nth-child(2) {
+      border-top-color: $primary-aqua;
+      animation: spin 1.5s linear infinite;
+      animation-delay: -0.5s;
+      width: 60px;
+      height: 60px;
+      top: 10px;
+      left: 10px;
+    }
+
+    &:nth-child(3) {
+      border-top-color: #ebecf7;
+      animation: spin 1.5s linear infinite;
+      animation-delay: -1s;
+      width: 40px;
+      height: 40px;
+      top: 20px;
+      left: 20px;
+    }
   }
 
-  &:nth-child(2) {
-    border-top-color: #0cadbb;
-    animation: spin 1.5s linear infinite;
-    animation-delay: -0.5s;
-    width: 60px;
-    height: 60px;
-    top: 10px;
-    left: 10px;
-  }
+  @media (prefers-reduced-motion: reduce) {
+    &:nth-child(1) {
+      border-top-color: $color-primary;
+    }
 
-  &:nth-child(3) {
-    border-top-color: #ebecf7;
-    animation: spin 1.5s linear infinite;
-    animation-delay: -1s;
-    width: 40px;
-    height: 40px;
-    top: 20px;
-    left: 20px;
+    &:nth-child(2) {
+      border-top-color: $primary-aqua;
+      width: 60px;
+      height: 60px;
+      top: 10px;
+      left: 10px;
+    }
+
+    &:nth-child(3) {
+      border-top-color: #ebecf7;
+      width: 40px;
+      height: 40px;
+      top: 20px;
+      left: 20px;
+    }
   }
 }
 
 @keyframes spin {
-  0% {
+  from {
     transform: rotate(0deg);
   }
-  100% {
+  to {
     transform: rotate(360deg);
   }
 }
 
 .loading-content {
   text-align: center;
-  animation: fadeInUp 0.8s ease-out;
+
+  @media (prefers-reduced-motion: no-preference) {
+    animation: fadeInUp 0.8s ease-out;
+  }
 }
 
 @keyframes fadeInUp {
@@ -106,37 +149,20 @@
 }
 
 .loading-title {
-  font-size: 1.5rem;
+  font-size: clamp(1.25rem, 2vw, 1.5rem);
   font-weight: 600;
-  color: #19213d;
-  margin-bottom: 0.5rem;
-  font-family: inherit;
+  color: $color-foreground;
+  margin: 0 0 $spacing-sm;
+  font-family: $font-family-main;
 }
 
 .loading-description {
   font-size: 1rem;
-  color: #6d758f;
+  color: $color-text-secondary;
   margin: 0;
   font-weight: 400;
-  opacity: 0.8;
-}
 
-@media (max-width: 768px) {
-  .loading-wrapper {
-    padding: 2rem 1.5rem;
-    min-width: 280px;
-  }
-
-  .loading-spinner {
-    width: 60px;
-    height: 60px;
-  }
-
-  .loading-title {
-    font-size: 1.25rem;
-  }
-
-  .loading-description {
+  @include respond-to-max(sm) {
     font-size: 0.9rem;
   }
 }

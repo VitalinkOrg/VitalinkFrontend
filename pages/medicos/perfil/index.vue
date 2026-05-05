@@ -1,9 +1,11 @@
 <script lang="ts" setup>
 useSeoMeta({
   title: "Mi Perfil Médico — Vitalink",
-  description: "Edita la información principal de tu perfil como proveedor de salud en Vitalink.",
+  description:
+    "Edita la información principal de tu perfil como proveedor de salud en Vitalink.",
   ogTitle: "Mi Perfil Médico — Vitalink",
-  ogDescription: "Edita la información principal de tu perfil como proveedor de salud en Vitalink.",
+  ogDescription:
+    "Edita la información principal de tu perfil como proveedor de salud en Vitalink.",
 });
 
 import { useAuth } from "@/composables/api";
@@ -87,7 +89,6 @@ const countryPhoneCodes: Record<string, string> = {
   PRI: "1",
 };
 
-
 const currentPhoneCode = computed(() => {
   return countryPhoneCodes[phoneCountryCode.value] || "506";
 });
@@ -99,7 +100,6 @@ const formattedPhone = computed(() => {
 const selectedCountry = computed(() => {
   return countries.find((country) => country.code === countryIsoCode.value);
 });
-
 
 const filteredCountries = computed(() => {
   if (!countrySearchText.value.trim()) {
@@ -272,7 +272,9 @@ const handleUpdateHospital = async () => {
             />
           </div>
           <div class="profile-form__field">
-            <label for="apellido" class="profile-form__label">Apellido (s)</label>
+            <label for="apellido" class="profile-form__label"
+              >Apellido (s)</label
+            >
             <input
               type="text"
               class="profile-form__input"
@@ -309,7 +311,7 @@ const handleUpdateHospital = async () => {
               type="tel"
               :value="formattedPhone"
               @input="handlePhoneInput"
-              :placeholder="`+${currentPhoneCode} 0000-0000`"
+              :placeholder="`00000000`"
               id="telefono"
               name="telefono"
               class="profile-form__input profile-form__phone-input"
@@ -360,7 +362,9 @@ const handleUpdateHospital = async () => {
           <div ref="countryDropdownRef" class="custom-dropdown">
             <div
               class="custom-dropdown__toggle"
-              :class="{ 'custom-dropdown__toggle--active': isCountryDropdownOpen }"
+              :class="{
+                'custom-dropdown__toggle--active': isCountryDropdownOpen,
+              }"
               @click="toggleCountryDropdown"
             >
               <input
@@ -374,7 +378,9 @@ const handleUpdateHospital = async () => {
               />
               <svg
                 class="custom-dropdown__arrow"
-                :class="{ 'custom-dropdown__arrow--rotated': isCountryDropdownOpen }"
+                :class="{
+                  'custom-dropdown__arrow--rotated': isCountryDropdownOpen,
+                }"
                 width="20"
                 height="20"
                 viewBox="0 0 20 20"
@@ -393,7 +399,10 @@ const handleUpdateHospital = async () => {
               class="custom-dropdown__menu"
               :class="{ 'custom-dropdown__menu--open': isCountryDropdownOpen }"
             >
-              <div v-if="filteredCountries.length === 0" class="custom-dropdown__no-results">
+              <div
+                v-if="filteredCountries.length === 0"
+                class="custom-dropdown__no-results"
+              >
                 No se encontraron países
               </div>
               <button
@@ -401,10 +410,15 @@ const handleUpdateHospital = async () => {
                 :key="country.code"
                 type="button"
                 class="custom-dropdown__item"
-                :class="{ 'custom-dropdown__item--active': countryIsoCode === country.code }"
+                :class="{
+                  'custom-dropdown__item--active':
+                    countryIsoCode === country.code,
+                }"
                 @click="selectCountry(country.code)"
               >
-                <span class="custom-dropdown__item-text">{{ country.name }}</span>
+                <span class="custom-dropdown__item-text">{{
+                  country.name
+                }}</span>
                 <svg
                   v-if="countryIsoCode === country.code"
                   class="custom-dropdown__item-check"
@@ -437,9 +451,7 @@ const handleUpdateHospital = async () => {
             <span class="profile-form__spinner" aria-hidden="true" />
             Actualizando...
           </template>
-          <template v-else>
-            Actualizar Perfil
-          </template>
+          <template v-else> Actualizar Perfil </template>
         </button>
       </div>
     </form>
@@ -568,17 +580,19 @@ const handleUpdateHospital = async () => {
     padding-right: 0.5rem;
   }
 
-  &__phone-input {
-    flex: 1;
-    min-width: 0;
-  }
-
   &__label {
     @include form-label;
   }
 
   &__input {
     @include input-base;
+  }
+
+  &__phone-input {
+    flex: 1;
+    min-width: 0;
+    border-top-left-radius: 0;
+    border-bottom-left-radius: 0;
   }
 
   &__actions {

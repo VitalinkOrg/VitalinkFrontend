@@ -118,8 +118,9 @@ onUnmounted(() => {
 </script>
 
 <template>
+  <a href="#main-content" class="skip-link">Saltar al contenido principal</a>
   <NuxtLayout name="medicos-dashboard">
-    <div class="dashboard">
+    <div id="main-content" class="dashboard" tabindex="-1">
       <WebsitePerfilDoctorPantallaCarga v-if="isLoading" />
 
       <div
@@ -157,7 +158,11 @@ onUnmounted(() => {
                     <p class="stat-card__placeholder">
                       Aún no tienes actividad
                     </p>
-                    <button class="stat-card__action" type="button">
+                    <button
+                      class="stat-card__action"
+                      type="button"
+                      :aria-label="`Empezar con ${card.label}`"
+                    >
                       Empezar
                     </button>
                   </div>
@@ -326,6 +331,27 @@ onUnmounted(() => {
 </template>
 
 <style scoped lang="scss">
+.skip-link {
+  position: absolute;
+  top: -100%;
+  left: $spacing-md;
+  z-index: 9999;
+  padding: $spacing-sm $spacing-md;
+  background: $color-primary;
+  color: $white;
+  border-radius: $border-radius-md;
+  font-family: $font-family-main;
+  font-weight: 600;
+  font-size: 14px;
+  text-decoration: none;
+
+  &:focus-visible {
+    top: $spacing-md;
+    outline: 3px solid $white;
+    outline-offset: 2px;
+  }
+}
+
 .sr-only {
   @include visually-hidden;
 }
@@ -341,13 +367,13 @@ onUnmounted(() => {
     min-height: 400px;
     gap: $spacing-md;
     padding: $spacing-lg;
-    background-color: #ffeaa7;
-    border: 1px solid #fdcb6e;
+    background-color: #fff3cd;
+    border: 1px solid #ffc107;
     border-radius: $border-radius-md;
   }
 
   &__error-message {
-    color: #e17055;
+    color: #6b3900;
     font-weight: 500;
     text-align: center;
     margin: 0;
@@ -503,8 +529,15 @@ onUnmounted(() => {
     font-weight: 400;
     line-height: 18px;
     color: #6d758f;
+    border-radius: 2px;
 
     &:hover {
+      color: $color-primary;
+    }
+
+    &:focus-visible {
+      outline: 2px solid $color-primary;
+      outline-offset: 3px;
       color: $color-primary;
     }
   }
@@ -605,10 +638,13 @@ onUnmounted(() => {
     border-radius: 33px;
     font-size: 13px;
     cursor: pointer;
-    transition: all 0.2s ease;
     font-family: $font-family-main;
     font-weight: 400;
     color: #6d758f;
+
+    @media (prefers-reduced-motion: no-preference) {
+      transition: all 0.2s ease;
+    }
 
     &:hover {
       background: #f1f5f9;
@@ -638,7 +674,10 @@ onUnmounted(() => {
   &__chevron {
     font-size: 16px;
     color: #9ca3af;
-    transition: transform 0.2s ease;
+
+    @media (prefers-reduced-motion: no-preference) {
+      transition: transform 0.2s ease;
+    }
 
     &--open {
       transform: rotate(180deg);
@@ -725,8 +764,15 @@ onUnmounted(() => {
     font-weight: 400;
     line-height: 18px;
     color: #6d758f;
+    border-radius: 2px;
 
     &:hover {
+      color: $color-primary;
+    }
+
+    &:focus-visible {
+      outline: 2px solid $color-primary;
+      outline-offset: 3px;
       color: $color-primary;
     }
   }
@@ -749,6 +795,14 @@ onUnmounted(() => {
       margin: 0;
       font-size: 16px;
     }
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .filter-dropdown__option,
+  .chart-layout__link,
+  .history-panel__link {
+    transition: none !important;
   }
 }
 </style>

@@ -4,10 +4,16 @@ interface IApiResponse<T = any> {
   data?: T;
 }
 
+interface IApiErrorData {
+  errno?: string;
+  code?: string;
+  message?: string;
+}
+
 interface IApiErrorResponse {
   status: IStatus;
   info: string;
-  data: string | null;
+  data: string | IApiErrorData | null;
 }
 
 interface IUsableAPI<T> {
@@ -40,6 +46,7 @@ interface IUdcParams {
   type: UdcType;
   father_code: string;
   code: string;
+  supplier_id: number;
 }
 
 type UdcType =
@@ -351,6 +358,7 @@ interface IUdc<T = string> {
   type: string;
   value1: string | null; // Precio Producto
   value2: string | null; // Precio cita valoracion producto
+  is_deleted?: number;
   created_date?: string | null;
   updated_date: string | null;
 }
@@ -382,6 +390,55 @@ interface ICreateSpecialtyBySupplierRequest {
 
 interface ISpecialtyBySupplierUpdateRequest
   extends Partial<ICreateSpecialtyBySupplierRequest> {}
+
+type ExperienceTypeCode =
+  | "EXPERIENCE"
+  | "EDUCATION"
+  | "CERTIFICATION"
+  | "AWARD_RECOGNITION"
+  | "ACCREDITATION"
+  | "SCIENTIFIC_PUBLICATION"
+  | "CONFERENCE_PARTICIPATION"
+  | "MEDICAL_RESEARCH";
+
+interface ICertificationExperience {
+  id: number;
+  supplier_id: number;
+  start_date: string;
+  end_date?: string;
+  name: string;
+  company_name: string;
+  province?: string;
+  address?: string;
+  city_name?: string;
+  country_iso_code?: string;
+  is_currently?: boolean;
+  url_document?: string;
+  experience_type_code: ExperienceTypeCode;
+}
+
+interface ICreateCertificationExperienceRequest {
+  supplier_id: number;
+  start_date: string;
+  end_date?: string;
+  name: string;
+  company_name: string;
+  province?: string;
+  address?: string;
+  city_name?: string;
+  country_iso_code?: string;
+  is_currently?: boolean;
+  url_document?: string;
+  experience_type_code: ExperienceTypeCode;
+}
+
+interface IUpdateCertificationExperienceRequest
+  extends Partial<Omit<ICreateCertificationExperienceRequest, "supplier_id">> {}
+
+interface IGetAllCertificationExperienceParams {
+  supplier_id?: number;
+  experience_type_code?: ExperienceTypeCode;
+}
 
 interface Pagination {
   total: number;
@@ -762,4 +819,61 @@ interface IInsuranceRegisterRequest {
   city: string;
   country: string;
   postal_code: string;
+}
+
+type ExperienceTypeCode =
+  | "EXPERIENCE"
+  | "EDUCATION"
+  | "CERTIFICATION"
+  | "AWARD_RECOGNITION"
+  | "ACCREDITATION"
+  | "SCIENTIFIC_PUBLICATION"
+  | "CONFERENCE_PARTICIPATION"
+  | "MEDICAL_RESEARCH";
+
+interface ICertificationExperienceBase {
+  supplier_id?: number;
+  start_date?: string;
+  end_date?: string;
+  name?: string;
+  company_name?: string;
+  province?: string;
+  address?: string;
+  city_name?: string;
+  country_iso_code?: string;
+  is_currently?: boolean;
+  url_document?: string;
+  experience_type_code?: ExperienceTypeCode;
+  experience_type?: { code: ExperienceTypeCode; name: string };
+}
+
+interface ICreateCertificationExperienceRequest
+  extends ICertificationExperienceBase {
+  supplier_id: number;
+  start_date: string;
+  name: string;
+  company_name: string;
+  experience_type_code: ExperienceTypeCode;
+}
+
+interface IUpdateCertificationExperienceRequest
+  extends ICertificationExperienceBase {}
+
+interface ICertificationExperience extends ICertificationExperienceBase {
+  id: number;
+}
+
+type LanguageProficiencyCode = "BASIC" | "INTERMEDIATE" | "ADVANCED" | "NATIVE";
+
+interface ILanguageSupplier {
+  id: number;
+  supplier_id: number;
+  language_proficiency_code: LanguageProficiencyCode;
+  language_code: string;
+}
+
+interface ILanguageSupplierRequest {
+  supplier_id: number;
+  language_proficiency_code: LanguageProficiencyCode;
+  language_code: string;
 }

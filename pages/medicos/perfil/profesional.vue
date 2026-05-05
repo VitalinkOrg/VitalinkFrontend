@@ -6,12 +6,19 @@ useSeoMeta({
   ogDescription: "Actualiza tu información profesional y datos de contacto en Vitalink.",
 });
 
+import { jwtDecode } from "jwt-decode";
 import { useDocuments } from "~/composables/api/useDocuments";
 import { useSupplier } from "~/composables/api/useSupplier";
 
+interface DecodedToken {
+  id: string;
+}
+
 const { show: showToast } = useToast();
 const { updateSupplier, getSupplierById, getAllSuppliers } = useSupplier();
-const { addDocument } = useDocuments();
+const { addDocument, getDocumentByCode } = useDocuments();
+const { getToken } = useAuthToken();
+const { id: userId } = jwtDecode<DecodedToken>(getToken()!);
 
 const supplierData = ref<ISupplierDetail | null>(null);
 const supplierId = ref<number | null>(null);
@@ -26,15 +33,23 @@ const isUploadingImage = ref(false);
 
 const isFormReady = computed(() => true);
 
+const isValidImageUrl = (url: string | null | undefined): boolean =>
+  !!url && (url.startsWith("http://") || url.startsWith("https://"));
+
+const storedProfileImageUrl = computed(() =>
+  isValidImageUrl(supplierData.value?.profile_picture_url)
+    ? supplierData.value!.profile_picture_url
+    : null,
+);
+
 const hasProfileImage = computed(
-  () =>
-    !!profileImagePreview.value || !!supplierData.value?.profile_picture_url,
+  () => !!profileImagePreview.value || !!storedProfileImageUrl.value,
 );
 
 const displayedImageSrc = computed(
   () =>
     profileImagePreview.value ||
-    supplierData.value?.profile_picture_url ||
+    storedProfileImageUrl.value ||
     "/_nuxt/src/assets/picture.svg",
 );
 
@@ -66,12 +81,33 @@ const fetchSupplierProfile = async () => {
       supplierData.value = data;
       profileDescription.value = data.description || "";
       medicalEnrollmentNumber.value = data.num_medical_enrollment || "";
+
+      await migrateProfilePictureCodeToUrl();
     }
   } catch {
     notify("Error inesperado al cargar el perfil", "error");
   } finally {
     isLoadingProfile.value = false;
   }
+};
+
+const migrateProfilePictureCodeToUrl = async () => {
+  if (!supplierId.value || !supplierData.value) return;
+
+  const stored = supplierData.value.profile_picture_url;
+  if (isValidImageUrl(stored)) return;
+  if (!stored) return;
+
+  const { data: doc, error } = await getDocumentByCode(stored);
+  if (error || !doc?.url) return;
+
+  await updateSupplier(supplierId.value, {
+    description: supplierData.value.description ?? "",
+    num_medical_enrollment: supplierData.value.num_medical_enrollment ?? "",
+    profile_picture_url: doc.url,
+  });
+
+  supplierData.value = { ...supplierData.value, profile_picture_url: doc.url };
 };
 
 const handleImageSelection = (event: Event) => {
@@ -120,9 +156,9 @@ const uploadProfileImage = async (): Promise<string | null> => {
         type: "IMG",
         description: "Foto de perfil profesional",
         id_for_table: String(supplierId.value),
-        table: "supplier",
+        table: "SUPPLIER",
         action_type: "GENERAL_GALLERY",
-        user_id: String(supplierId.value),
+        user_id: userId,
         is_public: 1,
       },
     });
@@ -132,7 +168,7 @@ const uploadProfileImage = async (): Promise<string | null> => {
       return null;
     }
 
-    return data?.code || data?.url || null;
+    return data?.url || null;
   } catch {
     notify("Error inesperado al subir la imagen", "error");
     return null;
@@ -150,7 +186,7 @@ const submitProfileUpdate = async () => {
   isSubmitting.value = true;
 
   try {
-    let profilePictureUrl = supplierData.value.profile_picture_url;
+    let profilePictureUrl = storedProfileImageUrl.value ?? "";
 
     if (selectedProfileImage.value) {
       const uploadedCode = await uploadProfileImage();

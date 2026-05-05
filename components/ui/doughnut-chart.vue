@@ -20,6 +20,7 @@ interface Props {
   chartSize?: number;
   centerLabelMaxWidth?: number;
   cutout?: string;
+  ariaLabel?: string;
 }
 
 const props = withDefaults(defineProps<Props>(), {
@@ -28,7 +29,13 @@ const props = withDefaults(defineProps<Props>(), {
   centerLabel: "",
   centerLabelMaxWidth: 100,
   cutout: "65%",
+  ariaLabel: "",
 });
+
+const prefersReducedMotion =
+  process.client
+    ? window.matchMedia("(prefers-reduced-motion: reduce)").matches
+    : false;
 
 if (process.client) {
   ChartJS.register(Title, Tooltip, Legend, ArcElement, Colors);
@@ -199,7 +206,7 @@ const singleValueOptions = computed<ChartOptions<"doughnut">>(() => ({
   responsive: true,
   maintainAspectRatio: false,
   animation: {
-    duration: 300,
+    duration: prefersReducedMotion ? 0 : 300,
   },
   interaction: {
     intersect: false,
@@ -281,15 +288,26 @@ onBeforeUnmount(() => {
       class="doughnut-chart__body"
       :style="{ maxHeight: chartSize ? `${chartSize}px` : '' }"
     >
-      <div class="doughnut-chart__wrapper">
+      <div
+        class="doughnut-chart__wrapper"
+        role="img"
+        :aria-label="
+          ariaLabel ||
+          `${title}: ${percentage}% (${attendedValue} de ${totalValue})`
+        "
+      >
+        <span class="doughnut-chart__sr-text">
+          {{ title }}: {{ percentage }}% — {{ attendedValue }} de
+          {{ totalValue }}
+        </span>
         <Doughnut
           class="doughnut-chart__canvas"
           :data="doughnutData"
           :options="singleValueOptions"
-          :aria-label="`Gráfico circular mostrando ${title}`"
+          aria-hidden="true"
         />
       </div>
-      <h3 class="doughnut-chart__title">{{ title }}</h3>
+      <p class="doughnut-chart__title">{{ title }}</p>
       <p class="doughnut-chart__description">{{ description }}</p>
     </div>
   </div>
@@ -319,6 +337,10 @@ onBeforeUnmount(() => {
     justify-content: center;
   }
 
+  &__sr-text {
+    @include visually-hidden;
+  }
+
   &__canvas {
     width: 100%;
     height: 100%;
@@ -339,7 +361,7 @@ onBeforeUnmount(() => {
     font-weight: 300;
     font-size: 14px;
     line-height: 100%;
-    color: #6d758f;
+    color: $color-text-secondary;
     margin: 0;
     text-align: center;
   }
