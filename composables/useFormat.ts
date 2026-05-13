@@ -1,5 +1,18 @@
 export const useFormat = () => {
   /**
+   * Converts a local Date to a safe ISO string for the API using the "Noon Trick".
+   * Appending T12:00:00Z means no timezone on Earth (UTC-12 to UTC+14) can shift
+   * the date to the previous or next day during the backend's UTC conversion.
+   */
+  const toSafeApiDate = (date: Date): string => {
+    const y = date.getFullYear();
+    const m = (date.getMonth() + 1).toString().padStart(2, "0");
+    const d = date.getDate().toString().padStart(2, "0");
+    return `${y}-${m}-${d}T12:00:00Z`;
+  };
+
+
+  /**
    * Formats a time string from 24-hour format (HH:mm:ss) to different formats.
    *
    * @param time - Time string in HH:mm:ss or HH:mm format (e.g. "14:30:00")
@@ -51,7 +64,12 @@ export const useFormat = () => {
         const [day, month, year] = date.split("/");
         dateObj = new Date(parseInt(year), parseInt(month) - 1, parseInt(day));
       } else {
-        dateObj = new Date(date);
+        // Strip any time/timezone suffix before parsing. This defends against
+        // the backend sending "2025-05-12T00:00:00.000Z", which would be parsed
+        // as UTC midnight and shift to May 11 for users in negative UTC offsets.
+        // Forcing T12:00:00 (local noon) makes getDate() correct in every timezone.
+        const datePart = date.split("T")[0];
+        dateObj = new Date(`${datePart}T12:00:00`);
       }
     } else {
       dateObj = date;
@@ -455,6 +473,7 @@ export const useFormat = () => {
   };
 
   return {
+    toSafeApiDate,
     formatTime,
     formatDate,
     formatDateTime,
