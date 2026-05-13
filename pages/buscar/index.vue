@@ -431,7 +431,7 @@ onMounted(async () => {
                 </select>
               </div>
 
-              <div class="search-results__map-toggle">
+              <!-- <div class="search-results__map-toggle">
                 <label
                   class="search-results__map-toggle-wrapper"
                   for="map-visibility-toggle"
@@ -448,7 +448,7 @@ onMounted(async () => {
                   />
                   <span class="search-results__map-label"> Mostrar mapa </span>
                 </label>
-              </div>
+              </div> -->
             </div>
           </header>
 

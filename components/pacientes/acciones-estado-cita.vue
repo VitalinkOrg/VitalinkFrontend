@@ -23,10 +23,8 @@
 
       <span
         v-else-if="buttonConfig.type === 'status'"
-        role="button"
         class="appointment-pay-modal__status"
         :class="buttonConfig.class"
-        @click="buttonConfig.action"
       >
         {{ buttonConfig.text }}
       </span>
@@ -238,10 +236,10 @@ const buttonConfig = computed((): ButtonConfig | null => {
   ) {
     if (remainingAmount.value !== 0) {
       return {
-        type: "button",
-        text: "Pagar ahora",
-        class: "appointment-pay-modal__button--outline",
-        action: openAppointmentDetails,
+        type: "empty",
+        text: "—",
+        class: "",
+        action: () => {},
       };
     } else {
       return {
@@ -337,7 +335,6 @@ const buttonConfig = computed((): ButtonConfig | null => {
     text-align: center;
     text-wrap: nowrap;
     padding: 0.375rem 0.625rem;
-    cursor: pointer;
     border-radius: 1.875rem;
     font-family: $font-family-main;
     font-weight: 500;

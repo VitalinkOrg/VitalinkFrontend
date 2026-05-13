@@ -1,20 +1,35 @@
 <template>
   <Teleport to="body">
-    <div v-if="isOpen" class="modal-overlay">
+    <div
+      v-if="isOpen"
+      class="modal-overlay"
+      @click.self="openConfirmationModal"
+      @keydown.esc="openConfirmationModal"
+    >
       <div
         class="modal-content packs z-3"
         :class="{ confirmation: internalCurrentStep === 4 }"
+        role="dialog"
+        aria-modal="true"
+        :aria-labelledby="internalCurrentStep !== 4 ? 'reservar-modal-title' : undefined"
+        tabindex="-1"
+        ref="modalContentRef"
       >
         <header v-if="internalCurrentStep != 4" class="modal-header">
-          <h2>
+          <h2 id="reservar-modal-title">
             {{
               internalCurrentStep === 1
                 ? "Packs de tratamientos"
                 : "Solicitar cita de valoración"
             }}
           </h2>
-          <button @click="openConfirmationModal">
-            <AtomsIconsXIcon />
+          <button
+            @click="openConfirmationModal"
+            class="modal-close-btn"
+            type="button"
+            aria-label="Cerrar modal"
+          >
+            <AtomsIconsXIcon aria-hidden="true" />
           </button>
         </header>
         <div class="modal-body">
@@ -691,10 +706,14 @@ const props = withDefaults(defineProps<Props>(), {
 
 const emit = defineEmits<Emits>();
 
-const { formatTime, formatDate } = useFormat();
+const { formatTime, formatDate, toSafeApiDate } = useFormat();
+
+const { lock, unlock } = useScrollLock();
 
 const isConfirmationModalOpen = ref<boolean>(false);
 const isLoading = ref<boolean>(false);
+const modalContentRef = ref<HTMLElement | null>(null);
+const triggerElement = ref<HTMLElement | null>(null);
 const selectedMonth = ref<number | null>(null);
 const localSelectedDay = ref<string>(props.selectedDay);
 const localSelectedHour = ref<string>(props.selectedHour);
@@ -872,7 +891,7 @@ const getAvailableDaysForMonth = (month: number | null): AvailableDay[] => {
 
   for (let day = 1; day <= daysInMonth; day++) {
     const date = new Date(year, month, day);
-    const dateString = date.toISOString().split("T")[0];
+    const dateString = toSafeApiDate(date);
 
     if (date >= today && availability.value[dateString]) {
       availableDaysArray.push({
@@ -988,13 +1007,21 @@ watch(
 watch(
   () => props.isOpen,
   (newVal) => {
-    if (!newVal) {
-      setTimeout(() => {
-        resetModalData();
-      }, 300);
+    if (newVal) {
+      triggerElement.value = document.activeElement as HTMLElement;
+      lock();
+      nextTick(() => modalContentRef.value?.focus());
+    } else {
+      unlock();
+      nextTick(() => triggerElement.value?.focus());
+      setTimeout(() => resetModalData(), 300);
     }
   },
 );
+
+onUnmounted(() => {
+  if (props.isOpen) unlock();
+});
 </script>
 
 <style scoped>
@@ -1032,11 +1059,30 @@ watch(
   margin-bottom: 20px;
 }
 
-.modal-header button {
+.modal-close-btn {
   background: none;
   border: none;
   font-size: 24px;
   cursor: pointer;
+  min-width: 44px;
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 6px;
+  padding: 0.5rem;
+  color: #6c757d;
+  transition: background-color 0.2s ease;
+
+  &:hover {
+    background-color: #f1f5f9;
+    color: #374151;
+  }
+
+  &:focus-visible {
+    outline: 2px solid #0cadbb;
+    outline-offset: 2px;
+  }
 }
 
 .day-container {

@@ -8,35 +8,43 @@
               Seleccione una fecha
             </h4>
             <div class="availability-selector__calendar-container">
-              <div class="dropdown availability-selector__dropdown">
+              <div
+                class="dropdown availability-selector__dropdown"
+                ref="dropdownContainerRef"
+              >
                 <button
                   class="dropdown-toggle availability-selector__dropdown-toggle"
                   type="button"
-                  data-bs-toggle="dropdown"
-                  aria-expanded="false"
+                  :id="dropdownToggleId"
+                  :aria-expanded="isDropdownOpen"
+                  aria-haspopup="listbox"
                   @click="toggleDropdown"
+                  @keydown="handleToggleKeydown"
                 >
                   {{ selectedMonthLabel || "Seleccione un mes" }}
                 </button>
                 <ul
                   class="dropdown-menu availability-selector__dropdown-menu"
                   :class="{ show: isDropdownOpen }"
-                  ref="dropdownRef"
+                  role="listbox"
+                  :aria-labelledby="dropdownToggleId"
+                  ref="menuRef"
                 >
-                  <li>
-                    <button
-                      v-for="month in months"
-                      :key="month.value"
-                      class="dropdown-item availability-selector__dropdown-item"
-                      :class="{
-                        'availability-selector__dropdown-item--active':
-                          selectedMonth === month.value,
-                      }"
-                      type="button"
-                      @click="handleMonthSelect(month)"
-                    >
-                      {{ month.label }}
-                    </button>
+                  <li
+                    v-for="(month, index) in months"
+                    :key="month.value"
+                    role="option"
+                    :aria-selected="selectedMonth === month.value"
+                    :tabindex="isDropdownOpen ? 0 : -1"
+                    class="dropdown-item availability-selector__dropdown-item"
+                    :class="{
+                      'availability-selector__dropdown-item--active':
+                        selectedMonth === month.value,
+                    }"
+                    @click="handleMonthSelect(month)"
+                    @keydown="handleOptionKeydown($event, month, index)"
+                  >
+                    {{ month.label }}
                   </li>
                 </ul>
               </div>
@@ -57,6 +65,8 @@
                   'availability-selector__day-button--active':
                     selectedDay === day.date,
                 }"
+                :aria-pressed="selectedDay === day.date"
+                :aria-label="`${day.day} ${day.number}${isDayFullyBooked(day.date) ? ', agotado' : ''}`"
               >
                 <span class="availability-selector__day-number">
                   {{ day.number }}
@@ -86,6 +96,8 @@
                 'availability-selector__hour-button--active':
                   selectedHour === time,
               }"
+              :aria-pressed="selectedHour === time"
+              :aria-label="`${formatTime(time)}${isHourBooked(time) ? ', no disponible' : ''}`"
             >
               {{ formatTime(time) }}
             </button>
@@ -123,7 +135,7 @@ interface Emits {
 const props = defineProps<Props>();
 const emit = defineEmits<Emits>();
 
-const { formatTime, capitalize } = useFormat();
+const { formatTime, capitalize, toSafeApiDate } = useFormat();
 const { fetchAvailabilityBySupplierId } = useAvailability();
 const { fetchAllAppointments } = useAppointment();
 
@@ -134,7 +146,9 @@ const selectedHour = ref<string | null>(props.modelValue?.hour || null);
 const selectedMonth = ref<number | null>(null);
 const selectedMonthLabel = ref<string>("");
 const isDropdownOpen = ref(false);
-const dropdownRef = ref<HTMLElement | null>(null);
+const dropdownContainerRef = ref<HTMLElement | null>(null);
+const menuRef = ref<HTMLElement | null>(null);
+const dropdownToggleId = `availability-month-${Math.random().toString(36).substring(2, 9)}`;
 
 const weekdayMap: Record<string, number> = {
   Monday: 1,
@@ -196,7 +210,7 @@ const availableDays = computed(() => {
 
     if (hasAvailability) {
       days.push({
-        date: date.toISOString().split("T")[0],
+        date: toSafeApiDate(date),
         number: day,
         day: date.toLocaleDateString("es-ES", { weekday: "short" }),
         fullDate: date,
@@ -362,6 +376,56 @@ const closeDropdown = (): void => {
   isDropdownOpen.value = false;
 };
 
+const handleToggleKeydown = (e: KeyboardEvent): void => {
+  if (e.key === "ArrowDown" || e.key === "Enter" || e.key === " ") {
+    e.preventDefault();
+    if (!isDropdownOpen.value) isDropdownOpen.value = true;
+    nextTick(() => {
+      const first = menuRef.value?.querySelector<HTMLElement>("[role='option']");
+      first?.focus();
+    });
+  } else if (e.key === "Escape") {
+    isDropdownOpen.value = false;
+  }
+};
+
+const handleOptionKeydown = (
+  e: KeyboardEvent,
+  month: { value: number; label: string; year: number },
+  index: number,
+): void => {
+  const options = Array.from(
+    menuRef.value?.querySelectorAll<HTMLElement>("[role='option']") ?? [],
+  );
+  if (!options.length) return;
+
+  if (e.key === "ArrowDown") {
+    e.preventDefault();
+    options[Math.min(index + 1, options.length - 1)]?.focus();
+  } else if (e.key === "ArrowUp") {
+    e.preventDefault();
+    if (index === 0) {
+      dropdownContainerRef.value
+        ?.querySelector<HTMLElement>("button")
+        ?.focus();
+    } else {
+      options[index - 1]?.focus();
+    }
+  } else if (e.key === "Enter" || e.key === " ") {
+    e.preventDefault();
+    handleMonthSelect(month);
+    nextTick(() =>
+      dropdownContainerRef.value
+        ?.querySelector<HTMLElement>("button")
+        ?.focus(),
+    );
+  } else if (e.key === "Escape") {
+    e.preventDefault();
+    isDropdownOpen.value = false;
+    dropdownContainerRef.value?.querySelector<HTMLElement>("button")?.focus();
+  }
+};
+
 watch(
   () => props.modelValue,
   (newValue) => {
@@ -389,7 +453,7 @@ onMounted(async () => {
   await getAppointments();
 });
 
-onClickOutside(dropdownRef, () => {
+onClickOutside(dropdownContainerRef, () => {
   if (isDropdownOpen.value) closeDropdown();
 });
 </script>
@@ -465,6 +529,12 @@ onClickOutside(dropdownRef, () => {
       color: $color-primary !important;
     }
 
+    &:focus-visible {
+      outline: 2px solid $color-primary !important;
+      outline-offset: 2px;
+      border-radius: 4px;
+    }
+
     &::after {
       display: none;
     }
@@ -488,26 +558,32 @@ onClickOutside(dropdownRef, () => {
     padding: 8px 16px;
     font-size: 14px;
     color: $color-foreground;
-    border: none;
-    background: none;
-    width: 100%;
-    text-align: left;
+    list-style: none;
+    cursor: pointer;
     transition: all 0.2s ease;
 
     &:hover {
-      background-color: rgba($color-primary, 0.1) !important;
-      color: $color-primary !important;
+      background-color: rgba($color-primary, 0.1);
+      color: $color-primary;
     }
 
     &:focus {
-      background-color: rgba($color-primary, 0.1) !important;
-      color: $color-primary !important;
+      background-color: rgba($color-primary, 0.1);
+      color: $color-primary;
       outline: none;
     }
 
+    &:focus-visible {
+      outline: 2px solid $color-primary;
+      outline-offset: -2px;
+      background-color: rgba($color-primary, 0.1);
+      color: $color-primary;
+    }
+
     &--active {
-      background-color: rgba($color-primary, 0.1) !important;
-      color: $color-primary !important;
+      background-color: rgba($color-primary, 0.1);
+      color: $color-primary;
+      font-weight: 600;
     }
   }
 
@@ -553,6 +629,11 @@ onClickOutside(dropdownRef, () => {
     transition: all 0.2s ease-in-out;
     flex-shrink: 0;
     border: 1px solid #e1e4ed;
+
+    &:focus-visible {
+      outline: 2px solid $primary-aqua;
+      outline-offset: 2px;
+    }
 
     &:not(&--active):not(:disabled):hover {
       background-color: rgba($primary-aqua, 0.05);
@@ -618,19 +699,25 @@ onClickOutside(dropdownRef, () => {
     flex-direction: column;
     align-items: center;
     min-width: 95.25px;
+    min-height: 44px;
     border: 1px solid #e1e4ed;
     background-color: transparent;
     cursor: pointer;
     transition: all 0.2s ease;
     position: relative;
     border-radius: 10px;
-    padding: 12px 8px;
+    padding: 16px 8px;
     gap: 10px;
 
     font-size: 14px;
     line-height: 12px;
     letter-spacing: 2;
     color: $primary-aqua;
+
+    &:focus-visible {
+      outline: 2px solid $primary-aqua;
+      outline-offset: 2px;
+    }
 
     &:hover {
       background-color: rgba($primary-aqua, 0.1);

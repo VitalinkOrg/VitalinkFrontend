@@ -84,6 +84,7 @@
                   :key="column.key"
                   class="appointment-table-base__cell"
                   :class="column.cellClass"
+                  :data-label="column.label"
                 >
                   <slot
                     :name="`cell-${column.key}`"
@@ -553,43 +554,120 @@ defineExpose({
   }
 }
 
-@media (max-width: $breakpoint-md) {
+// ─── Mobile: card-based layout (<768px) ─────────────────────────────────────
+
+@include respond-to-max(md) {
   .appointment-table-base {
     &__container {
+      background: transparent;
       border-radius: 0;
       box-shadow: none;
-      border: 0.0625rem solid #dee2e6;
+      border: none;
+      min-height: auto;
     }
 
-    &__table {
-      font-size: 0.75rem;
+    &__wrapper {
+      overflow-x: visible;
     }
 
-    &__header-cell,
+    // Override browser table layout so CSS card rules take effect
+    &__table,
+    &__header,
+    &__header-row,
+    &__body {
+      display: block;
+    }
+
+    // Hide column headers — labels come from data-label::before
+    &__header {
+      display: none;
+    }
+
+    // Each row becomes a card
+    &__row {
+      display: block;
+      background: $white;
+      border-radius: $border-radius-md;
+      border: 0.0625rem solid #e4e7ec;
+      box-shadow: 0 0.0625rem 0.1875rem rgba($color-foreground, 0.06);
+      margin-bottom: $spacing-sm;
+      overflow: hidden;
+      transition: box-shadow 0.2s ease;
+
+      &:last-child {
+        margin-bottom: 0;
+      }
+
+      // Suppress the default row hover — the card hover replaces it
+      &:hover {
+        background: $white;
+        box-shadow: 0 0.125rem 0.5rem rgba($color-foreground, 0.1);
+      }
+
+      &--selected {
+        border-color: rgba($color-primary, 0.4);
+        box-shadow: 0 0 0 0.125rem rgba($color-primary, 0.12);
+      }
+    }
+
+    // Each cell becomes a label:value row inside the card
     &__cell {
-      padding: 0.5rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: $spacing-sm $spacing-md;
+      font-size: 0.8125rem;
+      border-bottom: 0.0625rem solid #f2f4f7;
+      min-height: 2.75rem; // 44px touch target
+
+      &:last-child {
+        border-bottom: none;
+      }
+
+      // Column label rendered as inline prefix
+      &::before {
+        content: attr(data-label);
+        font-family: $font-family-main;
+        font-weight: 600;
+        font-size: 0.6875rem;
+        color: $color-text-secondary;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        flex: 0 0 auto;
+        margin-right: $spacing-sm;
+        white-space: nowrap;
+      }
+
+      // Icon-only / empty-label columns (e.g. three-dots actions)
+      &[data-label=""],
+      &--actions {
+        justify-content: flex-end;
+        background: #fafbfc;
+        border-top: 0.0625rem solid #e4e7ec;
+
+        &::before {
+          display: none;
+        }
+      }
+
+      // Center-aligned cells: keep label left, value right
+      &--center {
+        justify-content: space-between;
+      }
+    }
+
+    &__empty-state {
+      padding: $spacing-lg $spacing-md;
     }
 
     &__empty-content {
       flex-direction: column;
       text-align: center;
-      gap: 1rem;
+      gap: $spacing-md;
     }
 
     &__empty-icon {
       width: auto;
-    }
-  }
-}
-
-@media (max-width: $breakpoint-sm) {
-  .appointment-table-base {
-    &__header-text {
-      font-size: 0.625rem;
-    }
-
-    &__cell {
-      font-size: 0.625rem;
     }
   }
 }

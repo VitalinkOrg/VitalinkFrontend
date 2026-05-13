@@ -411,23 +411,24 @@ onBeforeUnmount(() => {
   &__datetime {
     font-family: $font-family-main;
     font-weight: 300;
-    font-size: 12px;
-    color: #19213d;
-    line-height: 20px;
+    font-size: 0.75rem;
+    color: $color-foreground;
+    line-height: 1.25rem;
   }
 
   &__time {
     display: block;
-    color: #6d758f;
-    font-size: 11px;
+    color: $color-text-secondary;
+    font-size: 0.6875rem;
   }
 
   &__actions-trigger {
     display: flex;
     align-items: center;
     justify-content: center;
-    width: 2rem;
-    height: 2rem;
+    // 44×44px minimum touch target (WCAG 2.5.5)
+    min-width: 2.75rem;
+    min-height: 2.75rem;
     border: none;
     border-radius: 0.375rem;
     background: transparent;

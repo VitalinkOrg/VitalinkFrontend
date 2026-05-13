@@ -171,7 +171,7 @@
             </div>
           </dl>
 
-          <div v-if="hasCoordinates(location)" class="hospitales__card-actions">
+          <div v-if="canShowMapLink(location)" class="hospitales__card-actions">
             <a
               :href="buildMapsUrl(location)"
               target="_blank"
@@ -247,19 +247,40 @@ function formatCityProvince(location: ILocation): string {
   return parts.length > 0 ? parts.join(", ") : "Ciudad no disponible";
 }
 
-function hasCoordinates(location: ILocation): boolean {
+function hasValidCoordinates(location: ILocation): boolean {
   const lat = parseFloat(location.latitude);
   const lng = parseFloat(location.longitude);
-
   return !isNaN(lat) && !isNaN(lng) && lat !== 0 && lng !== 0;
 }
 
-function buildMapsUrl(location: ILocation): string {
-  const lat = encodeURIComponent(location.latitude);
-  const lng = encodeURIComponent(location.longitude);
-  const name = encodeURIComponent(location.name);
+function canShowMapLink(location: ILocation): boolean {
+  return Boolean(location.name || location.address) || hasValidCoordinates(location);
+}
 
-  return `https://www.google.com/maps/search/?api=1&query=${lat},${lng}&query_place_id=${name}`;
+function buildMapsUrl(location: ILocation): string {
+  const BASE = "https://www.google.com/maps/search/?api=1&query=";
+
+  if (location.name && location.address) {
+    return BASE + encodeURIComponent(`${location.name} ${location.address}`);
+  }
+
+  if (location.name && hasValidCoordinates(location)) {
+    const lat = parseFloat(location.latitude);
+    const lng = parseFloat(location.longitude);
+    return BASE + encodeURIComponent(`${location.name} ${lat},${lng}`);
+  }
+
+  if (location.name) {
+    return BASE + encodeURIComponent(location.name);
+  }
+
+  if (location.address) {
+    return BASE + encodeURIComponent(location.address);
+  }
+
+  const lat = parseFloat(location.latitude);
+  const lng = parseFloat(location.longitude);
+  return BASE + encodeURIComponent(`${lat},${lng}`);
 }
 
 function loadLocations(): void {
