@@ -1,9 +1,11 @@
 <script setup lang="ts">
 useSeoMeta({
   title: "Perfil Profesional — Vitalink",
-  description: "Actualiza tu información profesional y datos de contacto en Vitalink.",
+  description:
+    "Actualiza tu información profesional y datos de contacto en Vitalink.",
   ogTitle: "Perfil Profesional — Vitalink",
-  ogDescription: "Actualiza tu información profesional y datos de contacto en Vitalink.",
+  ogDescription:
+    "Actualiza tu información profesional y datos de contacto en Vitalink.",
 });
 
 import { jwtDecode } from "jwt-decode";
@@ -64,7 +66,10 @@ const fetchSupplierProfile = async () => {
     const { data: suppliers, error: suppliersError } = await getAllSuppliers();
 
     if (suppliersError || !suppliers?.length) {
-      notify(suppliersError?.info || "No se encontró el perfil del proveedor", "error");
+      notify(
+        suppliersError?.info || "No se encontró el perfil del proveedor",
+        "error",
+      );
       return;
     }
 

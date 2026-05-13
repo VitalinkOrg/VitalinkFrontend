@@ -4,24 +4,14 @@ interface Props {
   supplier?: ISupplierDetail | Partial<ISupplierDetail> | null;
 }
 
-interface Emits {
-  (e: "openModal"): void;
-}
-
 const props = withDefaults(defineProps<Props>(), {
   supplierData: null,
   supplier: null,
 });
 
-const emit = defineEmits<Emits>();
-
 const { formatPhone } = useFormat();
 
 const imageError = ref(false);
-
-const handleOpenModal = (): void => {
-  emit("openModal");
-};
 
 const currentSupplier = computed<
   ISupplierDetail | Partial<ISupplierDetail> | null
@@ -225,72 +215,26 @@ watch(
               {{ supplierAddress }}
             </small>
           </p>
+        </div>
 
-          <div v-if="hasStatistics" class="profile-card-body__statistics">
-            <div
-              v-if="currentSupplier?.experience_years"
-              class="profile-card-body__statistics-card"
-            >
-              <p class="profile-card-body__statistics-card-title">
-                Experiencia
-              </p>
-              <p class="profile-card-body__statistics-card-highlight">
-                +{{ experienceYears }} años
-              </p>
-            </div>
-            <div
-              v-if="currentSupplier?.patients_number"
-              class="profile-card-body__statistics-card"
-            >
-              <p class="profile-card-body__statistics-card-title">Pacientes</p>
-              <p class="profile-card-body__statistics-card-highlight">
-                +{{ patientsNumber }}
-              </p>
-            </div>
+        <div v-if="hasStatistics" class="profile-card-body__statistics">
+          <div
+            v-if="currentSupplier?.experience_years"
+            class="profile-card-body__statistics-card"
+          >
+            <p class="profile-card-body__statistics-card-title">Experiencia</p>
+            <p class="profile-card-body__statistics-card-highlight">
+              +{{ experienceYears }} años
+            </p>
           </div>
-
-          <div class="profile-card-body__photos-section">
-            <div class="profile-card-body__photos-section-row">
-              <img
-                src="@/src/assets/img-clinica-thumbnail-md.png"
-                alt="Foto adicional de la clínica 1"
-                @click="handleOpenModal"
-                @error="
-                  ($event.target as HTMLImageElement).style.display = 'none'
-                "
-              />
-              <img
-                src="@/src/assets/img-clinica-thumbnail-md.png"
-                alt="Foto adicional de la clínica 2"
-                @click="handleOpenModal"
-                @error="
-                  ($event.target as HTMLImageElement).style.display = 'none'
-                "
-              />
-              <img
-                src="@/src/assets/img-clinica-thumbnail-md.png"
-                alt="Foto adicional de la clínica 3"
-                @click="handleOpenModal"
-                @error="
-                  ($event.target as HTMLImageElement).style.display = 'none'
-                "
-              />
-              <img
-                src="@/src/assets/img-clinica-thumbnail-md.png"
-                alt="Foto adicional de la clínica 4"
-                @click="handleOpenModal"
-                @error="
-                  ($event.target as HTMLImageElement).style.display = 'none'
-                "
-              />
-            </div>
-            <a
-              href="#"
-              class="profile-card-body__more-photos-link"
-              @click.prevent="handleOpenModal"
-            >
-              Ver más Fotos
-            </a>
+          <div
+            v-if="currentSupplier?.patients_number"
+            class="profile-card-body__statistics-card"
+          >
+            <p class="profile-card-body__statistics-card-title">Pacientes</p>
+            <p class="profile-card-body__statistics-card-highlight">
+              +{{ patientsNumber }}
+            </p>
           </div>
         </div>
       </div>
@@ -637,16 +581,16 @@ watch(
         display: grid;
         grid-template-columns: repeat(2, 1fr);
         gap: 1rem;
-        margin-top: 1rem;
+        padding: 0 10px 10px;
 
         @include respond-to-max(md) {
           gap: 12px;
-          margin-top: 12px;
+          padding: 0 $spacing-sm $spacing-sm;
         }
 
         @include respond-to-max(sm) {
           gap: 8px;
-          margin-top: 8px;
+          padding: 0 $spacing-xs $spacing-xs;
         }
       }
 
@@ -707,111 +651,6 @@ watch(
         }
       }
 
-      &__photos-section {
-        border-radius: 20px;
-        padding: 10px 12px;
-        background-color: #f1f3f7;
-
-        @include respond-to-max(md) {
-          border-radius: 16px;
-          padding: $spacing-sm 10px;
-        }
-
-        @include respond-to-max(sm) {
-          border-radius: 12px;
-          padding: $spacing-xs 8px;
-        }
-      }
-
-      &__photos-section-row {
-        display: flex;
-        flex-wrap: nowrap;
-        gap: 17px;
-        overflow-x: auto;
-        padding-bottom: 4px;
-
-        @include respond-to-max(md) {
-          gap: 12px;
-        }
-
-        @include respond-to-max(sm) {
-          gap: 8px;
-        }
-
-        &::-webkit-scrollbar {
-          height: 4px;
-        }
-
-        &::-webkit-scrollbar-track {
-          background: #f1f3f7;
-        }
-
-        &::-webkit-scrollbar-thumb {
-          background: #d0d5dd;
-          border-radius: 2px;
-        }
-
-        img {
-          width: 72px;
-          height: 69px;
-          border-radius: 20px;
-          border: 3px solid #ffffff80;
-          flex-shrink: 0;
-          cursor: pointer;
-
-          @include respond-to-max(md) {
-            width: 64px;
-            height: 60px;
-            border-radius: 16px;
-            border: 2px solid #ffffff80;
-          }
-
-          @include respond-to-max(sm) {
-            width: 56px;
-            height: 52px;
-            border-radius: 12px;
-            border: 2px solid #ffffff80;
-          }
-        }
-      }
-
-      &__more-photos-link {
-        text-align: center;
-        width: 100%;
-        font-weight: 600;
-        font-size: 16px;
-        line-height: 24px;
-        background-color: #ffffff;
-        border: 1px solid #d0d5dd;
-        display: inline-block;
-        margin-top: 10px;
-        box-shadow: 0px 1px 2px 0px #1018280d;
-        padding: 12px 20px;
-        border-radius: $border-radius-md;
-        text-decoration: none;
-        color: inherit;
-        cursor: pointer;
-        transition: background-color 0.2s ease;
-        font-family: $font-family-main;
-
-        @include respond-to-max(md) {
-          font-size: 14px;
-          line-height: 20px;
-          padding: 10px 16px;
-          margin-top: 8px;
-        }
-
-        @include respond-to-max(sm) {
-          font-size: 12px;
-          line-height: 18px;
-          padding: 8px 12px;
-          margin-top: 6px;
-        }
-
-        &:hover {
-          background-color: #fafafa;
-        }
-      }
     }
   }
 }

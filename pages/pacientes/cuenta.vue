@@ -3,74 +3,58 @@ useSeoMeta({
   title: "Mi Cuenta — Vitalink",
   description: "Edita tu información personal y datos de contacto en Vitalink.",
   ogTitle: "Mi Cuenta — Vitalink",
-  ogDescription: "Edita tu información personal y datos de contacto en Vitalink.",
+  ogDescription:
+    "Edita tu información personal y datos de contacto en Vitalink.",
 });
 
+import { jwtDecode } from "jwt-decode";
+import { useDocuments } from "~/composables/api/useDocuments";
+import { useAuth } from "~/composables/api/useAuth";
 import type { DropdownItem } from "@/components/ui/dropdown-base.vue";
 import { onClickOutside } from "@vueuse/core";
-import type { UserInformation } from "~/types/test-index";
 
-interface ValidationError {
-  field: string;
-  message: string;
+interface DecodedToken {
+  id: string;
 }
 
-interface ApiError {
-  message: string;
-  errors?: Record<string, string[]>;
-  statusCode?: number;
+interface PatientUpdatePayload {
+  name?: string;
+  phone_number?: string;
+  country_iso_code?: string;
+  city_name?: string;
+  address?: string;
+  postal_code?: string;
+  profile_picture_url?: string;
+  birth_date?: string;
 }
-
-const ALLOWED_IMAGE_TYPES = [
-  "image/jpeg",
-  "image/jpg",
-  "image/png",
-  "image/webp",
-];
-const MAX_FILE_SIZE = 5 * 1024 * 1024;
 
 definePageMeta({
   middleware: ["auth-pacientes"],
 });
 
-const config = useRuntimeConfig();
-const token = useCookie<string>("token");
-const { getUserInfo } = useUserInfo();
-const { formatPhone } = useFormat();
+const { show: showToast } = useToast();
+const { getUserById, updateUser: updateUserApi } = useAuth();
+const { addDocument, getDocumentByCode } = useDocuments();
+const { getToken } = useAuthToken();
+const { setUserInfo } = useUserInfo();
 
-const user_info = ref<UserInformation>({
-  id: "",
-  card_id: "",
-  id_type: "CC" as any,
-  name: "",
-  user_name: "",
-  email: "",
-  phone_number: "",
-  country_iso_code: "",
-  city_name: "",
-  postal_code: "",
-  latitude: null,
-  longitude: null,
-  gender: null,
-  birth_date: null,
-  role: "",
-  finance_entity: {} as any,
-  code_contract: null,
-  language: "es",
-  profile_picture_url: null,
-  account_status: "active",
-});
+const { id: userId } = jwtDecode<DecodedToken>(getToken()!);
 
-const firstName = ref<string>("");
-const lastName = ref<string>("");
-const phoneNumber = ref<string>("");
-const phoneCountryCode = ref<string>("CRC");
-const address = ref<string>("");
-const profilePicture = ref<File | null>(null);
-const imagePreview = ref<string | null>(null);
-const isLoading = ref<boolean>(false);
-const validationErrors = ref<ValidationError[]>([]);
+// ─── Form state ───────────────────────────────────────────────────────────────
+const userData = ref<IUser | null>(null);
+const firstName = ref("");
+const lastName = ref("");
+const phoneNumber = ref("");
+const phoneCountryCode = ref("CRC");
+const selectedProfileImage = ref<File | null>(null);
+const profileImagePreview = ref<string | null>(null);
 
+const isSubmitting = ref(false);
+const isLoadingProfile = ref(true);
+const isUploadingImage = ref(false);
+const numericId = ref<number | null>(null);
+
+// ─── Country dropdown ─────────────────────────────────────────────────────────
 const countryDropdownRef = ref<HTMLElement>();
 const countrySearchRef = ref<HTMLInputElement>();
 const isCountryDropdownOpen = ref(false);
@@ -102,211 +86,58 @@ const countries = [
   { code: "PRI", name: "Puerto Rico" },
 ];
 
-const countryPhoneCodes: Record<string, string> = {
-  CRC: "506",
-  USA: "1",
-  MEX: "52",
-  GTM: "502",
-  SLV: "503",
-  HND: "504",
-  NIC: "505",
-  PAN: "507",
-  BLZ: "501",
-  ESP: "34",
-  COL: "57",
-  VEN: "58",
-  PER: "51",
-  CHL: "56",
-  ARG: "54",
-  BRA: "55",
-  ECU: "593",
-  BOL: "591",
-  PRY: "595",
-  URY: "598",
-  DOM: "1",
-  CUB: "53",
-  PRI: "1",
-};
+// ─── Computed ─────────────────────────────────────────────────────────────────
+const isValidImageUrl = (url: string | null | undefined): boolean =>
+  !!url && (url.startsWith("http://") || url.startsWith("https://"));
 
-const phoneCountryDropdownItems = computed<DropdownItem[]>(() => {
-  return countries.map((country) => ({
-    value: country.code,
-    label: country.code,
-    disabled: false,
-  }));
-});
+const storedProfileImageUrl = computed(() =>
+  isValidImageUrl(userData.value?.profile_picture_url)
+    ? userData.value!.profile_picture_url
+    : null,
+);
 
-const currentPhoneCode = computed(() => {
-  return countryPhoneCodes[phoneCountryCode.value] || "506";
-});
+const hasProfileImage = computed(
+  () => !!profileImagePreview.value || !!storedProfileImageUrl.value,
+);
 
-const formattedPhone = computed(() => {
-  if (!phoneNumber.value) return "";
-  return formatPhone(phoneNumber.value, {
-    countryCode: currentPhoneCode.value,
-    addPrefix: true,
-  });
-});
+const displayedImageSrc = computed(
+  () =>
+    profileImagePreview.value ||
+    storedProfileImageUrl.value ||
+    "/_nuxt/src/assets/picture.svg",
+);
 
-const selectedCountry = computed(() => {
-  return countries.find(
-    (country) => country.code === user_info.value.country_iso_code,
-  );
-});
+const phoneCountryDropdownItems = computed<DropdownItem[]>(() =>
+  countries.map((c) => ({ value: c.code, label: c.code, disabled: false })),
+);
 
-const displayCountryText = computed(() => {
-  if (isCountryDropdownOpen.value) {
-    return countrySearchText.value;
-  }
-  return selectedCountry.value?.name || "Seleccionar país";
-});
+const selectedCountry = computed(() =>
+  countries.find((c) => c.code === userData.value?.country_iso_code),
+);
 
 const filteredCountries = computed(() => {
-  if (!countrySearchText.value.trim()) {
-    return countries;
-  }
-  return countries.filter((country) =>
-    country.name.toLowerCase().includes(countrySearchText.value.toLowerCase()),
+  if (!countrySearchText.value.trim()) return countries;
+  return countries.filter((c) =>
+    c.name.toLowerCase().includes(countrySearchText.value.toLowerCase()),
   );
 });
 
-onMounted(async () => {
-  await loadUserInfo();
-});
+// ─── Helpers ──────────────────────────────────────────────────────────────────
+const notify = (message: string, type: "success" | "error") =>
+  showToast(message, type);
 
-onBeforeUnmount(() => {
-  if (imagePreview.value) {
-    URL.revokeObjectURL(imagePreview.value);
-  }
-});
-
-onClickOutside(countryDropdownRef, () => {
-  closeCountryDropdown();
-});
-
-const loadUserInfo = async (): Promise<void> => {
-  try {
-    const userInfo = await getUserInfo();
-    if (userInfo) {
-      user_info.value = { ...userInfo };
-
-      const nameParts = userInfo.name?.split(" ") || [];
-      if (nameParts.length > 0) {
-        firstName.value = nameParts[0];
-        lastName.value = nameParts.slice(1).join(" ");
-      }
-
-      phoneNumber.value = userInfo.phone_number || "";
-      phoneCountryCode.value = userInfo.country_iso_code || "CRC";
-      countrySearchText.value = selectedCountry.value?.name || "";
-    }
-  } catch (error) {
-    console.error("Error loading user info:", error);
-    handleError(error as Error);
-  }
-};
-
-const handleFileChange = (event: Event): void => {
-  const target = event.target as HTMLInputElement;
-  const file = target.files?.[0];
-
-  if (!file) return;
-
-  clearFileErrors();
-
-  const fileValidation = validateFile(file);
-  if (!fileValidation.isValid) {
-    console.error("File validation failed:", fileValidation.error);
-    validationErrors.value.push({
-      field: "profile_picture_url",
-      message: fileValidation.error || "Invalid file",
-    });
-
-    target.value = "";
-    return;
-  }
-
-  if (imagePreview.value) {
-    URL.revokeObjectURL(imagePreview.value);
-  }
-
-  profilePicture.value = file;
-  imagePreview.value = URL.createObjectURL(file);
-
-  console.log("File selected successfully:", {
-    name: file.name,
-    size: `${(file.size / 1024).toFixed(2)} KB`,
-    type: file.type,
-  });
-};
-
-const handlePhoneInput = (event: Event) => {
-  const target = event.target as HTMLInputElement;
-  const cursorPosition = target.selectionStart || 0;
-  const value = target.value;
-
-  const digits = value.replace(/\D/g, "");
-
-  const prefix = formatPhone("", {
-    countryCode: currentPhoneCode.value,
-    addPrefix: true,
-  });
-
-  const prefixLength = prefix.length;
-
-  if (cursorPosition <= prefixLength) {
-    const formattedValue = formatPhone(phoneNumber.value, {
-      countryCode: currentPhoneCode.value,
-      addPrefix: true,
-    });
-    target.value = formattedValue;
-    target.setSelectionRange(prefixLength, prefixLength);
-    return;
-  }
-
-  phoneNumber.value = digits;
-
-  const formattedValue = formatPhone(digits, {
-    countryCode: currentPhoneCode.value,
-    addPrefix: true,
-  });
-
-  target.value = formattedValue;
-
-  const digitsBeforeCursor = value
-    .substring(0, cursorPosition)
-    .replace(/\D/g, "").length;
-
-  let newCursorPosition = 0;
-  let digitCount = 0;
-
-  for (let i = 0; i < formattedValue.length; i++) {
-    if (/\d/.test(formattedValue[i])) {
-      digitCount++;
-      if (digitCount === digitsBeforeCursor) {
-        newCursorPosition = i + 1;
-        break;
-      }
-    }
-  }
-
-  newCursorPosition = Math.max(prefixLength, newCursorPosition);
-
-  target.setSelectionRange(newCursorPosition, newCursorPosition);
-};
+// ─── Country dropdown ─────────────────────────────────────────────────────────
+onClickOutside(countryDropdownRef, () => closeCountryDropdown());
 
 const toggleCountryDropdown = () => {
   isCountryDropdownOpen.value = !isCountryDropdownOpen.value;
-
   if (isCountryDropdownOpen.value) {
-    nextTick(() => {
-      countrySearchRef.value?.focus();
-    });
+    nextTick(() => countrySearchRef.value?.focus());
   }
 };
 
-const selectCountry = (countryCode: string) => {
-  user_info.value.country_iso_code = countryCode;
+const selectCountry = (code: string) => {
+  if (userData.value) userData.value.country_iso_code = code;
   closeCountryDropdown();
 };
 
@@ -316,356 +147,345 @@ const closeCountryDropdown = () => {
 };
 
 const handleCountrySearchInput = () => {
-  if (!isCountryDropdownOpen.value) {
-    isCountryDropdownOpen.value = true;
-  }
+  if (!isCountryDropdownOpen.value) isCountryDropdownOpen.value = true;
 };
 
-const validateFile = (file: File): { isValid: boolean; error?: string } => {
-  if (!ALLOWED_IMAGE_TYPES.includes(file.type)) {
-    return {
-      isValid: false,
-      error: `Tipo de archivo no permitido. Formatos aceptados: ${ALLOWED_IMAGE_TYPES.join(", ")}`,
-    };
+// ─── Image handling ───────────────────────────────────────────────────────────
+const handleImageSelection = (event: Event) => {
+  const input = event.target as HTMLInputElement;
+  const file = input.files?.[0];
+  if (!file) return;
+
+  const allowedTypes = ["image/jpeg", "image/png", "image/webp"];
+  if (!allowedTypes.includes(file.type)) {
+    notify("Formato no válido. Use JPG, PNG o WebP", "error");
+    input.value = "";
+    return;
   }
-
-  if (file.size > MAX_FILE_SIZE) {
-    return {
-      isValid: false,
-      error: `El archivo es demasiado grande. Tamaño máximo: ${MAX_FILE_SIZE / (1024 * 1024)}MB`,
-    };
-  }
-
-  return { isValid: true };
-};
-
-const clearFileErrors = (): void => {
-  validationErrors.value = validationErrors.value.filter(
-    (error) => error.field !== "profile_picture_url",
-  );
-};
-
-const validateForm = (): boolean => {
-  validationErrors.value = [];
-
-  if (!firstName.value?.trim()) {
-    validationErrors.value.push({
-      field: "first_name",
-      message: "El nombre es requerido",
-    });
-  }
-
-  if (!lastName.value?.trim()) {
-    validationErrors.value.push({
-      field: "last_name",
-      message: "El apellido es requerido",
-    });
-  }
-
-  if (!user_info.value.city_name?.trim()) {
-    validationErrors.value.push({
-      field: "city_name",
-      message: "La ciudad es requerida",
-    });
-  }
-
-  if (!user_info.value.country_iso_code?.trim()) {
-    validationErrors.value.push({
-      field: "country_iso_code",
-      message: "El país es requerido",
-    });
-  }
-
-  if (user_info.value.postal_code && user_info.value.postal_code.length < 4) {
-    validationErrors.value.push({
-      field: "postal_code",
-      message: "Código postal inválido",
-    });
-  }
-
-  if (validationErrors.value.length > 0) {
-    console.error("Validation errors:", validationErrors.value);
-    return false;
-  }
-
-  return true;
-};
-
-const updateUser = async (): Promise<void> => {
-  if (isLoading.value) {
-    console.warn("Update already in progress");
+  if (file.size > 5 * 1024 * 1024) {
+    notify("La imagen no debe superar los 5 MB", "error");
+    input.value = "";
     return;
   }
 
-  if (!validateForm()) {
-    console.error("Form validation failed");
-    return;
-  }
+  selectedProfileImage.value = file;
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    profileImagePreview.value = e.target?.result as string;
+  };
+  reader.onerror = () => notify("Error al previsualizar la imagen", "error");
+  reader.readAsDataURL(file);
+};
 
-  isLoading.value = true;
-
+const uploadProfileImage = async (): Promise<string | null> => {
+  if (!selectedProfileImage.value || !userData.value) return null;
+  isUploadingImage.value = true;
   try {
-    let body: FormData | Record<string, any>;
-    let headers: Record<string, string> = {
-      Authorization: token.value || "",
-    };
+    const formData = new FormData();
+    formData.append("file", selectedProfileImage.value);
+    formData.append("title", `profile_picture_${userData.value.id}`);
+    formData.append("type", "IMG");
+    formData.append("description", "Foto de perfil de paciente");
+    formData.append("id_for_table", "6");
+    formData.append("table", "USER");
+    formData.append("action_type", "GENERAL_GALLERY");
+    formData.append("user_id", userId);
+    formData.append("is_public", "1");
 
-    // Si hay imagen, usar FormData; si no, usar JSON
-    if (profilePicture.value) {
-      body = buildFormData();
-    } else {
-      body = buildJsonBody();
-      headers["Content-Type"] = "application/json";
+    console.log("--- UPLOAD PAYLOAD LOG ---");
+    for (let [key, value] of formData.entries()) {
+      console.log(`${key}:`, value);
+    }
+    console.log("--------------------------");
+
+    const { data, error } = await addDocument({
+      file: selectedProfileImage.value,
+      fields: {
+        title: `profile_picture_${userData.value.id}`,
+        type: "IMG",
+        description: "Foto de perfil de paciente",
+        "id_for_table": "6",
+        table: "USER",
+        action_type: "GENERAL_GALLERY",
+        user_id: userId,
+        is_public: 1,
+      },
+    });
+    if (error) {
+      const is500 = error.status === 500 || error.info?.includes("500");
+      notify(
+        is500
+          ? "Error del servidor (500): Posible conflicto de formato en el ID. Contacte al administrador del sistema."
+          : error.info || "Error al subir la imagen",
+        "error",
+      );
+      return null;
+    }
+    return data?.url || null;
+  } catch {
+    notify("Error inesperado al subir la imagen", "error");
+    return null;
+  } finally {
+    isUploadingImage.value = false;
+  }
+};
+
+// ─── Fetch profile ────────────────────────────────────────────────────────────
+const migrateProfilePictureCodeToUrl = async () => {
+  if (!userData.value) return;
+
+  const stored = userData.value.profile_picture_url;
+  if (isValidImageUrl(stored)) return;
+  if (!stored) return;
+
+  const { data: doc, error } = await getDocumentByCode(stored);
+  if (error || !doc?.url) return;
+
+  await updateUserApi(userId, { profile_picture_url: doc.url });
+  userData.value = { ...userData.value, profile_picture_url: doc.url };
+};
+
+const fetchUserProfile = async () => {
+  isLoadingProfile.value = true;
+  try {
+    const { data, error } = await getUserById(userId);
+    if (error) {
+      notify(error.info || "Error al cargar el perfil", "error");
+      return;
+    }
+    if (data) {
+      console.log("Full User Data Response:", data);
+
+      if (typeof (data as any).internal_id === "number") {
+        numericId.value = (data as any).internal_id;
+      } else if (typeof (data as any).id === "number") {
+        numericId.value = (data as any).id;
+      } else {
+        console.warn(
+          "[uploadProfileImage] No se encontró un ID numérico en la respuesta del usuario. " +
+          "Se enviará el UUID como id_for_table, lo cual probablemente causará un error 500 " +
+          "porque el backend espera un INT UNSIGNED en esa columna.",
+        );
+      }
+
+      userData.value = data;
+      const nameParts = data.name?.split(" ") || [];
+      firstName.value = nameParts[0] || "";
+      lastName.value = nameParts.slice(1).join(" ");
+      phoneNumber.value = data.phone_number || "";
+      phoneCountryCode.value = data.country_iso_code || "CRC";
+      countrySearchText.value =
+        countries.find((c) => c.code === data.country_iso_code)?.name || "";
+
+      await migrateProfilePictureCodeToUrl();
+    }
+  } catch {
+    notify("Error inesperado al cargar el perfil", "error");
+  } finally {
+    isLoadingProfile.value = false;
+  }
+};
+
+// ─── Submit ───────────────────────────────────────────────────────────────────
+const submitProfileUpdate = async () => {
+  if (!userData.value) {
+    notify("No se encontró la información del usuario", "error");
+    return;
+  }
+
+  isSubmitting.value = true;
+  try {
+    let profilePictureUrl = storedProfileImageUrl.value ?? undefined;
+
+    if (selectedProfileImage.value) {
+      const uploadedUrl = await uploadProfileImage();
+      if (uploadedUrl) {
+        profilePictureUrl = uploadedUrl;
+      } else {
+        return; // upload failed — error already shown
+      }
     }
 
-    console.log("Updating user profile...", {
-      userId: user_info.value.id,
-      hasProfilePicture: !!profilePicture.value,
-      body: profilePicture.value ? "FormData" : body,
-    });
+    const fullName =
+      `${firstName.value.trim()} ${lastName.value.trim()}`.trim();
 
-    const { data, error } = await useFetch<UserInformation>(
-      `${config.public.API_BASE_URL}/user/edit?id=${user_info.value.id}`,
-      {
-        method: "PUT",
-        headers,
-        body,
-      },
+    const rawBirthDate = (userData.value as any).birth_date as string | undefined;
+    const safeBirthDate = rawBirthDate
+      ? rawBirthDate.includes("T")
+        ? rawBirthDate
+        : `${rawBirthDate}T12:00:00Z`
+      : undefined;
+
+    const payload: PatientUpdatePayload = {
+      name: fullName || undefined,
+      phone_number: phoneNumber.value || undefined,
+      country_iso_code: userData.value.country_iso_code || undefined,
+      city_name: userData.value.city_name || undefined,
+      address: userData.value.address || undefined,
+      postal_code: userData.value.postal_code || undefined,
+      profile_picture_url: profilePictureUrl,
+      birth_date: safeBirthDate,
+    };
+
+    const { data, error } = await updateUserApi(
+      userId,
+      payload as IUserUpdateRequest,
     );
 
-    if (error.value) {
-      handleApiError(error.value);
+    if (error) {
+      notify(error.info || "Error al actualizar el perfil", "error");
       return;
     }
 
-    if (data.value) {
-      handleUpdateSuccess(data.value);
+    if (data) {
+      userData.value = data;
+      const nameParts = data.name?.split(" ") || [];
+      firstName.value = nameParts[0] || "";
+      lastName.value = nameParts.slice(1).join(" ");
+      phoneNumber.value = data.phone_number || "";
+      selectedProfileImage.value = null;
+      setUserInfo(data);
+      notify("Perfil actualizado exitosamente", "success");
     }
-  } catch (error) {
-    console.error("Unexpected error during update:", error);
-    handleError(error as Error);
+  } catch {
+    notify("Error inesperado al actualizar el perfil", "error");
   } finally {
-    isLoading.value = false;
+    isSubmitting.value = false;
   }
 };
 
-const buildFormData = (): FormData => {
-  const formData = new FormData();
+onMounted(() => {
+  fetchUserProfile();
+});
 
-  const fullName = `${firstName.value.trim()} ${lastName.value.trim()}`.trim();
-  if (fullName) {
-    formData.append("first_name", fullName);
+onBeforeUnmount(() => {
+  if (profileImagePreview.value) {
+    URL.revokeObjectURL(profileImagePreview.value);
   }
-
-  if (phoneNumber.value) {
-    formData.append("phone_number", phoneNumber.value);
-  }
-
-  if (user_info.value.country_iso_code) {
-    formData.append("country_iso_code", user_info.value.country_iso_code);
-  }
-
-  if (user_info.value.city_name) {
-    formData.append("city_name", user_info.value.city_name);
-  }
-
-  if (user_info.value.postal_code) {
-    formData.append("postal_code", user_info.value.postal_code);
-  }
-
-  if (profilePicture.value) {
-    formData.append("profile_picture", profilePicture.value);
-  }
-
-  return formData;
-};
-
-const buildJsonBody = (): Record<string, any> => {
-  const body: Record<string, any> = {};
-
-  const fullName = `${firstName.value.trim()} ${lastName.value.trim()}`.trim();
-  if (fullName) {
-    body.first_name = fullName;
-  }
-
-  if (phoneNumber.value) {
-    body.phone_number = phoneNumber.value;
-  }
-
-  if (user_info.value.country_iso_code) {
-    body.country_iso_code = user_info.value.country_iso_code;
-  }
-
-  if (user_info.value.city_name) {
-    body.city_name = user_info.value.city_name;
-  }
-
-  if (user_info.value.postal_code) {
-    body.postal_code = user_info.value.postal_code;
-  }
-
-  return body;
-};
-
-const handleApiError = (error: any): void => {
-  console.error("API Error:", {
-    message: error.message || "Unknown error",
-    statusCode: error.statusCode,
-    data: error.data,
-  });
-
-  if (error.data?.errors) {
-    const apiErrors = error.data.errors as Record<string, string[]>;
-    Object.entries(apiErrors).forEach(([field, messages]) => {
-      messages.forEach((message) => {
-        validationErrors.value.push({ field, message });
-      });
-    });
-  }
-};
-
-const handleError = (error: Error): void => {
-  console.error("Error:", {
-    name: error.name,
-    message: error.message,
-    stack: error.stack,
-  });
-};
-
-const handleUpdateSuccess = (data: UserInformation): void => {
-  console.log("✅ Profile updated successfully", data);
-
-  user_info.value = { ...data };
-
-  const nameParts = data.name?.split(" ") || [];
-  if (nameParts.length > 0) {
-    firstName.value = nameParts[0];
-    lastName.value = nameParts.slice(1).join(" ");
-  }
-
-  phoneNumber.value = data.phone_number || "";
-  phoneCountryCode.value = data.country_iso_code || "CRC";
-  countrySearchText.value = selectedCountry.value?.name || "";
-
-  profilePicture.value = null;
-  validationErrors.value = [];
-
-  getUserInfo();
-};
-
-const hasValidationErrors = computed(() => validationErrors.value.length > 0);
-
-const getFieldError = (fieldName: string): string | null => {
-  const error = validationErrors.value.find((err) => err.field === fieldName);
-  return error ? error.message : null;
-};
+});
 </script>
 
 <template>
   <NuxtLayout name="pacientes-dashboard-perfil">
-    <div class="profile">
-      <h4 class="profile__title">Foto de Perfil</h4>
+    <div
+      v-if="isLoadingProfile"
+      class="account-profile__loading"
+      role="status"
+      aria-live="polite"
+    >
+      Cargando perfil...
+    </div>
 
-      <div class="profile__picture-section">
-        <div
-          class="profile__picture-container"
-          :class="{
-            'profile__picture-container--error': getFieldError(
-              'profile_picture_url',
-            ),
-          }"
-        >
-          <img
-            :src="
-              imagePreview ||
-              user_info.profile_picture_url ||
-              '/_nuxt/src/assets/picture.svg'
-            "
-            alt="Profile Picture"
-            class="profile__picture-image"
-          />
+    <form
+      v-else
+      class="account-profile"
+      novalidate
+      @submit.prevent="submitProfileUpdate"
+      aria-label="Formulario de perfil de cuenta"
+    >
+      <!-- ─── Profile Photo ─────────────────────────────────────────────── -->
+      <fieldset class="account-profile__fieldset">
+        <legend class="account-profile__visually-hidden">Foto de perfil</legend>
+
+        <div class="account-profile__field">
+          <span class="account-profile__label" id="photo-label">
+            Foto de Perfil
+          </span>
+          <p class="account-profile__hint" id="photo-hint">
+            Esta será la foto que verán tus médicos y el equipo de Vitalink.
+          </p>
+
+          <div
+            class="account-profile__avatar-group"
+            role="group"
+            aria-labelledby="photo-label"
+            aria-describedby="photo-hint"
+          >
+            <figure class="account-profile__avatar">
+              <img
+                :src="displayedImageSrc"
+                :class="[
+                  'account-profile__avatar-image',
+                  hasProfileImage
+                    ? 'account-profile__avatar-image--filled'
+                    : 'account-profile__avatar-image--placeholder',
+                ]"
+                alt="Foto de perfil actual"
+              />
+            </figure>
+
+            <label
+              for="profile-image-upload"
+              class="account-profile__avatar-trigger"
+              role="button"
+              tabindex="0"
+              aria-label="Cambiar foto de perfil"
+              @keydown.enter.prevent="
+                ($refs.imageInput as HTMLInputElement)?.click()
+              "
+              @keydown.space.prevent="
+                ($refs.imageInput as HTMLInputElement)?.click()
+              "
+            >
+              <img src="@/src/assets/camera.svg" alt="" aria-hidden="true" />
+            </label>
+
+            <input
+              id="profile-image-upload"
+              ref="imageInput"
+              type="file"
+              accept="image/jpeg,image/png,image/webp"
+              class="account-profile__visually-hidden"
+              @change="handleImageSelection"
+            />
+          </div>
         </div>
+      </fieldset>
 
-        <label
-          for="upload-picture"
-          class="profile__upload-button"
-          :class="{ 'profile__upload-button--disabled': isLoading }"
-        >
-          <img src="@/src/assets/camera.svg" alt="Upload Picture" />
-        </label>
-
-        <input
-          type="file"
-          id="upload-picture"
-          accept="image/jpeg,image/jpg,image/png,image/webp"
-          class="profile__upload-input"
-          :disabled="isLoading"
-          @change="handleFileChange"
-        />
-      </div>
-
-      <div
-        v-if="getFieldError('profile_picture_url')"
-        class="profile__error-message"
+      <!-- ─── Detalles Personales ────────────────────────────────────── -->
+      <fieldset
+        class="account-profile__fieldset account-profile__fieldset--section"
       >
-        {{ getFieldError("profile_picture_url") }}
-      </div>
+        <legend class="account-profile__section-title">
+          Detalles Personales
+        </legend>
 
-      <h4 class="profile__title profile__title--spacing">Datos Personales</h4>
-
-      <form class="profile__form" @submit.prevent="updateUser">
-        <div class="profile__row profile__row--two-cols">
-          <div class="profile__field">
-            <label for="nombre" class="profile__label">
-              Nombre (s) <span class="profile__label-required">*</span>
+        <div class="account-profile__grid">
+          <!-- Row 1: Nombre | Apellido -->
+          <div class="account-profile__field account-profile__field--half">
+            <label for="first-name" class="account-profile__label">
+              Nombre(s) <span class="account-profile__required">*</span>
             </label>
             <input
-              type="text"
-              class="profile__input"
-              :class="{ 'profile__input--error': getFieldError('first_name') }"
-              placeholder="Escribe tu nombre"
+              id="first-name"
               v-model="firstName"
-              name="nombre"
-              id="nombre"
-              :disabled="isLoading"
+              type="text"
+              class="account-profile__input"
+              placeholder="Escribe tu nombre"
               required
             />
-            <span
-              v-if="getFieldError('first_name')"
-              class="profile__field-error"
-            >
-              {{ getFieldError("first_name") }}
-            </span>
           </div>
 
-          <div class="profile__field">
-            <label for="apellido" class="profile__label">
-              Apellido (s) <span class="profile__label-required">*</span>
+          <div class="account-profile__field account-profile__field--half">
+            <label for="last-name" class="account-profile__label">
+              Apellido(s) <span class="account-profile__required">*</span>
             </label>
             <input
-              type="text"
-              class="profile__input"
-              :class="{ 'profile__input--error': getFieldError('last_name') }"
-              placeholder="Escribe tu apellido"
+              id="last-name"
               v-model="lastName"
-              id="apellido"
-              name="apellido"
-              :disabled="isLoading"
+              type="text"
+              class="account-profile__input"
+              placeholder="Escribe tu apellido"
               required
             />
-            <span
-              v-if="getFieldError('last_name')"
-              class="profile__field-error"
-            >
-              {{ getFieldError("last_name") }}
-            </span>
           </div>
 
-          <div class="profile__field">
-            <label class="profile__label" for="telefono">
+          <!-- Row 2: Teléfono | Dirección -->
+          <div class="account-profile__field account-profile__field--half">
+            <label for="telefono" class="account-profile__label">
               Número de teléfono
             </label>
-            <div class="profile__phone-group">
+            <div class="account-profile__phone-group">
               <UiDropdownBase
                 v-model="phoneCountryCode"
                 :items="phoneCountryDropdownItems"
@@ -673,101 +493,74 @@ const getFieldError = (fieldName: string): string | null => {
                 :clearable="false"
                 placeholder="País"
                 no-results-text="No se encontraron países"
-                class="profile__phone-dropdown"
+                class="account-profile__phone-dropdown"
               />
               <input
-                type="tel"
-                :value="formattedPhone"
-                @input="handlePhoneInput"
-                placeholder="+1(555) 000-0000"
                 id="telefono"
-                name="telefono"
-                class="profile__input profile__phone-input"
-                :class="{
-                  'profile__input--error': getFieldError('phone_number'),
-                }"
-                :disabled="isLoading"
+                v-model="phoneNumber"
+                type="tel"
+                placeholder="+506 8000-0000"
+                class="account-profile__input account-profile__phone-input"
               />
             </div>
-            <span
-              v-if="getFieldError('phone_number')"
-              class="profile__field-error"
-            >
-              {{ getFieldError("phone_number") }}
-            </span>
           </div>
 
-          <div class="profile__field">
-            <label for="direccion" class="profile__label"> Dirección </label>
+          <div class="account-profile__field account-profile__field--half">
+            <label for="direccion" class="account-profile__label">
+              Dirección
+            </label>
             <input
-              type="text"
-              placeholder="Dirección"
               id="direccion"
-              v-model="address"
-              name="direccion"
-              class="profile__input"
-              :disabled="isLoading"
+              v-model="userData!.address"
+              type="text"
+              class="account-profile__input"
+              placeholder="Calle, número, colonia..."
             />
           </div>
-        </div>
 
-        <div class="profile__row profile__row--three-cols">
-          <div class="profile__field">
-            <label class="profile__label" for="postal"> Código Postal </label>
+          <!-- Row 3: Código Postal | Ciudad | País -->
+          <div class="account-profile__field account-profile__field--third">
+            <label for="postal" class="account-profile__label">
+              Código Postal
+            </label>
             <input
-              type="text"
-              placeholder="00000000"
               id="postal"
-              name="postal"
-              v-model="user_info.postal_code"
-              class="profile__input"
-              :class="{ 'profile__input--error': getFieldError('postal_code') }"
-              :disabled="isLoading"
+              v-model="userData!.postal_code"
+              type="text"
+              class="account-profile__input"
+              placeholder="00000"
               maxlength="10"
             />
-            <span
-              v-if="getFieldError('postal_code')"
-              class="profile__field-error"
-            >
-              {{ getFieldError("postal_code") }}
-            </span>
           </div>
 
-          <div class="profile__field">
-            <label class="profile__label" for="ciudad">
-              Ciudad <span class="profile__label-required">*</span>
+          <div class="account-profile__field account-profile__field--third">
+            <label for="ciudad" class="account-profile__label">
+              Ciudad <span class="account-profile__required">*</span>
             </label>
             <input
-              type="text"
-              placeholder="Ciudad"
               id="ciudad"
-              name="ciudad"
-              v-model="user_info.city_name"
-              class="profile__input"
-              :class="{ 'profile__input--error': getFieldError('city_name') }"
-              :disabled="isLoading"
+              v-model="userData!.city_name"
+              type="text"
+              class="account-profile__input"
+              placeholder="Escribe tu ciudad"
               required
             />
-            <span
-              v-if="getFieldError('city_name')"
-              class="profile__field-error"
-            >
-              {{ getFieldError("city_name") }}
-            </span>
           </div>
 
-          <div class="profile__field">
-            <label class="profile__label" for="pais">
-              País <span class="profile__label-required">*</span>
+          <div class="account-profile__field account-profile__field--third">
+            <label for="pais" class="account-profile__label">
+              País <span class="account-profile__required">*</span>
             </label>
 
-            <div ref="countryDropdownRef" class="profile__country-dropdown">
+            <div
+              ref="countryDropdownRef"
+              class="account-profile__country-dropdown"
+            >
               <div
-                class="profile__country-toggle"
+                class="account-profile__country-toggle"
                 :class="{
-                  'profile__country-toggle--active': isCountryDropdownOpen,
-                  'profile__country-toggle--error':
-                    getFieldError('country_iso_code'),
+                  'account-profile__country-toggle--active':
+                    isCountryDropdownOpen,
                 }"
                 @click="toggleCountryDropdown"
               >
@@ -775,19 +568,18 @@ const getFieldError = (fieldName: string): string | null => {
                   ref="countrySearchRef"
                   v-model="countrySearchText"
                   type="text"
-                  class="profile__country-input"
+                  class="account-profile__country-input"
                   :placeholder="
-                    !user_info.country_iso_code ? 'Seleccionar país' : ''
+                    !userData?.country_iso_code ? 'Seleccionar país' : ''
                   "
                   @input="handleCountrySearchInput"
                   @click.stop="isCountryDropdownOpen = true"
-                  :disabled="isLoading"
                 />
-
                 <svg
-                  class="profile__country-arrow"
+                  class="account-profile__country-arrow"
                   :class="{
-                    'profile__country-arrow--rotated': isCountryDropdownOpen,
+                    'account-profile__country-arrow--rotated':
+                      isCountryDropdownOpen,
                   }"
                   width="20"
                   height="20"
@@ -805,40 +597,38 @@ const getFieldError = (fieldName: string): string | null => {
               </div>
 
               <div
-                class="profile__country-menu"
+                class="account-profile__country-menu"
                 :class="{
-                  'profile__country-menu--open': isCountryDropdownOpen,
+                  'account-profile__country-menu--open': isCountryDropdownOpen,
                 }"
               >
                 <div
                   v-if="filteredCountries.length === 0"
-                  class="profile__country-no-results"
+                  class="account-profile__country-no-results"
                 >
                   No se encontraron países
                 </div>
-
                 <button
                   v-for="country in filteredCountries"
                   :key="country.code"
                   type="button"
-                  class="profile__country-item"
+                  class="account-profile__country-item"
                   :class="{
-                    'profile__country-item--active':
-                      user_info.country_iso_code === country.code,
+                    'account-profile__country-item--active':
+                      userData?.country_iso_code === country.code,
                   }"
                   @click="selectCountry(country.code)"
                 >
-                  <span class="profile__country-item-text">{{
-                    country.name
-                  }}</span>
-
+                  <span class="account-profile__country-item-text">
+                    {{ country.name }}
+                  </span>
                   <svg
-                    v-if="user_info.country_iso_code === country.code"
-                    class="profile__country-item-check"
+                    v-if="userData?.country_iso_code === country.code"
                     width="16"
                     height="16"
                     viewBox="0 0 16 16"
                     fill="none"
+                    aria-hidden="true"
                   >
                     <path
                       d="M13.5 4.5L6 12L2.5 8.5"
@@ -851,179 +641,268 @@ const getFieldError = (fieldName: string): string | null => {
                 </button>
               </div>
             </div>
-
-            <span
-              v-if="getFieldError('country_iso_code')"
-              class="profile__field-error"
-            >
-              {{ getFieldError("country_iso_code") }}
-            </span>
           </div>
         </div>
+      </fieldset>
 
-        <div v-if="hasValidationErrors" class="profile__general-errors">
-          <p class="profile__general-errors-title">
-            Por favor corrija los siguientes errores:
-          </p>
-          <ul class="profile__general-errors-list">
-            <li
-              v-for="error in validationErrors"
-              :key="error.field"
-              class="profile__general-errors-item"
-            >
-              {{ error.message }}
-            </li>
-          </ul>
-        </div>
-
-        <div class="profile__actions">
-          <button
-            type="submit"
-            class="profile__submit"
-            :class="{ 'profile__submit--loading': isLoading }"
-            :disabled="isLoading"
-          >
-            <span v-if="!isLoading">Actualizar Perfil</span>
-            <span v-else class="profile__submit-loading">
-              <span class="profile__spinner"></span>
-              Actualizando...
-            </span>
-          </button>
-        </div>
-      </form>
-    </div>
+      <!-- ─── Actions ──────────────────────────────────────────────────── -->
+      <div class="account-profile__actions">
+        <button
+          type="submit"
+          class="account-profile__submit"
+          :disabled="isSubmitting || isUploadingImage"
+          :aria-busy="isSubmitting || isUploadingImage"
+        >
+          <template v-if="isSubmitting || isUploadingImage">
+            <span class="account-profile__spinner" aria-hidden="true" />
+            {{ isUploadingImage ? "Subiendo imagen..." : "Actualizando..." }}
+          </template>
+          <template v-else>Actualizar Perfil</template>
+        </button>
+      </div>
+    </form>
   </NuxtLayout>
 </template>
 
 <style lang="scss" scoped>
-.profile {
-  &__title {
-    font-weight: 400;
-    margin-bottom: 1rem;
+.account-profile {
+  &__loading {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 200px;
+    font-family: $font-family-main;
+    font-size: 14px;
+    color: $color-text-secondary;
+  }
+
+  &__fieldset {
+    border: none;
+    margin: 0;
+    padding: 0;
+
+    &--section {
+      margin-top: 2.5rem;
+
+      @include respond-to-max(md) {
+        margin-top: 2rem;
+      }
+
+      @include respond-to-max(sm) {
+        margin-top: 1.5rem;
+      }
+    }
+  }
+
+  &__section-title {
+    display: block;
+    font-family: $font-family-main;
     font-weight: 600;
     font-size: 1.125rem;
-    line-height: 100%;
-    letter-spacing: 0;
+    line-height: 1;
     color: #353e5c;
+    margin-bottom: 1.25rem;
 
-    &--spacing {
-      margin-top: 3rem;
+    @include respond-to-max(sm) {
+      font-size: 1rem;
+      margin-bottom: 1rem;
     }
   }
 
-  &__picture-section {
-    display: flex;
-    align-items: flex-end;
-    margin-bottom: 0.5rem;
-  }
-
-  &__picture-container {
-    border-radius: 18px;
-    border: 3px solid var(--Primary-Gradients-Violet-02, #c2c6e9);
-    background: #f8faff;
-    width: 130px;
-    height: 132px;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    overflow: hidden;
-    transition: border-color 0.3s ease;
-
-    &--error {
-      border-color: #dc3545;
-    }
-  }
-
-  &__picture-image {
-    width: 130px;
-    height: 132px;
-    object-fit: cover;
-  }
-
-  &__upload-button {
-    background: var(--bs-primary, #0d6efd);
-    border-radius: 39px;
-    width: 40px;
-    height: 40px;
-    margin-left: -25px;
-    margin-bottom: 0;
-    cursor: pointer;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    transition: all 0.3s ease;
-
-    &:hover:not(&--disabled) {
-      transform: scale(1.05);
-      opacity: 0.9;
-    }
-
-    &--disabled {
-      opacity: 0.6;
-      cursor: not-allowed;
-    }
-  }
-
-  &__upload-input {
-    display: none;
-  }
-
-  &__error-message {
-    color: #dc3545;
-    font-size: 0.875rem;
-    margin-top: 0.5rem;
-    padding: 0.5rem;
-    background-color: #f8d7da;
-    border: 1px solid #f5c2c7;
-    border-radius: 0.375rem;
-  }
-
-  &__form {
-    margin-top: 1.5rem;
-  }
-
-  &__row {
+  &__grid {
     display: grid;
+    grid-template-columns: repeat(6, 1fr);
     gap: 1rem;
 
-    &--two-cols {
+    @include respond-to-max(md) {
       grid-template-columns: repeat(2, 1fr);
-
-      @media (max-width: 768px) {
-        grid-template-columns: 1fr;
-      }
     }
 
-    &--three-cols {
-      grid-template-columns: repeat(3, 1fr);
-
-      @media (max-width: 768px) {
-        grid-template-columns: 1fr;
-      }
-
-      @media (min-width: 769px) and (max-width: 1024px) {
-        grid-template-columns: repeat(2, 1fr);
-      }
+    @include respond-to-max(sm) {
+      grid-template-columns: 1fr;
     }
   }
 
   &__field {
-    margin-bottom: 1rem;
+    &--full {
+      grid-column: 1 / -1;
+    }
+
+    &--half {
+      grid-column: span 3;
+
+      @include respond-to-max(md) {
+        grid-column: span 1;
+      }
+
+      @include respond-to-max(sm) {
+        grid-column: 1 / -1;
+      }
+    }
+
+    &--third {
+      grid-column: span 2;
+
+      @include respond-to-max(md) {
+        grid-column: span 1;
+      }
+
+      @include respond-to-max(sm) {
+        grid-column: 1 / -1;
+      }
+    }
   }
 
   &__label {
     @include form-label;
+    font-weight: 500;
+    margin-bottom: 0.5rem;
+    display: block;
 
-    &-required {
-      color: #dc3545;
-      margin-left: 2px;
+    @include respond-to-max(sm) {
+      margin-bottom: 0.375rem;
     }
   }
 
+  &__required {
+    color: #dc3545;
+    margin-left: 2px;
+  }
+
+  &__hint {
+    @include text-base;
+    color: $color-text-muted;
+    font-weight: 300;
+    margin-top: 0.25rem;
+    margin-bottom: 0.75rem;
+    font-size: 14px;
+    line-height: 1.4;
+
+    @include respond-to-max(sm) {
+      font-size: 0.75rem;
+    }
+  }
+
+  // ─── Avatar ───────────────────────────────────────────────────────────
+  &__avatar-group {
+    display: flex;
+    align-items: flex-end;
+    gap: 0.625rem;
+
+    @include respond-to-max(sm) {
+      gap: 0.5rem;
+    }
+  }
+
+  &__avatar {
+    margin: 0;
+    border-radius: 1.125rem;
+    border: 0.1875rem solid #c2c6e9;
+    background: #f8faff;
+    width: 8.125rem;
+    height: 8.25rem;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    flex-shrink: 0;
+    overflow: hidden;
+
+    @include respond-to-max(md) {
+      width: 7rem;
+      height: 7.125rem;
+      border-radius: 1rem;
+      border-width: 0.15rem;
+    }
+
+    @include respond-to-max(sm) {
+      width: 6rem;
+      height: 6.125rem;
+      border-radius: 0.875rem;
+      border-width: 0.125rem;
+    }
+  }
+
+  &__avatar-image {
+    &--placeholder {
+      width: 2.5rem;
+      height: 2.5rem;
+      object-fit: contain;
+
+      @include respond-to-max(sm) {
+        width: 2rem;
+        height: 2rem;
+      }
+    }
+
+    &--filled {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+  }
+
+  &__avatar-trigger {
+    z-index: 10;
+    border-radius: 50%;
+    width: 2.5rem;
+    height: 2.5rem;
+    margin-left: -1.5625rem;
+    cursor: pointer;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background-color: $color-primary;
+    flex-shrink: 0;
+    transition: all 0.2s ease;
+
+    @include respond-to-max(md) {
+      width: 2.25rem;
+      height: 2.25rem;
+      margin-left: -1.375rem;
+    }
+
+    @include respond-to-max(sm) {
+      width: 2rem;
+      height: 2rem;
+      margin-left: -1.125rem;
+    }
+
+    &:hover {
+      background-color: $color-primary-darkened-5;
+      transform: scale(1.05);
+    }
+
+    &:active {
+      background-color: $color-primary-darkened-10;
+      transform: scale(0.98);
+    }
+
+    &:focus-visible {
+      outline: 2px solid $color-primary;
+      outline-offset: 2px;
+    }
+
+    img {
+      width: 1.25rem;
+      height: 1.25rem;
+
+      @include respond-to-max(sm) {
+        width: 1rem;
+        height: 1rem;
+      }
+    }
+  }
+
+  // ─── Inputs ───────────────────────────────────────────────────────────
+  &__input {
+    @include input-base;
+    width: 100%;
+  }
+
+  // ─── Phone group ──────────────────────────────────────────────────────
   &__phone-group {
     display: flex;
     align-items: stretch;
-    position: relative;
     border-radius: 0.5rem;
     transition: all 0.2s ease;
 
@@ -1032,14 +911,12 @@ const getFieldError = (fieldName: string): string | null => {
       border-top-right-radius: 0;
       border-bottom-right-radius: 0;
       height: 100%;
-      transition: all 0.2s ease;
     }
 
-    .profile__phone-input {
+    .account-profile__phone-input {
       border-left: none !important;
       border-top-left-radius: 0 !important;
       border-bottom-left-radius: 0 !important;
-      transition: all 0.2s ease;
     }
 
     &:hover {
@@ -1048,13 +925,13 @@ const getFieldError = (fieldName: string): string | null => {
         border-right: none;
       }
 
-      .profile__phone-input {
+      .account-profile__phone-input {
         border-color: #98a2b3;
-        border-left: none !important;
       }
     }
 
-    &:has(:deep(.dropdown__toggle:focus-within)) {
+    &:has(:deep(.dropdown__toggle:focus-within)),
+    &:has(.account-profile__phone-input:focus) {
       box-shadow:
         0 0 0 4px rgba(13, 110, 253, 0.25),
         0 0 1.05px rgba(13, 110, 253, 0.4),
@@ -1066,29 +943,8 @@ const getFieldError = (fieldName: string): string | null => {
         box-shadow: none;
       }
 
-      .profile__phone-input {
+      .account-profile__phone-input {
         border-color: #80bdff;
-        border-left: none !important;
-        box-shadow: none;
-        outline: none;
-      }
-    }
-
-    &:has(.profile__phone-input:focus) {
-      box-shadow:
-        0 0 0 4px rgba(13, 110, 253, 0.25),
-        0 0 1.05px rgba(13, 110, 253, 0.4),
-        0 1.05px 2.1px rgba(50, 50, 71, 0.1);
-
-      :deep(.dropdown__toggle) {
-        border-color: #80bdff;
-        border-right: none;
-        box-shadow: none;
-      }
-
-      .profile__phone-input {
-        border-color: #80bdff;
-        border-left: none !important;
         box-shadow: none;
         outline: none;
       }
@@ -1105,27 +961,7 @@ const getFieldError = (fieldName: string): string | null => {
     min-width: 0;
   }
 
-  &__input {
-    @include input-base;
-    width: 100%;
-
-    &--error {
-      border-color: #dc3545;
-
-      &:focus {
-        border-color: #dc3545;
-        box-shadow: 0 0 0 0.2rem rgba(220, 53, 69, 0.25);
-      }
-    }
-  }
-
-  &__field-error {
-    display: block;
-    color: #dc3545;
-    font-size: 0.875rem;
-    margin-top: 0.25rem;
-  }
-
+  // ─── Country dropdown ─────────────────────────────────────────────────
   &__country-dropdown {
     position: relative;
     width: 100%;
@@ -1155,10 +991,6 @@ const getFieldError = (fieldName: string): string | null => {
         0 0 1.05px rgba(13, 110, 253, 0.4),
         0 1.05px 2.1px rgba(50, 50, 71, 0.1);
     }
-
-    &--error {
-      border-color: #dc3545;
-    }
   }
 
   &__country-input {
@@ -1171,14 +1003,10 @@ const getFieldError = (fieldName: string): string | null => {
     line-height: 1.5rem;
     font-family: inherit;
     padding: 0;
-    margin: 0;
+    cursor: pointer;
 
     &::placeholder {
       color: #9ca3af;
-    }
-
-    &:disabled {
-      cursor: not-allowed;
     }
   }
 
@@ -1276,6 +1104,10 @@ const getFieldError = (fieldName: string): string | null => {
     &--active {
       background-color: #f9fafb;
       font-weight: 500;
+
+      svg {
+        color: $color-primary;
+      }
     }
   }
 
@@ -1284,69 +1116,54 @@ const getFieldError = (fieldName: string): string | null => {
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
-    text-align: left;
   }
 
-  &__country-item-check {
-    color: var(--bs-primary, #0d6efd);
-    flex-shrink: 0;
-  }
-
-  &__general-errors {
-    background-color: #f8d7da;
-    border: 1px solid #f5c2c7;
-    border-radius: 0.375rem;
-    padding: 1rem;
-    margin-top: 1rem;
-
-    &-title {
-      color: #842029;
-      font-weight: 600;
-      margin-bottom: 0.5rem;
-    }
-
-    &-list {
-      margin: 0;
-      padding-left: 1.5rem;
-      color: #842029;
-    }
-
-    &-item {
-      margin-bottom: 0.25rem;
-      font-size: 0.875rem;
-    }
-  }
-
+  // ─── Actions ──────────────────────────────────────────────────────────
   &__actions {
-    margin-top: 3rem;
+    margin-top: 2.5rem;
+    display: flex;
+    justify-content: flex-start;
+
+    @include respond-to-max(md) {
+      margin-top: 2rem;
+    }
+
+    @include respond-to-max(sm) {
+      margin-top: 1.5rem;
+    }
   }
 
   &__submit {
     @include primary-button;
 
-    &--loading {
-      padding-left: 2.5rem;
+    @include respond-to-max(md) {
+      width: 100%;
     }
 
-    &-loading {
-      display: flex;
-      align-items: center;
-      gap: 0.5rem;
+    &:disabled {
+      opacity: 0.7;
+      cursor: not-allowed;
     }
   }
 
   &__spinner {
     display: inline-block;
-    width: 1rem;
-    height: 1rem;
+    width: 16px;
+    height: 16px;
     border: 2px solid rgba(255, 255, 255, 0.3);
-    border-top-color: white;
+    border-top-color: $white;
     border-radius: 50%;
-    animation: spin 0.8s linear infinite;
+    animation: account-spin 0.6s linear infinite;
+    margin-right: 8px;
+    vertical-align: middle;
+  }
+
+  &__visually-hidden {
+    @include visually-hidden;
   }
 }
 
-@keyframes spin {
+@keyframes account-spin {
   to {
     transform: rotate(360deg);
   }

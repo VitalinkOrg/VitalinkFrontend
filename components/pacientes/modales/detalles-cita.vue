@@ -704,14 +704,14 @@ const handleDownloadProforma = async () => {
         >
           Anular cita
         </button>
-        <button
+        <!-- <button
           v-if="shouldShowPayButton"
           type="button"
           class="appointment-detail__action appointment-detail__action--primary"
           @click="openModal('payAppointment')"
         >
           Pagar ahora
-        </button>
+        </button> -->
       </div>
 
       <div

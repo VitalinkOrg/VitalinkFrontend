@@ -153,6 +153,48 @@ const closeModal = (): void => {
   open.value = false;
 };
 
+const tabIds: Record<number, string> = {
+  1: "tab-servicios",
+  2: "tab-clinicas",
+  3: "tab-ubicacion",
+  4: "tab-perfil",
+};
+
+const activateTab = (tabNum: number): void => {
+  tab.value = tabNum;
+};
+
+const handleTabKeydown = (e: KeyboardEvent, currentTab: number): void => {
+  const allTabs = [1, 2, 3, 4];
+  const enabledTabs = allTabs.filter(
+    (t) => t !== 2 || selectedPackage.value !== null,
+  );
+  const currentIndex = enabledTabs.indexOf(currentTab);
+  let nextTab: number | null = null;
+
+  if (e.key === "ArrowRight") {
+    e.preventDefault();
+    nextTab = enabledTabs[(currentIndex + 1) % enabledTabs.length];
+  } else if (e.key === "ArrowLeft") {
+    e.preventDefault();
+    nextTab =
+      enabledTabs[(currentIndex - 1 + enabledTabs.length) % enabledTabs.length];
+  } else if (e.key === "Home") {
+    e.preventDefault();
+    nextTab = enabledTabs[0];
+  } else if (e.key === "End") {
+    e.preventDefault();
+    nextTab = enabledTabs[enabledTabs.length - 1];
+  }
+
+  if (nextTab !== null) {
+    activateTab(nextTab);
+    nextTick(() => {
+      document.getElementById(tabIds[nextTab!])?.focus();
+    });
+  }
+};
+
 const reserveAppointment = (): void => {
   if (panel.value) {
     panel.value = false;
@@ -363,40 +405,64 @@ watch(
 </script>
 
 <template>
-  <ul class="tabs-container">
-    <li class="tab-item">
+  <ul
+    class="tabs-container"
+    role="tablist"
+    aria-label="Secciones del perfil médico"
+  >
+    <li class="tab-item" role="presentation">
       <button
+        id="tab-servicios"
         class="tab-item__link"
         :class="{ 'tab-item__link--active': tab === 1 }"
-        @click="tab = 1"
+        role="tab"
+        :aria-selected="tab === 1"
+        aria-controls="tabpanel-servicios"
+        @click="activateTab(1)"
+        @keydown="handleTabKeydown($event, 1)"
       >
         Servicios
       </button>
     </li>
-    <li class="tab-item">
+    <li class="tab-item" role="presentation">
       <button
+        id="tab-clinicas"
         class="tab-item__link"
         :class="{ 'tab-item__link--active': tab === 2 }"
-        @click="tab = 2"
+        role="tab"
+        :aria-selected="tab === 2"
+        aria-controls="tabpanel-clinicas"
         :disabled="!selectedPackage"
+        @click="activateTab(2)"
+        @keydown="handleTabKeydown($event, 2)"
       >
-        Hospitales
+        Clínicas
       </button>
     </li>
-    <li class="tab-item">
+    <li class="tab-item" role="presentation">
       <button
+        id="tab-ubicacion"
         class="tab-item__link"
         :class="{ 'tab-item__link--active': tab === 3 }"
-        @click="tab = 3"
+        role="tab"
+        :aria-selected="tab === 3"
+        aria-controls="tabpanel-ubicacion"
+        @click="activateTab(3)"
+        @keydown="handleTabKeydown($event, 3)"
       >
         Ubicación
       </button>
     </li>
-    <li class="tab-item">
+    <li class="tab-item" role="presentation">
       <button
+        id="tab-perfil"
         class="tab-item__link"
         :class="{ 'tab-item__link--active': tab === 4 }"
-        @click="tab = 4"
+        role="tab"
+        :aria-selected="tab === 4"
+        aria-controls="tabpanel-perfil"
+        @click="activateTab(4)"
+        @keydown="handleTabKeydown($event, 4)"
       >
         Perfil
       </button>
@@ -412,49 +478,76 @@ watch(
       <p>No se encontró información del proveedor médico.</p>
     </div>
 
-    <WebsitePerfilDoctorTabsServicio
-      v-else-if="tab === 1 && hasServices"
-      :supplier="currentSupplier"
-      :select-specialty="selectSpecialty"
-      :selected-specialty="selectedSpecialty"
-      :selected-procedure="selectedProcedure"
-      :filtered-procedures="filteredProcedures"
-      :filtered-packages="filteredPackages"
-      :select-package="selectPackage"
-      :get-assessment-label="getAssessmentLabel"
-      :select-procedure="selectProcedure"
-      :specialties="specialties"
-      :search-specialty-code="searchSpecialtyCode"
-      :search-procedure-code="searchProcedureCode"
-      :is-search-mode="isSearchMode"
-      :customer="user"
-      :assessment-details="assessmentDetails"
-    />
+    <template v-else>
+      <div
+        v-show="tab === 1"
+        id="tabpanel-servicios"
+        role="tabpanel"
+        aria-labelledby="tab-servicios"
+        tabindex="0"
+      >
+        <WebsitePerfilDoctorTabsServicio
+          v-if="hasServices"
+          :supplier="currentSupplier"
+          :select-specialty="selectSpecialty"
+          :selected-specialty="selectedSpecialty"
+          :selected-procedure="selectedProcedure"
+          :filtered-procedures="filteredProcedures"
+          :filtered-packages="filteredPackages"
+          :select-package="selectPackage"
+          :get-assessment-label="getAssessmentLabel"
+          :select-procedure="selectProcedure"
+          :specialties="specialties"
+          :search-specialty-code="searchSpecialtyCode"
+          :search-procedure-code="searchProcedureCode"
+          :is-search-mode="isSearchMode"
+          :customer="user"
+          :assessment-details="assessmentDetails"
+        />
+        <div v-else class="empty-state">
+          <p>Este proveedor no tiene servicios disponibles.</p>
+        </div>
+      </div>
 
-    <div v-else-if="tab === 1 && !hasServices" class="empty-state">
-      <p>Este proveedor no tiene servicios disponibles.</p>
-    </div>
+      <div
+        v-show="tab === 2"
+        id="tabpanel-clinicas"
+        role="tabpanel"
+        aria-labelledby="tab-clinicas"
+        tabindex="0"
+      >
+        <WebsitePerfilDoctorTabsHospitales
+          v-if="selectedPackage"
+          :locations="currentSupplier?.locations ?? []"
+        />
+        <div v-else class="empty-state">
+          <p>
+            Primero selecciona un paquete de servicios en la pestaña
+            "Servicios".
+          </p>
+        </div>
+      </div>
 
-    <WebsitePerfilDoctorTabsHospitales
-      v-if="tab === 2 && selectedPackage"
-      :locations="currentSupplier?.locations ?? []"
-    />
+      <div
+        v-show="tab === 3"
+        id="tabpanel-ubicacion"
+        role="tabpanel"
+        aria-labelledby="tab-ubicacion"
+        tabindex="0"
+      >
+        <WebsitePerfilDoctorTabsUbicacion :supplier="currentSupplier" />
+      </div>
 
-    <div v-else-if="tab === 2 && !selectedPackage" class="empty-state">
-      <p>
-        Primero selecciona un paquete de servicios en la pestaña "Servicios".
-      </p>
-    </div>
-
-    <WebsitePerfilDoctorTabsUbicacion
-      v-if="tab === 3"
-      :supplier="currentSupplier"
-    />
-
-    <WebsitePerfilDoctorTabsPerfil
-      v-if="tab === 4"
-      :supplier="currentSupplier"
-    />
+      <div
+        v-show="tab === 4"
+        id="tabpanel-perfil"
+        role="tabpanel"
+        aria-labelledby="tab-perfil"
+        tabindex="0"
+      >
+        <WebsitePerfilDoctorTabsPerfil :supplier="currentSupplier" />
+      </div>
+    </template>
   </section>
 
   <WebsiteConfirmationCitaModal
@@ -535,6 +628,7 @@ watch(
     border-bottom: 3px solid #e1e4ed;
     color: #6d758f;
     padding: 15px 18px;
+    min-height: 44px;
 
     @include respond-to-max(sm) {
       padding: $spacing-sm $spacing-xs;
@@ -543,6 +637,11 @@ watch(
 
     @include respond-to-max(md) {
       padding: $spacing-sm;
+    }
+
+    &:focus-visible {
+      outline: 2px solid #0cadbb;
+      outline-offset: -2px;
     }
   }
 

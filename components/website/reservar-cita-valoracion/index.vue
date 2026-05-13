@@ -68,12 +68,16 @@
       <footer class="schedule-appointment-modal__footer">
         <button
           class="schedule-appointment-modal__button schedule-appointment-modal__button--outline"
-          @click="prevStep"
-          :disabled="internalCurrentStep === 1 || isLoading"
+          @click="internalCurrentStep === 1 ? closeModal() : prevStep()"
+          :disabled="isLoading"
           type="button"
-          aria-label="Volver al paso anterior"
+          :aria-label="
+            internalCurrentStep === 1
+              ? 'Cerrar modal'
+              : 'Volver al paso anterior'
+          "
         >
-          Volver
+          {{ internalCurrentStep === 1 ? "Cerrar" : "Volver" }}
         </button>
         <button
           class="schedule-appointment-modal__button schedule-appointment-modal__button--primary"

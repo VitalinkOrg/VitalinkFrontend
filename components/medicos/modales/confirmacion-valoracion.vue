@@ -1,5 +1,3 @@
-// components\medicos\modales\confirmacion-valoracion.vue
-
 <template>
   <AtomsModalBase
     :is-open="isVisible"

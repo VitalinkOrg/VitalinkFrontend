@@ -95,6 +95,32 @@
         </div>
 
         <div class="registration-field-group">
+          <label for="phone" class="registration-label">
+            Número de teléfono
+            <span aria-hidden="true">*</span>
+          </label>
+          <input
+            v-model="phoneNumber"
+            type="tel"
+            id="phone"
+            placeholder="Ej: +506 8888 8888"
+            class="registration-input"
+            :class="{ 'registration-input--invalid': errors.phoneNumber }"
+            :aria-invalid="errors.phoneNumber ? 'true' : 'false'"
+            :aria-describedby="errors.phoneNumber ? 'phone-error' : undefined"
+            @blur="validatePhoneNumber"
+          />
+          <span
+            v-if="errors.phoneNumber"
+            id="phone-error"
+            class="registration-error"
+            role="alert"
+          >
+            {{ errors.phoneNumber }}
+          </span>
+        </div>
+
+        <div class="registration-field-group">
           <label for="email" class="registration-label">
             Correo electrónico
             <span aria-hidden="true">*</span>
@@ -206,7 +232,7 @@
               <label for="terms" class="registration-option-label">
                 He leído y acepto los
                 <a
-                  href="/documentos/terminos-condiciones.pdf"
+                  href="/docs/Terminos_y_condiciones_Vitalink_-_Ago_25.pdf"
                   target="_blank"
                   rel="noopener noreferrer"
                   download
@@ -235,7 +261,7 @@
               <label for="privacy" class="registration-option-label">
                 He leído y acepto la
                 <a
-                  href="/documentos/politica-privacidad.pdf"
+                  href="/docs/Política_de_privacidad_Vitalink_-_Oct_25.pdf"
                   target="_blank"
                   rel="noopener noreferrer"
                   download
@@ -307,6 +333,7 @@ const toast = useToast();
 const documentType = ref("");
 const documentNumber = ref("");
 const name = ref("");
+const phoneNumber = ref("");
 const email = ref("");
 const password = ref("");
 const solidaristaAssociation = ref("");
@@ -333,6 +360,7 @@ const errors = reactive({
   documentType: "",
   documentNumber: "",
   name: "",
+  phoneNumber: "",
   email: "",
   password: "",
   solidarista: "",
@@ -375,6 +403,20 @@ const validateName = () => {
     return false;
   }
   errors.name = "";
+  return true;
+};
+
+const validatePhoneNumber = () => {
+  if (!phoneNumber.value.trim()) {
+    errors.phoneNumber = "El número de teléfono es requerido";
+    return false;
+  }
+  const phoneRegex = /^[0-9+ ]{8,15}$/;
+  if (!phoneRegex.test(phoneNumber.value.trim())) {
+    errors.phoneNumber = "Ingresa un número de teléfono válido";
+    return false;
+  }
+  errors.phoneNumber = "";
   return true;
 };
 
@@ -437,6 +479,7 @@ const validateForm = () => {
     validateDocumentType(),
     validateDocumentNumber(),
     validateName(),
+    validatePhoneNumber(),
     validateEmail(),
     validatePassword(),
     validateSolidarista(),
@@ -476,6 +519,7 @@ const handleSubmit = async () => {
     card_id: backendDocumentNumber,
     id_type: documentType.value,
     name: name.value,
+    phone_number: phoneNumber.value,
     email: email.value,
     password: password.value,
     role_code: "CUSTOMER",

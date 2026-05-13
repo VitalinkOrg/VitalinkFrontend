@@ -26,13 +26,6 @@
         </a>
       </div>
     </div>
-    <div class="location-tab__map">
-      <AtomsMapaInteractivo
-        :latitude="supplier?.latitude"
-        :longitude="supplier?.longitude"
-        :name="supplier?.name"
-      />
-    </div>
   </div>
 </template>
 
@@ -45,8 +38,6 @@ defineProps<{
 <style lang="scss" scoped>
 .location-tab {
   margin-top: 20px;
-  display: grid;
-  grid-template-columns: 1fr 2fr;
 
   &__info {
     display: flex;
@@ -108,12 +99,5 @@ defineProps<{
     }
   }
 
-  &__map {
-    width: 100%;
-    height: 100%;
-    position: relative;
-    border-radius: 20px;
-    overflow: hidden;
-  }
 }
 </style>

@@ -1,6 +1,6 @@
 <template>
   <Teleport to="body">
-    <Transition name="modal" appear>
+    <Transition :name="transitionName" appear>
       <div
         v-if="isOpen"
         class="modal"
@@ -22,6 +22,8 @@
           ref="dialogRef"
           open
         >
+          <div class="modal__drag-handle" aria-hidden="true" />
+
           <header class="modal__header" :class="headerClass" v-if="!hideHeader">
             <h2 class="modal__title" :id="headerId" v-if="$slots.title">
               <slot name="title" />
@@ -29,7 +31,7 @@
 
             <nav
               class="modal__controls"
-              v-if="showCloseButton || showCloseAllButton"
+              v-if="showCloseButton"
               aria-label="Controles del modal"
             >
               <button
@@ -117,23 +119,30 @@ const props = withDefaults(defineProps<Props>(), {
   modalClass: "",
 });
 
-const dialogRef = ref<HTMLElement>();
-const modalZIndex = ref(1000);
+const { lock, unlock } = useScrollLock();
 
+const dialogRef = ref<HTMLElement>();
+const triggerElement = ref<HTMLElement | null>(null);
+const modalZIndex = ref(1000);
 const modalId = ref("");
 const headerId = computed(() => `modal-header-${modalId.value}`);
 const contentId = computed(() => `modal-content-${modalId.value}`);
 
-const openModalsCount = useState("openModalsCount", () => 0);
-const baseZIndex = useState("baseModalZIndex", () => 1000);
 const activeModals = useState<Set<string>>("activeModals", () => new Set());
 const closeAllTrigger = useState("closeAllTrigger", () => 0);
-const isScrollLocked = useState("isScrollLocked", () => false);
-const originalBodyPadding = useState("originalBodyPadding", () => "");
-const originalBodyOverflow = useState("originalBodyOverflow", () => "");
+
+const isMobile = ref(false);
+const transitionName = computed(() =>
+  isMobile.value ? "modal-sheet" : "modal",
+);
 
 onMounted(() => {
   modalId.value = `modal-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+  const mq = window.matchMedia("(max-width: 47.9375rem)");
+  isMobile.value = mq.matches;
+  mq.addEventListener("change", (e) => {
+    isMobile.value = e.matches;
+  });
 });
 
 const modalClasses = computed(() => ({
@@ -155,19 +164,16 @@ const customStyles = computed(() => {
       styles.width =
         typeof props.width === "number" ? `${props.width}px` : props.width;
     }
-
     if (props.maxWidth) {
       styles.maxWidth =
         typeof props.maxWidth === "number"
           ? `${props.maxWidth}px`
           : props.maxWidth;
     }
-
     if (props.height) {
       styles.height =
         typeof props.height === "number" ? `${props.height}px` : props.height;
     }
-
     if (props.maxHeight) {
       styles.maxHeight =
         typeof props.maxHeight === "number"
@@ -178,51 +184,6 @@ const customStyles = computed(() => {
 
   return styles;
 });
-
-const getScrollbarWidth = (): number => {
-  if (typeof window === "undefined") return 0;
-  return window.innerWidth - document.documentElement.clientWidth;
-};
-
-const lockBodyScroll = () => {
-  if (typeof window === "undefined" || isScrollLocked.value) return;
-
-  const body = document.body;
-  const scrollbarWidth = getScrollbarWidth();
-
-  originalBodyPadding.value = body.style.paddingRight || "";
-  originalBodyOverflow.value = body.style.overflow || "";
-
-  const computedPaddingRight = window.getComputedStyle(body).paddingRight;
-  const currentPaddingRight = parseInt(computedPaddingRight, 10) || 0;
-
-  body.style.paddingRight = `${currentPaddingRight + scrollbarWidth}px`;
-  body.style.overflow = "hidden";
-
-  isScrollLocked.value = true;
-};
-
-const unlockBodyScroll = () => {
-  if (typeof window === "undefined" || !isScrollLocked.value) return;
-
-  const body = document.body;
-
-  if (originalBodyPadding.value === "") {
-    body.style.removeProperty("padding-right");
-  } else {
-    body.style.paddingRight = originalBodyPadding.value;
-  }
-
-  if (originalBodyOverflow.value === "") {
-    body.style.removeProperty("overflow");
-  } else {
-    body.style.overflow = originalBodyOverflow.value;
-  }
-
-  isScrollLocked.value = false;
-  originalBodyPadding.value = "";
-  originalBodyOverflow.value = "";
-};
 
 const closeModal = () => {
   if (!props.persistent) {
@@ -236,8 +197,6 @@ const handleBackdropClick = () => {
   }
 };
 
-const previousActiveElement = ref<HTMLElement | null>(null);
-
 watch(closeAllTrigger, () => {
   if (props.isOpen && activeModals.value.has(modalId.value)) {
     closeModal();
@@ -248,43 +207,36 @@ watch(
   () => props.isOpen,
   (newValue, oldValue) => {
     if (newValue && !oldValue) {
-      openModalsCount.value++;
+      triggerElement.value = document.activeElement as HTMLElement;
       activeModals.value.add(modalId.value);
-
-      if (openModalsCount.value === 1) {
-        lockBodyScroll();
-      }
-
+      lock();
       nextTick(() => dialogRef.value?.focus());
     } else if (!newValue && oldValue) {
-      openModalsCount.value = Math.max(0, openModalsCount.value - 1);
       activeModals.value.delete(modalId.value);
-
-      if (openModalsCount.value === 0) {
-        unlockBodyScroll();
-      }
+      unlock();
+      nextTick(() => triggerElement.value?.focus());
     }
-  }
+  },
 );
 
 onUnmounted(() => {
   if (props.isOpen) {
-    const wasLastModal = openModalsCount.value === 1;
-
-    openModalsCount.value = Math.max(0, openModalsCount.value - 1);
     activeModals.value.delete(modalId.value);
-
-    if (wasLastModal) {
-      unlockBodyScroll();
-    }
+    unlock();
+    triggerElement.value?.focus();
   }
+  document.removeEventListener("keydown", trapFocus);
 });
 
 const trapFocus = (e: KeyboardEvent) => {
   if (!props.isOpen || !dialogRef.value) return;
 
+  // Only trap focus in the topmost active modal
+  const modals = Array.from(activeModals.value);
+  if (modals[modals.length - 1] !== modalId.value) return;
+
   const focusableElements = dialogRef.value.querySelectorAll(
-    'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
+    'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])',
   ) as NodeListOf<HTMLElement>;
 
   const firstElement = focusableElements[0];
@@ -309,10 +261,6 @@ onMounted(() => {
   document.addEventListener("keydown", trapFocus);
 });
 
-onUnmounted(() => {
-  document.removeEventListener("keydown", trapFocus);
-});
-
 defineExpose({
   modalId,
 });
@@ -322,82 +270,79 @@ defineExpose({
 $modal-backdrop-color: rgba(0, 0, 0, 0.2);
 $modal-border-radius: 0.9375rem;
 $modal-padding: 1.5rem;
+$modal-focus-color: #3b82f6;
+$modal-breakpoint: 48rem;
 
-@mixin modal-size($width, $max-height: 90vh) {
-  width: $width;
-  max-width: 90vw;
-  max-height: $max-height;
-}
+// ─── Mobile-first base (bottom-sheet) ───────────────────────────────────────
 
 .modal {
   position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
+  inset: 0;
   background-color: $modal-backdrop-color;
   display: flex;
-  align-items: center;
+  align-items: flex-end; // bottom-sheet on mobile
   justify-content: center;
-  padding: 1rem;
   overflow: hidden;
+
+  &__drag-handle {
+    width: 2.5rem;
+    height: 0.25rem;
+    background: #e2e8f0;
+    border-radius: 0.125rem;
+    margin: 0.75rem auto 0;
+    flex-shrink: 0;
+  }
 
   &__dialog {
     background: white;
-    border-radius: $modal-border-radius;
     box-shadow:
-      0 0.5rem 0.5rem -0.25rem #1018280a,
-      0 1.25rem 1.5rem -0.25rem #1018281a;
+      0 -0.25rem 0.5rem -0.125rem #1018280a,
+      0 -0.5rem 1.5rem -0.25rem #1018281a;
     display: flex;
     flex-direction: column;
     outline: none;
     border: none;
     padding: 0;
-    margin: 0 auto;
+    margin: 0;
+    width: 100%;
+    max-width: 100%;
+    max-height: 90dvh;
+    border-radius: $modal-border-radius $modal-border-radius 0 0;
 
-    @include modal-size(31.25rem);
-
-    &--extra-small {
-      @include modal-size(25rem);
-    }
-
-    &--small {
-      @include modal-size(33.5rem);
-    }
-
-    &--medium {
-      @include modal-size(39.75rem);
-    }
-
-    &--large {
-      @include modal-size(44.875rem);
-    }
-
-    &--extra-large {
-      @include modal-size(62.5rem);
+    // All size variants collapse to full-width sheet on mobile
+    &--extra-small,
+    &--small,
+    &--medium,
+    &--large,
+    &--extra-large,
+    &--fullscreen {
+      width: 100%;
+      max-width: 100%;
     }
 
     &--fullscreen {
-      @include modal-size(95vw, 95vh);
+      max-height: 100dvh;
+      border-radius: 0;
     }
 
     &--custom {
-      max-width: 90vw;
-      max-height: 90vh;
+      max-width: 100%;
+      max-height: 90dvh;
     }
+
   }
 
   &__header {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: $modal-padding $modal-padding 0 $modal-padding;
+    padding: 0.75rem $modal-padding 0 $modal-padding;
     border-radius: $modal-border-radius $modal-border-radius 0 0;
   }
 
   &__title {
     margin: 0;
-    font-size: 1.25rem;
+    font-size: 1.125rem;
     font-weight: 600;
     color: #1a202c;
   }
@@ -405,17 +350,19 @@ $modal-padding: 1.5rem;
   &__controls {
     display: flex;
     align-items: center;
-    gap: 0.5rem;
+    gap: 0.25rem;
     margin-left: auto;
   }
 
-  &__close,
-  &__close-all {
+  &__close {
+    // 44×44 px touch target
+    min-width: 2.75rem;
+    min-height: 2.75rem;
     background: none;
     border: none;
     cursor: pointer;
     padding: 0.5rem;
-    border-radius: 0.25rem;
+    border-radius: 0.375rem;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -428,32 +375,19 @@ $modal-padding: 1.5rem;
     }
 
     &:focus {
-      outline: 0.125rem solid #3b82f6;
-      outline-offset: 0.125rem;
-    }
-  }
-
-  &__close-all {
-    color: #dc2626;
-
-    &:hover {
-      background-color: #fef2f2;
-      color: #b91c1c;
+      outline: none;
     }
 
-    &:focus {
-      outline: 0.125rem solid #dc2626;
+    &:focus-visible {
+      outline: 2px solid $modal-focus-color;
+      outline-offset: 2px;
     }
   }
 
   &__close-icon {
     width: 1.5rem;
     height: 1.5rem;
-  }
-
-  &__close-all-icon {
-    width: 1.25rem;
-    height: 1.25rem;
+    pointer-events: none;
   }
 
   &__content {
@@ -462,6 +396,8 @@ $modal-padding: 1.5rem;
     overflow-y: auto;
     color: #374151;
     line-height: 1.6;
+    // Smooth momentum scrolling on iOS
+    -webkit-overflow-scrolling: touch;
   }
 
   &__footer {
@@ -470,8 +406,86 @@ $modal-padding: 1.5rem;
     justify-content: flex-end;
     gap: 0.75rem;
     border-radius: 0 0 $modal-border-radius $modal-border-radius;
+    flex-shrink: 0;
   }
 }
+
+// ─── Desktop override (centered dialog) ─────────────────────────────────────
+
+@media (min-width: $modal-breakpoint) {
+  .modal {
+    align-items: center;
+    padding: 1rem;
+
+    &__drag-handle {
+      display: none;
+    }
+
+    &__dialog {
+      border-radius: $modal-border-radius;
+      box-shadow:
+        0 0.5rem 0.5rem -0.25rem #1018280a,
+        0 1.25rem 1.5rem -0.25rem #1018281a;
+      margin: 0 auto;
+
+      &--extra-small {
+        width: 25rem;
+        max-width: 90vw;
+        max-height: 90vh;
+      }
+
+      &--small {
+        width: 33.5rem;
+        max-width: 90vw;
+        max-height: 90vh;
+      }
+
+      &--medium {
+        width: 39.75rem;
+        max-width: 90vw;
+        max-height: 90vh;
+      }
+
+      &--large {
+        width: 44.875rem;
+        max-width: 90vw;
+        max-height: 90vh;
+      }
+
+      &--extra-large {
+        width: 62.5rem;
+        max-width: 90vw;
+        max-height: 90vh;
+      }
+
+      &--fullscreen {
+        width: 95vw;
+        max-width: 95vw;
+        max-height: 95vh;
+        border-radius: $modal-border-radius;
+      }
+
+      &--custom {
+        max-width: 90vw;
+        max-height: 90vh;
+      }
+    }
+
+    &__header {
+      padding: $modal-padding $modal-padding 0 $modal-padding;
+    }
+
+    &__title {
+      font-size: 1.25rem;
+    }
+
+    &__controls {
+      gap: 0.5rem;
+    }
+  }
+}
+
+// ─── Shared utility classes ──────────────────────────────────────────────────
 
 .header-border-bottom {
   padding-bottom: 0.625rem;
@@ -486,12 +500,40 @@ $modal-padding: 1.5rem;
   padding: 0;
 }
 
-.modal-enter-active,
-.modal-leave-active {
-  transition: opacity 0.3s ease;
+.height-full {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+// ─── Mobile: slide-up transition ────────────────────────────────────────────
+
+.modal-sheet-enter-active,
+.modal-sheet-leave-active {
+  transition: opacity 0.25s ease;
 
   .modal__dialog {
-    transition: transform 0.3s ease;
+    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+}
+
+.modal-sheet-enter-from,
+.modal-sheet-leave-to {
+  opacity: 0;
+
+  .modal__dialog {
+    transform: translateY(100%);
+  }
+}
+
+// ─── Desktop: scale + fade transition ───────────────────────────────────────
+
+.modal-enter-active,
+.modal-leave-active {
+  transition: opacity 0.25s ease;
+
+  .modal__dialog {
+    transition: transform 0.25s ease;
   }
 }
 
@@ -500,39 +542,7 @@ $modal-padding: 1.5rem;
   opacity: 0;
 
   .modal__dialog {
-    transform: scale(0.9) translateY(-1.25rem);
+    transform: scale(0.95) translateY(-0.5rem);
   }
-}
-
-@media (max-width: 48rem) {
-  .modal {
-    padding: 0.5rem;
-
-    &__dialog {
-      @include modal-size(95vw, 95vh);
-
-      &--small,
-      &--medium,
-      &--large {
-        @include modal-size(95vw, 95vh);
-      }
-    }
-
-    &__header,
-    &__content,
-    &__footer {
-      padding: 1rem;
-    }
-  }
-
-  .modal__controls {
-    gap: 0.25rem;
-  }
-}
-
-.height-full {
-  height: 100%;
-  display: flex;
-  flex-direction: column;
 }
 </style>
