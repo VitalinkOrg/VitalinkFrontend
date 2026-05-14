@@ -489,6 +489,21 @@ provide("handleRefresh", refreshAppointments);
 
           <div class="citas-toolbar">
             <button
+              class="citas-toolbar__button citas-toolbar__button--refresh"
+              :disabled="isRefreshing || isLoading"
+              :aria-disabled="isRefreshing || isLoading"
+              aria-label="Actualizar lista de citas"
+              @click="refreshAppointments"
+            >
+              <AtomsIconsRefreshCcwIcon
+                size="20"
+                aria-hidden="true"
+                :class="{ 'citas-toolbar__icon--spinning': isRefreshing }"
+              />
+              <span class="citas-toolbar__label">Actualizar</span>
+            </button>
+
+            <button
               class="citas-toolbar__button citas-toolbar__button--download"
               :disabled="!hasAppointments"
               :aria-disabled="!hasAppointments"
@@ -496,7 +511,7 @@ provide("handleRefresh", refreshAppointments);
               @click="downloadAppointmentsSummary"
             >
               <AtomsIconsDownloadIcon size="20" aria-hidden="true" />
-              Descargar
+              <span class="citas-toolbar__label">Descargar</span>
             </button>
 
             <div class="citas-sort" @keydown="handleSortToggleKeydown">
@@ -711,21 +726,27 @@ provide("handleRefresh", refreshAppointments);
   @include respond-to-max(md) {
     margin-left: 0;
     justify-content: space-between;
+    flex-wrap: wrap;
   }
 
   &__button {
     @include outline-button;
     white-space: nowrap;
 
-    &--download {
-      @include respond-to-max(sm) {
-        flex: 1;
-      }
+    @include respond-to-max(sm) {
+      flex: 1;
+      justify-content: center;
     }
 
     &:disabled {
       opacity: 0.5;
       cursor: not-allowed;
+    }
+  }
+
+  &__label {
+    @include respond-to-max(xs) {
+      @include visually-hidden;
     }
   }
 
@@ -741,9 +762,11 @@ provide("handleRefresh", refreshAppointments);
     @include outline-button;
     white-space: nowrap;
     position: relative;
+    width: 100%;
 
     @include respond-to-max(sm) {
       flex: 1;
+      justify-content: center;
     }
   }
 
