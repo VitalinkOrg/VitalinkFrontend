@@ -31,13 +31,19 @@ const {
 const { generateReport } = useAppointmentReport();
 
 const tableKey = computed(() => activeSortCriterion.value);
+const isRefreshing = ref(false);
 
 function handleDownloadReport(): void {
   generateReport(filteredAppointments.value);
 }
 
 async function handleRefresh(): Promise<void> {
-  await fetchAppointments();
+  isRefreshing.value = true;
+  try {
+    await fetchAppointments();
+  } finally {
+    isRefreshing.value = false;
+  }
 }
 
 provide("refreshAppointments", handleRefresh);
@@ -74,6 +80,22 @@ onMounted(fetchAppointments);
         />
 
         <div class="toolbar__actions">
+          <button
+            type="button"
+            class="toolbar__refresh-btn"
+            :disabled="isRefreshing || isLoading"
+            aria-label="Actualizar lista de citas"
+            @click="handleRefresh"
+          >
+            <AtomsIconsRefreshCcwIcon
+              size="20"
+              aria-hidden="true"
+              focusable="false"
+              :class="{ 'toolbar__icon--spinning': isRefreshing }"
+            />
+            <span class="toolbar__refresh-label">Actualizar</span>
+          </button>
+
           <button
             type="button"
             class="toolbar__download-btn"
@@ -115,7 +137,7 @@ onMounted(fetchAppointments);
 
           <WebsiteBaseDropdown>
             <template #button>
-              <span class="toolbar__dropdown-text">Estado de solicitud:</span>
+              <span class="toolbar__dropdown-text toolbar__dropdown-text--filter">Estado de solicitud:</span>
               <div class="badge-group" aria-live="polite">
                 <span
                   v-for="status in visibleStatusBadges"
@@ -338,6 +360,37 @@ onMounted(fetchAppointments);
     }
   }
 
+  &__refresh-btn {
+    @include outline-button;
+    font-weight: 400;
+    font-size: 0.75rem;
+    line-height: 1.25;
+    color: #344054;
+    padding: 0.5rem 0.75rem;
+    gap: 0.375rem;
+
+    @include respond-to(sm) {
+      font-size: 0.875rem;
+      padding: 0.625rem 1rem;
+      gap: 0.5rem;
+    }
+
+    &:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
+  }
+
+  &__refresh-label {
+    @include respond-to-max(sm) {
+      @include visually-hidden;
+    }
+  }
+
+  &__icon--spinning {
+    animation: spin-icon 0.8s linear infinite;
+  }
+
   &__download-btn {
     @include outline-button;
     font-weight: 400;
@@ -368,6 +421,12 @@ onMounted(fetchAppointments);
   &__dropdown-text {
     @include respond-to-max(sm) {
       font-size: 0.875rem;
+    }
+
+    &--filter {
+      @include respond-to-max(sm) {
+        @include visually-hidden;
+      }
     }
   }
 
@@ -577,7 +636,22 @@ onMounted(fetchAppointments);
   .toolbar {
     &__actions {
       width: 100%;
-      justify-content: space-between;
+      display: grid;
+      grid-template-columns: auto auto 1fr 1fr;
+      gap: 0.5rem;
+      align-items: center;
+
+      :deep(.dropdown) {
+        display: flex;
+        width: 100%;
+
+        .dropdown__toggle {
+          width: 100%;
+          justify-content: space-between;
+          font-size: 0.8125rem;
+          padding: 0.5rem 0.75rem;
+        }
+      }
     }
   }
 
@@ -609,10 +683,29 @@ onMounted(fetchAppointments);
   .toolbar {
     padding: 0 1rem;
     margin: 0 -1rem 1rem;
+
+    &__actions {
+      grid-template-columns: auto auto;
+      gap: 0.5rem;
+
+      > *:nth-child(3),
+      > *:nth-child(4) {
+        grid-column: span 2;
+      }
+    }
   }
 
   .appointment-list {
     margin: 0 -1rem;
+  }
+}
+
+@keyframes spin-icon {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
   }
 }
 </style>

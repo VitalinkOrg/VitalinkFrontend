@@ -49,7 +49,10 @@ const listRef = ref<HTMLUListElement>();
 const isOpen = ref(false);
 const query = ref("");
 const activeIndex = ref(-1);
-const menuPos = ref({ top: 0, left: 0, width: 0 });
+const placement = ref<"bottom" | "top">("bottom");
+const menuPos = ref({ top: "auto", bottom: "auto", left: 0, width: 0 });
+
+const MENU_HEIGHT_THRESHOLD = 300;
 
 const uid = Math.random().toString(36).slice(2, 9);
 const triggerId = `db-trigger-${uid}`;
@@ -104,7 +107,25 @@ function nextEnabled(from: number, step: 1 | -1): number {
 function refreshMenuPos() {
   if (!rootRef.value) return;
   const r = rootRef.value.getBoundingClientRect();
-  menuPos.value = { top: r.bottom, left: r.left, width: r.width };
+  const spaceBelow = window.innerHeight - r.bottom;
+
+  if (spaceBelow < MENU_HEIGHT_THRESHOLD && r.top > spaceBelow) {
+    placement.value = "top";
+    menuPos.value = {
+      top: "auto",
+      bottom: `${window.innerHeight - r.top}px`,
+      left: r.left,
+      width: r.width,
+    };
+  } else {
+    placement.value = "bottom";
+    menuPos.value = {
+      top: `${r.bottom}px`,
+      bottom: "auto",
+      left: r.left,
+      width: r.width,
+    };
+  }
 }
 
 function scrollActiveIntoView() {
@@ -478,12 +499,13 @@ onClickOutside(rootRef, () => {
         ref="listRef"
         role="listbox"
         class="db__list"
-        :class="`db__list--${size}`"
+        :class="[`db__list--${size}`, `db__list--${placement}`]"
         :aria-labelledby="triggerId"
         :aria-activedescendant="activeOptionId"
         tabindex="-1"
         :style="{
-          top: `${menuPos.top}px`,
+          top: menuPos.top,
+          bottom: menuPos.bottom,
           left: `${menuPos.left}px`,
           width: `${menuPos.width}px`,
         }"
@@ -860,7 +882,7 @@ onClickOutside(rootRef, () => {
     position: fixed;
     z-index: 9999;
     list-style: none;
-    margin: 0.25rem 0 0;
+    margin: 0;
     padding: 0;
     background: var(--db-bg);
     border: 1px solid var(--db-border);
@@ -869,6 +891,19 @@ onClickOutside(rootRef, () => {
     max-height: 16rem;
     overflow-y: auto;
     outline: none;
+
+    &--bottom {
+      margin-top: 0.25rem;
+      transform-origin: top center;
+    }
+
+    &--top {
+      margin-bottom: 0.25rem;
+      transform-origin: bottom center;
+      box-shadow:
+        0 -0.625rem 1.25rem -0.1875rem rgba(0, 0, 0, 0.1),
+        0 -0.25rem 0.375rem -0.125rem rgba(0, 0, 0, 0.05);
+    }
 
     &--sm .db__option {
       padding: 0.5rem 0.75rem;

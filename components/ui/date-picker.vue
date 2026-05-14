@@ -1,5 +1,6 @@
 <template>
   <VueDatePicker
+    ref="dpRef"
     v-model="internalValue"
     :min-date="minDate"
     :class="customClass"
@@ -11,7 +12,12 @@
     :clearable="false"
     :action-row="actionRowConfig"
     :select-text="confirmText"
+    teleport="body"
+    :alt-position="calculatePosition"
+    :menu-class-name="`dp-custom-menu dp-custom-menu--${placement}`"
     @update:model-value="handleDateUpdate"
+    @open="onOpen"
+    @closed="onClose"
   >
     <template #input-icon>
       <AtomsIconsCalendarIcon
@@ -66,7 +72,14 @@ const { formatDate } = useFormat();
 
 const locale = "es";
 
+const dpRef = ref<InstanceType<typeof VueDatePicker> | null>(null);
 const internalValue = ref(props.modelValue);
+const placement = ref<"top" | "bottom">("bottom");
+
+const CALENDAR_HEIGHT = 315;
+const CALENDAR_WIDTH = 328;
+const CALENDAR_OFFSET = 8;
+const MOBILE_BREAKPOINT = 576;
 
 const actionRowConfig = computed(() => {
   if (!props.hasConfirmation) return { showSelect: false };
@@ -77,7 +90,7 @@ watch(
   () => props.modelValue,
   (newValue) => {
     internalValue.value = newValue;
-  }
+  },
 );
 
 const handleDateUpdate = (date: Date | null) => {
@@ -88,6 +101,64 @@ const handleDateUpdate = (date: Date | null) => {
     emit("confirm", date);
   }
 };
+
+// alt-position receives the trigger element and returns viewport-relative coordinates.
+// VueDatePicker applies them via position: fixed on the teleported menu, so
+// we must NOT add scrollY/scrollX — getBoundingClientRect() already gives us
+// viewport-relative values which is exactly what we need.
+const calculatePosition = (el: HTMLElement | null) => {
+  if (!el) return { top: "0px", left: "0px", transform: "" };
+
+  const rect = el.getBoundingClientRect();
+  const viewportHeight = window.innerHeight;
+  const viewportWidth = window.innerWidth;
+
+  if (viewportWidth < MOBILE_BREAKPOINT) {
+    placement.value = "bottom";
+    const top = Math.max(8, (viewportHeight - CALENDAR_HEIGHT) / 2);
+    const left = Math.max(8, (viewportWidth - CALENDAR_WIDTH) / 2);
+    return { top: `${top}px`, left: `${left}px`, transform: "" };
+  }
+
+  const spaceBelow = viewportHeight - rect.bottom;
+  const spaceAbove = rect.top;
+
+  let top: number;
+
+  if (spaceBelow >= CALENDAR_HEIGHT || spaceBelow >= spaceAbove) {
+    placement.value = "bottom";
+    top = rect.bottom + CALENDAR_OFFSET;
+  } else {
+    placement.value = "top";
+    top = rect.top - CALENDAR_HEIGHT - CALENDAR_OFFSET;
+  }
+
+  let left = rect.left;
+  const maxLeft = viewportWidth - CALENDAR_WIDTH - 8;
+  left = Math.min(left, maxLeft);
+  left = Math.max(8, left);
+
+  return { top: `${top}px`, left: `${left}px`, transform: "" };
+};
+
+const closeMenu = () => dpRef.value?.closeMenu();
+
+const onOpen = () => {
+  window.addEventListener("scroll", closeMenu, {
+    passive: true,
+    capture: true,
+  });
+  window.addEventListener("resize", closeMenu, { passive: true });
+};
+
+const onClose = () => {
+  window.removeEventListener("scroll", closeMenu, { capture: true });
+  window.removeEventListener("resize", closeMenu);
+};
+
+onBeforeUnmount(() => {
+  onClose();
+});
 </script>
 
 <style lang="scss" scoped>
@@ -196,6 +267,18 @@ const handleDateUpdate = (date: Date | null) => {
   box-shadow:
     0 0.75rem 2.625rem -0.25rem rgba(24, 39, 75, 0.25),
     0 0.5rem 1.125rem -0.375rem rgba(24, 39, 75, 0.2);
+}
+
+.dp-custom-menu {
+  z-index: 9999 !important;
+}
+
+.dp-custom-menu--bottom {
+  transform-origin: top center;
+}
+
+.dp-custom-menu--top {
+  transform-origin: bottom center;
 }
 
 .dp__calendar_header_item {
