@@ -1,5 +1,5 @@
 <template>
-  <AtomsModalBase
+  <UiModalBase
     :is-open="isModalVisible"
     title="Pagar Cita"
     size="large"
@@ -135,7 +135,7 @@
         </button>
       </nav>
     </section>
-  </AtomsModalBase>
+  </UiModalBase>
 </template>
 
 <script setup lang="ts">

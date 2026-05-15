@@ -1,5 +1,5 @@
 <template>
-  <AtomsModalBase
+  <UiModalBase
     :is-open="modalManager.isOpen.rejection"
     @close="modalManager.closeModal('rejection')"
     size="extra-small"
@@ -41,7 +41,7 @@
         </button>
       </div>
     </template>
-  </AtomsModalBase>
+  </UiModalBase>
 </template>
 
 <script lang="ts" setup>

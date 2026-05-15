@@ -1,5 +1,5 @@
 <template>
-  <AtomsModalBase
+  <UiModalBase
     :is-open="isModalOpen"
     size="small"
     class="success-confirmation"
@@ -51,7 +51,7 @@
         </button>
       </div>
     </template>
-  </AtomsModalBase>
+  </UiModalBase>
 </template>
 
 <script lang="ts" setup>

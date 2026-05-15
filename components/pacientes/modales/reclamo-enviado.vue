@@ -1,5 +1,5 @@
 <template>
-  <AtomsModalBase :is-open="isOpen" size="extra-small" @close="closeModal">
+  <UiModalBase :is-open="isOpen" size="extra-small" @close="closeModal">
     <div class="claim-sent__body">
       <div class="claim-sent__header">
         <AtomsIconsCheckIcon size="20" class="claim-sent__header-icon" />
@@ -16,7 +16,7 @@
         <button class="claim-sent__button--primary">Ir a Home</button>
       </div>
     </template>
-  </AtomsModalBase>
+  </UiModalBase>
 </template>
 
 <script lang="ts" setup>

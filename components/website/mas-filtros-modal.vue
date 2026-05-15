@@ -274,7 +274,7 @@ defineExpose({
       <span>Más Filtros</span>
     </button>
 
-    <AtomsModalBase :is-open="isOpen" size="large" @close="handleCloseModal">
+    <UiModalBase :is-open="isOpen" size="large" @close="handleCloseModal">
       <template #title>
         <h2 id="filter-modal-title" class="filter-modal__title">Filtros</h2>
       </template>
@@ -482,7 +482,7 @@ defineExpose({
           </button>
         </div>
       </template>
-    </AtomsModalBase>
+    </UiModalBase>
   </div>
 </template>
 

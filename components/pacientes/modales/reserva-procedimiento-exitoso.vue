@@ -1,5 +1,5 @@
 <template>
-  <AtomsModalBase
+  <UiModalBase
     :is-open="isModalOpen"
     size="medium"
     @close="handleCloseModal('scheduleProcedureSuccess')"
@@ -43,7 +43,7 @@
         </button>
       </div>
     </template>
-  </AtomsModalBase>
+  </UiModalBase>
 </template>
 
 <script lang="ts" setup>

@@ -9,7 +9,7 @@
     <AtomsIconsArrowRightIcon class="specialty-modal-trigger__icon" />
   </button>
 
-  <AtomsModalBase
+  <UiModalBase
     :is-open="isOpen"
     @close="handleCloseModal"
     :show-close-button="false"
@@ -81,7 +81,7 @@
         </section>
       </div>
     </article>
-  </AtomsModalBase>
+  </UiModalBase>
 </template>
 
 <script lang="ts" setup>

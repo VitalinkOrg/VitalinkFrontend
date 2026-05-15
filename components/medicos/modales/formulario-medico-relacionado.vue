@@ -2,7 +2,7 @@
   <div>
     <slot name="trigger" :open="openModal" />
 
-    <AtomsModalBase
+    <UiModalBase
       :is-open="isModalVisible"
       size="extra-large"
       :show-close-button="true"
@@ -542,7 +542,7 @@
           </template>
         </nav>
       </template>
-    </AtomsModalBase>
+    </UiModalBase>
   </div>
 </template>
 

@@ -1,5 +1,5 @@
 <template>
-  <AtomsModalBase
+  <UiModalBase
     :is-open="isModalOpen"
     size="large"
     :close-on-backdrop="false"
@@ -206,7 +206,7 @@
         </div>
       </div>
     </template>
-  </AtomsModalBase>
+  </UiModalBase>
 </template>
 
 <script lang="ts" setup>

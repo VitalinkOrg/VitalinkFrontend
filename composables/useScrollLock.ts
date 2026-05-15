@@ -1,14 +1,20 @@
 const lockCount = ref(0);
 let savedScrollY = 0;
-let savedPaddingRight = "";
 let savedOverflow = "";
 let savedPosition = "";
 let savedTop = "";
 let savedWidth = "";
 
-function getScrollbarWidth(): number {
-  if (typeof window === "undefined") return 0;
-  return window.innerWidth - document.documentElement.clientWidth;
+// Detects iPhone/iPad via UA or the navigator.standalone hint (iOS 13+ iPads
+// report a desktop UA but expose standalone). Using position:fixed on iOS
+// prevents momentum-scroll bleed-through; on Android it causes a visible
+// double-paint layout jump, so we use overflow:hidden there instead.
+function isIOS(): boolean {
+  if (typeof navigator === "undefined") return false;
+  return (
+    /iP(hone|ad|od)/.test(navigator.userAgent) ||
+    (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1)
+  );
 }
 
 export function useScrollLock() {
@@ -22,25 +28,25 @@ export function useScrollLock() {
     const body = document.body;
     savedScrollY = window.scrollY;
     savedOverflow = body.style.overflow;
-    savedPaddingRight = body.style.paddingRight;
     savedPosition = body.style.position;
     savedTop = body.style.top;
     savedWidth = body.style.width;
 
-    const scrollbarWidth = getScrollbarWidth();
-    if (scrollbarWidth > 0) {
-      const computedPadding =
-        parseInt(window.getComputedStyle(body).paddingRight, 10) || 0;
-      body.style.paddingRight = `${computedPadding + scrollbarWidth}px`;
+    if (isIOS()) {
+      // position:fixed prevents momentum-scroll bleed-through on iOS Safari.
+      // We save scrollY and restore it on unlock so the page doesn't jump to top.
+      // overflow:hidden is intentionally NOT set here: on iOS Safari, combining
+      // position:fixed + overflow:hidden on <body> triggers a compositing-layer
+      // clip bug that makes the underlying page content invisible. position:fixed
+      // alone is sufficient to prevent scrolling on iOS.
+      body.style.position = "fixed";
+      body.style.top = `-${savedScrollY}px`;
+      body.style.width = "100%";
+    } else {
+      // scrollbar-gutter: stable (set globally on body) keeps the gutter space
+      // reserved even when overflow is hidden, so no padding compensation needed.
+      body.style.overflow = "hidden";
     }
-
-    // iOS Safari: position:fixed prevents momentum-scroll bleed-through.
-    // Saving scrollY and restoring it on unlock prevents the page from
-    // jumping to top when the fixed body is removed.
-    body.style.position = "fixed";
-    body.style.top = `-${savedScrollY}px`;
-    body.style.width = "100%";
-    body.style.overflow = "hidden";
   };
 
   const unlock = (): void => {
@@ -51,27 +57,25 @@ export function useScrollLock() {
 
     const body = document.body;
 
-    if (savedOverflow === "") body.style.removeProperty("overflow");
-    else body.style.overflow = savedOverflow;
+    if (isIOS()) {
+      if (savedPosition === "") body.style.removeProperty("position");
+      else body.style.position = savedPosition;
 
-    if (savedPaddingRight === "") body.style.removeProperty("padding-right");
-    else body.style.paddingRight = savedPaddingRight;
+      if (savedTop === "") body.style.removeProperty("top");
+      else body.style.top = savedTop;
 
-    if (savedPosition === "") body.style.removeProperty("position");
-    else body.style.position = savedPosition;
+      if (savedWidth === "") body.style.removeProperty("width");
+      else body.style.width = savedWidth;
 
-    if (savedTop === "") body.style.removeProperty("top");
-    else body.style.top = savedTop;
-
-    if (savedWidth === "") body.style.removeProperty("width");
-    else body.style.width = savedWidth;
-
-    // Restore the scroll position that was saved before locking.
-    window.scrollTo(0, savedScrollY);
+      // Restore the scroll position saved before locking.
+      window.scrollTo(0, savedScrollY);
+    } else {
+      if (savedOverflow === "") body.style.removeProperty("overflow");
+      else body.style.overflow = savedOverflow;
+    }
 
     savedScrollY = 0;
     savedOverflow = "";
-    savedPaddingRight = "";
     savedPosition = "";
     savedTop = "";
     savedWidth = "";

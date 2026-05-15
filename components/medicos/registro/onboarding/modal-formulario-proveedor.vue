@@ -1,7 +1,7 @@
 <template>
   <slot name="trigger" :open="handleOpenModal"></slot>
 
-  <AtomsModalBase
+  <UiModalBase
     :is-open="isModalOpen"
     :close-on-backdrop="false"
     @close="handleGoBack"
@@ -308,7 +308,7 @@
         {{ isLoading ? "Procesando..." : "Finalizar" }}
       </button>
     </template>
-  </AtomsModalBase>
+  </UiModalBase>
 </template>
 
 <script lang="ts" setup>

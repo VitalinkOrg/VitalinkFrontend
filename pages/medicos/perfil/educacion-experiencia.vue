@@ -637,7 +637,7 @@ const deleteLanguage = async (id: number) => {
       </div>
     </section>
 
-    <AtomsModalBase
+    <UiModalBase
       :is-open="showEducationModal"
       @close="closeEducationModal"
       size="medium"
@@ -734,9 +734,9 @@ const deleteLanguage = async (id: number) => {
           {{ isLoading ? "Guardando..." : "Guardar" }}
         </button>
       </template>
-    </AtomsModalBase>
+    </UiModalBase>
 
-    <AtomsModalBase
+    <UiModalBase
       :is-open="showExperienceModal"
       @close="closeExperienceModal"
       size="medium"
@@ -825,9 +825,9 @@ const deleteLanguage = async (id: number) => {
           {{ isLoading ? "Guardando..." : "Guardar" }}
         </button>
       </template>
-    </AtomsModalBase>
+    </UiModalBase>
 
-    <AtomsModalBase
+    <UiModalBase
       :is-open="showLanguageModal"
       @close="closeLanguageModal"
       size="medium"
@@ -875,7 +875,7 @@ const deleteLanguage = async (id: number) => {
           Guardar
         </button>
       </template>
-    </AtomsModalBase>
+    </UiModalBase>
     </template>
   </NuxtLayout>
 </template>

@@ -193,7 +193,7 @@
         </template>
       </UiAppointmentTableBase>
 
-      <AtomsModalBase
+      <UiModalBase
         :is-open="isDoctorDeletionDialogVisible"
         size="small"
         role="alertdialog"
@@ -230,7 +230,7 @@
             {{ isDoctorDeletionInProgress ? "Eliminando..." : "Eliminar" }}
           </button>
         </template>
-      </AtomsModalBase>
+      </UiModalBase>
     </section>
 
     <section
@@ -338,7 +338,7 @@
         @hospital-updated="handleHospitalUpdated"
       />
 
-      <AtomsModalBase
+      <UiModalBase
         :is-open="isHospitalDeletionDialogVisible"
         size="small"
         role="alertdialog"
@@ -375,7 +375,7 @@
             {{ isHospitalDeletionInProgress ? "Eliminando..." : "Eliminar" }}
           </button>
         </template>
-      </AtomsModalBase>
+      </UiModalBase>
     </section>
   </NuxtLayout>
   <MedicosRegistroOnboarding />

@@ -1,5 +1,8 @@
 body {
   font-family: $font-family-main;
+  // Reserve scrollbar gutter space at all times so hiding/showing the
+  // scrollbar (e.g. when a modal locks scroll) never causes a layout shift.
+  scrollbar-gutter: stable;
 }
 
 a {

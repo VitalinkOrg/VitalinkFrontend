@@ -290,7 +290,7 @@ defineExpose({
 <template>
   <slot name="trigger" :open="handleOpenModal"></slot>
 
-  <AtomsModalBase
+  <UiModalBase
     :is-open="isModalOpen"
     size="medium"
     class="user-information"
@@ -450,7 +450,7 @@ defineExpose({
         </div>
       </div>
     </div>
-  </AtomsModalBase>
+  </UiModalBase>
 </template>
 
 <style lang="scss" scoped>
