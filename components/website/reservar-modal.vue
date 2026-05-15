@@ -1028,7 +1028,7 @@ onUnmounted(() => {
 .modal-overlay {
   position: fixed;
   inset: 0;
-  // Respect notch/home-indicator on iOS
+  /* Respect notch/home-indicator on iOS */
   padding: env(safe-area-inset-top, 0px) env(safe-area-inset-right, 0px) env(safe-area-inset-bottom, 0px) env(safe-area-inset-left, 0px);
   background-color: rgba(0, 0, 0, 0.5);
   display: flex;
@@ -1043,7 +1043,7 @@ onUnmounted(() => {
   border-radius: 8px;
   max-width: 900px;
   width: 100%;
-  // dvh accounts for the iOS Safari address bar (98vh does not)
+  /* dvh accounts for the iOS Safari address bar (98vh does not) */
   max-height: 98dvh;
   height: 100%;
   overflow-y: auto;
