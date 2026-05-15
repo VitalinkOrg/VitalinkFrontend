@@ -3,7 +3,7 @@
     Ver Detalles
   </button>
 
-  <AtomsModalBase
+  <UiModalBase
     :is-open="isOpen"
     @close="handleCloseModal"
     :close-on-backdrop="false"
@@ -260,7 +260,7 @@
         </div>
       </div>
     </div>
-  </AtomsModalBase>
+  </UiModalBase>
 </template>
 
 <script lang="ts" setup>

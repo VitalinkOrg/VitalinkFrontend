@@ -1,5 +1,5 @@
 <template>
-  <AtomsModalBase
+  <UiModalBase
     :is-open="props.isOpen"
     title="Anular Cita"
     size="extra-small"
@@ -47,11 +47,13 @@
         </button>
       </div>
     </template>
-  </AtomsModalBase>
+  </UiModalBase>
 </template>
 
 <script lang="ts" setup>
 import { useAppointment } from "@/composables/api";
+import { useLogger } from "@/composables/useLogger";
+import { useToast } from "@/composables/useToast";
 
 interface Props {
   appointment: IAppointment;

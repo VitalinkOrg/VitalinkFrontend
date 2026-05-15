@@ -9,14 +9,14 @@
         tabindex="-1"
         ref="backdropRef"
       >
-        <dialog
+        <div
+          role="dialog"
           class="modal__dialog"
           :class="modalClasses"
           :style="customStyles"
           :aria-labelledby="hasHeader ? headerId : undefined"
           :aria-describedby="contentId"
           aria-modal="true"
-          open
           @click.stop
           ref="dialogRef"
           tabindex="-1"
@@ -64,7 +64,7 @@
           >
             <slot name="footer" />
           </footer>
-        </dialog>
+        </div>
       </div>
     </Transition>
   </Teleport>
@@ -419,6 +419,8 @@ $modal-breakpoint: 48rem;
     line-height: 1.6;
     -webkit-overflow-scrolling: touch;
     overscroll-behavior: contain;
+    min-height: 0;
+    height: 100%;
   }
 
   &__footer {

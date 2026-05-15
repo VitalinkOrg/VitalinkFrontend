@@ -1,5 +1,5 @@
 <template>
-  <AtomsModalBase
+  <UiModalBase
     :is-open="modalManager.isOpen.details"
     @close="handleClose"
     :close-on-backdrop="false"
@@ -67,7 +67,7 @@
         </button>
       </div>
     </div>
-  </AtomsModalBase>
+  </UiModalBase>
 </template>
 
 <script lang="ts" setup>

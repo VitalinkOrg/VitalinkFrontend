@@ -1,5 +1,5 @@
 <template>
-  <AtomsModalBase
+  <UiModalBase
     :is-open="isOpen"
     @close="handleCloseModal"
     size="small"
@@ -113,7 +113,7 @@
         </NuxtLink>
       </div>
     </template>
-  </AtomsModalBase>
+  </UiModalBase>
 </template>
 
 <script lang="ts" setup>

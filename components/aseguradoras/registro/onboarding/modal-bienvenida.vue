@@ -1,7 +1,7 @@
 <template>
   <slot name="trigger" :open="handleOpenModal"></slot>
 
-  <AtomsModalBase
+  <UiModalBase
     :is-open="isModalOpen"
     :close-on-backdrop="false"
     @close="handleCloseAndRemoveFlag"
@@ -61,7 +61,7 @@
         </button>
       </div>
     </template>
-  </AtomsModalBase>
+  </UiModalBase>
 </template>
 
 <script lang="ts" setup>

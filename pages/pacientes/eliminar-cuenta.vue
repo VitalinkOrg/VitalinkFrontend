@@ -191,7 +191,7 @@ useHead({
       </div>
     </div>
 
-    <AtomsModalBase
+    <UiModalBase
       :is-open="showConfirmation"
       size="extra-small"
       @close="closeConfirmation"
@@ -288,7 +288,7 @@ useHead({
           </button>
         </div>
       </template>
-    </AtomsModalBase>
+    </UiModalBase>
   </NuxtLayout>
 </template>
 

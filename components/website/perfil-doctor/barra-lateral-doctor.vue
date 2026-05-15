@@ -1,4 +1,6 @@
 <script lang="ts" setup>
+import { useFormat } from "@/composables/useFormat";
+
 interface Props {
   supplierData?: ISupplierDetail | Partial<ISupplierDetail> | null;
   supplier?: ISupplierDetail | Partial<ISupplierDetail> | null;
@@ -650,7 +652,6 @@ watch(
           line-height: 18px;
         }
       }
-
     }
   }
 }

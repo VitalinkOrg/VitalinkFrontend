@@ -15,7 +15,7 @@
     Reservar Cita de valoración
   </button>
 
-  <AtomsModalBase
+  <UiModalBase
     :isOpen="isOpen"
     @close="closeModal"
     size="large"
@@ -31,7 +31,7 @@
       </h1>
     </template>
 
-    <main class="schedule-appointment-modal__content">
+    <div class="schedule-appointment-modal__content">
       <WebsiteStepper
         v-if="internalCurrentStep !== 0 && internalCurrentStep !== 3"
         :steps="steps"
@@ -62,7 +62,7 @@
         :selected-package="selectedPackage"
         :services="services"
       />
-    </main>
+    </div>
 
     <template #footer>
       <footer class="schedule-appointment-modal__footer">
@@ -94,7 +94,7 @@
         </button>
       </footer>
     </template>
-  </AtomsModalBase>
+  </UiModalBase>
 
   <WebsiteReservarCitaValoracionReservaExitosa
     :is-open="isOpenSuccessModal"

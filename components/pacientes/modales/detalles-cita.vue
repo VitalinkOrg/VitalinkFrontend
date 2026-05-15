@@ -532,7 +532,7 @@ const handleDownloadProforma = async () => {
 </script>
 
 <template>
-  <AtomsModalBase
+  <UiModalBase
     :is-open="isOpen"
     size="medium"
     :close-on-backdrop="false"
@@ -744,7 +744,7 @@ const handleDownloadProforma = async () => {
         </button>
       </div>
     </template>
-  </AtomsModalBase>
+  </UiModalBase>
 </template>
 
 <style lang="scss">

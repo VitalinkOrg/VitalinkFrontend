@@ -1,5 +1,5 @@
 <template>
-  <AtomsModalBase :is-open="isOpen" size="small" @close="handleCloseModal">
+  <UiModalBase :is-open="isOpen" size="small" @close="handleCloseModal">
     <main class="cancel-appointment__body">
       <div class="cancel-appointment__content">
         <div class="cancel-appointment__content--icon">
@@ -28,7 +28,7 @@
         Salir
       </button>
     </footer>
-  </AtomsModalBase>
+  </UiModalBase>
 </template>
 
 <script lang="ts" setup>

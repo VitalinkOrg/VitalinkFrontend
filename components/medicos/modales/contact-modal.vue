@@ -3,7 +3,7 @@
     <AtomsIconsPhoneIcon size="20" />
   </button>
 
-  <AtomsModalBase :is-open="isOpen" size="extra-small" @close="closeModal">
+  <UiModalBase :is-open="isOpen" size="extra-small" @close="closeModal">
     <template #title>
       <span class="appointment-contact-modal__header--icon">
         <AtomsIconsPhoneIcon />
@@ -50,10 +50,11 @@
         </div>
       </div>
     </div>
-  </AtomsModalBase>
+  </UiModalBase>
 </template>
 
 <script lang="ts" setup>
+import { useFormat } from "@/composables/useFormat";
 const { formatPhone } = useFormat();
 
 const isOpen = ref<boolean>(false);
