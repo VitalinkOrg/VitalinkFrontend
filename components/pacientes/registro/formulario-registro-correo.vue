@@ -544,7 +544,14 @@ const handleSubmit = async () => {
         message: error.value.message,
         data: error.value.data,
       });
-      toast.error("Error al registrar. Por favor intenta nuevamente.");
+      const errorCode = (error.value.data as any)?.data?.code;
+      if (errorCode === "ER_DUP_ENTRY") {
+        toast.error(
+          "El correo electrónico o número de documento ya está registrado.",
+        );
+      } else {
+        toast.error("Error al registrar. Por favor intenta nuevamente.");
+      }
       return;
     }
 

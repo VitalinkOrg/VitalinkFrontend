@@ -396,12 +396,15 @@ $modal-breakpoint: 48rem;
     overflow-y: auto;
     color: #374151;
     line-height: 1.6;
-    // Smooth momentum scrolling on iOS
     -webkit-overflow-scrolling: touch;
+    // Prevent scroll-chaining to the body on iOS when content reaches its boundary
+    overscroll-behavior: contain;
   }
 
   &__footer {
     padding: $modal-padding;
+    // Account for iOS home indicator on notched iPhones
+    padding-bottom: calc(#{$modal-padding} + env(safe-area-inset-bottom, 0px));
     display: flex;
     justify-content: flex-end;
     gap: 0.75rem;
@@ -431,43 +434,43 @@ $modal-breakpoint: 48rem;
       &--extra-small {
         width: 25rem;
         max-width: 90vw;
-        max-height: 90vh;
+        max-height: 90dvh;
       }
 
       &--small {
         width: 33.5rem;
         max-width: 90vw;
-        max-height: 90vh;
+        max-height: 90dvh;
       }
 
       &--medium {
         width: 39.75rem;
         max-width: 90vw;
-        max-height: 90vh;
+        max-height: 90dvh;
       }
 
       &--large {
         width: 44.875rem;
         max-width: 90vw;
-        max-height: 90vh;
+        max-height: 90dvh;
       }
 
       &--extra-large {
         width: 62.5rem;
         max-width: 90vw;
-        max-height: 90vh;
+        max-height: 90dvh;
       }
 
       &--fullscreen {
         width: 95vw;
         max-width: 95vw;
-        max-height: 95vh;
+        max-height: 95dvh;
         border-radius: $modal-border-radius;
       }
 
       &--custom {
         max-width: 90vw;
-        max-height: 90vh;
+        max-height: 90dvh;
       }
     }
 
@@ -481,6 +484,10 @@ $modal-breakpoint: 48rem;
 
     &__controls {
       gap: 0.5rem;
+    }
+
+    &__footer {
+      padding-bottom: $modal-padding;
     }
   }
 }

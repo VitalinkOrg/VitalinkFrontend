@@ -408,7 +408,7 @@ onUnmounted(() => {
       top: 0;
       left: 0;
       width: 100%;
-      height: 100vh;
+      height: 100dvh;
       background: rgba(0, 0, 0, 0.6);
       z-index: 998;
       backdrop-filter: blur(2px);
@@ -429,7 +429,7 @@ onUnmounted(() => {
       top: 0;
       right: 0;
       width: min(100%, 25rem);
-      height: 100vh;
+      height: 100dvh;
       flex-direction: column;
       justify-content: space-between;
       background: $white;
