@@ -96,15 +96,14 @@
 
             <div class="registration__field">
               <label for="pais" class="registration__label">País</label>
-              <input
-                v-model="registerData.country_iso_code"
-                type="text"
-                class="registration__input"
-                :class="{
-                  'registration__input--error': errors.country_iso_code,
-                }"
-                placeholder="Ej: CR, US"
+              <UiDropdownBase
                 id="pais"
+                :model-value="registerData.country_iso_code"
+                :items="countryOptions"
+                :error="!!errors.country_iso_code"
+                :searchable="true"
+                placeholder="Selecciona un país"
+                @update:model-value="registerData.country_iso_code = $event as string"
               />
               <span
                 v-if="errors.country_iso_code"
@@ -142,15 +141,26 @@
               <label for="password" class="registration__label"
                 >Contraseña</label
               >
-              <input
-                v-model="registerData.password"
-                type="password"
-                class="registration__input"
-                :class="{ 'registration__input--error': errors.password }"
-                id="password"
-                placeholder="Escribe tu contraseña"
-                required
-              />
+              <div class="registration__input-wrapper">
+                <input
+                  v-model="registerData.password"
+                  :type="showPassword ? 'text' : 'password'"
+                  class="registration__input registration__input--with-icon"
+                  :class="{ 'registration__input--error': errors.password }"
+                  id="password"
+                  placeholder="Escribe tu contraseña"
+                  required
+                />
+                <button
+                  type="button"
+                  class="registration__eye-button"
+                  @click="showPassword = !showPassword"
+                  :aria-label="showPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'"
+                >
+                  <AtomsIconsEyeOffIcon v-if="showPassword" />
+                  <AtomsIconsEyeIcon v-else />
+                </button>
+              </div>
               <span v-if="errors.password" class="registration__error">{{
                 errors.password
               }}</span>
@@ -160,18 +170,29 @@
               <label for="confirmar-password" class="registration__label"
                 >Confirmar Contraseña</label
               >
-              <input
-                v-model="registerData.passwordConfirmation"
-                type="password"
-                class="registration__input"
-                :class="{
-                  'registration__input--error': errors.passwordConfirmation,
-                }"
-                id="confirmar-password"
-                placeholder="Escribe tu contraseña"
-                name="passwordConfirmation"
-                required
-              />
+              <div class="registration__input-wrapper">
+                <input
+                  v-model="registerData.passwordConfirmation"
+                  :type="showPasswordConfirmation ? 'text' : 'password'"
+                  class="registration__input registration__input--with-icon"
+                  :class="{
+                    'registration__input--error': errors.passwordConfirmation,
+                  }"
+                  id="confirmar-password"
+                  placeholder="Escribe tu contraseña"
+                  name="passwordConfirmation"
+                  required
+                />
+                <button
+                  type="button"
+                  class="registration__eye-button"
+                  @click="showPasswordConfirmation = !showPasswordConfirmation"
+                  :aria-label="showPasswordConfirmation ? 'Ocultar contraseña' : 'Mostrar contraseña'"
+                >
+                  <AtomsIconsEyeOffIcon v-if="showPasswordConfirmation" />
+                  <AtomsIconsEyeIcon v-else />
+                </button>
+              </div>
               <span
                 v-if="errors.passwordConfirmation"
                 class="registration__error"
@@ -227,8 +248,206 @@ const idTypeOptions = [
   { value: "PASSPORT", label: "Pasaporte" },
 ];
 
+const countryOptions = [
+  { value: "AF", label: "Afganistán" },
+  { value: "AL", label: "Albania" },
+  { value: "DE", label: "Alemania" },
+  { value: "AD", label: "Andorra" },
+  { value: "AO", label: "Angola" },
+  { value: "AG", label: "Antigua y Barbuda" },
+  { value: "SA", label: "Arabia Saudita" },
+  { value: "DZ", label: "Argelia" },
+  { value: "AR", label: "Argentina" },
+  { value: "AM", label: "Armenia" },
+  { value: "AU", label: "Australia" },
+  { value: "AT", label: "Austria" },
+  { value: "AZ", label: "Azerbaiyán" },
+  { value: "BS", label: "Bahamas" },
+  { value: "BD", label: "Bangladés" },
+  { value: "BB", label: "Barbados" },
+  { value: "BH", label: "Baréin" },
+  { value: "BE", label: "Bélgica" },
+  { value: "BZ", label: "Belice" },
+  { value: "BJ", label: "Benín" },
+  { value: "BY", label: "Bielorrusia" },
+  { value: "BO", label: "Bolivia" },
+  { value: "BA", label: "Bosnia y Herzegovina" },
+  { value: "BW", label: "Botsuana" },
+  { value: "BR", label: "Brasil" },
+  { value: "BN", label: "Brunéi" },
+  { value: "BG", label: "Bulgaria" },
+  { value: "BF", label: "Burkina Faso" },
+  { value: "BI", label: "Burundi" },
+  { value: "BT", label: "Bután" },
+  { value: "CV", label: "Cabo Verde" },
+  { value: "KH", label: "Camboya" },
+  { value: "CM", label: "Camerún" },
+  { value: "CA", label: "Canadá" },
+  { value: "QA", label: "Catar" },
+  { value: "TD", label: "Chad" },
+  { value: "CL", label: "Chile" },
+  { value: "CN", label: "China" },
+  { value: "CY", label: "Chipre" },
+  { value: "CO", label: "Colombia" },
+  { value: "KM", label: "Comoras" },
+  { value: "CG", label: "Congo" },
+  { value: "CD", label: "Congo (R. D.)" },
+  { value: "KP", label: "Corea del Norte" },
+  { value: "KR", label: "Corea del Sur" },
+  { value: "CI", label: "Costa de Marfil" },
+  { value: "CR", label: "Costa Rica" },
+  { value: "HR", label: "Croacia" },
+  { value: "CU", label: "Cuba" },
+  { value: "DK", label: "Dinamarca" },
+  { value: "DJ", label: "Yibuti" },
+  { value: "DM", label: "Dominica" },
+  { value: "EC", label: "Ecuador" },
+  { value: "EG", label: "Egipto" },
+  { value: "SV", label: "El Salvador" },
+  { value: "AE", label: "Emiratos Árabes Unidos" },
+  { value: "ER", label: "Eritrea" },
+  { value: "SK", label: "Eslovaquia" },
+  { value: "SI", label: "Eslovenia" },
+  { value: "ES", label: "España" },
+  { value: "US", label: "Estados Unidos" },
+  { value: "EE", label: "Estonia" },
+  { value: "ET", label: "Etiopía" },
+  { value: "FJ", label: "Fiyi" },
+  { value: "PH", label: "Filipinas" },
+  { value: "FI", label: "Finlandia" },
+  { value: "FR", label: "Francia" },
+  { value: "GA", label: "Gabón" },
+  { value: "GM", label: "Gambia" },
+  { value: "GE", label: "Georgia" },
+  { value: "GH", label: "Ghana" },
+  { value: "GD", label: "Granada" },
+  { value: "GR", label: "Grecia" },
+  { value: "GT", label: "Guatemala" },
+  { value: "GN", label: "Guinea" },
+  { value: "GQ", label: "Guinea Ecuatorial" },
+  { value: "GW", label: "Guinea-Bisáu" },
+  { value: "GY", label: "Guyana" },
+  { value: "HT", label: "Haití" },
+  { value: "HN", label: "Honduras" },
+  { value: "HU", label: "Hungría" },
+  { value: "IN", label: "India" },
+  { value: "ID", label: "Indonesia" },
+  { value: "IQ", label: "Irak" },
+  { value: "IR", label: "Irán" },
+  { value: "IE", label: "Irlanda" },
+  { value: "IS", label: "Islandia" },
+  { value: "MH", label: "Islas Marshall" },
+  { value: "SB", label: "Islas Salomón" },
+  { value: "IL", label: "Israel" },
+  { value: "IT", label: "Italia" },
+  { value: "JM", label: "Jamaica" },
+  { value: "JP", label: "Japón" },
+  { value: "JO", label: "Jordania" },
+  { value: "KZ", label: "Kazajistán" },
+  { value: "KE", label: "Kenia" },
+  { value: "KG", label: "Kirguistán" },
+  { value: "KI", label: "Kiribati" },
+  { value: "KW", label: "Kuwait" },
+  { value: "LA", label: "Laos" },
+  { value: "LS", label: "Lesoto" },
+  { value: "LV", label: "Letonia" },
+  { value: "LB", label: "Líbano" },
+  { value: "LR", label: "Liberia" },
+  { value: "LY", label: "Libia" },
+  { value: "LI", label: "Liechtenstein" },
+  { value: "LT", label: "Lituania" },
+  { value: "LU", label: "Luxemburgo" },
+  { value: "MK", label: "Macedonia del Norte" },
+  { value: "MG", label: "Madagascar" },
+  { value: "MY", label: "Malasia" },
+  { value: "MW", label: "Malaui" },
+  { value: "MV", label: "Maldivas" },
+  { value: "ML", label: "Malí" },
+  { value: "MT", label: "Malta" },
+  { value: "MA", label: "Marruecos" },
+  { value: "MU", label: "Mauricio" },
+  { value: "MR", label: "Mauritania" },
+  { value: "MX", label: "México" },
+  { value: "FM", label: "Micronesia" },
+  { value: "MD", label: "Moldavia" },
+  { value: "MC", label: "Mónaco" },
+  { value: "MN", label: "Mongolia" },
+  { value: "ME", label: "Montenegro" },
+  { value: "MZ", label: "Mozambique" },
+  { value: "MM", label: "Myanmar" },
+  { value: "NA", label: "Namibia" },
+  { value: "NR", label: "Nauru" },
+  { value: "NP", label: "Nepal" },
+  { value: "NI", label: "Nicaragua" },
+  { value: "NE", label: "Níger" },
+  { value: "NG", label: "Nigeria" },
+  { value: "NO", label: "Noruega" },
+  { value: "NZ", label: "Nueva Zelanda" },
+  { value: "OM", label: "Omán" },
+  { value: "NL", label: "Países Bajos" },
+  { value: "PK", label: "Pakistán" },
+  { value: "PW", label: "Palaos" },
+  { value: "PA", label: "Panamá" },
+  { value: "PG", label: "Papúa Nueva Guinea" },
+  { value: "PY", label: "Paraguay" },
+  { value: "PE", label: "Perú" },
+  { value: "PL", label: "Polonia" },
+  { value: "PT", label: "Portugal" },
+  { value: "GB", label: "Reino Unido" },
+  { value: "CF", label: "República Centroafricana" },
+  { value: "CZ", label: "República Checa" },
+  { value: "DO", label: "República Dominicana" },
+  { value: "RW", label: "Ruanda" },
+  { value: "RO", label: "Rumanía" },
+  { value: "RU", label: "Rusia" },
+  { value: "WS", label: "Samoa" },
+  { value: "KN", label: "San Cristóbal y Nieves" },
+  { value: "SM", label: "San Marino" },
+  { value: "VC", label: "San Vicente y las Granadinas" },
+  { value: "LC", label: "Santa Lucía" },
+  { value: "ST", label: "Santo Tomé y Príncipe" },
+  { value: "SN", label: "Senegal" },
+  { value: "RS", label: "Serbia" },
+  { value: "SC", label: "Seychelles" },
+  { value: "SL", label: "Sierra Leona" },
+  { value: "SG", label: "Singapur" },
+  { value: "SY", label: "Siria" },
+  { value: "SO", label: "Somalia" },
+  { value: "LK", label: "Sri Lanka" },
+  { value: "SZ", label: "Suazilandia" },
+  { value: "ZA", label: "Sudáfrica" },
+  { value: "SD", label: "Sudán" },
+  { value: "SS", label: "Sudán del Sur" },
+  { value: "SE", label: "Suecia" },
+  { value: "CH", label: "Suiza" },
+  { value: "SR", label: "Surinam" },
+  { value: "TH", label: "Tailandia" },
+  { value: "TZ", label: "Tanzania" },
+  { value: "TJ", label: "Tayikistán" },
+  { value: "TL", label: "Timor Oriental" },
+  { value: "TG", label: "Togo" },
+  { value: "TO", label: "Tonga" },
+  { value: "TT", label: "Trinidad y Tobago" },
+  { value: "TN", label: "Túnez" },
+  { value: "TM", label: "Turkmenistán" },
+  { value: "TR", label: "Turquía" },
+  { value: "TV", label: "Tuvalu" },
+  { value: "UA", label: "Ucrania" },
+  { value: "UG", label: "Uganda" },
+  { value: "UY", label: "Uruguay" },
+  { value: "UZ", label: "Uzbekistán" },
+  { value: "VU", label: "Vanuatu" },
+  { value: "VE", label: "Venezuela" },
+  { value: "VN", label: "Vietnam" },
+  { value: "YE", label: "Yemen" },
+  { value: "ZM", label: "Zambia" },
+  { value: "ZW", label: "Zimbabue" },
+];
+
 const isLoading = ref<boolean>(false);
 const registered = ref<boolean>(false);
+const showPassword = ref<boolean>(false);
+const showPasswordConfirmation = ref<boolean>(false);
 
 interface RegisterFormData extends Omit<IRegisterRequest, "gender"> {
   passwordConfirmation: string;
@@ -359,8 +578,14 @@ const handleRegister = async () => {
       error: error.value,
     });
     const httpCode = error.value.status?.http_code;
-    if (httpCode === 409) {
-      errors.value.email = "Este correo electrónico ya está registrado";
+    const errorCode =
+      error.value.data && typeof error.value.data === "object"
+        ? (error.value.data as IApiErrorData).code
+        : null;
+
+    if (httpCode === 409 || errorCode === "ER_DUP_ENTRY") {
+      errors.value.email =
+        "Este correo electrónico ya está registrado. Intenta iniciar sesión.";
     } else {
       toast.error(
         error.value.info ||
@@ -457,6 +682,12 @@ const handleRegister = async () => {
     color: #344054;
   }
 
+  &__input-wrapper {
+    position: relative;
+    display: flex;
+    align-items: center;
+  }
+
   &__input {
     @include input-base;
     padding: 0.625rem 0.875rem;
@@ -473,6 +704,26 @@ const handleRegister = async () => {
     &--error {
       border-color: #dc2626;
       box-shadow: 0 0 0 0.1875rem rgba(220, 38, 38, 0.1);
+    }
+
+    &--with-icon {
+      padding-right: 2.5rem;
+    }
+  }
+
+  &__eye-button {
+    position: absolute;
+    right: 0.75rem;
+    background: none;
+    border: none;
+    padding: 0;
+    cursor: pointer;
+    color: #6b7280;
+    display: flex;
+    align-items: center;
+
+    &:hover {
+      color: #374151;
     }
   }
 
