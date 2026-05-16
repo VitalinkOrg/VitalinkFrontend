@@ -39,6 +39,8 @@ const procedureInputRef = ref<HTMLInputElement | null>(null);
 
 const supplierId = ref<number | null>(null);
 
+const { token } = useAuthToken();
+
 const toNormalizedCode = (value: string): string =>
   value.trim().toUpperCase().replace(/\s+/g, "_");
 
@@ -264,8 +266,22 @@ const confirmAndRemoveProcedure = async (procedure: IdentifiableItem) => {
   }
 };
 
-onMounted(async () => {
-  const { data: suppliers, error } = await getAllSuppliers();
+const initializePage = async () => {
+  const MAX_ATTEMPTS = 3;
+  const RETRY_DELAY_MS = 800;
+
+  let suppliers = null;
+  let error = null;
+
+  for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
+    ({ data: suppliers, error } = await getAllSuppliers());
+
+    if (!error && suppliers?.length) break;
+
+    if (attempt < MAX_ATTEMPTS) {
+      await new Promise((resolve) => setTimeout(resolve, RETRY_DELAY_MS));
+    }
+  }
 
   if (error || !suppliers?.length) {
     notify(error?.info || "No se encontró el perfil del proveedor", "error");
@@ -274,6 +290,20 @@ onMounted(async () => {
 
   supplierId.value = suppliers[0].id;
   await Promise.all([fetchSpecialties(), fetchProcedures()]);
+};
+
+onMounted(() => {
+  if (token.value) {
+    initializePage();
+    return;
+  }
+
+  const stop = watch(token, (newToken) => {
+    if (newToken) {
+      stop();
+      initializePage();
+    }
+  });
 });
 </script>
 
