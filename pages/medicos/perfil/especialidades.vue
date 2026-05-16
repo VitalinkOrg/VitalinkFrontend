@@ -139,7 +139,7 @@ const submitSpecialty = async () => {
     const { data, error } = await createUdc({
       supplier_id: supplierId.value,
       name: trimmedName,
-      code: toNormalizedCode(trimmedName),
+      code: `${toNormalizedCode(trimmedName)}_${crypto.randomUUID().replace(/-/g, "").slice(0, 8)}`,
       type: "MEDICAL_SPECIALTY",
       father_code: "",
       description: "",
@@ -216,7 +216,7 @@ const submitProcedure = async () => {
       description: "",
       value1: "0",
       value2: "0",
-      code: toNormalizedCode(trimmedName),
+      code: `${toNormalizedCode(trimmedName)}_${crypto.randomUUID().replace(/-/g, "").slice(0, 8)}`,
     };
     console.log("[submitProcedure] payload", payload);
     const { data, error } = await createUdc(payload);
