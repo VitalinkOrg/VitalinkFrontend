@@ -32,6 +32,7 @@ const profileImagePreview = ref<string | null>(null);
 const isSubmitting = ref(false);
 const isLoadingProfile = ref(true);
 const isUploadingImage = ref(false);
+const loadError = ref<string | null>(null);
 
 const isFormReady = computed(() => true);
 
@@ -59,17 +60,20 @@ const notify = (message: string, type: "success" | "error") => {
   showToast(message, type);
 };
 
-const fetchSupplierProfile = async () => {
+const fetchSupplierProfile = async (attempt = 1) => {
   isLoadingProfile.value = true;
+  loadError.value = null;
 
   try {
     const { data: suppliers, error: suppliersError } = await getAllSuppliers();
 
     if (suppliersError || !suppliers?.length) {
-      notify(
-        suppliersError?.info || "No se encontró el perfil del proveedor",
-        "error",
-      );
+      if (attempt < 3) {
+        await new Promise((resolve) => setTimeout(resolve, attempt * 800));
+        return fetchSupplierProfile(attempt + 1);
+      }
+      loadError.value =
+        suppliersError?.info || "No se encontró el perfil del proveedor";
       return;
     }
 
@@ -78,7 +82,11 @@ const fetchSupplierProfile = async () => {
     const { data, error } = await getSupplierById(supplierId.value);
 
     if (error) {
-      notify(error.info || "Error al cargar el perfil profesional", "error");
+      if (attempt < 3) {
+        await new Promise((resolve) => setTimeout(resolve, attempt * 800));
+        return fetchSupplierProfile(attempt + 1);
+      }
+      loadError.value = error.info || "Error al cargar el perfil profesional";
       return;
     }
 
@@ -90,7 +98,11 @@ const fetchSupplierProfile = async () => {
       await migrateProfilePictureCodeToUrl();
     }
   } catch {
-    notify("Error inesperado al cargar el perfil", "error");
+    if (attempt < 3) {
+      await new Promise((resolve) => setTimeout(resolve, attempt * 800));
+      return fetchSupplierProfile(attempt + 1);
+    }
+    loadError.value = "Error inesperado al cargar el perfil";
   } finally {
     isLoadingProfile.value = false;
   }
@@ -253,6 +265,21 @@ onMounted(() => {
       Cargando perfil profesional...
     </div>
 
+    <div
+      v-else-if="loadError"
+      class="professional-profile__load-error"
+      role="alert"
+    >
+      <p>{{ loadError }}</p>
+      <button
+        type="button"
+        class="professional-profile__submit"
+        @click="fetchSupplierProfile"
+      >
+        Reintentar
+      </button>
+    </div>
+
     <form
       v-else
       class="professional-profile"
@@ -392,6 +419,19 @@ onMounted(() => {
     font-family: $font-family-main;
     font-size: 14px;
     color: $color-text-secondary;
+  }
+
+  &__load-error {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1rem;
+    min-height: 200px;
+    justify-content: center;
+    font-family: $font-family-main;
+    font-size: 14px;
+    color: $color-text-secondary;
+    text-align: center;
   }
 
   &__fieldset {
