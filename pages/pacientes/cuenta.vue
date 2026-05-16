@@ -12,6 +12,7 @@ import { useDocuments } from "~/composables/api/useDocuments";
 import { useAuth } from "~/composables/api/useAuth";
 import type { DropdownItem } from "@/components/ui/dropdown-base.vue";
 import { onClickOutside } from "@vueuse/core";
+import picturePlaceholder from "@/src/assets/picture.svg";
 
 interface DecodedToken {
   id: string;
@@ -104,7 +105,7 @@ const displayedImageSrc = computed(
   () =>
     profileImagePreview.value ||
     storedProfileImageUrl.value ||
-    "/_nuxt/src/assets/picture.svg",
+    picturePlaceholder,
 );
 
 const phoneCountryDropdownItems = computed<DropdownItem[]>(() =>
@@ -151,6 +152,14 @@ const handleCountrySearchInput = () => {
 };
 
 // ─── Image handling ───────────────────────────────────────────────────────────
+const removeProfilePicture = () => {
+  selectedProfileImage.value = null;
+  profileImagePreview.value = null;
+  if (userData.value) {
+    userData.value = { ...userData.value, profile_picture_url: "" };
+  }
+};
+
 const handleImageSelection = (event: Event) => {
   const input = event.target as HTMLInputElement;
   const file = input.files?.[0];
@@ -192,19 +201,13 @@ const uploadProfileImage = async (): Promise<string | null> => {
     formData.append("user_id", userId);
     formData.append("is_public", "1");
 
-    console.log("--- UPLOAD PAYLOAD LOG ---");
-    for (let [key, value] of formData.entries()) {
-      console.log(`${key}:`, value);
-    }
-    console.log("--------------------------");
-
     const { data, error } = await addDocument({
       file: selectedProfileImage.value,
       fields: {
         title: `profile_picture_${userData.value.id}`,
         type: "IMG",
         description: "Foto de perfil de paciente",
-        "id_for_table": "6",
+        id_for_table: "6",
         table: "USER",
         action_type: "GENERAL_GALLERY",
         user_id: userId,
@@ -263,8 +266,8 @@ const fetchUserProfile = async () => {
       } else {
         console.warn(
           "[uploadProfileImage] No se encontró un ID numérico en la respuesta del usuario. " +
-          "Se enviará el UUID como id_for_table, lo cual probablemente causará un error 500 " +
-          "porque el backend espera un INT UNSIGNED en esa columna.",
+            "Se enviará el UUID como id_for_table, lo cual probablemente causará un error 500 " +
+            "porque el backend espera un INT UNSIGNED en esa columna.",
         );
       }
 
@@ -295,7 +298,7 @@ const submitProfileUpdate = async () => {
 
   isSubmitting.value = true;
   try {
-    let profilePictureUrl = storedProfileImageUrl.value ?? undefined;
+    let profilePictureUrl = storedProfileImageUrl.value ?? "";
 
     if (selectedProfileImage.value) {
       const uploadedUrl = await uploadProfileImage();
@@ -309,7 +312,9 @@ const submitProfileUpdate = async () => {
     const fullName =
       `${firstName.value.trim()} ${lastName.value.trim()}`.trim();
 
-    const rawBirthDate = (userData.value as any).birth_date as string | undefined;
+    const rawBirthDate = (userData.value as any).birth_date as
+      | string
+      | undefined;
     const safeBirthDate = rawBirthDate
       ? rawBirthDate.includes("T")
         ? rawBirthDate
@@ -378,23 +383,16 @@ onBeforeUnmount(() => {
 
     <form
       v-else
-      class="account-profile"
-      novalidate
-      @submit.prevent="submitProfileUpdate"
+      ovalidate
       aria-label="Formulario de perfil de cuenta"
+      @submit.prevent="submitProfileUpdate"
     >
-      <!-- ─── Profile Photo ─────────────────────────────────────────────── -->
       <fieldset class="account-profile__fieldset">
         <legend class="account-profile__visually-hidden">Foto de perfil</legend>
-
         <div class="account-profile__field">
-          <span class="account-profile__label" id="photo-label">
-            Foto de Perfil
-          </span>
-          <p class="account-profile__hint" id="photo-hint">
+          <p id="photo-hint" class="account-profile__hint">
             Esta será la foto que verán tus médicos y el equipo de Vitalink.
           </p>
-
           <div
             class="account-profile__avatar-group"
             role="group"
@@ -439,6 +437,15 @@ onBeforeUnmount(() => {
               @change="handleImageSelection"
             />
           </div>
+
+          <button
+            v-if="hasProfileImage"
+            type="button"
+            class="account-profile__remove-picture"
+            @click="removeProfilePicture"
+          >
+            Eliminar foto de perfil
+          </button>
         </div>
       </fieldset>
 
@@ -451,7 +458,10 @@ onBeforeUnmount(() => {
         </legend>
 
         <div class="account-profile__grid">
-          <!-- Row 1: Nombre | Apellido -->
+          <!-- Row
+              1: Nombre | Apel
+            l ido -->
+
           <div class="account-profile__field account-profile__field--half">
             <label for="first-name" class="account-profile__label">
               Nombre(s) <span class="account-profile__required">*</span>
@@ -480,7 +490,6 @@ onBeforeUnmount(() => {
             />
           </div>
 
-          <!-- Row 2: Teléfono | Dirección -->
           <div class="account-profile__field account-profile__field--half">
             <label for="telefono" class="account-profile__label">
               Número de teléfono
@@ -518,7 +527,6 @@ onBeforeUnmount(() => {
             />
           </div>
 
-          <!-- Row 3: Código Postal | Ciudad | País -->
           <div class="account-profile__field account-profile__field--third">
             <label for="postal" class="account-profile__label">
               Código Postal
@@ -657,7 +665,7 @@ onBeforeUnmount(() => {
             <span class="account-profile__spinner" aria-hidden="true" />
             {{ isUploadingImage ? "Subiendo imagen..." : "Actualizando..." }}
           </template>
-          <template v-else>Actualizar Perfil</template>
+          <template v-else> Actualizar Perfil </template>
         </button>
       </div>
     </form>
@@ -890,6 +898,24 @@ onBeforeUnmount(() => {
         width: 1rem;
         height: 1rem;
       }
+    }
+  }
+
+  &__remove-picture {
+    display: inline-block;
+    margin-top: 0.5rem;
+    padding: 0;
+    background: none;
+    border: none;
+    font-family: $font-family-main;
+    font-size: 13px;
+    color: $color-text-muted;
+    cursor: pointer;
+    text-decoration: underline;
+    transition: color 0.15s ease;
+
+    &:hover {
+      color: $color-error;
     }
   }
 

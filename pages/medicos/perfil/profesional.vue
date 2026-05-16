@@ -1,4 +1,9 @@
 <script setup lang="ts">
+import { jwtDecode } from "jwt-decode";
+import { useDocuments } from "~/composables/api/useDocuments";
+import { useSupplier } from "~/composables/api/useSupplier";
+import placeholderAvatar from "@/src/assets/picture.svg";
+
 useSeoMeta({
   title: "Perfil Profesional — Vitalink",
   description:
@@ -8,13 +13,15 @@ useSeoMeta({
     "Actualiza tu información profesional y datos de contacto en Vitalink.",
 });
 
-import { jwtDecode } from "jwt-decode";
-import { useDocuments } from "~/composables/api/useDocuments";
-import { useSupplier } from "~/composables/api/useSupplier";
-
 interface DecodedToken {
   id: string;
 }
+
+const ALLOWED_IMAGE_TYPES = ["image/jpeg", "image/png", "image/webp"];
+const MAX_IMAGE_SIZE_BYTES = 5 * 1024 * 1024;
+const MAX_DETAIL_ATTEMPTS = 3;
+const POLL_INTERVAL_MS = 1_500;
+const MAX_POLL_DURATION_MS = 30_000;
 
 const { show: showToast } = useToast();
 const { updateSupplier, getSupplierById, getAllSuppliers } = useSupplier();
@@ -34,8 +41,6 @@ const isLoadingProfile = ref(true);
 const isUploadingImage = ref(false);
 const loadError = ref<string | null>(null);
 
-const isFormReady = computed(() => true);
-
 const isValidImageUrl = (url: string | null | undefined): boolean =>
   !!url && (url.startsWith("http://") || url.startsWith("https://"));
 
@@ -53,56 +58,72 @@ const displayedImageSrc = computed(
   () =>
     profileImagePreview.value ||
     storedProfileImageUrl.value ||
-    "/_nuxt/src/assets/picture.svg",
+    placeholderAvatar,
 );
 
 const notify = (message: string, type: "success" | "error") => {
   showToast(message, type);
 };
 
-const fetchSupplierProfile = async (attempt = 1) => {
+const delay = (ms: number) => new Promise<void>((resolve) => setTimeout(resolve, ms));
+
+const fetchSupplierProfile = async () => {
   isLoadingProfile.value = true;
   loadError.value = null;
 
   try {
-    const { data: suppliers, error: suppliersError } = await getAllSuppliers();
+    // Phase 1: poll until a supplier record exists (created asynchronously after registration)
+    const pollStart = Date.now();
+    let pollElapsed = 0;
 
-    if (suppliersError || !suppliers?.length) {
-      if (attempt < 3) {
-        await new Promise((resolve) => setTimeout(resolve, attempt * 800));
-        return fetchSupplierProfile(attempt + 1);
+    while (pollElapsed < MAX_POLL_DURATION_MS) {
+      const { data: suppliers, error: suppliersError } = await getAllSuppliers();
+
+      if (suppliersError) {
+        loadError.value = suppliersError.info ?? "Error al cargar el perfil del proveedor";
+        return;
       }
-      loadError.value =
-        suppliersError?.info || "No se encontró el perfil del proveedor";
+
+      if (suppliers?.length) {
+        supplierId.value = suppliers[0].id;
+        break;
+      }
+
+      await delay(POLL_INTERVAL_MS);
+      pollElapsed = Date.now() - pollStart;
+    }
+
+    if (!supplierId.value) {
+      loadError.value = "No se encontró el perfil del proveedor";
       return;
     }
 
-    supplierId.value = suppliers[0].id;
+    // Phase 2: fetch supplier detail with retry
+    for (let attempt = 1; attempt <= MAX_DETAIL_ATTEMPTS; attempt++) {
+      const canRetry = attempt < MAX_DETAIL_ATTEMPTS;
 
-    const { data, error } = await getSupplierById(supplierId.value);
+      try {
+        const { data, error } = await getSupplierById(supplierId.value!);
 
-    if (error) {
-      if (attempt < 3) {
-        await new Promise((resolve) => setTimeout(resolve, attempt * 800));
-        return fetchSupplierProfile(attempt + 1);
+        if (error) {
+          if (canRetry) { await delay(attempt * 800); continue; }
+          loadError.value = error.info ?? "Error al cargar el perfil profesional";
+          return;
+        }
+
+        if (data) {
+          supplierData.value = data;
+          profileDescription.value = data.description ?? "";
+          medicalEnrollmentNumber.value = data.num_medical_enrollment ?? "";
+          await migrateProfilePictureCodeToUrl();
+        }
+
+        return;
+      } catch {
+        if (canRetry) { await delay(attempt * 800); continue; }
+        loadError.value = "Error inesperado al cargar el perfil";
       }
-      loadError.value = error.info || "Error al cargar el perfil profesional";
-      return;
     }
-
-    if (data) {
-      supplierData.value = data;
-      profileDescription.value = data.description || "";
-      medicalEnrollmentNumber.value = data.num_medical_enrollment || "";
-
-      await migrateProfilePictureCodeToUrl();
-    }
-  } catch {
-    if (attempt < 3) {
-      await new Promise((resolve) => setTimeout(resolve, attempt * 800));
-      return fetchSupplierProfile(attempt + 1);
-    }
-    loadError.value = "Error inesperado al cargar el perfil";
   } finally {
     isLoadingProfile.value = false;
   }
@@ -112,8 +133,7 @@ const migrateProfilePictureCodeToUrl = async () => {
   if (!supplierId.value || !supplierData.value) return;
 
   const stored = supplierData.value.profile_picture_url;
-  if (isValidImageUrl(stored)) return;
-  if (!stored) return;
+  if (isValidImageUrl(stored) || !stored) return;
 
   const { data: doc, error } = await getDocumentByCode(stored);
   if (error || !doc?.url) return;
@@ -127,23 +147,30 @@ const migrateProfilePictureCodeToUrl = async () => {
   supplierData.value = { ...supplierData.value, profile_picture_url: doc.url };
 };
 
+const validateImageFile = (file: File): string | null => {
+  if (!ALLOWED_IMAGE_TYPES.includes(file.type))
+    return "Formato no válido. Use JPG, PNG o WebP";
+  if (file.size > MAX_IMAGE_SIZE_BYTES)
+    return "La imagen no debe superar los 5 MB";
+  return null;
+};
+
+const removeProfilePicture = () => {
+  selectedProfileImage.value = null;
+  profileImagePreview.value = null;
+  if (supplierData.value) {
+    supplierData.value = { ...supplierData.value, profile_picture_url: "" };
+  }
+};
+
 const handleImageSelection = (event: Event) => {
   const input = event.target as HTMLInputElement;
   const file = input.files?.[0];
-
   if (!file) return;
 
-  const allowedTypes = ["image/jpeg", "image/png", "image/webp"];
-  const maxSizeInBytes = 5 * 1024 * 1024;
-
-  if (!allowedTypes.includes(file.type)) {
-    notify("Formato no válido. Use JPG, PNG o WebP", "error");
-    input.value = "";
-    return;
-  }
-
-  if (file.size > maxSizeInBytes) {
-    notify("La imagen no debe superar los 5 MB", "error");
+  const validationError = validateImageFile(file);
+  if (validationError) {
+    notify(validationError, "error");
     input.value = "";
     return;
   }
@@ -185,7 +212,7 @@ const uploadProfileImage = async (): Promise<string | null> => {
       return null;
     }
 
-    return data?.url || null;
+    return data?.url ?? null;
   } catch {
     notify("Error inesperado al subir la imagen", "error");
     return null;
@@ -206,19 +233,15 @@ const submitProfileUpdate = async () => {
     let profilePictureUrl = storedProfileImageUrl.value ?? "";
 
     if (selectedProfileImage.value) {
-      const uploadedCode = await uploadProfileImage();
-
-      if (uploadedCode) {
-        profilePictureUrl = uploadedCode;
-      } else if (selectedProfileImage.value) {
-        return;
-      }
+      const uploadedUrl = await uploadProfileImage();
+      if (!uploadedUrl) return;
+      profilePictureUrl = uploadedUrl;
     }
 
     const payload: ISupplierUpdateRequest = {
       description: profileDescription.value.trim(),
       num_medical_enrollment: medicalEnrollmentNumber.value.trim(),
-      profile_picture_url: profilePictureUrl || "",
+      profile_picture_url: profilePictureUrl,
     };
 
     const { data, error } = await updateSupplier(supplierId.value, payload);
@@ -231,12 +254,9 @@ const submitProfileUpdate = async () => {
     if (data) {
       supplierData.value = {
         ...supplierData.value,
-        description: payload.description ?? supplierData.value.description,
-        num_medical_enrollment:
-          payload.num_medical_enrollment ??
-          supplierData.value.num_medical_enrollment,
-        profile_picture_url:
-          profilePictureUrl ?? supplierData.value.profile_picture_url,
+        description: payload.description,
+        num_medical_enrollment: payload.num_medical_enrollment,
+        profile_picture_url: profilePictureUrl,
       };
 
       selectedProfileImage.value = null;
@@ -323,9 +343,6 @@ onMounted(() => {
             <label
               for="profile-image-upload"
               class="professional-profile__avatar-trigger"
-              :class="{
-                'professional-profile__avatar-trigger--disabled': !isFormReady,
-              }"
               role="button"
               tabindex="0"
               aria-label="Cambiar foto de perfil"
@@ -345,10 +362,18 @@ onMounted(() => {
               type="file"
               accept="image/jpeg,image/png,image/webp"
               class="professional-profile__visually-hidden"
-              :disabled="!isFormReady"
               @change="handleImageSelection"
             />
           </div>
+
+          <button
+            v-if="hasProfileImage"
+            type="button"
+            class="professional-profile__remove-picture"
+            @click="removeProfilePicture"
+          >
+            Eliminar foto de perfil
+          </button>
         </div>
 
         <div class="professional-profile__field">
@@ -364,7 +389,6 @@ onMounted(() => {
             class="professional-profile__textarea"
             rows="3"
             placeholder="Escribe una descripción sobre ti y tu experiencia profesional"
-            :disabled="!isFormReady"
             aria-describedby="description-counter"
           />
           <span
@@ -386,7 +410,6 @@ onMounted(() => {
             type="text"
             class="professional-profile__input"
             placeholder="Escribe el número de tu matrícula"
-            :disabled="!isFormReady"
           />
         </div>
       </fieldset>
@@ -395,7 +418,6 @@ onMounted(() => {
         <button
           type="submit"
           class="professional-profile__submit"
-          :disabled="!isFormReady"
           :aria-busy="isSubmitting || isUploadingImage"
         >
           <template v-if="isSubmitting || isUploadingImage">
@@ -571,12 +593,12 @@ onMounted(() => {
       margin-left: -1.125rem;
     }
 
-    &:hover:not(&--disabled) {
+    &:hover {
       background-color: $color-primary-darkened-5;
       transform: scale(1.05);
     }
 
-    &:active:not(&--disabled) {
+    &:active {
       background-color: $color-primary-darkened-10;
       transform: scale(0.98);
     }
@@ -584,11 +606,6 @@ onMounted(() => {
     &:focus-visible {
       outline: 2px solid $color-primary;
       outline-offset: 2px;
-    }
-
-    &--disabled {
-      opacity: 0.6;
-      cursor: not-allowed;
     }
 
     img {
@@ -604,6 +621,24 @@ onMounted(() => {
         width: 1rem;
         height: 1rem;
       }
+    }
+  }
+
+  &__remove-picture {
+    display: inline-block;
+    margin-top: 0.5rem;
+    padding: 0;
+    background: none;
+    border: none;
+    font-family: $font-family-main;
+    font-size: 13px;
+    color: $color-text-muted;
+    cursor: pointer;
+    text-decoration: underline;
+    transition: color 0.15s ease;
+
+    &:hover {
+      color: $color-error;
     }
   }
 
