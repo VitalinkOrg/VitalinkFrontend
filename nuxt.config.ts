@@ -3,6 +3,9 @@
 export default defineNuxtConfig({
   app: {
     head: {
+      link: [
+        { rel: 'icon', type: 'image/x-icon', href: '/vitalinkicon.ico' }
+      ],
       script: [
         {
           src: '/bootstrap.bundle.min.js',
