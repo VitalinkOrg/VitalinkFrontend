@@ -98,8 +98,8 @@ export const useSupplier = () => {
       method: "GET",
     });
 
-  const getAllMainSuppliers = (params?: ISupplierParams) =>
-    executeRequest<ISupplierMain[]>(
+  const getAllMainSuppliers = async (params?: ISupplierParams) => {
+    const result = await executeRequest<ISupplierMain[]>(
       "getAllMainSuppliers",
       "supplier/get_all_main",
       {
@@ -107,6 +107,13 @@ export const useSupplier = () => {
         query: params,
       },
     );
+
+    if (result.error?.status?.http_code === 404) {
+      return { data: [] as ISupplierMain[], error: null, loading: result.loading };
+    }
+
+    return result;
+  };
 
   const deleteSupplier = (supplierId: number) =>
     executeRequest<{ success: boolean }>("deleteSupplier", "supplier/delete", {
