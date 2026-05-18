@@ -24,77 +24,77 @@
       >
         <span class="nav__toggle-icon" aria-hidden="true"></span>
       </button>
+
+      <div
+        v-show="isMenuOpen"
+        class="nav__overlay"
+        @click="closeMenu"
+        aria-hidden="true"
+      ></div>
+
+      <div
+        id="nav-menu"
+        class="nav__container"
+        :class="{ 'nav__container--open': isMenuOpen }"
+      >
+        <ul class="nav__menu" role="menu">
+          <li
+            v-for="item in menuItems"
+            :key="item.id"
+            class="nav__menu-item"
+            role="none"
+          >
+            <NuxtLink
+              :to="item.to"
+              class="nav__menu-link"
+              :aria-current="isCurrentSection(item.id) ? 'page' : undefined"
+              role="menuitem"
+              @click="closeMenu"
+            >
+              {{ item.label }}
+            </NuxtLink>
+          </li>
+        </ul>
+
+        <div
+          class="nav__actions"
+          :class="{ 'nav__actions--visible': isMenuOpen }"
+        >
+          <template v-if="isAuthenticated">
+            <button
+              class="nav__button--primary"
+              @click="handleLogout"
+              aria-label="Cerrar sesión de su cuenta"
+            >
+              Cerrar Sesión
+            </button>
+          </template>
+          <template v-else>
+            <NuxtLink
+              to="/auth/login"
+              class="nav__button--outline"
+              @click="closeMenu"
+              aria-label="Ingresar a su cuenta"
+            >
+              Ingresar
+            </NuxtLink>
+            <NuxtLink
+              to="/pacientes/registro"
+              class="nav__button--primary"
+              @click="closeMenu"
+              aria-label="Registrarse como nuevo usuario"
+            >
+              Registrarse
+            </NuxtLink>
+          </template>
+        </div>
+      </div>
     </nav>
 
     <div role="status" aria-live="polite" aria-atomic="true" class="sr-only">
       {{ statusMessage }}
     </div>
   </header>
-
-  <div
-    v-show="isMenuOpen"
-    class="nav__overlay"
-    @click="closeMenu"
-    aria-hidden="true"
-  ></div>
-
-  <div
-    id="nav-menu"
-    class="nav__container"
-    :class="{ 'nav__container--open': isMenuOpen }"
-  >
-    <ul class="nav__menu" role="menu">
-      <li
-        v-for="item in menuItems"
-        :key="item.id"
-        class="nav__menu-item"
-        role="none"
-      >
-        <NuxtLink
-          :to="item.to"
-          class="nav__menu-link"
-          :aria-current="isCurrentSection(item.id) ? 'page' : undefined"
-          role="menuitem"
-          @click="closeMenu"
-        >
-          {{ item.label }}
-        </NuxtLink>
-      </li>
-    </ul>
-
-    <div
-      class="nav__actions"
-      :class="{ 'nav__actions--visible': isMenuOpen }"
-    >
-      <template v-if="isAuthenticated">
-        <button
-          class="nav__button--primary"
-          @click="handleLogout"
-          aria-label="Cerrar sesión de su cuenta"
-        >
-          Cerrar Sesión
-        </button>
-      </template>
-      <template v-else>
-        <NuxtLink
-          to="/auth/login"
-          class="nav__button--outline"
-          @click="closeMenu"
-          aria-label="Ingresar a su cuenta"
-        >
-          Ingresar
-        </NuxtLink>
-        <NuxtLink
-          to="/pacientes/registro"
-          class="nav__button--primary"
-          @click="closeMenu"
-          aria-label="Registrarse como nuevo usuario"
-        >
-          Registrarse
-        </NuxtLink>
-      </template>
-    </div>
-  </div>
 </template>
 
 <script setup lang="ts">
@@ -269,6 +269,11 @@ onUnmounted(() => {
   @include visually-hidden;
 }
 
+:global(html),
+:global(body) {
+  overflow-x: hidden;
+}
+
 .header {
   position: sticky;
   top: 0;
@@ -276,6 +281,7 @@ onUnmounted(() => {
   background: $white;
   box-shadow: 0 0.25rem 1.25rem 0 rgba(0, 0, 0, 0.03);
   transition: transform 0.3s ease;
+  overflow: hidden;
 
   @media (prefers-reduced-motion: reduce) {
     transition: none;
