@@ -25,12 +25,19 @@ const MAX_DETAIL_ATTEMPTS = 3;
 const { show: showToast } = useToast();
 const { updateSupplier, getSupplierById, getAllSuppliers } = useSupplier();
 const { addDocument, getDocumentByCode } = useDocuments();
-const { updateUser } = useUser();
+const { getUser, updateUser } = useUser();
+const { getUserInfo, setUserInfo } = useUserInfo();
 const { getToken } = useAuthToken();
-const { id: userId } = jwtDecode<DecodedToken>(getToken()!);
+
+const token = getToken();
+if (!token) {
+  await navigateTo("/auth/login");
+}
+const { id: userId } = jwtDecode<DecodedToken>(token ?? "");
 
 const supplierData = ref<ISupplierDetail | null>(null);
 const supplierId = ref<number | null>(null);
+const userData = ref<IUser | null>(null);
 const profileDescription = ref("");
 const medicalEnrollmentNumber = ref("");
 const selectedProfileImage = ref<File | null>(null);
@@ -45,11 +52,13 @@ const pictureModified = ref(false);
 const isValidImageUrl = (url: string | null | undefined): boolean =>
   !!url && (url.startsWith("http://") || url.startsWith("https://"));
 
-const storedProfileImageUrl = computed(() =>
-  isValidImageUrl(supplierData.value?.profile_picture_url)
-    ? supplierData.value!.profile_picture_url
-    : null,
-);
+const storedProfileImageUrl = computed(() => {
+  const userUrl = userData.value?.profile_picture_url;
+  if (isValidImageUrl(userUrl)) return userUrl!;
+  const supplierUrl = supplierData.value?.profile_picture_url;
+  if (isValidImageUrl(supplierUrl)) return supplierUrl!;
+  return null;
+});
 
 const hasProfileImage = computed(
   () => !!profileImagePreview.value || !!storedProfileImageUrl.value,
@@ -74,7 +83,12 @@ const fetchSupplierProfile = async () => {
   loadError.value = null;
 
   try {
-    const { data: suppliers, error: suppliersError } = await getAllSuppliers();
+    const [{ data: suppliers, error: suppliersError }, { data: user }] =
+      await Promise.all([getAllSuppliers(), getUser(userId)]);
+
+    if (user) {
+      userData.value = user;
+    }
 
     if (suppliersError) {
       loadError.value =
@@ -162,6 +176,10 @@ const removeProfilePicture = () => {
   if (supplierData.value) {
     supplierData.value = { ...supplierData.value, profile_picture_url: "" };
   }
+  if (userData.value) {
+    userData.value = { ...userData.value, profile_picture_url: "" };
+  }
+  setUserInfo({ ...getUserInfo(), profile_picture_url: "" });
 };
 
 const handleImageSelection = (event: Event) => {
@@ -248,6 +266,10 @@ const submitProfileUpdate = async () => {
         );
         return;
       }
+      if (userData.value) {
+        userData.value = { ...userData.value, profile_picture_url: pictureUrl };
+      }
+      setUserInfo({ ...getUserInfo(), profile_picture_url: pictureUrl });
     }
 
     if (!supplierId.value) {
