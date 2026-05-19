@@ -1075,7 +1075,7 @@ async function executeCreateSubmission() {
     country_iso_code: "CRC",
     province: "",
     city_name: "",
-    profile_picture_url: "",
+    profile_picture_url: currentUser.profile_picture_url ?? "",
     description: "",
     is_hospital: false,
     code_card_id_file: cardIdFileCode,
