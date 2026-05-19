@@ -94,7 +94,8 @@ const fetchSupplierProfile = async () => {
     }
 
     if (!supplierId.value) {
-      loadError.value = "No se encontró el perfil del proveedor";
+      // No supplier record yet — show the form with empty defaults so the user
+      // can still upload a profile picture without being blocked by this error.
       return;
     }
 
@@ -188,18 +189,19 @@ const handleImageSelection = (event: Event) => {
 };
 
 const uploadProfileImage = async (): Promise<string | null> => {
-  if (!selectedProfileImage.value || !supplierId.value) return null;
+  if (!selectedProfileImage.value) return null;
 
   isUploadingImage.value = true;
+  const entityId = supplierId.value ?? userId;
 
   try {
     const { data, error } = await addDocument({
       file: selectedProfileImage.value,
       fields: {
-        title: `profile_picture_${supplierId.value}`,
+        title: `profile_picture_${entityId}`,
         type: "IMG",
         description: "Foto de perfil profesional",
-        id_for_table: String(supplierId.value),
+        id_for_table: String(entityId),
         table: "SUPPLIER",
         action_type: "GENERAL_GALLERY",
         user_id: userId,
@@ -222,11 +224,6 @@ const uploadProfileImage = async (): Promise<string | null> => {
 };
 
 const submitProfileUpdate = async () => {
-  if (!supplierId.value || !supplierData.value) {
-    notify("No se encontró la información del proveedor", "error");
-    return;
-  }
-
   isSubmitting.value = true;
 
   try {
@@ -236,6 +233,16 @@ const submitProfileUpdate = async () => {
       const uploadedUrl = await uploadProfileImage();
       if (!uploadedUrl) return;
       profilePictureUrl = uploadedUrl;
+    }
+
+    if (!supplierId.value) {
+      supplierData.value = {
+        ...(supplierData.value ?? ({} as ISupplierDetail)),
+        profile_picture_url: profilePictureUrl,
+      };
+      selectedProfileImage.value = null;
+      notify("Foto de perfil actualizada", "success");
+      return;
     }
 
     const payload: ISupplierUpdateRequest = {
@@ -253,7 +260,7 @@ const submitProfileUpdate = async () => {
 
     if (data) {
       supplierData.value = {
-        ...supplierData.value,
+        ...supplierData.value!,
         description: payload.description,
         num_medical_enrollment: payload.num_medical_enrollment,
         profile_picture_url: profilePictureUrl,

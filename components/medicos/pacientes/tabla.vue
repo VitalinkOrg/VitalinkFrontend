@@ -168,28 +168,6 @@ const handlePageChange = (page: number) => {
 
               <th
                 scope="col"
-                class="patients-table__header-cell patients-table__header-cell--id"
-              >
-                <button
-                  class="patients-table__sort-button"
-                  @click="sortBy('card_id')"
-                  :aria-label="
-                    'Ordenar por ID ' +
-                    (sortColumn === 'card_id' && sortDirection === 'asc'
-                      ? 'descendente'
-                      : 'ascendente')
-                  "
-                >
-                  <span class="patients-table__header-text">ID</span>
-                  <AtomsIconsChevronsUpDown
-                    size="16"
-                    class="patients-table__sort-icon"
-                  />
-                </button>
-              </th>
-
-              <th
-                scope="col"
                 class="patients-table__header-cell patients-table__header-cell--name"
               >
                 <button
@@ -314,17 +292,8 @@ const handlePageChange = (page: number) => {
                 </label>
               </td>
 
-              <td class="patients-table__cell patients-table__cell--id">
-                <span class="patients-table__card-id">{{
-                  patient.card_id
-                }}</span>
-              </td>
-
               <td class="patients-table__cell patients-table__cell--name">
                 <div class="patients-table__patient-info">
-                  <span class="patients-table__patient-avatar">
-                    <img src="@/src/assets/img-avatar-sm.png" alt="avatar" />
-                  </span>
                   <span class="patients-table__patient-name">{{
                     patient.name
                   }}</span>
@@ -440,7 +409,6 @@ const handlePageChange = (page: number) => {
 
 .patients-table {
   --col-checkbox-width: 3.75rem;
-  --col-id-width: 6.25rem;
   --col-name-width: 12.5rem;
   --col-address-width: 11.25rem;
   --col-phone-width: 10rem;
@@ -487,10 +455,6 @@ const handlePageChange = (page: number) => {
     &--checkbox {
       width: var(--col-checkbox-width);
       text-align: center;
-    }
-
-    &--id {
-      width: var(--col-id-width);
     }
 
     &--name {
@@ -564,11 +528,6 @@ const handlePageChange = (page: number) => {
     gap: 0.5rem;
   }
 
-  &__patient-avatar {
-    flex-shrink: 0;
-  }
-
-  &__card-id,
   &__patient-name,
   &__address,
   &__phone,
@@ -797,7 +756,6 @@ const handlePageChange = (page: number) => {
 
 @media (max-width: $breakpoint-md) {
   .patients-table {
-    --col-id-width: 5rem;
     --col-name-width: 8.75rem;
     --col-address-width: 7.5rem;
     --col-phone-width: 6.875rem;
