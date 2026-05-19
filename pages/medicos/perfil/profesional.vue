@@ -66,7 +66,8 @@ const notify = (message: string, type: "success" | "error") => {
   showToast(message, type);
 };
 
-const delay = (ms: number) => new Promise<void>((resolve) => setTimeout(resolve, ms));
+const delay = (ms: number) =>
+  new Promise<void>((resolve) => setTimeout(resolve, ms));
 
 const fetchSupplierProfile = async () => {
   isLoadingProfile.value = true;
@@ -76,7 +77,8 @@ const fetchSupplierProfile = async () => {
     const { data: suppliers, error: suppliersError } = await getAllSuppliers();
 
     if (suppliersError) {
-      loadError.value = suppliersError.info ?? "Error al cargar el perfil del proveedor";
+      loadError.value =
+        suppliersError.info ?? "Error al cargar el perfil del proveedor";
       return;
     }
 
@@ -97,8 +99,12 @@ const fetchSupplierProfile = async () => {
         const { data, error } = await getSupplierById(supplierId.value!);
 
         if (error) {
-          if (canRetry) { await delay(attempt * 800); continue; }
-          loadError.value = error.info ?? "Error al cargar el perfil profesional";
+          if (canRetry) {
+            await delay(attempt * 800);
+            continue;
+          }
+          loadError.value =
+            error.info ?? "Error al cargar el perfil profesional";
           return;
         }
 
@@ -111,7 +117,10 @@ const fetchSupplierProfile = async () => {
 
         return;
       } catch {
-        if (canRetry) { await delay(attempt * 800); continue; }
+        if (canRetry) {
+          await delay(attempt * 800);
+          continue;
+        }
         loadError.value = "Error inesperado al cargar el perfil";
       }
     }
@@ -192,9 +201,9 @@ const uploadProfileImage = async (): Promise<string | null> => {
         title: `profile_picture_${userId}`,
         type: "IMG",
         description: "Foto de perfil profesional",
-        id_for_table: userId,
-        table: "users",
-        action_type: "PROFILE_PICTURE",
+        id_for_table: "6",
+        table: "SUPPLIER",
+        action_type: "GENERAL_GALLERY",
         user_id: userId,
         is_public: 1,
       },
@@ -218,7 +227,8 @@ const submitProfileUpdate = async () => {
   isSubmitting.value = true;
 
   try {
-    const shouldUpdatePicture = !!selectedProfileImage.value || pictureModified.value;
+    const shouldUpdatePicture =
+      !!selectedProfileImage.value || pictureModified.value;
     let pictureUrl = storedProfileImageUrl.value ?? "";
 
     if (selectedProfileImage.value) {
@@ -232,7 +242,10 @@ const submitProfileUpdate = async () => {
         profile_picture_url: pictureUrl,
       });
       if (userError) {
-        notify(userError.info || "Error al actualizar la foto de perfil", "error");
+        notify(
+          userError.info || "Error al actualizar la foto de perfil",
+          "error",
+        );
         return;
       }
     }
