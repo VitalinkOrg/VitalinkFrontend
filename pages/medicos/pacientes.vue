@@ -6,328 +6,529 @@ useSeoMeta({
   ogDescription: "Consulta y gestiona tu lista de pacientes.",
 });
 
-import { jsPDF } from "jspdf";
-import "jspdf-autotable";
-import { ref } from "vue";
-
-import type { Customer } from "~/types/test-index";
-
-interface RuntimeConfig {
-  public: {
-    API_BASE_URL: string;
-  };
-}
-
 definePageMeta({
   middleware: ["auth-doctors-hospitals"],
 });
 
-const config: RuntimeConfig = useRuntimeConfig();
-const token = useCookie<string>("token");
-const role = useCookie<string>("role");
-const tab = ref<number>(1);
-const allAppointments = ref();
+const {
+  isLoading,
+  hasError,
+  searchQuery,
+  activeSortCriterion,
+  filteredPatients,
+  patientCount,
+  hasPatients,
+  sortOptions,
+  fetchPatients,
+  applySortCriterion,
+} = usePatientsPage();
 
-let url: string;
-if (role.value == "R_HOS") {
-  url = "/hospital_dashboard/get_patients";
-} else {
-  url = "/doctor_dashboard/get_patients";
+const { generateReport } = usePatientReport();
+
+const tableKey = computed(() => activeSortCriterion.value);
+const isRefreshing = ref(false);
+
+function handleDownloadReport(): void {
+  generateReport(filteredPatients.value);
 }
 
-// const { data: patients, loading } = await useFetch(
-//   config.public.API_BASE_URL + url,
-//   {
-//     headers: { Authorization: token.value },
-//     transform: (_patients) => _patients.data,
-//   },
-// );
+async function handleRefresh(): Promise<void> {
+  isRefreshing.value = true;
+  try {
+    await fetchPatients();
+  } finally {
+    isRefreshing.value = false;
+  }
+}
 
-const patients: Customer[] = [
-  {
-    id: "1",
-    card_id: "ABC123",
-    name: "Juan Pérez",
-    email: "juan.perez@gmail.com",
-    user_name: "jperez",
-    phone_number: "4444565756",
-    gender: "M",
-    birth_date: "1990-01-01",
-    country_iso_code: "CR",
-    province: "San José",
-    address: "Calle Falsa 123",
-    city_name: "San José",
-    postal_code: "10101",
-    role_code: "CUSTOMER",
-    is_deleted: 0,
-    is_active_from_email: 1,
-    account_status: "ACTIVE",
-    fail_login_number: 0,
-    forgot_password_token: null,
-    active_register_token: null,
-    latitude: null,
-    longitude: null,
-    code_contract: null,
-    language: "es",
-    profile_picture_url: null,
-    last_login_at: "2023-10-01T10:00:00Z",
-    login_ip_address: "192.168.1.1",
-    created_at: "2023-01-01T00:00:00Z",
-    updated_at: "2023-10-01T10:00:00Z",
-    verified_at: "2023-01-01T12:00:00Z",
-    id_type: {
-      id: 1,
-      code: "CEDULA",
-      name: "Cédula Nacional",
-      type: "IDENTIFICATION",
-      description: "Documento de identificación nacional",
-      father_code: null,
-      value1: null,
-      created_date: "2023-01-01T00:00:00Z",
-      updated_date: null,
-      is_deleted: 0,
-    },
-  },
-  {
-    id: "2",
-    card_id: "DEF456",
-    name: "María López",
-    email: "maria.lopez@gmail.com",
-    user_name: "mlopez",
-    phone_number: "4444565757",
-    gender: "F",
-    birth_date: "1985-05-15",
-    country_iso_code: "CR",
-    province: "Cartago",
-    address: "Avenida Siempre Viva 742",
-    city_name: "Cartago",
-    postal_code: "30101",
-    role_code: "CUSTOMER",
-    is_deleted: 0,
-    is_active_from_email: 1,
-    account_status: "ACTIVE",
-    fail_login_number: 0,
-    forgot_password_token: null,
-    active_register_token: null,
-    latitude: null,
-    longitude: null,
-    code_contract: null,
-    language: "es",
-    profile_picture_url: null,
-    last_login_at: "2023-10-02T12:00:00Z",
-    login_ip_address: "192.168.1.2",
-    created_at: "2023-02-01T00:00:00Z",
-    updated_at: "2023-10-02T12:00:00Z",
-    verified_at: "2023-02-01T15:00:00Z",
-    id_type: {
-      id: 1,
-      code: "CEDULA",
-      name: "Cédula Nacional",
-      type: "IDENTIFICATION",
-      description: "Documento de identificación nacional",
-      father_code: null,
-      value1: null,
-      created_date: "2023-01-01T00:00:00Z",
-      updated_date: null,
-      is_deleted: 0,
-    },
-  },
-  {
-    id: "3",
-    card_id: "GHI789",
-    name: "Carlos García",
-    email: "carlos.garcia@gmail.com",
-    user_name: "cgarcia",
-    phone_number: "4444565758",
-    gender: "M",
-    birth_date: "1978-12-20",
-    country_iso_code: "CR",
-    province: "Heredia",
-    address: "Calle Luna 456",
-    city_name: "Heredia",
-    postal_code: "40101",
-    role_code: "CUSTOMER",
-    is_deleted: 0,
-    is_active_from_email: 1,
-    account_status: "ACTIVE",
-    fail_login_number: 0,
-    forgot_password_token: null,
-    active_register_token: null,
-    latitude: null,
-    longitude: null,
-    code_contract: null,
-    language: "es",
-    profile_picture_url: null,
-    last_login_at: "2023-10-03T14:00:00Z",
-    login_ip_address: "192.168.1.3",
-    created_at: "2023-03-01T00:00:00Z",
-    updated_at: "2023-10-03T14:00:00Z",
-    verified_at: "2023-03-01T16:00:00Z",
-    id_type: {
-      id: 1,
-      code: "CEDULA",
-      name: "Cédula Nacional",
-      type: "IDENTIFICATION",
-      description: "Documento de identificación nacional",
-      father_code: null,
-      value1: null,
-      created_date: "2023-01-01T00:00:00Z",
-      updated_date: null,
-      is_deleted: 0,
-    },
-  },
-];
-
-const downloadAllPatients = (): void => {
-  if (!patients || patients.length === 0) return;
-
-  const doc = new jsPDF();
-  const pageWidth: number = doc.internal.pageSize.getWidth();
-  const margin: number = 15;
-  let yPosition: number = 20;
-
-  doc.setFontSize(18);
-  doc.setFont("helvetica", "bold");
-  doc.text("Reporte de Pacientes", pageWidth / 2, yPosition, {
-    align: "center",
-  });
-  yPosition += 10;
-
-  doc.setFontSize(10);
-  doc.setFont("helvetica", "normal");
-  doc.text(
-    `Generado el: ${new Date().toLocaleDateString("es-ES")}`,
-    pageWidth / 2,
-    yPosition,
-    { align: "center" },
-  );
-  yPosition += 15;
-
-  doc.setFontSize(12);
-  doc.setFont("helvetica", "bold");
-  const headers: string[] = ["Paciente", "Direccion", "Telefono", "Correo"];
-  const columnWidths: number[] = [40, 50, 40, 40];
-  let xPosition: number = margin;
-
-  headers.forEach((header: string, i: number) => {
-    doc.text(header, xPosition, yPosition);
-    xPosition += columnWidths[i];
-  });
-  yPosition += 8;
-
-  doc.line(margin, yPosition, pageWidth - margin, yPosition);
-  yPosition += 10;
-
-  doc.setFontSize(10);
-  doc.setFont("helvetica", "normal");
-
-  patients.forEach((customer: Customer, index: number) => {
-    if (yPosition > 270) {
-      doc.addPage();
-      yPosition = 20;
-    }
-
-    const row: string[] = [
-      customer.name,
-      customer.address,
-      customer.phone_number,
-      customer.email,
-    ];
-
-    xPosition = margin;
-    row.forEach((cell: string, i: number) => {
-      doc.text(cell, xPosition, yPosition);
-      xPosition += columnWidths[i];
-    });
-
-    yPosition += 8;
-
-    if (index < patients.length - 1) {
-      doc.setDrawColor(220, 220, 220);
-      doc.line(margin, yPosition - 2, pageWidth - margin, yPosition - 2);
-      doc.setDrawColor(0, 0, 0);
-      yPosition += 4;
-    }
-  });
-
-  doc.setFontSize(8);
-  doc.setTextColor(100);
-  doc.text(`Total pacientes: ${patients.length}`, margin, 280);
-  doc.text("Sistema de Gestión Médica - Vitalink", pageWidth / 2, 280, {
-    align: "center",
-  });
-
-  doc.save(`Reporte_Pacientes_${new Date().toISOString().slice(0, 10)}.pdf`);
-};
+onMounted(fetchPatients);
 </script>
 
 <template>
   <NuxtLayout name="medicos-dashboard">
-    <UiHeaderBreadcrumb title="Mis Pacientes" />
+    <header class="page-header">
+      <nav class="breadcrumb" aria-label="Navegación de migas de pan">
+        <ol class="breadcrumb__list">
+          <li class="breadcrumb__item">
+            <NuxtLink to="/medicos/inicio" class="breadcrumb__link">
+              Inicio
+            </NuxtLink>
+          </li>
+          <li class="breadcrumb__item" aria-current="page">
+            <span class="breadcrumb__current">Pacientes</span>
+          </li>
+        </ol>
+      </nav>
 
-    <div class="patients__actions--wrapper">
-      <UiSearchInput
-        placeholder="Buscar"
-        aria-label="Buscar en mis citas"
-        max-width="320px"
-      />
-      <div class="patients__actions">
-        <button disabled class="patients__button--outline">
-          + Nuevo Paciente
-        </button>
-        <button class="patients__button--outline" @click="downloadAllPatients">
-          <AtomsIconsDownloadIcon /> Descargar
-        </button>
-        <div class="dropdown">
+      <h1 class="page-header__title">Mis Pacientes</h1>
+    </header>
+
+    <main class="page-body">
+      <section class="toolbar" aria-label="Herramientas de filtrado y búsqueda">
+        <UiSearchInput
+          v-model="searchQuery"
+          placeholder="Buscar"
+          aria-label="Buscar en mis pacientes"
+          max-width="320px"
+        />
+
+        <div class="toolbar__actions">
           <button
-            class="patients__button--outline dropdown-toggle"
             type="button"
-            data-bs-toggle="dropdown"
-            aria-expanded="false"
+            class="toolbar__refresh-btn"
+            :disabled="isRefreshing || isLoading"
+            aria-label="Actualizar lista de pacientes"
+            @click="handleRefresh"
           >
-            Ordenar por
+            <AtomsIconsRefreshCcwIcon
+              size="20"
+              aria-hidden="true"
+              focusable="false"
+              :class="{ 'toolbar__icon--spinning': isRefreshing }"
+            />
+            <span class="toolbar__refresh-label">Actualizar</span>
           </button>
-          <ul class="dropdown-menu">
-            <li><a class="dropdown-item" href="#">Action</a></li>
-            <li><a class="dropdown-item" href="#">Another action</a></li>
-            <li><a class="dropdown-item" href="#">Something else here</a></li>
-          </ul>
-        </div>
-      </div>
-    </div>
 
-    <div class="card">
-      <MedicosPacientesTabla :patients="patients" />
-    </div>
+          <button
+            type="button"
+            class="toolbar__download-btn"
+            :disabled="!hasPatients"
+            :aria-label="`Descargar reporte de ${patientCount} pacientes`"
+            @click="handleDownloadReport"
+          >
+            <AtomsIconsDownloadIcon
+              size="20"
+              aria-hidden="true"
+              focusable="false"
+            />
+            <span class="toolbar__download-label">Descargar</span>
+          </button>
+
+          <WebsiteBaseDropdown>
+            <template #button>
+              <span class="toolbar__dropdown-text">Ordenar por</span>
+              <span class="icon-chevron-down" aria-hidden="true" />
+            </template>
+            <template #menu>
+              <li
+                v-for="option in sortOptions"
+                :key="option.value"
+                class="toolbar__menu-item"
+              >
+                <button
+                  type="button"
+                  role="menuitem"
+                  class="toolbar__menu-action"
+                  :aria-pressed="activeSortCriterion === option.value"
+                  @click="applySortCriterion(option.value)"
+                >
+                  {{ option.label }}
+                </button>
+              </li>
+            </template>
+          </WebsiteBaseDropdown>
+        </div>
+      </section>
+
+      <section class="patient-list" aria-label="Lista de pacientes">
+        <div class="patient-list__card">
+          <div
+            v-if="isLoading"
+            class="patient-list__placeholder"
+            role="status"
+            aria-live="polite"
+          >
+            <span class="sr-only">Cargando pacientes…</span>
+          </div>
+
+          <div
+            v-else-if="hasError"
+            class="patient-list__error"
+            role="alert"
+            aria-live="assertive"
+          >
+            <p class="patient-list__error-text">
+              No se pudieron cargar los pacientes.
+            </p>
+            <button
+              type="button"
+              class="patient-list__retry-btn"
+              @click="fetchPatients"
+            >
+              Reintentar
+            </button>
+          </div>
+
+          <div
+            v-else-if="!hasPatients"
+            class="patient-list__empty"
+            role="status"
+          >
+            <p class="patient-list__empty-text">
+              No se encontraron pacientes que coincidan con los filtros
+              aplicados.
+            </p>
+          </div>
+
+          <MedicosPacientesTabla
+            v-else
+            :key="tableKey"
+            :patients="filteredPatients"
+          />
+        </div>
+      </section>
+    </main>
   </NuxtLayout>
 </template>
 
 <style lang="scss" scoped>
-.patients {
+.sr-only {
+  @include visually-hidden;
+}
+
+.page-header {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: 1.5rem;
+
+  @include respond-to(md) {
+    margin-bottom: 2rem;
+  }
+
+  &__title {
+    font-family: $font-family-main;
+    font-weight: 600;
+    font-size: 20px;
+    line-height: 20px;
+    letter-spacing: 0;
+    margin: 0;
+  }
+}
+
+.breadcrumb {
+  display: flex;
+  align-items: center;
+
+  &__list {
+    display: flex;
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    flex-wrap: wrap;
+    gap: 0.25rem;
+
+    li + li::before {
+      content: "/";
+      padding: 0 0.5rem;
+      color: #6c757d;
+
+      @include respond-to-max(sm) {
+        padding: 0 0.25rem;
+      }
+    }
+  }
+
+  &__item {
+    font-size: 0.75rem;
+
+    @include respond-to(sm) {
+      font-size: 0.875rem;
+    }
+  }
+
+  &__link {
+    text-decoration: none;
+    color: #6c757d;
+
+    &:hover,
+    &:focus-visible {
+      text-decoration: underline;
+    }
+
+    &:focus-visible {
+      outline: 2px solid $color-primary;
+      outline-offset: 2px;
+      border-radius: 2px;
+    }
+  }
+
+  &__current {
+    color: #6c757d;
+  }
+}
+
+.page-body {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+
+  @include respond-to(md) {
+    gap: 1.5rem;
+    margin-bottom: 3rem;
+  }
+}
+
+.toolbar {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  margin-bottom: 1rem;
+
+  @include respond-to(sm) {
+    flex-direction: row;
+    flex-wrap: wrap;
+    align-items: flex-start;
+  }
+
+  @include respond-to(lg) {
+    margin-bottom: 1.5rem;
+  }
+
   &__actions {
     display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+
+    @include respond-to(sm) {
+      margin-left: auto;
+      gap: 0.75rem;
+    }
+  }
+
+  &__refresh-btn {
+    @include outline-button;
+    font-weight: 400;
+    font-size: 0.75rem;
+    line-height: 1.25;
+    color: #344054;
+    padding: 0.5rem 0.75rem;
+    gap: 0.375rem;
+
+    @include respond-to(sm) {
+      font-size: 0.875rem;
+      padding: 0.625rem 1rem;
+      gap: 0.5rem;
+    }
+
+    &:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
+  }
+
+  &__refresh-label {
+    @include respond-to-max(sm) {
+      @include visually-hidden;
+    }
+  }
+
+  &__icon--spinning {
+    animation: spin-icon 0.8s linear infinite;
+  }
+
+  &__download-btn {
+    @include outline-button;
+    font-weight: 400;
+    font-size: 0.75rem;
+    line-height: 1.25;
+    color: #344054;
+    padding: 0.5rem 0.75rem;
+    gap: 0.375rem;
+
+    @include respond-to(sm) {
+      font-size: 0.875rem;
+      padding: 0.625rem 1rem;
+      gap: 0.5rem;
+    }
+
+    &:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
+  }
+
+  &__download-label {
+    @include respond-to-max(sm) {
+      @include visually-hidden;
+    }
+  }
+
+  &__dropdown-text {
+    @include respond-to-max(sm) {
+      font-size: 0.875rem;
+    }
+  }
+
+  &__menu-item {
+    display: flex;
     gap: 0.75rem;
+    padding: 0.625rem 1rem;
+    align-items: center;
 
-    &--wrapper {
-      display: flex;
-      justify-content: space-between;
+    &:hover {
+      background-color: #f1f3f7;
+    }
+  }
+
+  &__menu-action {
+    width: 100%;
+    text-align: left;
+    padding: 0.5rem 0;
+    background: none;
+    border: none;
+    color: inherit;
+    cursor: pointer;
+    font-size: 0.875rem;
+    font-family: $font-family-main;
+    transition: color 0.2s ease;
+
+    @include respond-to-max(sm) {
+      font-size: 0.8125rem;
+      padding: 0.625rem 0;
+    }
+
+    &:hover,
+    &:focus-visible {
+      color: $color-primary;
+    }
+
+    &:focus-visible {
+      outline: 2px solid $color-primary;
+      outline-offset: 2px;
+    }
+
+    &[aria-pressed="true"] {
+      font-weight: 600;
+      color: $color-primary;
+    }
+  }
+}
+
+.patient-list {
+  flex: 1;
+  min-height: 20rem;
+
+  &__card {
+    background: $white;
+    border-radius: $border-radius-md;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    overflow: hidden;
+  }
+
+  &__placeholder {
+    padding: 3rem 1rem;
+    text-align: center;
+    color: #6c757d;
+  }
+
+  &__error {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: $spacing-md;
+    padding: 3rem 1rem;
+    text-align: center;
+  }
+
+  &__error-text {
+    color: #e17055;
+    font-weight: 500;
+    margin: 0;
+  }
+
+  &__retry-btn {
+    @include primary-button;
+    padding: 8px 20px;
+    font-size: 14px;
+  }
+
+  &__empty {
+    padding: 3rem 1rem;
+    text-align: center;
+  }
+
+  &__empty-text {
+    color: #6c757d;
+    font-size: 1rem;
+    margin: 0;
+  }
+}
+
+@include respond-to-max(sm) {
+  .toolbar {
+    &__actions {
+      width: 100%;
+      display: grid;
+      grid-template-columns: auto auto 1fr;
+      gap: 0.5rem;
       align-items: center;
-      padding: 0.75rem 0;
+
+      :deep(.dropdown) {
+        display: flex;
+        width: 100%;
+
+        .dropdown__toggle {
+          width: 100%;
+          justify-content: space-between;
+          font-size: 0.8125rem;
+          padding: 0.5rem 0.75rem;
+        }
+      }
     }
   }
 
-  &__input {
-    @include input-base;
+  .patient-list__card {
+    border-radius: 0;
+    box-shadow: none;
+    border-top: 1px solid #e1e4ed;
+    border-bottom: 1px solid #e1e4ed;
   }
 
-  &__button {
-    &--outline {
-      @include outline-button;
-    }
+  .patient-list__placeholder {
+    padding: 2rem 1rem;
+  }
 
-    &--primary {
-      @include primary-button;
+  .patient-list__empty {
+    padding: 2rem 1rem;
+
+    .patient-list__empty-text {
+      font-size: 0.875rem;
     }
+  }
+}
+
+@include respond-to-max(xs) {
+  .page-header {
+    padding: 0 1rem;
+  }
+
+  .toolbar {
+    padding: 0 1rem;
+    margin: 0 -1rem 1rem;
+
+    &__actions {
+      grid-template-columns: auto auto;
+      gap: 0.5rem;
+
+      > *:nth-child(3) {
+        grid-column: span 2;
+      }
+    }
+  }
+
+  .patient-list {
+    margin: 0 -1rem;
+  }
+}
+
+@keyframes spin-icon {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
   }
 }
 </style>
