@@ -1,5 +1,7 @@
 <script setup lang="ts">
 import { jwtDecode } from "jwt-decode";
+
+definePageMeta({ middleware: "auth-doctors-hospitals" });
 import { useDocuments } from "~/composables/api/useDocuments";
 import { useSupplier } from "~/composables/api/useSupplier";
 import { useUser } from "~/composables/api/useUser";
@@ -28,12 +30,7 @@ const { addDocument, getDocumentByCode } = useDocuments();
 const { getUser, updateUser } = useUser();
 const { getUserInfo, setUserInfo } = useUserInfo();
 const { getToken } = useAuthToken();
-
-const token = getToken();
-if (!token) {
-  await navigateTo("/auth/login");
-}
-const { id: userId } = jwtDecode<DecodedToken>(token ?? "");
+const { id: userId } = jwtDecode<DecodedToken>(getToken()!);
 
 const supplierData = ref<ISupplierDetail | null>(null);
 const supplierId = ref<number | null>(null);
@@ -422,6 +419,12 @@ onMounted(() => {
           </button>
         </div>
 
+        <p v-if="!supplierId && !isLoadingProfile" class="professional-profile__no-supplier-hint">
+          Los siguientes campos estarán disponibles una vez que hayas agregado
+          un médico en
+          <NuxtLink to="/medicos/mis-medicos">Mis Médicos</NuxtLink>.
+        </p>
+
         <div class="professional-profile__field">
           <label
             for="professional-description"
@@ -436,6 +439,7 @@ onMounted(() => {
             rows="3"
             placeholder="Escribe una descripción sobre ti y tu experiencia profesional"
             aria-describedby="description-counter"
+            :disabled="!supplierId"
           />
           <span
             id="description-counter"
@@ -456,6 +460,7 @@ onMounted(() => {
             type="text"
             class="professional-profile__input"
             placeholder="Escribe el número de tu matrícula"
+            :disabled="!supplierId"
           />
         </div>
       </fieldset>
@@ -500,6 +505,27 @@ onMounted(() => {
     font-size: 14px;
     color: $color-text-secondary;
     text-align: center;
+  }
+
+  &__no-supplier-hint {
+    margin: 0 0 1.5rem;
+    padding: 0.75rem 1rem;
+    border-radius: 8px;
+    background-color: rgba($color-primary, 0.06);
+    font-family: $font-family-main;
+    font-size: 13px;
+    color: $color-text-secondary;
+    line-height: 1.5;
+
+    a {
+      color: $color-primary;
+      font-weight: 500;
+      text-decoration: none;
+
+      &:hover {
+        text-decoration: underline;
+      }
+    }
   }
 
   &__fieldset {

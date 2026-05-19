@@ -1,9 +1,12 @@
 <script setup lang="ts">
+definePageMeta({ middleware: "auth-doctors-hospitals" });
 useSeoMeta({
   title: "Especialidades y Procedimientos — Vitalink",
-  description: "Administra tus especialidades médicas y procedimientos disponibles en tu perfil.",
+  description:
+    "Administra tus especialidades médicas y procedimientos disponibles en tu perfil.",
   ogTitle: "Especialidades y Procedimientos — Vitalink",
-  ogDescription: "Administra tus especialidades médicas y procedimientos disponibles en tu perfil.",
+  ogDescription:
+    "Administra tus especialidades médicas y procedimientos disponibles en tu perfil.",
 });
 
 import { useUdc } from "@/composables/api";
@@ -38,6 +41,7 @@ const specialtyInputRef = ref<HTMLInputElement | null>(null);
 const procedureInputRef = ref<HTMLInputElement | null>(null);
 
 const supplierId = ref<number | null>(null);
+const isInitializing = ref(true);
 
 const { token } = useAuthToken();
 
@@ -54,7 +58,10 @@ const fetchSpecialties = async () => {
   isLoadingSpecialties.value = true;
 
   try {
-    const { data, error } = await getAllUdcs({ supplier_id: supplierId.value!, type: "MEDICAL_SPECIALTY" }, true);
+    const { data, error } = await getAllUdcs(
+      { supplier_id: supplierId.value!, type: "MEDICAL_SPECIALTY" },
+      true,
+    );
 
     if (error) {
       notify(error.info || "Error al cargar especialidades", "error");
@@ -80,7 +87,10 @@ const fetchProcedures = async () => {
   isLoadingProcedures.value = true;
 
   try {
-    const { data, error } = await getAllUdcs({ supplier_id: supplierId.value!, type: "MEDICAL_PROCEDURE" });
+    const { data, error } = await getAllUdcs({
+      supplier_id: supplierId.value!,
+      type: "MEDICAL_PROCEDURE",
+    });
 
     if (error) {
       notify(error.info || "Error al cargar procedimientos", "error");
@@ -150,7 +160,10 @@ const submitSpecialty = async () => {
     if (error) {
       const errorData = error.data as IApiErrorData | null;
       if (errorData?.code === "ER_DUP_ENTRY") {
-        notify("Esta especialidad ya existe. Intente con un nombre diferente.", "error");
+        notify(
+          "Esta especialidad ya existe. Intente con un nombre diferente.",
+          "error",
+        );
       } else {
         notify(error.info || "Error al agregar especialidad", "error");
       }
@@ -224,7 +237,10 @@ const submitProcedure = async () => {
     if (error) {
       const errorData = error.data as IApiErrorData | null;
       if (errorData?.code === "ER_DUP_ENTRY") {
-        notify("Este servicio ya existe. Intente con un nombre diferente.", "error");
+        notify(
+          "Este servicio ya existe. Intente con un nombre diferente.",
+          "error",
+        );
       } else {
         notify(error.info || "Error al agregar servicio", "error");
       }
@@ -283,13 +299,12 @@ const initializePage = async () => {
     }
   }
 
-  if (error || !suppliers?.length) {
-    notify(error?.info || "No se encontró el perfil del proveedor", "error");
-    return;
+  if (!error && suppliers?.length) {
+    supplierId.value = suppliers[0].id;
+    await Promise.all([fetchSpecialties(), fetchProcedures()]);
   }
 
-  supplierId.value = suppliers[0].id;
-  await Promise.all([fetchSpecialties(), fetchProcedures()]);
+  isInitializing.value = false;
 };
 
 onMounted(() => {
@@ -310,12 +325,29 @@ onMounted(() => {
 <template>
   <NuxtLayout name="medicos-dashboard-perfil">
     <div
-      v-if="!supplierId"
+      v-if="isInitializing"
       class="profile-catalog__loading"
       role="status"
       aria-live="polite"
     >
       Cargando información del proveedor...
+    </div>
+
+    <div
+      v-else-if="!supplierId"
+      class="profile-catalog__no-supplier"
+      role="status"
+    >
+      <p class="profile-catalog__no-supplier-message">
+        Esta sección estará disponible una vez que hayas agregado un médico en
+        la sección de Mis Médicos.
+      </p>
+      <NuxtLink
+        to="/medicos/mis-medicos"
+        class="profile-catalog__no-supplier-link"
+      >
+        Ir a Mis Médicos
+      </NuxtLink>
     </div>
 
     <div v-else class="profile-catalog" role="main">
@@ -543,6 +575,36 @@ onMounted(() => {
     font-family: $font-family-main;
     font-size: 14px;
     color: $color-text-secondary;
+  }
+
+  &__no-supplier {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 200px;
+    gap: 1rem;
+    text-align: center;
+  }
+
+  &__no-supplier-message {
+    margin: 0;
+    font-family: $font-family-main;
+    font-size: 14px;
+    color: $color-text-secondary;
+    max-width: 360px;
+  }
+
+  &__no-supplier-link {
+    font-family: $font-family-main;
+    font-size: 14px;
+    font-weight: 500;
+    color: $color-primary;
+    text-decoration: none;
+
+    &:hover {
+      text-decoration: underline;
+    }
   }
 
   &__section {
