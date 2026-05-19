@@ -20,8 +20,6 @@ interface DecodedToken {
 const ALLOWED_IMAGE_TYPES = ["image/jpeg", "image/png", "image/webp"];
 const MAX_IMAGE_SIZE_BYTES = 5 * 1024 * 1024;
 const MAX_DETAIL_ATTEMPTS = 3;
-const POLL_INTERVAL_MS = 1_500;
-const MAX_POLL_DURATION_MS = 30_000;
 
 const { show: showToast } = useToast();
 const { updateSupplier, getSupplierById, getAllSuppliers } = useSupplier();
@@ -72,30 +70,19 @@ const fetchSupplierProfile = async () => {
   loadError.value = null;
 
   try {
-    // Phase 1: poll until a supplier record exists (created asynchronously after registration)
-    const pollStart = Date.now();
-    let pollElapsed = 0;
+    const { data: suppliers, error: suppliersError } = await getAllSuppliers();
 
-    while (pollElapsed < MAX_POLL_DURATION_MS) {
-      const { data: suppliers, error: suppliersError } = await getAllSuppliers();
+    if (suppliersError) {
+      loadError.value = suppliersError.info ?? "Error al cargar el perfil del proveedor";
+      return;
+    }
 
-      if (suppliersError) {
-        loadError.value = suppliersError.info ?? "Error al cargar el perfil del proveedor";
-        return;
-      }
-
-      if (suppliers?.length) {
-        supplierId.value = suppliers[0].id;
-        break;
-      }
-
-      await delay(POLL_INTERVAL_MS);
-      pollElapsed = Date.now() - pollStart;
+    if (suppliers?.length) {
+      supplierId.value = suppliers[0].id;
     }
 
     if (!supplierId.value) {
-      // No supplier record yet — show the form with empty defaults so the user
-      // can still upload a profile picture without being blocked by this error.
+      // No supplier record yet — show the form with empty defaults.
       return;
     }
 
