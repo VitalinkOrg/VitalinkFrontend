@@ -61,6 +61,12 @@ export const useUser = () => {
     }
   };
 
+  const getUser = (userId: string) =>
+    executeRequest<IUser>("getUser", "user/get", {
+      method: "GET",
+      query: { id: userId },
+    });
+
   const updateUser = (userId: string, payload: IUserUpdateRequest) =>
     executeRequest<IUser>("updateUser", "user/edit", {
       method: "PUT",
@@ -68,5 +74,5 @@ export const useUser = () => {
       query: { id: userId },
     });
 
-  return { updateUser };
+  return { getUser, updateUser };
 };

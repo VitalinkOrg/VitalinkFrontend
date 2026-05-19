@@ -30,12 +30,10 @@ const pending: Ref<boolean> = ref(false);
 const sidebarOpen: Ref<boolean> = ref(false);
 const isMobile: Ref<boolean> = ref(false);
 const isTablet: Ref<boolean> = ref(false);
-const { getUserInfo } = useUserInfo();
-
-const userInfo = getUserInfo() || {};
+const { userInfo } = useUserInfo();
 
 const userProfilePicture = computed(() => {
-  const url = userInfo.profile_picture_url;
+  const url = userInfo.value?.profile_picture_url;
   if (!url) return null;
   try {
     new URL(url);

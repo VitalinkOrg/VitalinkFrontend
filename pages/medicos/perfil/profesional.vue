@@ -1,5 +1,7 @@
 <script setup lang="ts">
 import { jwtDecode } from "jwt-decode";
+
+definePageMeta({ middleware: "auth-doctors-hospitals" });
 import { useDocuments } from "~/composables/api/useDocuments";
 import { useSupplier } from "~/composables/api/useSupplier";
 import { useUser } from "~/composables/api/useUser";
@@ -25,12 +27,14 @@ const MAX_DETAIL_ATTEMPTS = 3;
 const { show: showToast } = useToast();
 const { updateSupplier, getSupplierById, getAllSuppliers } = useSupplier();
 const { addDocument, getDocumentByCode } = useDocuments();
-const { updateUser } = useUser();
+const { getUser, updateUser } = useUser();
+const { getUserInfo, setUserInfo } = useUserInfo();
 const { getToken } = useAuthToken();
 const { id: userId } = jwtDecode<DecodedToken>(getToken()!);
 
 const supplierData = ref<ISupplierDetail | null>(null);
 const supplierId = ref<number | null>(null);
+const userData = ref<IUser | null>(null);
 const profileDescription = ref("");
 const medicalEnrollmentNumber = ref("");
 const selectedProfileImage = ref<File | null>(null);
@@ -45,11 +49,13 @@ const pictureModified = ref(false);
 const isValidImageUrl = (url: string | null | undefined): boolean =>
   !!url && (url.startsWith("http://") || url.startsWith("https://"));
 
-const storedProfileImageUrl = computed(() =>
-  isValidImageUrl(supplierData.value?.profile_picture_url)
-    ? supplierData.value!.profile_picture_url
-    : null,
-);
+const storedProfileImageUrl = computed(() => {
+  const userUrl = userData.value?.profile_picture_url;
+  if (isValidImageUrl(userUrl)) return userUrl!;
+  const supplierUrl = supplierData.value?.profile_picture_url;
+  if (isValidImageUrl(supplierUrl)) return supplierUrl!;
+  return null;
+});
 
 const hasProfileImage = computed(
   () => !!profileImagePreview.value || !!storedProfileImageUrl.value,
@@ -74,7 +80,12 @@ const fetchSupplierProfile = async () => {
   loadError.value = null;
 
   try {
-    const { data: suppliers, error: suppliersError } = await getAllSuppliers();
+    const [{ data: suppliers, error: suppliersError }, { data: user }] =
+      await Promise.all([getAllSuppliers(), getUser(userId)]);
+
+    if (user) {
+      userData.value = user;
+    }
 
     if (suppliersError) {
       loadError.value =
@@ -162,6 +173,10 @@ const removeProfilePicture = () => {
   if (supplierData.value) {
     supplierData.value = { ...supplierData.value, profile_picture_url: "" };
   }
+  if (userData.value) {
+    userData.value = { ...userData.value, profile_picture_url: "" };
+  }
+  setUserInfo({ ...getUserInfo(), profile_picture_url: "" });
 };
 
 const handleImageSelection = (event: Event) => {
@@ -248,6 +263,10 @@ const submitProfileUpdate = async () => {
         );
         return;
       }
+      if (userData.value) {
+        userData.value = { ...userData.value, profile_picture_url: pictureUrl };
+      }
+      setUserInfo({ ...getUserInfo(), profile_picture_url: pictureUrl });
     }
 
     if (!supplierId.value) {
@@ -400,6 +419,12 @@ onMounted(() => {
           </button>
         </div>
 
+        <p v-if="!supplierId && !isLoadingProfile" class="professional-profile__no-supplier-hint">
+          Los siguientes campos estarán disponibles una vez que hayas agregado
+          un médico en
+          <NuxtLink to="/medicos/mis-medicos">Mis Médicos</NuxtLink>.
+        </p>
+
         <div class="professional-profile__field">
           <label
             for="professional-description"
@@ -414,6 +439,7 @@ onMounted(() => {
             rows="3"
             placeholder="Escribe una descripción sobre ti y tu experiencia profesional"
             aria-describedby="description-counter"
+            :disabled="!supplierId"
           />
           <span
             id="description-counter"
@@ -434,6 +460,7 @@ onMounted(() => {
             type="text"
             class="professional-profile__input"
             placeholder="Escribe el número de tu matrícula"
+            :disabled="!supplierId"
           />
         </div>
       </fieldset>
@@ -478,6 +505,27 @@ onMounted(() => {
     font-size: 14px;
     color: $color-text-secondary;
     text-align: center;
+  }
+
+  &__no-supplier-hint {
+    margin: 0 0 1.5rem;
+    padding: 0.75rem 1rem;
+    border-radius: 8px;
+    background-color: rgba($color-primary, 0.06);
+    font-family: $font-family-main;
+    font-size: 13px;
+    color: $color-text-secondary;
+    line-height: 1.5;
+
+    a {
+      color: $color-primary;
+      font-weight: 500;
+      text-decoration: none;
+
+      &:hover {
+        text-decoration: underline;
+      }
+    }
   }
 
   &__fieldset {
