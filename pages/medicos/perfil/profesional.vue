@@ -2,6 +2,7 @@
 import { jwtDecode } from "jwt-decode";
 import { useDocuments } from "~/composables/api/useDocuments";
 import { useSupplier } from "~/composables/api/useSupplier";
+import { useUser } from "~/composables/api/useUser";
 import placeholderAvatar from "@/src/assets/picture.svg";
 
 useSeoMeta({
@@ -24,6 +25,7 @@ const MAX_DETAIL_ATTEMPTS = 3;
 const { show: showToast } = useToast();
 const { updateSupplier, getSupplierById, getAllSuppliers } = useSupplier();
 const { addDocument, getDocumentByCode } = useDocuments();
+const { updateUser } = useUser();
 const { getToken } = useAuthToken();
 const { id: userId } = jwtDecode<DecodedToken>(getToken()!);
 
@@ -38,6 +40,7 @@ const isSubmitting = ref(false);
 const isLoadingProfile = ref(true);
 const isUploadingImage = ref(false);
 const loadError = ref<string | null>(null);
+const pictureModified = ref(false);
 
 const isValidImageUrl = (url: string | null | undefined): boolean =>
   !!url && (url.startsWith("http://") || url.startsWith("https://"));
@@ -146,6 +149,7 @@ const validateImageFile = (file: File): string | null => {
 const removeProfilePicture = () => {
   selectedProfileImage.value = null;
   profileImagePreview.value = null;
+  pictureModified.value = true;
   if (supplierData.value) {
     supplierData.value = { ...supplierData.value, profile_picture_url: "" };
   }
@@ -164,6 +168,7 @@ const handleImageSelection = (event: Event) => {
   }
 
   selectedProfileImage.value = file;
+  pictureModified.value = true;
 
   const reader = new FileReader();
   reader.onload = (e) => {
@@ -179,18 +184,17 @@ const uploadProfileImage = async (): Promise<string | null> => {
   if (!selectedProfileImage.value) return null;
 
   isUploadingImage.value = true;
-  const entityId = supplierId.value ?? userId;
 
   try {
     const { data, error } = await addDocument({
       file: selectedProfileImage.value,
       fields: {
-        title: `profile_picture_${entityId}`,
+        title: `profile_picture_${userId}`,
         type: "IMG",
         description: "Foto de perfil profesional",
-        id_for_table: String(entityId),
-        table: "SUPPLIER",
-        action_type: "GENERAL_GALLERY",
+        id_for_table: userId,
+        table: "users",
+        action_type: "PROFILE_PICTURE",
         user_id: userId,
         is_public: 1,
       },
@@ -214,20 +218,34 @@ const submitProfileUpdate = async () => {
   isSubmitting.value = true;
 
   try {
-    let profilePictureUrl = storedProfileImageUrl.value ?? "";
+    const shouldUpdatePicture = !!selectedProfileImage.value || pictureModified.value;
+    let pictureUrl = storedProfileImageUrl.value ?? "";
 
     if (selectedProfileImage.value) {
       const uploadedUrl = await uploadProfileImage();
       if (!uploadedUrl) return;
-      profilePictureUrl = uploadedUrl;
+      pictureUrl = uploadedUrl;
+    }
+
+    if (shouldUpdatePicture) {
+      const { error: userError } = await updateUser(userId, {
+        profile_picture_url: pictureUrl,
+      });
+      if (userError) {
+        notify(userError.info || "Error al actualizar la foto de perfil", "error");
+        return;
+      }
     }
 
     if (!supplierId.value) {
-      supplierData.value = {
-        ...(supplierData.value ?? ({} as ISupplierDetail)),
-        profile_picture_url: profilePictureUrl,
-      };
-      selectedProfileImage.value = null;
+      if (shouldUpdatePicture) {
+        supplierData.value = {
+          ...(supplierData.value ?? ({} as ISupplierDetail)),
+          profile_picture_url: pictureUrl,
+        };
+        selectedProfileImage.value = null;
+        pictureModified.value = false;
+      }
       notify("Foto de perfil actualizada", "success");
       return;
     }
@@ -235,7 +253,6 @@ const submitProfileUpdate = async () => {
     const payload: ISupplierUpdateRequest = {
       description: profileDescription.value.trim(),
       num_medical_enrollment: medicalEnrollmentNumber.value.trim(),
-      profile_picture_url: profilePictureUrl,
     };
 
     const { data, error } = await updateSupplier(supplierId.value, payload);
@@ -250,10 +267,10 @@ const submitProfileUpdate = async () => {
         ...supplierData.value!,
         description: payload.description,
         num_medical_enrollment: payload.num_medical_enrollment,
-        profile_picture_url: profilePictureUrl,
+        ...(shouldUpdatePicture && { profile_picture_url: pictureUrl }),
       };
-
       selectedProfileImage.value = null;
+      pictureModified.value = false;
       notify("Perfil actualizado exitosamente", "success");
     }
   } catch {
