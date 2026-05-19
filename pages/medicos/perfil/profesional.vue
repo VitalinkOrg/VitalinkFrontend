@@ -267,6 +267,15 @@ const submitProfileUpdate = async () => {
         userData.value = { ...userData.value, profile_picture_url: pictureUrl };
       }
       setUserInfo({ ...getUserInfo(), profile_picture_url: pictureUrl });
+
+      const { data: allSuppliers } = await getAllSuppliers();
+      if (allSuppliers?.length) {
+        await Promise.allSettled(
+          allSuppliers.map((s) =>
+            updateSupplier(s.id, { profile_picture_url: pictureUrl }),
+          ),
+        );
+      }
     }
 
     if (!supplierId.value) {
