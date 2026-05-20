@@ -56,18 +56,22 @@
               </p>
             </div>
 
-            <div class="supplier-card__meta">
-              <img
-                src="@/src/assets/marker.svg"
-                alt=""
-                aria-hidden="true"
-                class="supplier-card__meta-icon"
-              />
-              <p class="supplier-card__location">
-                {{ supplier.location_number }}
-                {{ locationLabel }}
-              </p>
-            </div>
+            <ul
+              v-if="supplierLocations.length"
+              class="supplier-card__locations"
+              aria-label="Hospitales y clínicas"
+            >
+              <li
+                v-for="location in supplierLocations"
+                :key="location.id"
+                class="supplier-card__location-item"
+              >
+                <div class="supplier-card__location-icon" aria-hidden="true">
+                  <AtomsIconsPinIcon class="supplier-card__location-pin" />
+                </div>
+                <span class="supplier-card__location-name">{{ location.name }}</span>
+              </li>
+            </ul>
           </div>
         </header>
 
@@ -164,13 +168,13 @@ import { usePackage } from "@/composables/api";
 import type { LocationQueryRaw } from "vue-router";
 
 interface Props {
-  supplier: ISupplierMain;
+  supplier: ISupplierDetail;
   queryParams?: LocationQueryRaw;
 }
 
 interface Emits {
-  (event: "toggle-favorite", doctorId: ISupplierMain["id"]): void;
-  (event: "show-packages", payload: { selectedSupplier: ISupplierMain }): void;
+  (event: "toggle-favorite", doctorId: ISupplierDetail["id"]): void;
+  (event: "show-packages", payload: { selectedSupplier: ISupplierDetail }): void;
 }
 
 const props = defineProps<Props>();
@@ -192,9 +196,16 @@ const formattedRating = computed<string>(
   () => props.supplier.stars_by_supplier?.toFixed(1) ?? "0.0",
 );
 
-const locationLabel = computed<string>(() =>
-  props.supplier.location_number === 1 ? "Hospital" : "Hospitales diferentes",
-);
+
+const supplierLocations = computed<ILocation[]>(() => {
+  const locations = props.supplier.locations ?? [];
+  logger.debug("supplierLocations", {
+    supplierId: props.supplier.id,
+    rawLocations: props.supplier.locations,
+    resolved: locations,
+  });
+  return locations;
+});
 
 const hasLoadedPricing = computed<boolean>(() => originalPrice.value !== null);
 
@@ -759,6 +770,60 @@ onMounted(fetchSupplierPackages);
     @include respond-to(md) {
       width: 20px;
       height: 20px;
+    }
+  }
+
+  &__locations {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  &__location-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  &__location-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 24px;
+    height: 24px;
+    padding: 5px;
+    border-radius: 20px;
+    background-color: #3541b40d;
+    color: #3541b4;
+    flex-shrink: 0;
+
+    @include respond-to(md) {
+      width: 30px;
+      height: 30px;
+      padding: 7px;
+      border-radius: 24px;
+    }
+  }
+
+  &__location-pin {
+    width: 100%;
+    height: 100%;
+  }
+
+  &__location-name {
+    @include label-base;
+    font-weight: 400;
+    font-size: 14px;
+    line-height: 1.3;
+    color: #6d758f;
+    word-break: break-word;
+
+    @include respond-to(md) {
+      font-size: 16px;
+      line-height: 21px;
     }
   }
 }
