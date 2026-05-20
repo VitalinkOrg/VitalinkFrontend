@@ -11,16 +11,6 @@
         {{ buttonConfig.text }}
       </button>
 
-      <div
-        v-else-if="buttonConfig.type === 'paid-status'"
-        role="button"
-        :class="buttonConfig.class"
-        @click="buttonConfig.action"
-      >
-        <img src="@/src/assets/success.svg" class="mr-2" alt="Success" />
-        <p class="text-success mb-0">{{ buttonConfig.text }}</p>
-      </div>
-
       <span
         v-else-if="buttonConfig.type === 'status'"
         class="appointment-pay-modal__status"
@@ -131,7 +121,7 @@ const modals = reactive<ModalState>({
   applyCreditSuccess: false,
 });
 
-type ButtonType = "button" | "paid-status" | "status" | "empty";
+type ButtonType = "button" | "status" | "empty";
 
 interface ButtonConfig {
   type: ButtonType;
@@ -243,10 +233,10 @@ const buttonConfig = computed((): ButtonConfig | null => {
       };
     } else {
       return {
-        type: "paid-status",
-        text: "Pagado",
-        class: "appointment-pay-modal__button-item",
-        action: openAppointmentDetails,
+        type: "empty",
+        text: "—",
+        class: "",
+        action: () => {},
       };
     }
   }
@@ -267,10 +257,10 @@ const buttonConfig = computed((): ButtonConfig | null => {
     appointmentCode === "CONCRETED_APPOINTMENT"
   ) {
     return {
-      type: "paid-status",
-      text: "Pagado",
-      class: "appointment-pay-modal__button-item",
-      action: openAppointmentDetails,
+      type: "empty",
+      text: "—",
+      class: "",
+      action: () => {},
     };
   }
 
@@ -362,18 +352,6 @@ const buttonConfig = computed((): ButtonConfig | null => {
     }
   }
 
-  &__button-item {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    gap: 0.5rem;
-    cursor: pointer;
-    transition: opacity 0.2s ease;
-
-    &:hover {
-      opacity: 0.8;
-    }
-  }
 }
 
 .width-full {
