@@ -47,6 +47,7 @@
         @set-alternative-phone-number="setAlternativePhoneNumber"
         @is-for-external-user="setIsForExternalUser"
         @set-user-description="setUserDescription"
+        @toggle-alternative-number="setIsUsingAlternativeNumber"
       />
 
       <WebsiteReservarCitaValoracionConfirmacionReserva
@@ -84,7 +85,7 @@
           @click="nextStep"
           type="button"
           aria-label="Continuar al siguiente paso"
-          :disabled="isLoading"
+          :disabled="isLoading || (internalCurrentStep === 1 && isUsingAlternativeNumber && !alternativePhoneNumber)"
         >
           <span
             v-if="isLoading"
@@ -144,6 +145,7 @@ const isOpenSuccessModal = ref<boolean>(false);
 const isLoading = ref<boolean>(false);
 
 const alternativePhoneNumber = ref<string | null>(null);
+const isUsingAlternativeNumber = ref<boolean>(false);
 const isForExternalUser = ref<"me" | "someoneElse">("me");
 const userDescription = ref<string>("");
 
@@ -194,6 +196,12 @@ const setUserDescription = (description: string) => {
 };
 
 const nextStep = (): void => {
+  if (internalCurrentStep.value === 1) {
+    if (isUsingAlternativeNumber.value && !alternativePhoneNumber.value) {
+      return;
+    }
+  }
+
   if (internalCurrentStep.value === 2) {
     handleConfirmReservation();
     return;
@@ -212,6 +220,13 @@ const prevStep = (): void => {
 
 const setAlternativePhoneNumber = (phone: string): void => {
   alternativePhoneNumber.value = phone;
+};
+
+const setIsUsingAlternativeNumber = (active: boolean): void => {
+  isUsingAlternativeNumber.value = active;
+  if (!active) {
+    alternativePhoneNumber.value = null;
+  }
 };
 
 const handleConfirmReservation = async () => {

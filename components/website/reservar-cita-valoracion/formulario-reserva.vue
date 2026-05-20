@@ -200,6 +200,7 @@ interface Emits {
   (e: "is-for-external-user", person: "me" | "someoneElse"): void;
   (e: "set-alternative-phone-number", phone: string): void;
   (e: "set-user-description", description: string): void;
+  (e: "toggle-alternative-number", active: boolean): void;
 }
 const props = defineProps<Props>();
 const emit = defineEmits<Emits>();
@@ -264,6 +265,8 @@ const toggleAlternativeNumber = (event: Event): void => {
     alternativeInput.parentElement?.classList.remove("active");
     emit("set-alternative-phone-number", "");
   }
+
+  emit("toggle-alternative-number", isChecked);
 };
 </script>
 
