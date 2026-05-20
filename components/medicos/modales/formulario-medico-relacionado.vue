@@ -1071,7 +1071,7 @@ async function executeCreateSubmission() {
     legal_representative: currentUser.id,
     num_medical_enrollment: doctorForm.medicalEnrollmentCode.trim(),
     name: doctorForm.fullName.trim(),
-    phone_number: "",
+    phone_number: currentUser.phone_number ?? "",
     country_iso_code: "CRC",
     province: "",
     city_name: "",
