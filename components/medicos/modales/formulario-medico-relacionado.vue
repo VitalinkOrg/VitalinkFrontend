@@ -22,7 +22,7 @@
         </h2>
       </template>
 
-      <div class="doctor-modal__body">
+      <div ref="modalBodyRef" class="doctor-modal__body">
         <div v-if="isLoadingInitialData" class="doctor-modal__loading">
           <div class="doctor-modal__loading-spinner" />
           <p class="doctor-modal__loading-text">Cargando datos del médico...</p>
@@ -288,6 +288,7 @@
                     @update:model-value="
                       pendingSpecialtyCode = $event as string
                     "
+                    @select="pendingSpecialtyName = $event.label"
                   />
                   <button
                     type="button"
@@ -543,6 +544,47 @@
         </nav>
       </template>
     </UiModalBase>
+
+    <UiModalBase
+      :is-open="isOrphanWarningVisible"
+      size="small"
+      title="Packs con especialidad eliminada"
+      :show-close-button="false"
+      :close-on-backdrop="false"
+      @close="isOrphanWarningVisible = false"
+    >
+      <div class="orphan-warning">
+        <p class="orphan-warning__message">
+          Los siguientes packs tienen una especialidad que fue eliminada y no
+          pueden guardarse:
+        </p>
+        <ul class="orphan-warning__list">
+          <li
+            v-for="(pack, i) in packsWithOrphanedSpecialty"
+            :key="i"
+            class="orphan-warning__item"
+          >
+            Pack {{ packsList.indexOf(pack) + 1 }}
+            <span class="orphan-warning__specialty">
+              (especialidad: {{ getSpecialtyName(pack.specialty_code) }})
+            </span>
+          </li>
+        </ul>
+        <p class="orphan-warning__hint">
+          Ve a <strong>Packs y precios</strong> y elimina estos packs antes de
+          guardar.
+        </p>
+        <div class="orphan-warning__actions">
+          <button
+            type="button"
+            class="doctor-modal__button--primary"
+            @click="isOrphanWarningVisible = false"
+          >
+            Entendido
+          </button>
+        </div>
+      </div>
+    </UiModalBase>
   </div>
 </template>
 
@@ -620,8 +662,12 @@ const logger = useLogger("FormularioMedicoRelacionado");
 const toast = useToast();
 const { getAllUdcs, createUdc, updateUdc } = useUdc();
 const { createSupplier, updateSupplier, getSupplierById } = useSupplier();
-const { createMultipleSpecialtiesBySupplier } = useSpecialtyBySupplier();
-const { createPackage, updatePackage, deletePackage, getPackageById } =
+const {
+  getAllSpecialtyBySupplier,
+  createMultipleSpecialtiesBySupplier,
+  deleteSpecialtyBySupplier,
+} = useSpecialtyBySupplier();
+const { createPackage, updatePackage, deletePackage, getPackageById, getAllPackages } =
   usePackage();
 const { getAllLocations } = useLocation();
 const { getUserInfo } = useUserInfo();
@@ -635,8 +681,10 @@ const {
 
 const isModalVisible = ref(false);
 const currentStep = ref(STEP_DOCTOR_INFO);
+const modalBodyRef = ref<HTMLElement | null>(null);
 const isLoadingInitialData = ref(false);
 const isSubmitting = ref(false);
+const isOrphanWarningVisible = ref(false);
 
 const documentTypes = ref<IUdc[]>([]);
 const medicalTypes = ref<IUdc[]>([]);
@@ -649,6 +697,7 @@ const isLoadingSpecialties = ref(false);
 const isLoadingLocations = ref(false);
 
 const pendingSpecialtyCode = ref("");
+const pendingSpecialtyName = ref("");
 const pendingLocationId = ref<number | undefined>(undefined);
 const activePreviewPackIndex = ref(0);
 
@@ -797,6 +846,28 @@ const submitButtonLabel = computed(() => {
   return isEditMode.value ? "Actualizar médico" : "Guardar médico";
 });
 
+const validSelectedSpecialtyCodes = computed(
+  () => new Set(doctorForm.selectedSpecialties.map((s) => s.code)),
+);
+
+const packsWithOrphanedSpecialty = computed(() =>
+  packsList.value.filter(
+    (p) =>
+      p.specialty_code &&
+      !validSelectedSpecialtyCodes.value.has(p.specialty_code),
+  ),
+);
+
+function getSpecialtyName(code: string): string {
+  return (
+    specialtiesCatalog.value.find((s) => s.code === code)?.name ??
+    editSupplierDetail.value?.services
+      ?.find((svc) => svc.medical_specialty.code === code)
+      ?.medical_specialty.name ??
+    code
+  );
+}
+
 function createEmptyPack(): PackFormItem {
   return {
     procedure_code: "",
@@ -890,6 +961,10 @@ function handleModalClose() {
 
 function navigateToStep(step: number) {
   currentStep.value = step;
+  nextTick(() => {
+    const scrollable = modalBodyRef.value?.closest<HTMLElement>(".modal__content");
+    if (scrollable) scrollable.scrollTop = 0;
+  });
 }
 
 function handleDocumentTypeSelection(code: string) {
@@ -903,6 +978,7 @@ function handleMedicalTypeChange(code: string) {
 
   doctorForm.selectedSpecialties = [];
   pendingSpecialtyCode.value = "";
+  pendingSpecialtyName.value = "";
   specialtiesCatalog.value = [];
 
   if (code) {
@@ -912,16 +988,13 @@ function handleMedicalTypeChange(code: string) {
 
 function addSelectedSpecialty() {
   if (!canAddSpecialty.value) return;
-  const matched = specialtiesCatalog.value.find(
-    (s) => s.code === pendingSpecialtyCode.value,
-  );
-  if (!matched) return;
 
   doctorForm.selectedSpecialties.push({
-    code: matched.code,
-    name: matched.name,
+    code: pendingSpecialtyCode.value,
+    name: pendingSpecialtyName.value,
   });
   pendingSpecialtyCode.value = "";
+  pendingSpecialtyName.value = "";
   touched.selectedSpecialties = true;
 }
 
@@ -943,6 +1016,11 @@ async function handleFinalSubmit() {
     toast.error(
       "Cada pack debe tener al menos un procedimiento y costo de valoración.",
     );
+    return;
+  }
+
+  if (packsWithOrphanedSpecialty.value.length > 0) {
+    isOrphanWarningVisible.value = true;
     return;
   }
 
@@ -1172,76 +1250,31 @@ async function executeEditSubmission(supplierId: number) {
 
   let specialtyCodeToIdMap = new Map<string, number>();
 
-  const detail = editSupplierDetail.value;
-  if (detail?.services?.length) {
-    for (const svc of detail.services) {
-      specialtyCodeToIdMap.set(svc.medical_specialty.code, svc.id);
+  logger.debug("Obteniendo especialidades actuales del supplier...");
+  const { data: currentSpecialties, error: specFetchError } =
+    await getAllSpecialtyBySupplier({ supplier_id: supplierId });
+
+  if (specFetchError) {
+    throw new Error(
+      specFetchError.info ?? "Error al obtener especialidades actuales",
+    );
+  }
+
+  if (currentSpecialties?.length) {
+    for (const spec of currentSpecialties) {
+      specialtyCodeToIdMap.set(spec.medical_specialty.code, spec.id);
     }
-    logger.debug("Mapa desde editSupplierDetail", {
+    logger.debug("Mapa de especialidades actuales", {
       map: Object.fromEntries(specialtyCodeToIdMap),
     });
   }
 
-  if (specialtyCodeToIdMap.size === 0) {
-    logger.warn(
-      "specialtyCodeToIdMap vacío, recargando detalle del supplier...",
-    );
-    await delay(1000);
+  const selectedCodes = new Set(
+    doctorForm.selectedSpecialties.map((s) => s.code),
+  );
 
-    const { data: freshDetail, error: freshError } =
-      await getSupplierById(supplierId);
-
-    if (!freshError && freshDetail?.services?.length) {
-      editSupplierDetail.value = freshDetail;
-      for (const svc of freshDetail.services) {
-        specialtyCodeToIdMap.set(svc.medical_specialty.code, svc.id);
-      }
-      logger.debug("Mapa reconstruido desde API", {
-        map: Object.fromEntries(specialtyCodeToIdMap),
-      });
-    }
-  }
-
-  if (
-    specialtyCodeToIdMap.size === 0 &&
-    doctorForm.selectedSpecialties.length > 0
-  ) {
-    logger.warn("Especialidades no encontradas en el supplier, creándolas...");
-
-    const specialtyPayloads: ICreateSpecialtyBySupplierRequest[] =
-      doctorForm.selectedSpecialties.map((s) => ({
-        supplier_id: supplierId,
-        medical_specialty_code: s.code,
-      }));
-
-    const { data: specData, error: specError } =
-      await createMultipleSpecialtiesBySupplier(specialtyPayloads);
-
-    if (specError) {
-      logger.error("Error al crear especialidades en fallback", {
-        info: specError.info,
-      });
-    }
-
-    if (specData) {
-      specialtyCodeToIdMap = buildSpecialtyMapFromResponse(specData);
-      logger.debug("Mapa construido desde createMultiple", {
-        map: Object.fromEntries(specialtyCodeToIdMap),
-      });
-    }
-
-    if (specialtyCodeToIdMap.size > 0) {
-      await delay(1000);
-    }
-  }
-
-  if (specialtyCodeToIdMap.size === 0) {
-    throw new Error(
-      "No se pudieron obtener los IDs de specialty_by_supplier. " +
-        "Verifica que las especialidades estén correctamente asignadas e intenta nuevamente.",
-    );
-  }
-
+  // Delete removed packs first so the backend FK constraint doesn't block
+  // specialty deletion when a specialty that still has packs is removed.
   const currentPackIds = new Set(
     packsList.value.filter((p) => p.id !== undefined).map((p) => p.id!),
   );
@@ -1267,8 +1300,103 @@ async function executeEditSubmission(supplierId: number) {
     }
   }
 
+  const toDelete = [...specialtyCodeToIdMap.entries()].filter(
+    ([code]) => !selectedCodes.has(code),
+  );
+
+  // Before deleting specialties, delete all backend packages that reference
+  // those specialty_by_supplier IDs. The form's specialty_code may not always
+  // match the actual DB reference (loaded from service grouping), so we query
+  // the backend directly via IPackage.specialty.id instead of relying on form state.
+  if (toDelete.length > 0) {
+    const deletingSpecialtyIds = new Set(toDelete.map(([, id]) => id));
+    const { data: allPkgs } = await getAllPackages(supplierId);
+    if (allPkgs?.length) {
+      for (const pkg of allPkgs) {
+        if (deletingSpecialtyIds.has(pkg.specialty.id)) {
+          logger.debug("Eliminando package vinculado a especialidad removida", {
+            pkgId: pkg.id,
+            specialtyId: pkg.specialty.id,
+          });
+          const { error: delErr } = await deletePackage(pkg.id);
+          if (delErr) {
+            throw new Error(
+              `No se pudo eliminar el pack #${pkg.id}: ${delErr.info}`,
+            );
+          }
+          deletedPackageIds.value.add(pkg.id);
+          await delay(500);
+        }
+      }
+    }
+  }
+
+  for (const [code, specialtyBySupplierId] of toDelete) {
+    logger.debug("Eliminando especialidad removida", {
+      code,
+      specialtyBySupplierId,
+    });
+    const { error: delSpecErr } =
+      await deleteSpecialtyBySupplier(specialtyBySupplierId);
+    if (delSpecErr) {
+      throw new Error(
+        delSpecErr.info ?? `Error al eliminar especialidad ${code}`,
+      );
+    }
+    specialtyCodeToIdMap.delete(code);
+  }
+
+  const addedSpecialties = doctorForm.selectedSpecialties.filter(
+    (s) => !specialtyCodeToIdMap.has(s.code),
+  );
+
+  if (addedSpecialties.length > 0) {
+    logger.debug("Creando especialidades nuevas", {
+      codes: addedSpecialties.map((s) => s.code),
+    });
+
+    const newSpecialtyPayloads: ICreateSpecialtyBySupplierRequest[] =
+      addedSpecialties.map((s) => ({
+        supplier_id: supplierId,
+        medical_specialty_code: s.code,
+      }));
+
+    const { data: newSpecData, error: newSpecError } =
+      await createMultipleSpecialtiesBySupplier(newSpecialtyPayloads);
+
+    if (newSpecError) {
+      logger.error("Error al crear especialidades nuevas", {
+        info: newSpecError.info,
+      });
+    }
+
+    if (newSpecData) {
+      const newMap = buildSpecialtyMapFromResponse(newSpecData);
+      for (const [code, id] of newMap) {
+        specialtyCodeToIdMap.set(code, id);
+      }
+      logger.debug("Mapa actualizado con especialidades nuevas", {
+        map: Object.fromEntries(specialtyCodeToIdMap),
+      });
+      await delay(1000);
+    }
+  }
+
+  if (specialtyCodeToIdMap.size === 0) {
+    throw new Error(
+      "No se pudieron obtener los IDs de specialty_by_supplier. " +
+        "Verifica que las especialidades estén correctamente asignadas e intenta nuevamente.",
+    );
+  }
+
   for (let i = 0; i < packsList.value.length; i++) {
     const pack = packsList.value[i];
+
+    if (pack.id && deletedPackageIds.value.has(pack.id)) {
+      logger.debug(`Pack ${i + 1} ya eliminado (especialidad removida), omitiendo`);
+      continue;
+    }
+
     const specialtyId = specialtyCodeToIdMap.get(pack.specialty_code) ?? 0;
 
     if (specialtyId === 0) {
@@ -1728,6 +1856,7 @@ function resetFormState() {
   });
 
   pendingSpecialtyCode.value = "";
+  pendingSpecialtyName.value = "";
   pendingLocationId.value = undefined;
   activePreviewPackIndex.value = 0;
   packsList.value = [createEmptyPack()];
@@ -2121,6 +2250,50 @@ defineExpose({ openModal });
 @keyframes doctor-modal-spin {
   to {
     transform: rotate(360deg);
+  }
+}
+
+.orphan-warning {
+  padding: 1.25rem 1.5rem 1.5rem;
+
+  &__message {
+    margin: 0 0 0.75rem;
+    font-size: 0.9375rem;
+    color: #374151;
+  }
+
+  &__list {
+    margin: 0 0 1rem;
+    padding-left: 1.25rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+  }
+
+  &__item {
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: #111827;
+  }
+
+  &__specialty {
+    font-weight: 400;
+    color: #6b7280;
+  }
+
+  &__hint {
+    margin: 0 0 1.25rem;
+    font-size: 0.875rem;
+    color: #92400e;
+    background: #fffbeb;
+    border: 1px solid #f59e0b;
+    border-radius: 6px;
+    padding: 0.625rem 0.75rem;
+  }
+
+  &__actions {
+    display: flex;
+    justify-content: flex-end;
   }
 }
 </style>

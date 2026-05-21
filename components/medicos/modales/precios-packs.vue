@@ -16,14 +16,25 @@
         type="button"
         role="tab"
         class="packs-config__tab"
-        :class="{ 'packs-config__tab--active': activePackIndex === packIndex }"
+        :class="{
+          'packs-config__tab--active': activePackIndex === packIndex,
+          'packs-config__tab--warning': hasOrphanedSpecialty(pack),
+        }"
         :aria-selected="activePackIndex === packIndex"
         :aria-controls="`pack-panel-${packIndex}`"
         @click="activatePack(packIndex)"
       >
         Pack {{ packIndex + 1 }}
         <span
-          v-if="isPackComplete(pack)"
+          v-if="hasOrphanedSpecialty(pack)"
+          class="packs-config__tab-warning-icon"
+          title="La especialidad de este pack fue eliminada. Elimina este pack antes de guardar."
+          aria-label="Advertencia: especialidad eliminada"
+        >
+          ⚠
+        </span>
+        <span
+          v-else-if="isPackComplete(pack)"
           class="packs-config__tab-check"
           aria-label="Completo"
         >
@@ -372,6 +383,16 @@ const internalPacks = computed<PackFormItem[]>({
 const specialtyDropdownItems = computed<DropdownItem[]>(() =>
   props.availableSpecialties.map((s) => ({ value: s.code, label: s.name })),
 );
+
+const validSpecialtyCodes = computed(
+  () => new Set(props.availableSpecialties.map((s) => s.code)),
+);
+
+function hasOrphanedSpecialty(pack: PackFormItem): boolean {
+  return (
+    !!pack.specialty_code && !validSpecialtyCodes.value.has(pack.specialty_code)
+  );
+}
 
 function procedureItemsForPack(pack: PackFormItem): DropdownItem[] {
   if (!pack.specialty_code) return [];
@@ -727,6 +748,25 @@ defineExpose({
         background: lighten($color-primary, 45%);
       }
     }
+
+    &--warning {
+      border-color: #f59e0b;
+      color: #92400e;
+      background: #fffbeb;
+      &:hover {
+        background: #fef3c7;
+      }
+    }
+  }
+
+  &__tab-warning-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 18px;
+    height: 18px;
+    font-size: 12px;
+    color: #f59e0b;
   }
 
   &__tab-check {
