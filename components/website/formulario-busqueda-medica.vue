@@ -157,6 +157,11 @@ const handleSpecialtyClear = () => {
 };
 
 const searchResults = () => {
+  if (!isAuthenticated.value) {
+    router.push("/auth/login");
+    return;
+  }
+
   const newQuery: Record<string, string> = {
     ...(selectedProcedure.value && {
       procedure_code: selectedProcedure.value.toString(),

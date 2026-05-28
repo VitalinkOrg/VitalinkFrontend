@@ -94,6 +94,11 @@
           </tr>
         </tbody>
       </table>
+
+      <div class="successful-reservation__message--email-notice">
+        <AtomsIconsCorreoIcon size="24" />
+        <p>Recibirás un correo de confirmación. Revisa tu spam si no lo encuentras.</p>
+      </div>
     </div>
 
     <template #footer>
@@ -284,6 +289,32 @@ const getSelectedProcedureName = computed(() => {
       line-height: 24px;
       text-align: center;
       color: #353e5c;
+    }
+
+    &--email-notice {
+      display: flex;
+      align-items: flex-start;
+      gap: 8px;
+      margin-top: 12px;
+      padding: 10px 14px;
+      background-color: #fffbeb;
+      border: 1px solid #f5c518;
+      border-radius: 10px;
+      color: #6d758f;
+
+      :deep(.iconify) {
+        flex-shrink: 0;
+        margin-top: 2px;
+        color: #d4a017;
+      }
+
+      p {
+        font-weight: 400;
+        font-size: 14px;
+        line-height: 20px;
+        text-align: left;
+        margin: 0;
+      }
     }
   }
 

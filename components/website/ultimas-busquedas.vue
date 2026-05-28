@@ -1,4 +1,7 @@
 <script lang="ts" setup>
+const { authenticated } = useAuthState();
+const router = useRouter();
+
 interface SearchHistory {
   specialtyCode: string;
   specialtyName: string;
@@ -42,6 +45,13 @@ const getSearchLabel = (search: SearchHistory) => {
   return search.procedureName || search.specialtyName;
 };
 
+const handleSearchClick = (event: Event, search: SearchHistory) => {
+  if (!authenticated.value) {
+    event.preventDefault();
+    router.push("/auth/login");
+  }
+};
+
 onMounted(() => {
   loadSearchHistory();
 });
@@ -70,6 +80,7 @@ onMounted(() => {
         :key="`${search.specialtyCode}-${search.procedureCode || 'none'}-${index}`"
         :to="getSearchLink(search)"
         class="latest-search__badge"
+        @click="handleSearchClick($event, search)"
       >
         {{ getSearchLabel(search) }}
       </NuxtLink>

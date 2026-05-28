@@ -65,10 +65,11 @@ const packageName = computed<string>(
 const isKingPackage = computed<boolean>(() => Boolean(props.pkg?.is_king));
 
 const packagePrice = computed<string>(() => {
-  const price = props.pkg?.reference_price;
-  if (!price) return "₡0.00";
+  const raw = props.pkg?.reference_price;
+  const price = Number(raw);
+  if (!price || isNaN(price)) return "Precio a definir en cita";
 
-  return typeof price === "string" ? price : safeCurrencyFormat(price);
+  return safeCurrencyFormat(price);
 });
 
 const originalPrice = computed<string>(() => {

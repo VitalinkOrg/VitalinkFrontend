@@ -238,9 +238,11 @@ const displayDiscountPrice = computed(() => {
   return formatCurrency(rawValue);
 });
 
-const formattedReferencePrice = computed(() =>
-  formatCurrency(props.pack?.reference_price),
-);
+const formattedReferencePrice = computed(() => {
+  const price = props.pack?.reference_price;
+  if (!price || price === 0) return "Precio a definir en cita";
+  return formatCurrency(price);
+});
 
 const formattedValorationPrice = computed(() =>
   formatCurrency(props.pack?.product_valoration_price),
