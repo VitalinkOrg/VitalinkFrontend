@@ -137,7 +137,7 @@
           </h2>
           <button
             class="call-to-action__button"
-            @click="scrollToBusqueda"
+            @click="handleCtaClick"
             aria-label="Ir al formulario de búsqueda de especialistas"
           >
             <span class="call-to-action__button--text">
@@ -164,6 +164,9 @@ useSeoMeta({
   ogDescription: "Encuentra médicos, agenda citas y gestiona tu salud en un solo lugar.",
 });
 
+const { authenticated } = useAuthState();
+const router = useRouter();
+
 const scrollToBusqueda = () => {
   const element = document.getElementById("home");
   if (element) {
@@ -174,6 +177,14 @@ const scrollToBusqueda = () => {
         searchInput.focus();
       }, 500);
     }
+  }
+};
+
+const handleCtaClick = () => {
+  if (!authenticated.value) {
+    router.push("/auth/login");
+  } else {
+    scrollToBusqueda();
   }
 };
 </script>
