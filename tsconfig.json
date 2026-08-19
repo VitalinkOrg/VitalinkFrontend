@@ -1,4 +1,11 @@
 {
   // https://nuxt.com/docs/guide/concepts/typescript
-  "extends": "./.nuxt/tsconfig.json"
+  "extends": "./.nuxt/tsconfig.json",
+  "compilerOptions": {
+    // .nuxt/tsconfig.json (generated) still sets moduleResolution=node10
+    // (via moduleResolution="Node"), which TS 6.x has removed outright
+    // (TS5108). Override to the modern equivalent until Nuxt's generated
+    // config catches up.
+    "moduleResolution": "Bundler"
+  }
 }
