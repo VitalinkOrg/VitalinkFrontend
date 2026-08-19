@@ -267,33 +267,36 @@ function closeModal(): void {
           <footer class="service-card__footer">
             <div class="service-card__footer-divider" aria-hidden="true" />
 
-            <dl class="service-card__valoracion">
-              <div class="service-card__valoracion-row">
-                <dt class="service-card__valoracion-label">
-                  Cita de valoración
-                </dt>
-                <dd
+            <div
+              class="service-card__valoracion"
+              role="group"
+              aria-label="Precio de la cita de valoración"
+            >
+              <div class="service-card__valoracion-amounts">
+                <p
                   class="service-card__valoracion-price"
                   :class="{
                     'service-card__valoracion-price--struck':
                       hasVitalinkDiscount,
                   }"
                 >
+                  <span class="visually-hidden">Precio original: </span>
                   {{ formattedValoracionCost }}
-                </dd>
+                </p>
+
+                <p
+                  v-if="hasVitalinkDiscount"
+                  class="service-card__valoracion-vitalink"
+                >
+                  <span class="visually-hidden">Precio con descuento: </span>
+                  {{ displayDiscountPrice }}
+                </p>
               </div>
 
-              <div class="service-card__valoracion-row">
-                <dt
-                  class="service-card__valoracion-label service-card__valoracion-label--highlight"
-                >
-                  Precio Vitalink
-                </dt>
-                <dd class="service-card__valoracion-vitalink">
-                  {{ displayDiscountPrice }}
-                </dd>
-              </div>
-            </dl>
+              <p class="service-card__valoracion-caption">
+                Cita de valoración
+              </p>
+            </div>
 
             <div class="service-card__cta">
               <WebsiteReservarCitaValoracion
@@ -575,35 +578,19 @@ function closeModal(): void {
     margin: 0;
     display: flex;
     flex-direction: column;
-    gap: 6px;
+    gap: 3px;
   }
 
-  &__valoracion-row {
+  &__valoracion-amounts {
     display: flex;
-    justify-content: space-between;
-    align-items: center;
-  }
-
-  &__valoracion-label {
-    font-weight: 500;
-    font-size: 13px;
-    line-height: 16px;
-    color: $color-text-secondary;
-    margin: 0;
-
-    &--highlight {
-      display: flex;
-      align-items: center;
-      gap: 4px;
-      font-weight: 600;
-      color: $primary-aqua;
-    }
+    align-items: baseline;
+    gap: 0.75rem;
   }
 
   &__valoracion-price {
-    font-weight: 600;
-    font-size: 14px;
-    line-height: 20px;
+    font-weight: 700;
+    font-size: 16px;
+    line-height: 1.2;
     color: $color-foreground;
     margin: 0;
 
@@ -621,12 +608,14 @@ function closeModal(): void {
     line-height: 20px;
     color: $primary-aqua;
     margin: 0;
+  }
 
-    &--inactive {
-      font-weight: 500;
-      font-size: 13px;
-      color: #98a2b3;
-    }
+  &__valoracion-caption {
+    font-weight: 300;
+    font-size: 12px;
+    line-height: 1.2;
+    color: #6d758f;
+    margin: 0;
   }
 
   &__cta {

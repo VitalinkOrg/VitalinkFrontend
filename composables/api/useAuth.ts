@@ -1,5 +1,12 @@
 import { useLogger } from "@/composables/useLogger";
 import useApi from "./useApi";
+import type {
+  IForgotPassword,
+  IForgotPasswordResponse,
+  IVerifyTokenResponse,
+  IResetPassword,
+  IResetPasswordResponse,
+} from "@/types/auth";
 
 export const useAuth = () => {
   const { getToken, clearTokens } = useAuthToken();

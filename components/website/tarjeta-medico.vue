@@ -45,15 +45,18 @@
             </div>
 
             <div class="supplier-card__meta">
-              <img
-                src="@/src/assets/doctor-element.svg"
-                alt=""
-                aria-hidden="true"
-                class="supplier-card__meta-icon"
-              />
-              <p class="supplier-card__specialty">
-                {{ supplier.description }}
-              </p>
+              <ul
+                class="supplier-card__service-list"
+                aria-label="Servicios ofrecidos"
+              >
+                <li
+                  v-for="serviceName in supplier.services_names"
+                  :key="serviceName"
+                  class="supplier-card__service-tag"
+                >
+                  {{ serviceName }}
+                </li>
+              </ul>
             </div>
 
             <ul
@@ -103,19 +106,6 @@
             </time>
           </div>
         </section>
-
-        <ul
-          class="supplier-card__service-list"
-          aria-label="Servicios ofrecidos"
-        >
-          <li
-            v-for="serviceName in supplier.services_names"
-            :key="serviceName"
-            class="supplier-card__service-tag"
-          >
-            {{ serviceName }}
-          </li>
-        </ul>
 
         <footer class="supplier-card__footer">
           <div class="supplier-card__pricing" aria-label="Precio de valoración">
@@ -502,23 +492,6 @@ onMounted(fetchSupplierPackages);
     }
   }
 
-  &__meta-icon {
-    width: 24px;
-    height: 24px;
-    padding: 5px;
-    border-radius: 20px;
-    background-color: #3541b40d;
-    flex-shrink: 0;
-
-    @include respond-to(md) {
-      width: 30px;
-      height: 30px;
-      padding: 7px;
-      border-radius: 24px;
-    }
-  }
-
-  &__specialty,
   &__location {
     @include label-base;
     font-weight: 300;
@@ -602,14 +575,11 @@ onMounted(fetchSupplierPackages);
     display: flex;
     flex-wrap: wrap;
     gap: 5px;
-    margin-top: 15px;
-    margin-bottom: auto;
     list-style: none;
     padding: 0;
 
     @include respond-to(md) {
       gap: 6.3px;
-      margin-top: 20px;
     }
   }
 

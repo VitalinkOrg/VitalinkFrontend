@@ -3,6 +3,7 @@ import { jwtDecode } from "jwt-decode";
 import { useAuth } from "@/composables/api";
 import { useDocuments } from "@/composables/api/useDocuments";
 import { onClickOutside } from "@vueuse/core";
+import type { DecodedToken } from "@/types/auth";
 
 useSeoMeta({
   title: "Mi Perfil — Vitalink Seguros",

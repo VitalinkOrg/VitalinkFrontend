@@ -1,6 +1,7 @@
 <script lang="ts" setup>
 import { jwtDecode } from "jwt-decode";
 import { useAuth } from "@/composables/api";
+import type { DecodedToken } from "@/types/auth";
 
 useSeoMeta({
   title: "Privacidad y Seguridad — Vitalink Seguros",

@@ -3,19 +3,28 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "build": "nuxt build",
     "dev": "nuxt dev",
+    "build": "nuxt build",
     "generate": "nuxt generate",
     "preview": "nuxt preview",
-    "postinstall": "nuxt prepare"
+    "postinstall": "nuxt prepare",
+    "typecheck": "nuxt typecheck",
+    "lint": "eslint . --ext .vue,.ts,.js --ignore-path .gitignore",
+    "lint:fix": "eslint . --ext .vue,.ts,.js --ignore-path .gitignore --fix",
+    "format": "prettier --write .",
+    "format:check": "prettier --check ."
   },
   "devDependencies": {
     "@nuxt/devtools": "latest",
+    "@nuxt/eslint-config": "^0.3.13",
+    "eslint": "^8.57.0",
+    "eslint-plugin-vue": "^9.25.0",
     "nuxt": "^3.8.2",
     "nuxt-icon": "^0.6.8",
     "sass": "^1.69.6",
     "vue": "^3.3.12",
-    "vue-router": "^4.2.5"
+    "vue-router": "^4.2.5",
+    "vue-tsc": "^2.0.0"
   },
   "dependencies": {
     "@popperjs/core": "^2.11.8",
