@@ -3,6 +3,7 @@ export const UserRole = {
   CUSTOMER: "CUSTOMER",
   LEGAL_REPRESENTATIVE: "LEGAL_REPRESENTATIVE",
   FINANCE_ENTITY: "FINANCE_ENTITY",
+  SUPER_ADMIN: "SUPER_ADMIN",
 } as const;
 
 export type UserRoleType = (typeof UserRole)[keyof typeof UserRole];
@@ -56,6 +57,7 @@ export const ROLE_HOME_ROUTES: Readonly<Record<UserRoleType, string>> = {
   [UserRole.CUSTOMER]: "/pacientes/inicio",
   [UserRole.LEGAL_REPRESENTATIVE]: "/medicos/inicio",
   [UserRole.FINANCE_ENTITY]: "/socio-financiero/inicio",
+  [UserRole.SUPER_ADMIN]: "/admin/inicio",
 };
 
 /**

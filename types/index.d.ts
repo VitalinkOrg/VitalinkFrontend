@@ -20,6 +20,7 @@ interface IApiResponse<T = any> {
   status: IStatus;
   info: string;
   data?: T;
+  pagination?: Pagination;
 }
 
 interface IApiErrorData {
@@ -39,6 +40,7 @@ interface IUsableAPI<T> {
   request: () => Promise<void>;
   error: Ref<IApiErrorResponse | null>;
   loading: Ref<boolean>;
+  pagination: Ref<Pagination | undefined>;
 }
 
 // ─── Pagination ──────────────────────────────────────────────────────────────
@@ -446,6 +448,39 @@ interface ISupplierParams {
   max_price?: number;
   size?: number;
   page?: number;
+}
+
+// ─── Admin Supplier Management ─────────────────────────────────────────────────
+
+interface IAdminSupplierListParams {
+  search?: string;
+  page?: number;
+  limit?: number;
+  isDeleted?: 0 | 1;
+}
+
+interface IAdminSupplierSpecialty {
+  code: string;
+  name: string;
+}
+
+interface IAdminSupplierListItem {
+  id: number;
+  name: string | null;
+  email: string;
+  phone_number: string | null;
+  is_hospital: boolean;
+  is_deleted: 0 | 1;
+  profile_picture_url: string | null;
+  legal_representative: { id: number | string; name: string } | null;
+  specialties: IAdminSupplierSpecialty[];
+  created_date: string | null;
+  updated_date: string | null;
+}
+
+interface IToggleSupplierActiveRequest {
+  supplierId: number;
+  isDeleted: 0 | 1;
 }
 
 interface ICreateSupplierRequest {

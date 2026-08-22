@@ -25,12 +25,13 @@ export const useSupplier = () => {
     data: T | undefined;
     error: IApiErrorResponse | null;
     loading: Ref<boolean>;
+    pagination: Pagination | undefined;
   }> => {
     const loading = ref(true);
 
     try {
       const headers = getAuthHeaders();
-      const { response, request, error } = useApi<T>(endpoint, {
+      const { response, request, error, pagination } = useApi<T>(endpoint, {
         ...options,
         headers: { ...headers, ...options?.headers },
       });
@@ -45,11 +46,21 @@ export const useSupplier = () => {
           status: error.value.status?.http_code,
           message: error.value.info,
         });
-        return { data: undefined, error: error.value, loading };
+        return {
+          data: undefined,
+          error: error.value,
+          loading,
+          pagination: undefined,
+        };
       }
 
       logger.debug(`${operationName} succeeded`, { endpoint });
-      return { data: response.value, error: null, loading };
+      return {
+        data: response.value,
+        error: null,
+        loading,
+        pagination: pagination.value,
+      };
     } catch (err: unknown) {
       loading.value = false;
 
@@ -67,7 +78,12 @@ export const useSupplier = () => {
         error: fallbackError.info,
       });
 
-      return { data: undefined, error: fallbackError, loading };
+      return {
+        data: undefined,
+        error: fallbackError,
+        loading,
+        pagination: undefined,
+      };
     }
   };
 
@@ -98,6 +114,38 @@ export const useSupplier = () => {
       method: "GET",
     });
 
+  const getAllSuppliersAdmin = async (params?: IAdminSupplierListParams) => {
+    const result = await executeRequest<IAdminSupplierListItem[]>(
+      "getAllSuppliersAdmin",
+      "supplier/admin/get_all",
+      {
+        method: "GET",
+        query: params,
+      },
+    );
+
+    if (result.error?.status?.http_code === 404) {
+      return {
+        ...result,
+        data: [] as IAdminSupplierListItem[],
+        error: null,
+        pagination: { total: 0, page: params?.page ?? 1, size: params?.limit ?? 20, total_pages: 0 },
+      };
+    }
+
+    return result;
+  };
+
+  const toggleSupplierActive = (payload: IToggleSupplierActiveRequest) =>
+    executeRequest<IAdminSupplierListItem>(
+      "toggleSupplierActive",
+      "supplier/toggle-active",
+      {
+        method: "PATCH",
+        body: JSON.stringify(payload),
+      },
+    );
+
   const getAllMainSuppliers = async (params?: ISupplierParams) => {
     const result = await executeRequest<ISupplierMain[]>(
       "getAllMainSuppliers",
@@ -126,7 +174,9 @@ export const useSupplier = () => {
     updateSupplier,
     getSupplierById,
     getAllSuppliers,
+    getAllSuppliersAdmin,
     getAllMainSuppliers,
     deleteSupplier,
+    toggleSupplierActive,
   };
 };

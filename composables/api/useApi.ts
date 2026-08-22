@@ -15,11 +15,13 @@ const useApi = <T>(
   const response = ref<T>() as Ref<T | undefined>;
   const error = ref<IApiErrorResponse | null>(null);
   const loading = ref(false);
+  const pagination = ref<Pagination | undefined>();
 
   const request = async (): Promise<void> => {
     loading.value = true;
     error.value = null;
     response.value = undefined;
+    pagination.value = undefined;
 
     try {
       const result = await $fetch<IApiResponse<T>>(endpoint, {
@@ -28,6 +30,7 @@ const useApi = <T>(
       });
 
       response.value = result.data;
+      pagination.value = result.pagination;
     } catch (err: unknown) {
       error.value = normalizeApiError(err);
     } finally {
@@ -35,7 +38,7 @@ const useApi = <T>(
     }
   };
 
-  return { response, request, error, loading };
+  return { response, request, error, loading, pagination };
 };
 
 /**
