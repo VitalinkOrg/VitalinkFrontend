@@ -635,6 +635,15 @@ watch(
     padding: 1.25rem 1.5rem;
     max-height: 60vh;
     overflow-y: auto;
+
+    @media (max-width: $breakpoint-md) {
+      // Below the modal's mobile bottom-sheet breakpoint, let the outer
+      // .modal__content be the single scroll container instead of nesting
+      // two independent scrollers on short viewports.
+      max-height: none;
+      overflow-y: visible;
+      padding: 1rem;
+    }
   }
 
   &__form-error {
