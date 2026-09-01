@@ -1990,6 +1990,10 @@ defineExpose({ openModal });
 
   &__body {
     padding: 1.5rem;
+
+    @include respond-to-max(sm) {
+      padding: 1rem;
+    }
   }
 
   &__loading {
@@ -2023,11 +2027,21 @@ defineExpose({ openModal });
 
     &--with-preview {
       display: grid;
-      grid-template-columns: 1fr 350px;
+      grid-template-columns: minmax(0, 1fr) 350px;
       gap: 2rem;
       align-items: start;
 
-      @media (max-width: 1024px) {
+      // Tablets (portrait through landscape, up to $breakpoint-xl) get less
+      // room than desktop once the modal's own padding and the extra-large
+      // dialog's 90vw cap are accounted for — a fixed 350px preview column
+      // squeezes the form column too tight, so shrink the preview instead
+      // of only reacting at the final single-column collapse.
+      @media (max-width: $breakpoint-xl) {
+        grid-template-columns: minmax(0, 1fr) 280px;
+        gap: 1.5rem;
+      }
+
+      @include respond-to-max(lg) {
         grid-template-columns: 1fr;
       }
     }
@@ -2093,6 +2107,15 @@ defineExpose({ openModal });
     gap: 0.75rem;
     justify-content: flex-end;
     width: 100%;
+
+    @include respond-to-max(sm) {
+      flex-direction: column-reverse;
+
+      button,
+      a {
+        width: 100%;
+      }
+    }
   }
 
   &__button--secondary {
@@ -2177,12 +2200,20 @@ defineExpose({ openModal });
   &__inline-group {
     display: flex;
     gap: 0.5rem;
+
+    @include respond-to-max(sm) {
+      flex-direction: column;
+    }
   }
 
   &__add-button {
     @include primary-button;
     padding: 0.625rem 1rem;
     white-space: nowrap;
+
+    @include respond-to-max(sm) {
+      width: 100%;
+    }
 
     &:disabled {
       opacity: 0.5;

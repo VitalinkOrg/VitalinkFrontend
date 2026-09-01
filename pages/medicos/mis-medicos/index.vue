@@ -710,9 +710,19 @@ onMounted(async () => {
     gap: 0;
     border-bottom: 2px solid #e4e7ec;
     margin-bottom: 1.25rem;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+
+    &::-webkit-scrollbar {
+      display: none;
+    }
   }
 
   &__tab {
+    display: flex;
+    align-items: center;
+    min-height: 44px;
     padding: 0.625rem 1.25rem;
     font-weight: 600;
     font-size: 14px;
@@ -721,6 +731,8 @@ onMounted(async () => {
     border: none;
     border-bottom: 2px solid transparent;
     margin-bottom: -2px;
+    white-space: nowrap;
+    flex-shrink: 0;
     cursor: pointer;
     transition: all 0.2s ease;
 
@@ -931,6 +943,7 @@ onMounted(async () => {
     display: flex;
     align-items: center;
     justify-content: space-between;
+    gap: $spacing-sm;
     background: $white;
     border: 1px solid #f1f3f7;
     padding: 10px 14px;
@@ -939,6 +952,15 @@ onMounted(async () => {
 
     &:hover {
       box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    }
+
+    @include respond-to-max(sm) {
+      flex-direction: column;
+      align-items: flex-start;
+
+      .my-practitioners__row-actions {
+        align-self: flex-end;
+      }
     }
   }
 
