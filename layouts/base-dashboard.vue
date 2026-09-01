@@ -171,6 +171,7 @@ onUnmounted(() => {
         </button>
 
         <UiSearchInput
+          class="dashboard__search"
           placeholder="Buscar"
           aria-label="Buscar"
           max-width="320px"
@@ -185,6 +186,7 @@ onUnmounted(() => {
         </button>
 
         <UiInputDropdownMenu
+          class="dashboard__user-menu"
           :src="userProfilePicture"
           :hide-default-items="hideDefaultItems"
           :custom-urls="customUrls"
@@ -387,7 +389,10 @@ onUnmounted(() => {
     padding: $spacing-lg;
     gap: $spacing-md;
     background-color: $white;
-    margin-left: 15rem;
+    // Must match .dashboard__sidebar's width at each breakpoint (and mirror
+    // .dashboard__main's margin-left below) — previously 15rem here vs the
+    // sidebar's actual 292px let the fixed sidebar cover ~52px of the header.
+    margin-left: 292px;
     min-height: 5rem;
 
     @include respond-to-max(xl) {
@@ -589,9 +594,9 @@ onUnmounted(() => {
     width: 100%;
     margin-bottom: $spacing-md;
 
-    @include respond-to-max(lg) {
-      margin-bottom: $spacing-sm;
-    }
+    // No lg-tier override here on purpose: tablets (768–991px) are
+    // touch-primary and need the same $spacing-md rhythm as desktop and
+    // mobile, not a tightened one — see the matching note on &__nav-link.
 
     @include respond-to-max(md) {
       margin-bottom: $spacing-md;
@@ -616,7 +621,11 @@ onUnmounted(() => {
     }
 
     @include respond-to-max(lg) {
-      padding: $spacing-sm $spacing-md;
+      // Tablets are touch input, not mouse — $spacing-sm vertical padding
+      // here used to collapse the row to ~36px, under the 44px minimum
+      // touch target. Keep $spacing-md vertical (matches xl/md tiers) and
+      // only trim the font-size for the tablet's narrower sidebar.
+      padding: $spacing-md;
       font-size: 0.875rem;
     }
 
