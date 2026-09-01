@@ -554,9 +554,12 @@ defineExpose({
   }
 }
 
-// ─── Mobile: card-based layout (<768px) ─────────────────────────────────────
+// ─── Mobile & tablet: card-based layout (<992px) ────────────────────────────
+// Covers portrait tablets too (e.g. a 768px-wide iPad) — at that width the
+// 5-column table is too cramped to read, so it switches to cards the same
+// as phones. Landscape tablets (≥992px) have enough room for the real table.
 
-@include respond-to-max(md) {
+@include respond-to-max(lg) {
   .appointment-table-base {
     &__container {
       background: transparent;
@@ -564,6 +567,13 @@ defineExpose({
       box-shadow: none;
       border: none;
       min-height: auto;
+      // The base (desktop) rule sets overflow: hidden for the rounded-card
+      // clipping trick — in card mode that's no longer needed (cards clip
+      // themselves via &__row now) but was never reset here, so this
+      // ancestor kept clipping anything that escaped a cell (e.g. the edit
+      // button's own box, or a row's popover) even after &__row and
+      // &__wrapper below were opened up.
+      overflow: visible;
     }
 
     &__wrapper {
@@ -591,7 +601,11 @@ defineExpose({
       border: 0.0625rem solid #e4e7ec;
       box-shadow: 0 0.0625rem 0.1875rem rgba($color-foreground, 0.06);
       margin-bottom: $spacing-sm;
-      overflow: hidden;
+      // Not hidden: an actions cell can hold an absolutely-positioned
+      // dropdown/popover (see e.g. citas-table.vue's actions menu) that
+      // needs to escape the card's bounds. The rounded bottom corners are
+      // preserved instead via matching radii on the last/actions cell below.
+      overflow: visible;
       transition: box-shadow 0.2s ease;
 
       &:last-child {
@@ -622,6 +636,11 @@ defineExpose({
 
       &:last-child {
         border-bottom: none;
+        // Row overflow is no longer hidden (popovers need to escape it), so
+        // the last cell must clip its own background to the row's rounded
+        // bottom corners itself instead of relying on the row to do it.
+        border-bottom-left-radius: $border-radius-md;
+        border-bottom-right-radius: $border-radius-md;
       }
 
       // Column label rendered as inline prefix
