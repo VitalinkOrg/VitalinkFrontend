@@ -178,6 +178,20 @@ onBeforeUnmount(() => {
   padding: 0 40px;
 }
 
+@media (max-width: 576px) {
+  .stepper {
+    margin: 24px 0;
+  }
+
+  .step {
+    padding: 0 16px;
+  }
+
+  .step-label {
+    font-size: 11px;
+  }
+}
+
 .step-circle-container {
   display: flex;
   justify-content: center;
